@@ -63,7 +63,7 @@ def is_ideal (sf : SetFamily U) : Prop :=
 structure IdealFamily (U : Type) [DecidableEq U] [Fintype U] extends SetFamily U :=
 (empty_mem : sets ∅)  -- 空集合が含まれる
 (univ_mem : sets Finset.univ)  -- 全体集合が含まれる
-(down_closed : ∀ {A B : Finset U}, sets B → A ⊆ B → sets A)  -- ダウンクローズド
+(down_closed : ∀ {A B : Finset U}, sets B → B ≠ Finset.univ → A ⊆ B → sets A)  -- ダウンクローズド
 
 -- IdealFamily から SetFamily へのキャスト関数を定義
 def to_SetFamily {U : Type} [DecidableEq U] [Fintype U] (sf : IdealFamily U) : SetFamily U :=
@@ -252,7 +252,7 @@ by
     have hH' : sf.sets (Finset.erase H x) :=
       by
         --let HX := (Finset.erase H x)
-        exact sf.down_closed hH h_subset
+        exact sf.down_closed hH h_univ h_subset
         ---(down_closed : ∀ {A B : Finset U}, sets B → A ⊆ B → sets A)
     have hH'' : sf.sets (Finset.erase H x) :=
       by
