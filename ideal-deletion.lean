@@ -215,6 +215,8 @@ def contraction (F : SetFamily α) (x : α) (hx : x ∈ F.ground) (gcard: F.grou
     nonempty_ground := ground_nonempty_after_deletion F.ground x hx gcard
   }
 
+
+
 -- IdealFamilyに対するcontraction操作がIdealFamilyになることの証明
 instance contraction_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x} ) (gcard: F.ground.card ≥ 2): IdealFamily α :=
 {
@@ -328,21 +330,111 @@ instance contraction_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x}
     --ここで夏学のために休止。
     --F.sets (A cup {x})がF.setsのdown_closedからいえる。
     --するとcontractionの定義から、contraction後のsets Aがいえる。
+    --hB_ne_ground : B ≠ thisF.ground
+    --groundx : F.ground = thisF.ground ∪ {x}
+
     have Fsets_down: F.sets (A ∪ {x}) := by
       apply F.down_closed (A ∪ {x}) (B ∪ {x})
       exact Fsets
-      intro h
+      intro h--h : B ∪ {x} = F.ground
+      rw [groundx] at h
+      -- h  B ∪ {x} = thisF.ground ∪ {x}
       apply hB_ne_ground
-      rw [h, finset.erase_eq_of_not_mem (λ H => hxH (Finset.mem_singleton.mp H))]
-      exact finset.ext (λ y=> ⟨λ hy=> finset.mem_insert_of_mem _ hy, λ hy=> finset.mem_of_mem_insert_of_ne hy (finset.not_mem_erase x y)⟩)
-      exact hAB
+      -- goal B = thisF.ground
+      have nxB: x ∉ B := by
+        simp [hB.2.2]
+      have nthisF: x ∉ thisF.ground := by
+        dsimp [contraction]
+        dsimp [thisF]
+        dsimp [contraction]
+        rw [Finset.erase_eq]
+        simp
+      have hB_eq: B = thisF.ground := by
+        ext y
+        constructor
+        -- y ∈ B → y ∈ thisF.ground
+        intro hy
+        have xneqy: x ≠ y := by
+          intro hxy
+          rw [←hxy] at hy
+          -- x ∈ B
+          -- nxB: x ∉ B
+          contradiction
+        -- h: B ∪ {x} = thisF.ground ∪ {x}
+        have hyy: y ∈ thisF.ground ∪ {x}:= by
+          -- hy : y ∈ B
+          -- h: B ∪ {x} = thisF.ground ∪ {x}
+          rw [←h]
+          apply Finset.mem_union_left
+          exact hy
+        --rw [←h] at hyy
+        rw [Finset.mem_union] at hyy
+        --hyy : y ∈ thisF.ground ∨ y = xだが、xneqyからy ∈ thisF.ground
+        cases hyy with
+        | inl hyy' =>
+          exact hyy'
+        | inr hyy' =>
+          --xneqy： x ≠ yとhyy' : y in {x}から矛盾
+          rw [Finset.mem_singleton] at hyy'
+          rw [hyy'] at xneqy
+          contradiction
+        --y ∈ thisF.ground → y ∈ B
+        intro hy
+        have hyy: y ∈ thisF.ground ∪ {x} := by
+          apply Finset.mem_union_left
+          exact hy
+        rw [←h] at hyy
+        rw [Finset.mem_union] at hyy
+        cases hyy with
+        | inl hyy' =>
+          exact hyy'
+        | inr hyy' =>
+          rw [Finset.mem_singleton] at hyy'
+          --rw [←hyy'] at nxB
+          rw [hyy'] at hy
+          contradiction
 
-    have contraction_sets_A: thisF.sets A := by
-      rw [contraction]
-      rw [set_family.mk_sets]
-      exact Fsets_down
+      rw [hB_eq]
+      exact Finset.union_subset_union hAB (by simp)
+    --最後の部分が残っている。
+    --Fsets_down: F.sets (A ∪ {x})まで証明した。
+    --最後は、thisF.sets Aを証明する。
+    --thisF.sets Aは、contractionの定義から、F.sets Aがいえる。
+    --def contraction (F : SetFamily α) (x : α) (hx : x ∈ F.ground) (gcard: F.ground.card ≥ 2)
+    have thisF_setsA: thisF.sets A := by
+      dsimp [thisF]
+      unfold contraction
+      unfold SetFamily.sets
+      --goal ∃ (H : Finset α), F.sets H ∧ x ∈ H ∧ A = H.erase x
+      have hA_sets: F.sets A := by
+        apply F.down_closed A (A ∪ {x})
+        exact Fsets_down
+        intro h
+        rw [groundx] at h
+        apply hB_ne_ground
+        --ここが不完全。このF.sets Aは必要？
+        --goal B = __src✝.ground
+        --exacts [subset_union_right hAB hAB, h]
+        --exacts [Or.resolve_left hAB hB_ne_ground, h]
 
-    exact contraction_sets_A
+      have nxB: x ∉ B := by
+        simp [hB.2.2]
+      have nxA: x ∉ A := by
+        by_contra h
+        have hxB: x ∈ B := by
+          apply hAB
+          exact h
+        contradiction
+
+      have hA_eq: A = (A ∪ {x}).erase x := by
+        rw [Finset.union_comm]
+        rw [←Finset.insert_eq]
+        --nxA: x ∉ A
+        rw [Finset.erase_insert nxA]
+      --最後は適当なものを選ぶ。ここが不完全。
+      --exact ⟨A, hA_sets, nxA, hA_eq⟩
+      --exact ⟨F.ground, hA_sets, nxA, hA_eq⟩
+      --exact ⟨A, hA_sets, hAB, hA_eq⟩
   }
 }
 --この関数のために、setsの値をBoolからPropに変換する。
