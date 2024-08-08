@@ -241,7 +241,6 @@ instance contraction_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x}
   --(down_closed : ∀ (A B : Finset α), sets B → B ≠ ground → A ⊆ B → sets A)
   --Fのdown_closedを使って、contractionのdown_closedを証明する。
   down_closed := by
-  {
     let thisF := contraction (F.toSetFamily) x (by { exact F.inc_ground {x} hx (by simp) }) gcard
     --あとで使うかも。
     have thisg : thisF.ground = F.ground.erase x := by
@@ -289,21 +288,6 @@ instance contraction_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x}
            apply Finset.mem_of_subset thisinc hinThis
         exact y_in_F_ground
 
-
-    /-つかわなかったし、証明も不完全。けして良い。
-    --以下の補題は、thisF.sets Bの前提のもので成り立つ。
-    have hB_sets0: ∃ H, F.sets H ∧ x ∈ H ∧ B = H.erase x := by
-     -- Bがcontraction後の集合族に属するという前提から、Hを見つける
-      simp only [groundx] at hB
-      --goal ∃ H, F.sets H ∧ x ∈ H ∧ B = H.erase x
-      --Fのfd.down_closedを使って、証明する。
-      -- (contraction F.toSetFamily x ⋯ gcard).sets B
-      exact F.down_closed B (B ∪ {x}) hB hB_ne_ground (by
-        intro h_eq
-        rw [h_eq] at hAB
-        contradiction
-      )
-    -/
     intros A B hB hB_ne_ground hAB
     have sets_imp: thisF.sets B → F.sets (B ∪ {x}) := by
       intro hB_sets
@@ -327,7 +311,15 @@ instance contraction_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x}
       apply sets_imp
       exact thisF_sets
 
-    --ここで夏学のために休止。
+    have nxB: x ∉ B := by
+      simp [hB.2.2]
+    have nxA: x ∉ A := by
+      by_contra h
+      have hxB: x ∈ B := by
+        apply hAB
+        exact h
+      contradiction
+
     --F.sets (A cup {x})がF.setsのdown_closedからいえる。
     --するとcontractionの定義から、contraction後のsets Aがいえる。
     --hB_ne_ground : B ≠ thisF.ground
@@ -341,8 +333,6 @@ instance contraction_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x}
       -- h  B ∪ {x} = thisF.ground ∪ {x}
       apply hB_ne_ground
       -- goal B = thisF.ground
-      have nxB: x ∉ B := by
-        simp [hB.2.2]
       have nthisF: x ∉ thisF.ground := by
         dsimp [contraction]
         dsimp [thisF]
@@ -405,37 +395,23 @@ instance contraction_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x}
       dsimp [thisF]
       unfold contraction
       unfold SetFamily.sets
-      --goal ∃ (H : Finset α), F.sets H ∧ x ∈ H ∧ A = H.erase x
-      have hA_sets: F.sets A := by
-        apply F.down_closed A (A ∪ {x})
+      --exact contraction (F.toSetFamily) x (by { exact F.inc_ground {x} hx (by simp) }) gcard
+      have thisFset: (s : Finset α) → thisF.sets s ↔ ∃ H, F.sets H ∧ x ∈ H ∧ s = H.erase x:= by
+        unfold SetFamily.sets
+        dsimp [thisF]
+        rw [contraction]
+        simp
+      have existsH: ∃ H, F.sets H ∧ x ∈ H ∧ A = H.erase x := by
+        use  A ∪ {x}
+        constructor
         exact Fsets_down
-        intro h
-        rw [groundx] at h
-        apply hB_ne_ground
-        --ここが不完全。このF.sets Aは必要？
-        --goal B = __src✝.ground
-        --exacts [subset_union_right hAB hAB, h]
-        --exacts [Or.resolve_left hAB hB_ne_ground, h]
-
-      have nxB: x ∉ B := by
-        simp [hB.2.2]
-      have nxA: x ∉ A := by
-        by_contra h
-        have hxB: x ∈ B := by
-          apply hAB
-          exact h
-        contradiction
-
-      have hA_eq: A = (A ∪ {x}).erase x := by
+        simp
+        show A  = (A ∪ {x}).erase x
         rw [Finset.union_comm]
         rw [←Finset.insert_eq]
-        --nxA: x ∉ A
         rw [Finset.erase_insert nxA]
-      --最後は適当なものを選ぶ。ここが不完全。
-      --exact ⟨A, hA_sets, nxA, hA_eq⟩
-      --exact ⟨F.ground, hA_sets, nxA, hA_eq⟩
-      --exact ⟨A, hA_sets, hAB, hA_eq⟩
-  }
+      exact (thisFset A).mpr existsH
+    exact thisF_setsA
 }
 --この関数のために、setsの値をBoolからPropに変換する。
 def total_size_of_hyperedges (F : SetFamily α)  [DecidablePred F.sets] : ℕ :=
