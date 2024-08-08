@@ -241,30 +241,53 @@ instance contraction_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x}
   down_closed := by
   {
     let thisF := contraction (F.toSetFamily) x (by { exact F.inc_ground {x} hx (by simp) }) gcard
-    --証明が不完全。あとで使うかも。
+    --あとで使うかも。
+    have thisg : thisF.ground = F.ground.erase x := by
+        rfl
+    have thisinc: thisF.ground ⊆ F.ground := by
+      rw [thisg]
+      apply erase_subset
+
     have groundx: F.ground = thisF.ground ∪ {x} := by
       ext y
       constructor
+      -- x ∈ F.groundのとき
       intro hy
       by_cases hxy: x = y
+      -- x = yのとき
       rw [hxy]
       simp
-
       -- x ≠ yのとき
       rw [Finset.mem_union, Finset.mem_singleton]
       left
-      have thisg : thisF.ground = F.ground.erase x := by
-        rfl
+
       rw [thisg]
       rw [Finset.mem_erase]
-
+      simp
+      -- ¬y = x ∧ y ∈ F.ground
       constructor
-      by_contra h
-      rw [h] at hxy
-      contradiction
+      tauto
       exact hy
 
-    intros A B hB hB_ne_ground hAB
+      -- y ∈ thisF.ground ∨ y = x → y ∈ F.ground
+      intro hy
+      rw [Finset.mem_union, Finset.mem_singleton] at hy
+      by_cases  hy' : x = y
+      case pos =>
+        rw [←hy']
+        exact F.inc_ground {x} hx (by simp)
+
+      case neg =>  --x neq yの場合
+        --goal y ∈ F.ground
+        --
+        have hinThis: y ∈ thisF.ground := by
+          tauto
+        --  y ∈ thisF.groundと、thisF.ground ⊆ F.groundから、y ∈ F.ground
+        have y_in_F_ground : y ∈ F.ground := by
+           apply Finset.mem_of_subset thisinc hinThis
+        exact y_in_F_ground
+
+
     /-つかわなかったし、証明も不完全。けして良い。
     --以下の補題は、thisF.sets Bの前提のもので成り立つ。
     have hB_sets0: ∃ H, F.sets H ∧ x ∈ H ∧ B = H.erase x := by
@@ -279,7 +302,7 @@ instance contraction_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x}
         contradiction
       )
     -/
-
+    intros A B hB hB_ne_ground hAB
     have sets_imp: thisF.sets B → F.sets (B ∪ {x}) := by
       intro hB_sets
       have ninB: x ∉ B := by simp [hB_sets.2.2]
