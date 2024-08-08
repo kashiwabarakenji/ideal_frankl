@@ -289,10 +289,29 @@ instance contraction_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x}
         exact y_in_F_ground
 
     intros A B hB hB_ne_ground hAB
+    --have thisF_setsB: thisF.sets B := hB
+    have thisF_sets: thisF.sets B := hB
+    obtain ⟨H, hH_sets, hxH, hB_eq⟩ := hB
+      --have ninB: x ∉ B := by simp [hB_sets.2.2]
+
+    have nxB: x ∉ B := by --この理由はgroundでなくて、sets Bの定理より。
+      rw [hB_eq]
+      exact Finset.not_mem_erase x H
+
+      --simp [thisF_setsB.2] --sets Bの定義を参照することでエラーであれば深刻かも。
+
+      --simp [hB.2.2] --これでも同じ。
+      --hB_eq : B = H.erase x から、x ∉ Bをいうのが良さそう。obtainをhaveの外に出すと良い。
+    have nxA: x ∉ A := by
+      by_contra h
+      have hxB: x ∈ B := by
+        apply hAB
+        exact h
+      contradiction
+
     have sets_imp: thisF.sets B → F.sets (B ∪ {x}) := by
-      intro hB_sets
-      have ninB: x ∉ B := by simp [hB_sets.2.2]
-      obtain ⟨H, hH_sets, hxH, hB_eq⟩ := hB_sets
+      intro hB_sets --introをhaveの外に出す。TODO
+      obtain ⟨H, hH_sets, hxH, hB_eq⟩ := hB_sets --TODO obtainをhaveの外に出すと良い。
       --hB_sets : F.sets H
       --hxB : x ∈ H
       --hB_eq : B = H.erase x
@@ -304,21 +323,9 @@ instance contraction_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x}
         exact hxH
       rwa [← h_union]
 
-
-    have thisF_sets: thisF.sets B := hB
-
     have Fsets: F.sets (B ∪ {x}) := by
       apply sets_imp
       exact thisF_sets
-
-    have nxB: x ∉ B := by
-      simp [hB.2.2]
-    have nxA: x ∉ A := by
-      by_contra h
-      have hxB: x ∈ B := by
-        apply hAB
-        exact h
-      contradiction
 
     --F.sets (A cup {x})がF.setsのdown_closedからいえる。
     --するとcontractionの定義から、contraction後のsets Aがいえる。
