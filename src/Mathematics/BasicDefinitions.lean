@@ -7,6 +7,8 @@ import Mathlib.Data.Bool.Basic
 import Mathlib.Tactic
 import LeanCopilot
 
+namespace Mathematics
+
 variable {α : Type} [DecidableEq α] [Fintype α] [Nonempty α]
 
 structure SetFamily (α : Type) [DecidableEq α] [Fintype α] :=
@@ -76,12 +78,22 @@ def is_ideal (sf : SetFamily α) : Prop :=
 --def to_SetFamily {α : Type*} (sf : SetFamily α) : SetFamily α :=
 --sf
 
--- DecidablePredインスタンスの提供 必要なのか？
+-- DecidablePredインスタンスの提供 なくすとnormalized_degree_sumでエラーが出る。
 noncomputable instance [DecidableEq α] (sf : IdealFamily α) : DecidablePred sf.sets :=
 λ s => Classical.propDecidable (sf.sets s)
 
+noncomputable instance [DecidableEq α] (sf : SetFamily α) : DecidablePred sf.sets :=
+λ s => Classical.propDecidable (sf.sets s)
+
 -- 標準化次数和を計算する関数を定義 上のinstanceの定義のあとにする必要あり。
-noncomputable def normalized_degree_sum {α : Type} [DecidableEq α] [Fintype α] (F : IdealFamily α) : ℕ :=
+-- IdealFamilyでない場合に定義する。
+noncomputable def normalized_degree_sum {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) : ℕ :=
+  let total_size := total_size_of_hyperedges F
+  let num_sets := number_of_hyperedges F
+  let base_set_size := Fintype.card α
+  total_size * 2 - num_sets * base_set_size
+
+noncomputable def ideal_normalized_degree_sum {α : Type} [DecidableEq α] [Fintype α] (F : IdealFamily α) : ℕ :=
   let total_size := total_size_of_hyperedges F.toSetFamily
   let num_sets := number_of_hyperedges F.toSetFamily
   let base_set_size := Fintype.card α
@@ -103,3 +115,5 @@ noncomputable def ideal_degree (sf : IdealFamily α) (x : α) : ℕ :=
 structure IntersectionClosedFamily (α : Type) [DecidableEq α] [Fintype α] extends SetFamily α :=
   (univ_mem : sets ground)  -- 全体集合が含まれる
   (intersection_closed : ∀ {s t : Finset α}, sets s→ sets t → sets (s ∩ t) ) -- 条件2: 共通部分で閉じている
+
+end Mathematics

@@ -13,6 +13,8 @@ variable {α : Type} [DecidableEq α] [Fintype α] [Nonempty α]
 
 open Finset
 
+namespace Mathematics.IdealTrace
+
 --deletionに限らないかも。名前を変えてBasicLemmasに移動するかも。
 lemma ground_nonempty_after_deletion {α : Type} [DecidableEq α] (ground : Finset α) (x : α) (hx: x ∈ ground) (gcard: ground.card ≥ 2) : (ground.erase x).Nonempty :=
   by
@@ -44,7 +46,7 @@ lemma ground_nonempty_after_deletion {α : Type} [DecidableEq α] (ground : Fins
     rw [Finset.card_singleton] at gcard
     contradiction
 
-def trace {α : Type} [DecidableEq α] (F : SetFamily α) (x : α) (hx: x ∈ F.ground) (gcard: F.ground.card ≥ 2): SetFamily α :=
+def trace {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) (x : α) (hx: x ∈ F.ground) (gcard: F.ground.card ≥ 2): SetFamily α :=
   { ground := F.ground.erase x,
     sets := λ s => (x ∉ s) ∧ (F.sets s ∨ F.sets (s ∪ {x})),
     nonempty_ground := ground_nonempty_after_deletion F.ground x hx gcard,
@@ -67,7 +69,7 @@ def trace {α : Type} [DecidableEq α] (F : SetFamily α) (x : α) (hx: x ∈ F.
         -- F.sets (s ∪ {x})
         | inr hh =>
           have hhh: s ∪ {x} ⊆ F.ground := F.inc_ground (s ∪ {x}) hh
-          rename_i α_1 _ _ _ inst_3
+          rename_i _ _ _ _ inst_3
           simp_all only [ge_iff_le]
           intro y hy
           exact hhh (mem_union_left _ hy)
@@ -246,3 +248,5 @@ instance trace_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x} ) (gc
           exact (union_erase_singleton B x nxB).symm
         contradiction
 }
+
+end Mathematics.IdealTrace

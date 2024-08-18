@@ -9,6 +9,8 @@ import LeanCopilot
 
 open Finset
 
+namespace Mathematics
+
 variable {α : Type} [DecidableEq α] [Fintype α] [Nonempty α]
 
 -- 空集合と全体集合が異なることの証明
@@ -317,3 +319,5 @@ theorem diff_diff_eq_diff_diff (A B C : Finset α) : (A \ B) \ C = (A \ C) \ B :
         exact h.2
       -- x ∉ C
       exact h.1.2
+
+end Mathematics
