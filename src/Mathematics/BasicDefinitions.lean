@@ -46,6 +46,11 @@ def all_subsets {α : Type} [DecidableEq α] (s : Finset α) : Finset (Finset α
 noncomputable def degree (sf : SetFamily α) (v : α) : ℕ :=
   Finset.card (Finset.filter (λ s => sf.sets s = true ∧ v ∈ s) (all_subsets sf.ground))
 
+--使ってない。trueの要素を数える関数
+def count_true_sets  (G : Finset α) (sets : Finset α → Prop) [∀ s, Decidable (sets s)] : Nat :=
+  G.powerset.filter sets |>.card
+
+
 -- 空集合がセットに含まれることを定義
 def has_empty (sf : SetFamily α) : Prop :=
   sf.sets ∅
@@ -75,6 +80,13 @@ def is_ideal (sf : SetFamily α) : Prop :=
 noncomputable instance [DecidableEq α] (sf : IdealFamily α) : DecidablePred sf.sets :=
 λ s => Classical.propDecidable (sf.sets s)
 
+-- 標準化次数和を計算する関数を定義 上のinstanceの定義のあとにする必要あり。
+noncomputable def normalized_degree_sum {α : Type} [DecidableEq α] [Fintype α] (F : IdealFamily α) : ℕ :=
+  let total_size := total_size_of_hyperedges F.toSetFamily
+  let num_sets := number_of_hyperedges F.toSetFamily
+  let base_set_size := Fintype.card α
+  total_size * 2 - num_sets * base_set_size
+
 -- Ideal_family_size_sf関数の定義 必要なのか？
 noncomputable def ideal_family_size (sf : IdealFamily α) : ℕ :=
 number_of_hyperedges sf.toSetFamily
@@ -86,3 +98,8 @@ number_of_hyperedges sf.toSetFamily
 -- Ideal Family の頂点の次数を計算する関数
 noncomputable def ideal_degree (sf : IdealFamily α) (x : α) : ℕ :=
   degree (sf.toSetFamily) x
+
+--IntersectionClosedFamilyの定義
+structure IntersectionClosedFamily (α : Type) [DecidableEq α] [Fintype α] extends SetFamily α :=
+  (univ_mem : sets ground)  -- 全体集合が含まれる
+  (intersection_closed : ∀ {s t : Finset α}, sets s→ sets t → sets (s ∩ t) ) -- 条件2: 共通部分で閉じている

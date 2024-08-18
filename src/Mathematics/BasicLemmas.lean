@@ -222,3 +222,98 @@ lemma ground_nonempty_after_minor {α : Type} [DecidableEq α] (ground : Finset 
     rw [g_eq_x] at gcard
     rw [Finset.card_singleton] at gcard
     contradiction
+
+-- IntersectionClosedにあった補題
+--BasicLemmasに似たようなものがある。使っているが、置き換えれば消せる。
+lemma h_erase {G : Finset α} {x : α} :x ∉ G → (G ∪ {x}).erase x = G :=
+  by
+    intro h -- x ∉ G
+    ext y
+    simp only [Finset.mem_erase, Finset.mem_union, Finset.mem_singleton]
+    constructor -- 左辺から右辺と右辺から左辺にわける。y ∈ G ∨ y = xからy ∈ G をしめす。
+    ·intro h' -- 左辺から右辺。
+     have x_ne_y : x ≠ y := by
+       intro hH
+       rw [hH] at h
+       have hl :=h'.left.symm
+       contradiction --ここまででx neq yが証明できた。
+     cases h'.right with
+     |inl yG =>
+      exact yG  -- ここにも到達してなさそう。
+     |inr xy =>
+      rw [xy] at x_ne_y --ここに到達してなさそう。
+      contradiction --ここまででcasesの両側が証明できた?constructionの左辺から右辺も。goalが残っている。
+
+    --右辺から左辺 ゴールは、y ∈ G → y ≠ x ∧ (y ∈ G ∨ y = x)
+    intro h' --y ∈ G ゴールは、 y ≠ x ∧ (y ∈ G ∨ y = x)
+    constructor
+    -- サブゴールは、x neq y
+    have x_ne_y2 : x ≠ y := by
+      intro hH --x=y
+      rw [←hH] at h'  -- x in Gに書き換え。
+      contradiction
+    exact x_ne_y2.symm
+    -- 右側 ゴールは、(y ∈ G ∨ y = x)
+    exact Or.inl h'
+    --これで、lemmaの証明が完了した。
+
+lemma card_union_singleton_sub_one {G : Finset α} {x : α} : x ∉ G → x ∈ G ∪ {x} → G.card = (G ∪ {x}).card - 1 :=
+  by
+    intro xnG -- x ∉ G
+    intro _ -- x ∈ G ∪ {x} ゴールはG.card = (G ∪ {x}).card - 1
+        -- Use the theorem `Finset.card_erase_of_mem`
+        --{α : Type u_1}  {s : Finset α}  {a : α}  [DecidableEq α]
+        -- a ∈ s → (s.erase a).card = s.card - 1
+    let G' := G ∪ {x}
+    have GdG: G' = G ∪ {x} := by rfl
+    have gg: G'.erase x = G := by exact h_erase xnG
+    have gxH : x ∈ G' := by exact Finset.mem_union_right G (Finset.mem_singleton_self x)
+    have ggg: G.card = (G ∪ {x}).card - 1 :=
+      by
+        have h_erase := h_erase xnG
+        rw [←h_erase]
+        rw [gg]
+        rw [←GdG]
+        rw [←h_erase]
+        rw [←GdG]
+        exact Finset.card_erase_of_mem gxH
+    exact ggg
+
+theorem ne_implies_not_mem_singleton (x y: α)(h : y ≠ x) : y ∉ ({x} : Finset α) :=
+  by
+    intro h1
+    rw [mem_singleton] at h1
+    contradiction
+
+theorem not_mem_singleton_implies_ne (h : y ∉ ({x} : Finset α)) : y ≠ x :=
+  by
+    intro heq
+    rw [heq] at h
+    simp at h
+
+theorem my_card_le_of_subset {s t:Finset α} (h : s ⊆ t) : s.card ≤ t.card :=
+  Finset.card_le_card h
+
+theorem diff_diff_eq_diff_diff (A B C : Finset α) : (A \ B) \ C = (A \ C) \ B :=
+  by
+    ext x
+    simp only [mem_sdiff, mem_union, mem_inter, not_and, not_or, not_not]
+    constructor
+    -- (x ∈ (A \ B) \ C → x ∈ (A \ C) \ B)
+    · intro h
+      constructor
+      -- x ∈ A \ C
+      · constructor
+        exact h.1.1
+        exact h.2
+      -- x ∉ B
+      exact h.1.2
+      -- (x ∈ (A \ C) \ B → x ∈ (A \ B) \ C)
+    · intro h
+      constructor
+      -- x ∈ A \ B
+      · constructor
+        exact h.1.1
+        exact h.2
+      -- x ∉ C
+      exact h.1.2
