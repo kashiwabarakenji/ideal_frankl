@@ -29,51 +29,47 @@ by
   -- 左側から右側への全単射を構成
   have h_bijective : Multiset.card right_side = Multiset.card left_side :=
     by
-      let f := fun (s : Finset α) => s ∪ {v}
-      -- 関数の値が値域に入っていることをチェック
-      have h_maps_to : ∀ s ∈ right_side, f s ∈ left_side :=
-        by
-          intros s hs
-          rw [Multiset.mem_filter] at hs ⊢
-          rcases hs with ⟨hs1, hs2⟩
-          simp only [Finset.mem_powerset, Finset.mem_singleton, f]
-          have nxs: v ∉ s := by
-            intro h_in
-            have h_erase := Finset.erase_insert (Finset.not_mem_erase v s)
-            rcases hs2 with ⟨H, H_sets, hHH, rfl⟩
-            exact Finset.not_mem_erase v H h_in
-          constructor
-          · --goal s ∪ {v} ∈ F.ground.powerset.val
-            --hs1 s ∈(F.ground.erase v).powerset.val
-            --hv: v ∈ F.ground
-            have sfge: s ⊆ F.ground.erase v := by
-              --intro ss hss
-              exact Finset.mem_powerset.mp hs1
-            have fgsubset: F.ground.erase v ⊆ F.ground := by
-              exact Finset.erase_subset v F.ground
-            have sfg: s ⊆ F.ground := by
-              exact sfge.trans fgsubset
-              --s ∈ Finset.powerset t ↔ s ⊆ t
-            have svfg: s ∪ {v} ⊆ F.ground := by
+      let f : {s // s ∈ right_side} → {s // s ∈ left_side} := fun s => ⟨s.val ∪ {v}, by
+        -- s.val ∪ {v} が left_side に属することを証明します。
+        rw [Multiset.mem_filter]
+
+        -- right_side に属していることから得られる情報を利用する
+        have hs := s.property
+        rw [Multiset.mem_filter] at hs
+        rcases hs with ⟨hs1, hs2⟩
+
+        constructor
+        -- s.val ∪ {v} ⊆ F.ground を示す部分
+        · have sfge: s.val ⊆ F.ground.erase v := Finset.mem_powerset.mp hs1
+          have fgsubset: F.ground.erase v ⊆ F.ground := Finset.erase_subset v F.ground
+          have sfg: s.val ⊆ F.ground := sfge.trans fgsubset
+          have svfg: s.val ∪ {v} ⊆ F.ground :=
+            by
               intro ss hss
-              --sfg: s ⊆ F.ground
-              --hv: v ∈ F.ground
               cases Finset.mem_union.mp hss with
               | inl hss => exact sfg hss
               | inr hss =>
                 simp at hss
                 rw [hss]
                 exact hv
-            exact Finset.mem_powerset.mpr svfg
+          exact Finset.mem_powerset.mpr svfg
 
-          constructor
-          · --goal F.sets (s ∪ {v})
-            --hs2 : ∃ H, F.sets H ∧ v ∈ H ∧ s = H.erase v
-            obtain ⟨H, H_sets, hHH, rfl⟩ := hs2
-            rw [Mathematics.erase_insert H v hHH]
-            exact H_sets
-          · --goal v ∈ s ∪ {v}
-            simp
+        constructor
+        · --goal F.sets (s ∪ {v})
+          --hs2 : ∃ H, F.sets H ∧ v ∈ H ∧ s = H.erase v
+          rcases hs2 with ⟨H1, H2, hH3, hh4⟩
+          --obtain ⟨H, H_sets, hHH, _⟩ := hs2
+
+          have Fssv: F.sets (s.val ∪ {v}) := by
+            rw [hh4]
+            rw [Mathematics.erase_insert H1 v hH3]
+            exact H2
+          exact Fssv
+
+        · --goal v ∈ s ∪ {v}
+          -- v ∈ ↑s ∪ {v}
+          simp⟩
+
 
       -- 単射を示す
 
