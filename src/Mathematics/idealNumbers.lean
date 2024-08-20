@@ -10,34 +10,94 @@ import Mathematics.BasicLemmas
 import Mathematics.IdealDeletion
 import Mathlib.Data.Multiset.Basic
 import LeanCopilot
-
+--set_option maxHeartbeats 500000 -- Increase the heartbeat limit
 namespace Mathematics
 variable {α : Type} [DecidableEq α] [Fintype α] [Nonempty α]
 
+--この部分は、汎用に使えるので、後日、BasicLemmasに移動する。
+--全単射があるとき、集合の要素数が等しいことを示す。
+theorem finset_card_eq_card_of_bijective {α β : Type} [DecidableEq α] [Fintype α][DecidableEq β]{s : Finset α}[DecidableEq {x // x ∈ s}] {t : Finset β}
+  (f : s → t) (hf : Function.Bijective f)  : s.card = t.card := by
+  --have h_inj : Function.Injective f := hf.1
+  have h_inj : Function.Injective f := hf.1
+
+  have h_image : t = (s.attach).image (λ ss=> (f ss).val) := Finset.ext (by
+    --simp [hf.2]
+    --gaol ∃ a_2 ∈ s, f a_2 = a
+    --fが全射なので、a ∈ t ならば、a = f a' となるa'が存在する。
+     intro a
+     constructor
+     · --goal : a ∈ t → a ∈ s.image f
+      intro ha
+      -- ha: a ∈ t
+      let surjf := hf.2
+      rw [Function.Surjective] at surjf
+      --surjf : ∀ (b : β), ∃ (a : α), f a = b
+      let surjfa := surjf ⟨a, ha⟩
+      obtain ⟨b, hb⟩ := surjfa
+      --hb : f b = ⟨a, ha⟩
+      --a ∈ Finset.image (fun s ↦ ↑(f s)) s.attach
+      rw [Finset.mem_image]
+      --goal  ∃ a_1 ∈ s.attach, ↑(f a_1) = a
+      use b
+      simp
+      simp [hb]
+     · --goal a ∈ Finset.image (fun s ↦ ↑(f s)) s.attach → a ∈ t
+      intro ha
+      --ha : a ∈ Finset.image (fun s ↦ ↑(f s)) s.attach
+      rw [Finset.mem_image] at ha
+      obtain ⟨b, _, hb2⟩ := ha
+      --hb1 : b ∈ s.attach
+      --hb2 : ↑(f b) = a
+      --a ∈ t
+      rw [←hb2]
+      subst hb2
+      simp_all only [Multiset.bijective_iff_map_univ_eq_univ, Finset.univ_eq_attach, Finset.attach_val,
+        Finset.mem_attach, Finset.coe_mem]
+    )
+
+  calc
+    s.card = s.attach.card := by rw [Finset.card_attach]
+    _ = (s.attach.image (λ ss => (f ss).val)).card := by
+      apply Eq.symm
+      apply Finset.card_image_of_injOn
+      intro x _ y _ h
+      simp only [Subtype.val_inj] at h
+      have : f x = f y := by
+        ext
+        rw [h]
+      exact h_inj this
+    _ = t.card := by rw [← h_image]
+
+
+--theorem Finset.card_image_of_injective {α : Type u_1}  {β : Type u_2}  {f : α → β} [DecidableEq β]  (s : Finset α)  (H : Function.Injective f) :
+--Finset.card (Finset.image f s) = Finset.card s
+
 -- 言明：頂点 v を含む hyperedge 数と、v で contraction して得られた集合族の hyperedge 数が等しいことを示す
+
 theorem degree_eq_contraction_degree {α : Type} [DecidableEq α] [Fintype α]
   (F : SetFamily α) (v : α) (hv : v ∈ F.ground) (gcard: F.ground.card ≥ 2):
   degree F v = number_of_hyperedges (IdealDeletion.contraction F v hv gcard) :=
 by
   rw [IdealDeletion.contraction, degree, number_of_hyperedges]
-  dsimp [Finset.filter, all_subsets]
+  dsimp [all_subsets]
   simp
-
-  let left_side := Multiset.filter (fun s ↦ F.sets s ∧ v ∈ s) F.ground.powerset.val
-  let right_side := Multiset.filter (fun s ↦ ∃ H, F.sets H ∧ v ∈ H ∧ s = H.erase v) (F.ground.erase v).powerset.val
-  have right_side_def: right_side = Multiset.filter (fun s ↦ ∃ H, F.sets H ∧ v ∈ H ∧ s = H.erase v) (F.ground.erase v).powerset.val := rfl
-  have left_side_def: left_side = Multiset.filter (fun s ↦ F.sets s ∧ v ∈ s) F.ground.powerset.val := rfl
+  --leftとrightが間違って入れ替わっているので、注意。
+  let left_side := Finset.filter (fun (s :Finset α) ↦ F.sets s ∧ v ∈ s) F.ground.powerset
+  let right_side := Finset.filter (fun (s :Finset α) ↦ ∃ (H:Finset α), F.sets H ∧ v ∈ H ∧ s = H.erase v) (F.ground.erase v).powerset
+  have right_side_def: right_side = Finset.filter (fun (s :Finset α) ↦ ∃ (H :Finset α), F.sets H ∧ v ∈ H ∧ s = H.erase v) (F.ground.erase v).powerset := rfl
+  --have left_side_def: left_side = Finset.filter (fun (s :Finset α) ↦ F.sets s ∧ v ∈ s) F.ground.powerset := rfl
 
   -- 左側から右側への全単射を構成
-  have h_bijective : Multiset.card right_side = Multiset.card left_side :=
+  have h_bijective : Finset.card right_side = Finset.card left_side :=
     by
       let f : {s // s ∈ right_side} → {s // s ∈ left_side} := fun s => ⟨s.val ∪ {v}, by
         -- s.val ∪ {v} が left_side に属することを証明します。
-        rw [Multiset.mem_filter]
+        rw [Finset.mem_filter]
 
         -- right_side に属していることから得られる情報を利用する
         have hs := s.property
-        rw [Multiset.mem_filter] at hs
+        rw [Finset.mem_filter] at hs
         rcases hs with ⟨hs1, hs2⟩
 
         constructor
@@ -77,10 +137,10 @@ by
       have h_injective : Function.Injective f :=
         by
           intros a b h
-          have v_val_in : a.val ∈ right_side := by
-            exact a.property
+          --have v_val_in : a.val ∈ right_side := by
+          --  exact a.property
           let ap := a.property
-          rw [Multiset.mem_filter] at ap
+          rw [Finset.mem_filter] at ap
           obtain ⟨Ha1,Ha2, Ha_sets, Ha3,Ha4⟩ := ap
           have ha_subset : a.val ⊆ F.ground.erase v := by
             exact Finset.mem_powerset.mp Ha1
@@ -89,7 +149,7 @@ by
             simp [Ha4]
 
           let bp := b.property
-          rw [Multiset.mem_filter] at bp
+          rw [Finset.mem_filter] at bp
           obtain ⟨Hb1,Hb2, Hb_sets, Hb3,Hb4⟩ := bp
           have hb_subset : b.val ⊆ F.ground.erase v := by
             exact Finset.mem_powerset.mp Hb1
@@ -119,7 +179,7 @@ by
             rfl
 
           have ss_sets := ss.property
-          rw [Multiset.mem_filter] at ss_sets
+          rw [Finset.mem_filter] at ss_sets
           obtain ⟨sss_sets, ss_v, ss_erase⟩ := ss_sets
           have sss_subset: ss.val ⊆ F.ground := by
             exact Finset.mem_powerset.mp sss_sets
@@ -141,16 +201,16 @@ by
             simp
             constructor
             · -- left goal: F.sets ssev
-              rename_i α_1 inst inst_1 inst_2 inst_3 inst_4
+              rename_i α_1 _ _ _ inst_3 inst_4
               simp_all only [ge_iff_le, Finset.mem_val, Finset.mem_powerset, right_side, left_side, f, ssev]
               obtain ⟨val, property⟩ := ss
               simp_all only
               intro x hx
               simp_all only [Finset.mem_erase, ne_eq, not_false_eq_true, true_and]
-              obtain ⟨left, right⟩ := hx
+              obtain ⟨_, right⟩ := hx
               exact sss_subset right
             · -- right goal: ssev ⊆ F.ground.erase v
-              rename_i α_1 inst inst_1 inst_2 inst_3 inst_4
+              rename_i α_1 _ _ _ inst_3 inst_4
               simp_all only [ge_iff_le, Finset.mem_val, Finset.mem_powerset, right_side, left_side, f, ssev]
               obtain ⟨val, property⟩ := ss
               simp_all only
@@ -173,71 +233,32 @@ by
           have rw_rule := Mathematics.erase_insert' ss.val v ss_erase
           constructor
           -- goal: F.sets ssev
-          rename_i α_1 inst inst_1 inst_2 inst_3 inst_4
+          rename_i α_1 _ _ _ inst_3 inst_4
           simp [rw_rule]
           -- goal: ssev ∪ {v} = ss.val
-          simpa [rw_rule]
+          simpa [rw_rule] -- simpもsimpaも両方とも必要みたい。
 
-      -- 単射性と全射性から全単射性を得る
-      --fが全単射という言明をまず証明する
-      have h_bijective : Function.Bijective f :=
+          -- 単射性と全射性から全単射性を得る
+          --fが全単射という言明をまず証明する
+      have h_bijection : Function.Bijective f :=
         by
-          exact ⟨h_injective, h_surjective⟩
+         exact ⟨h_injective, h_surjective⟩
       --fが全単射なので、right_side と left_side の要素数は等しい。
-      exact Finset.card_eq_of_bijective h_bijective
+      exact finset_card_eq_card_of_bijective f h_bijection
+      --これで、Finset.card right_side = Finset.card left_side が証明された。
+  --congr たぶんcongrはだめ。両辺で対応してない。
+  --goal Finset.card (Finset.filter (λ (s : Finset α), F.sets s ∧ v ∈ s) F.ground.powerset) = Finset.card (Finset.filter (λ (s : Finset α), ∃ (H : Finset α), F.sets H ∧ v ∈ H ∧ s = H.erase v) (F.ground.erase v).powerset)
+  have r_eq: (Finset.filter (fun (s: Finset α) ↦ F.sets s ∧ v ∈ s) F.ground.powerset).card =left_side.card := by
+    rfl
+  rw [r_eq]
 
+  rw [←h_bijective]
 
-
-  rw [h_bijective]
-  refl
-
--- 言明：頂点 v を含む hyperedge 数と、v で contraction して得られた集合族の hyperedge 数が等しいことを示す
-theorem degree_eq_contraction_degree2 {α : Type} [DecidableEq α] [Fintype α]
-  (F : SetFamily α) (v : α) (hv : v ∈ F.ground) (gcard: F.ground.card ≥ 2):
-  degree F v = number_of_hyperedges (IdealDeletion.contraction F v hv gcard) :=
-by
-  rw [IdealDeletion.contraction, degree, number_of_hyperedges]
-  dsimp [Finset.filter, all_subsets]
-  simp
-  let left_side := (Multiset.filter (fun s ↦ F.sets s ∧ v ∈ s) F.ground.powerset.val)
-  let right_side := (Multiset.filter (fun s ↦ F.sets s ∧ v ∈ s) (F.ground.erase v).powerset.val)
-  --集合として等しいことを示すのではなく、大きさが等しいことを示す。
-  --そのために全単射を作る。
-  -- 全単射を構成
-  let f : (Multiset (Finset α)) → (Multiset (Finset α)) := fun s =>
-    Multiset.map (fun (x : Finset α) => x ∪ {v}) s
-
-  -- 左側から右側への対応関係
-  have h_injective : Function.Injective (fun (x : Finset α) => x ∪ {v}) :=
-    by
-      intros a b h
-      have v_not_in_a : v ∉ a := by
-        intro h_in
-        have h' := Finset.mem_of_mem_insert_of_ne h_in (ne_of_eq_of_ne rfl (Finset.not_mem_erase v (a ∪ {v})))
-        exact Finset.not_mem_erase v a h'
-
-      have v_not_in_b : v ∉ b := by
-        intro h_in
-        have h' := Finset.mem_of_mem_insert_of_ne h_in (ne_of_eq_of_ne rfl (Finset.not_mem_erase v (b ∪ {v})))
-        exact Finset.not_mem_erase v b h'
-
-      have h_erase_a : a = (a ∪ {v}).erase v := Finset.erase_insert v_not_in_a
-      have h_erase_b : b = (b ∪ {v}).erase v := Finset.erase_insert v_not_in_b
-      rw [←h_erase_a, ←h_erase_b, h]
-
-
-  have h_surjective : Function.Surjective (fun x => x.erase v) :=
-    by
-      intro s
-      use (s ∪ {v}).erase v
-      constructor
-      · exact Finset.erase_insert v s (Finset.not_mem_erase v s)
-      · exact Finset.erase_insert v s (Finset.not_mem_erase v s)
-
-  -- 2つの Multiset が同じ大きさを持つことを証明
-  have h_bijective : left_side.card = right_side.card :=
-    by
-      apply Multiset.card_map_eq_of_bijective
-      exact ⟨h_injective, h_surjective⟩
-
-  rw [h_bijective]
+  --have l_eq :(Finset.filter (fun (s: Finset α) ↦ ∃ (H:Finset α), F.sets H ∧ v ∈ H ∧ s = H.erase v) (F.ground.erase v).powerset).card = right_side.card := by
+  --  rfl
+  --rw [l_eq] うまくマッチしなかった。
+  --集合でなく、cardにして、置き換えた。
+  have right_side_card_eq: right_side.card = Finset.card (Finset.filter (fun (s : Finset α) ↦ ∃ (H : Finset α), F.sets H ∧ v ∈ H ∧ s = H.erase v) (F.ground.erase v).powerset) := rfl
+  rw [right_side_card_eq]
+  congr
+  --同じ式なのに全然マッチしてくれなかったが、ゴールを両辺が等しい形まで変形して、congrで簡約させてうまくいった。
