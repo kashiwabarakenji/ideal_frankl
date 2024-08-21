@@ -11,6 +11,7 @@ import Mathematics.IdealDeletion
 import Mathlib.Data.Multiset.Basic
 import LeanCopilot
 --set_option maxHeartbeats 500000 -- Increase the heartbeat limit
+
 namespace Mathematics
 variable {α : Type} [DecidableEq α] [Fintype α] [Nonempty α]
 
@@ -262,3 +263,169 @@ by
   rw [right_side_card_eq]
   congr
   --同じ式なのに全然マッチしてくれなかったが、ゴールを両辺が等しい形まで変形して、congrで簡約させてうまくいった。
+
+  -- 補題 1: Deletion後の集合族の性質
+lemma deletion_property {α : Type} [DecidableEq α] [Fintype α]
+  (F : SetFamily α) (v : α) (hv : v ∈ F.ground) (gcard: F.ground.card ≥ 2):
+  ∀ s, (IdealDeletion.deletion F v hv gcard).sets s ↔ F.sets s∧ v ∉ s :=
+by
+  intro s
+  constructor
+  · intro hs
+    rw [IdealDeletion.deletion] at hs
+    simp at hs
+    constructor
+    exact hs.1
+    exact hs.2
+
+  · intro hs
+    rw [IdealDeletion.deletion]
+    simp
+    exact hs
+
+-- 補題 2: 元の集合族における次数の定義
+lemma degree_definition {α : Type} [DecidableEq α] [Fintype α]
+  (F : SetFamily α) (v : α) :
+  degree F v = Finset.card (Finset.filter (λ s => F.sets s = true ∧ v ∈ s) (Finset.powerset F.ground)) :=
+by
+  rw [degree]
+  congr
+
+lemma hyperedge_count_split {α : Type} [DecidableEq α] [Fintype α]
+  (F : SetFamily α) (v : α) (hv : v ∈ F.ground) (gcard: F.ground.card ≥ 2):
+  number_of_hyperedges F = number_of_hyperedges (IdealDeletion.deletion F v hv gcard) + degree F v :=
+by
+ -- まず、number_of_hyperedges の定義に基づいて、全てのハイパーエッジをカウントします
+  rw [number_of_hyperedges]
+  rw [number_of_hyperedges]
+
+  -- 全ての部分集合に対するフィルタリングを行います。
+  let all_sets2 := (Finset.powerset F.ground).filter F.sets
+
+  -- このフィルタリングした集合を元に、カード（要素数）を計算します。
+  --have count_all_sets : all_sets2.card = Finset.card all_sets2 := rfl
+
+  -- 同様に、deletion後の集合族のハイパーエッジ数を計算します。
+  --let deletion_sets := (Finset.powerset (F.ground.erase v)).filter (λ s => F.sets s ∧ v ∉ s)
+  --以下は動いているが、使っていない。
+  --have count_deletion_sets : number_of_hyperedges (IdealDeletion.deletion F v hv gcard) = deletion_sets.card :=
+  --  by
+  --    rw [number_of_hyperedges]
+  --    congr!
+
+  -- 次に、degreeを計算します。これは、vを含む全ての部分集合の数に対応します。
+  rw [degree_definition F v]
+
+  -- ハイパーエッジ全体の集合は、vを含むものと含まないもので分割できます。
+  let sets_with_v := all_sets2.filter (λ s => v ∈ s)
+  let sets_without_v := all_sets2.filter (λ s => v ∉ s)
+  have sets_without_v_def: sets_without_v = all_sets2.filter (λ s => v ∉ s) := rfl
+
+
+  -- この分割が正確であることを確認します。
+  have partition : all_sets2 = sets_with_v ∪ sets_without_v := by
+    ext s
+    simp only [Finset.mem_filter, Finset.mem_union, Finset.mem_powerset, Finset.mem_erase, and_iff_right_iff_imp, or_iff_not_imp_left]
+    constructor
+    -- s ∈ all_sets の場合を考える
+    intro hs
+    by_cases h : v ∈ s
+    -- v ∈ s の場合、s ∈ sets_with_v
+    case pos =>
+      simp [sets_with_v, *]
+    -- v ∉ s の場合、s ∈ sets_without_v
+    case neg =>
+      simp [sets_without_v, *]
+
+    -- s ∈ sets_with_v ∪ sets_without_v の場合を考える
+    intro hs
+    -- hs : s ∈ sets_with_v ∨ s ∈ sets_without_v
+    by_cases hss : s ∈ sets_with_v
+    case pos h_with_v =>
+      --goal s ∈ sets_with_v
+      dsimp [sets_with_v] at hss
+      rw [Finset.mem_filter] at hss
+      exact hss.1
+    case neg h_without_v =>
+      have hsss:= hs hss
+      dsimp [sets_without_v] at hsss
+      rw [Finset.mem_filter] at hsss
+      exact hsss.1
+
+  -- 最後に、全ての部分集合のカード（要素数）が、分割された集合のカード（要素数）の合計と等しいことを示します。
+  --goal Finset.card all_sets = Finset.card sets_with_v + Finset.card sets_without_v
+  --simp_all
+  have partition_card : all_sets2.card = (sets_with_v ∪ sets_without_v).card := by
+    rw [partition]
+  have term1: (Finset.filter F.sets F.ground.powerset).card = all_sets2.card := rfl
+
+  have term2: (Finset.filter (λ (s : Finset α)=> F.sets s ∧ v ∈ s) (Finset.powerset F.ground)).card = sets_with_v.card := by
+    simp [sets_with_v]
+    simp [all_sets2]
+    simp [Finset.filter]
+    apply congr_arg
+    apply Multiset.filter_congr
+    tauto
+  have term3: (Finset.filter (λ (s : Finset α)=> F.sets s = true ∧ v ∉ s) (Finset.powerset F.ground)).card = sets_without_v.card :=
+    by
+      simp [sets_without_v]
+      simp [all_sets2]
+      simp [Finset.filter]
+      apply congr_arg
+      apply Multiset.filter_congr
+      tauto
+
+  have term_eq: Finset.filter ((F ∖ v) hv gcard).sets ((F ∖ v) hv gcard).ground.powerset = sets_without_v := by
+    ext s
+    simp only [Finset.mem_filter, Finset.mem_powerset, IdealDeletion.deletion, and_iff_right_iff_imp]
+    constructor
+    · intro hs --a.mp.left
+      dsimp [sets_without_v]
+      dsimp [all_sets2]
+      rw [Finset.mem_filter]
+      simp [Finset.filter]
+      constructor
+      constructor
+      exact F.inc_ground s hs.2.1
+      exacts [hs.2.1, hs.2.2]
+    · intro h -- a.mp.right goal: s ⊆ F.ground.erase v ∧ F.sets s ∧ v ∉ s
+      --unfold sets_without_v at h
+      rw [sets_without_v_def] at h
+      dsimp [all_sets2] at h
+      rw [Finset.mem_filter] at h
+      simp [Finset.filter] at h
+      constructor
+      apply Finset.subset_erase.mpr
+      constructor
+      exact h.1.1
+      exact h.2
+
+      --goal F.sets s ∧ v ∉ s
+      constructor
+      exact h.1.2
+      exact h.2
+
+  rw [term1]
+  rw [partition_card]
+  dsimp [sets_with_v]
+  dsimp [sets_without_v]
+  dsimp [all_sets2]
+  rw [Finset.card_union_of_disjoint]
+  rw [term_eq]
+  simp
+  rw [term2]
+  --rw [add_comm sets_with_v.card sets_without_v.card]
+  rw [←term2]--add_commとの順番で適用できなくなる。
+  rw [←term3]
+  rw [add_comm]
+
+  have disj: Disjoint (Finset.filter (fun s ↦ v ∈ s) (Finset.filter F.sets F.ground.powerset)) (Finset.filter (fun s ↦ v ∉ s) (Finset.filter F.sets F.ground.powerset)) :=
+    by
+      -- sets_with_v と sets_without_v の交わりが空集合であることを示す必要があります。
+      apply Finset.disjoint_filter.2
+      simp
+
+  exact disj
+  --原因不明でexact disjができなかったが、原因不明でできるようになった。
+
+end Mathematics
