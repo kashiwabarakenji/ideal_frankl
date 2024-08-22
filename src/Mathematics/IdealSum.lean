@@ -345,9 +345,9 @@ lemma sumbij (F : SetFamily α) [DecidablePred F.sets] (x : α) (hx : x ∈ F.gr
   domain00.sum Finset.card = range00.sum Finset.card + range00.card:=
   by
    let domain0 :Finset (Finset α):= (Finset.powerset F.ground).filter (λ s => F.sets s ∧ x ∈ s)
-   have domain0have: domain0 = (Finset.powerset F.ground).filter (λ s => F.sets s ∧ x ∈ s):= by rfl
+   --have domain0have: domain0 = (Finset.powerset F.ground).filter (λ s => F.sets s ∧ x ∈ s):= by rfl
    let range0 :Finset (Finset α):= (Finset.powerset (F.ground.erase x)).filter (λ s => ∃ H, F.sets H ∧ x ∈ H ∧ s = H.erase x)
-   have range0have: range0 = (Finset.powerset (F.ground.erase x)).filter (λ s => ∃ H, F.sets H ∧ x ∈ H ∧ s = H.erase x):= by rfl
+   --have range0have: range0 = (Finset.powerset (F.ground.erase x)).filter (λ s => ∃ H, F.sets H ∧ x ∈ H ∧ s = H.erase x):= by rfl
    -- 関数 f の定義
    let f := λ (s : Finset α) => Finset.card s
     -- 関数 g の定義
@@ -355,7 +355,7 @@ lemma sumbij (F : SetFamily α) [DecidablePred F.sets] (x : α) (hx : x ∈ F.gr
 
 
    let ap := @Finset.sum_bij _ _ _ _ domain0 range0 f g
-    (λ (s:Finset α) (hs: s ∈ domain0) => s.erase x) --これは右側の集合から
+    (λ (s:Finset α) (_: s ∈ domain0) => s.erase x) --これは右側の集合から
    -- 写像の値が終域に含まれることの証明 うまくいっているのか。
     (by
      have index2: ∀ s ∈ domain0, s.erase x ∈ range0 :=
@@ -422,13 +422,13 @@ lemma sumbij (F : SetFamily α) [DecidablePred F.sets] (x : α) (hx : x ∈ F.gr
         constructor
         --hs.1: s ⊆ F.ground.erase x
         --x in F.ground
-       -- から s ⊆ F.ground.erase xがいえる。
-        have s1: s ⊆ F.ground.erase x := by
-          rename_i inst inst_1 inst_2 inst_3
-          simp_all only
+        -- から s ⊆ F.ground.erase xがいえる。
+        --have s1: s ⊆ F.ground.erase x := by
+        --  rename_i inst inst_1 inst_2 inst_3
+        --  simp_all only
 
         have s2: s ∪ {x} ⊆ (F.ground.erase x)∪{x} := by
-          rename_i inst inst_1 inst_2 inst_3
+          rename_i inst inst_1 _ inst_3
           simp_all only [true_and]
           --obtain ⟨w, h⟩ := hs
           --obtain ⟨left, right⟩ := h
@@ -466,7 +466,7 @@ lemma sumbij (F : SetFamily α) [DecidablePred F.sets] (x : α) (hx : x ∈ F.gr
         exact hH1
         --goal  s = (s ∪ {x}).erase x
         have s4: x ∉ s := by
-          rename_i inst inst_1 inst_2 inst_3
+          rename_i inst inst_1 _ inst_3
           subst hH3
           simp_all only [Finset.mem_erase, ne_eq, not_true_eq_false, and_true, not_false_eq_true]
         exact (Mathematics.union_erase_singleton s x s4).symm
@@ -487,7 +487,7 @@ lemma sumbij (F : SetFamily α) [DecidablePred F.sets] (x : α) (hx : x ∈ F.gr
     (by
       --goal  ∀ (a : Finset α) (ha : a ∈ domain0), f a = g ((fun s hs ↦ s.erase x) a ha)
       --definition (h : ∀ (a : ι) (ha : a ∈ s), f a = g (i a ha))
-      have index5 : ∀ (a : Finset α) (ha : a ∈ domain0),
+      have index5 : ∀ (a : Finset α) (_ : a ∈ domain0),
         Finset.card a = Finset.card (a.erase x) + 1 :=
       by
         intros a ha
@@ -508,10 +508,10 @@ lemma sumbij (F : SetFamily α) [DecidablePred F.sets] (x : α) (hx : x ∈ F.gr
           apply Nat.one_le_of_lt
           apply Finset.card_pos.mpr
           exact ⟨x, hx⟩
-        rename_i inst inst_1 inst_2 inst_3 hx_1
+        rename_i inst inst_1 _ inst_3 hx_1
         simp_all only [ge_iff_le, Finset.one_le_card, Nat.sub_add_cancel]
 
-      have index5': ∀ (a : Finset α) (ha : a ∈ domain0), f a = g ((fun s hs ↦ s.erase x) a ha) :=
+      have index5': ∀ (a : Finset α) (ha : a ∈ domain0), f a = g ((fun s _ ↦ s.erase x) a ha) :=
       by
         dsimp [f, g]
         dsimp [domain0]
@@ -519,7 +519,7 @@ lemma sumbij (F : SetFamily α) [DecidablePred F.sets] (x : α) (hx : x ∈ F.gr
         simp
         simp at index5
         intro a ha b hb
-        let index5o := (index5 a ha b hb)
+        --let index5o := (index5 a ha b hb)
         simp [range0, ha, index5, hb]
 
         have hx : x ∈ a := by
@@ -529,37 +529,31 @@ lemma sumbij (F : SetFamily α) [DecidablePred F.sets] (x : α) (hx : x ∈ F.gr
           apply Nat.one_le_of_lt
           apply Finset.card_pos.mpr
           exact ⟨x, hx⟩
-        rename_i inst inst_1 inst_2 inst_3 hx_1
+        rename_i inst inst_1 _ inst_3 hx_1
         simp_all only [ge_iff_le, Finset.one_le_card, Nat.sub_add_cancel]
 
       exact index5'
     )
    -- sum の分配と簡単な変形
    dsimp [domain0, range0]
-   rw [←domain0have]
-   rw [←range0have]
    simp_all
+   rw [←ap]
    dsimp [domain0, range0,range0] at ap
+   --have domain_eq3: (∑ x ∈ domain0, f x) = (∑ (x ∈ Finset.filter (fun s ↦ F.sets s ∧ x ∈ s) F.ground.powerset), (f x)) := by rfl
+   --have domain_eq2: domain0 = Finset.filter (fun s ↦ F.sets s ∧ x ∈ s) F.ground.powerset := by
+   --  rw [←domain_eq]
+   -- apの変換して標準化
    have domain_eq: domain0 = (Finset.powerset F.ground).filter (λ s => F.sets s ∧ x ∈ s) :=
       by rfl
-   have domain_eq2: domain0 = Finset.filter (fun s ↦ F.sets s ∧ x ∈ s) F.ground.powerset := by
-     rw [←domain_eq]
    have range_eq: range0 = (Finset.powerset (F.ground.erase x)).filter (λ s => ∃ H, F.sets H ∧ x ∈ H ∧ s = H.erase x) :=
       by rfl
-   have domain_eq3: (∑ x ∈ domain0, f x) = (∑ (x ∈ Finset.filter (fun s ↦ F.sets s ∧ x ∈ s) F.ground.powerset), (f x)) := by rfl
-   have range_eq3: ∑ x ∈ range0, x.card = range0.sum Finset.card := by rfl
-   rw [←ap]
-   rw [←domain_eq3]
-   have domain_eq4: ∑ x ∈ domain0, f x = domain0.sum Finset.card := by rfl
-   rw [domain_eq4]
-   -- apの変換して標準化
-   rw [←domain_eq] at ap
-   rw [←range_eq] at ap
+   rw [←domain_eq,←range_eq] at ap
    have ghave: g = λ s => (Finset.card s) + 1 := by rfl
    rw [ghave] at ap
-   rw [Finset.sum_add_distrib] at ap
-   rw [Finset.sum_const] at ap
+   rw [Finset.sum_add_distrib,Finset.sum_const] at ap
+   have domain_eq4: ∑ x ∈ domain0, f x = domain0.sum Finset.card := by rfl
    rw [domain_eq4] at ap
+   have range_eq3: ∑ x ∈ range0, x.card = range0.sum Finset.card := by rfl
    rw [range_eq3] at ap
    simp at ap
    rw [ap]
