@@ -9,6 +9,7 @@ import Mathematics.BasicDefinitions
 import Mathematics.BasicLemmas
 import LeanCopilot
 
+namespace Mathematics.IdealDeletion
 -- 型変数と必要な型クラスの宣言 この宣言は必要。もともとUだったのをαに変えた。
 variable {α : Type} [DecidableEq α] [Fintype α][Nonempty α]
 
@@ -47,7 +48,7 @@ lemma ground_nonempty_after_deletion {α : Type} [DecidableEq α] (ground : Fins
 def deletion {α : Type} [DecidableEq α] [Fintype α](F : SetFamily α) (x : α) (hx: x ∈ F.ground) (gcard: F.ground.card ≥ 2): SetFamily α :=
   { ground := F.ground.erase x,
     sets := λ s => F.sets s ∧ ¬ x ∈ s,
-    nonempty_ground := ground_nonempty_after_deletion F.ground x hx gcard
+    nonempty_ground := ground_nonempty_after_minor F.ground x hx gcard
     /-      by
         rw [Finset.erase_eq]
         apply Finset.nonempty_of_ne_empty
@@ -183,7 +184,7 @@ def idealdeletion {α : Type} [DecidableEq α] [Fintype α] (F : IdealFamily α)
 def contraction (F : SetFamily α) (x : α) (hx : x ∈ F.ground) (gcard: F.ground.card ≥ 2): SetFamily α :=
   { ground := F.ground.erase x,
 
-    sets := λ s => ∃ H, F.sets H ∧ x ∈ H ∧ s = H.erase x,
+    sets := λ (s: Finset α) => ∃ (H :Finset α), F.sets H ∧ x ∈ H ∧ s = H.erase x,
 
     inc_ground := by
         intros s hs
@@ -411,3 +412,5 @@ instance contraction_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x}
       exact (thisFset A).mpr existsH
     exact thisF_setsA
 }
+
+end Mathematics.IdealDeletion

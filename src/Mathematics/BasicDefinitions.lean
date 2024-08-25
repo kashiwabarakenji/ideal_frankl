@@ -35,8 +35,9 @@ def total_size_of_hyperedges (F : SetFamily α)  [DecidablePred F.sets] : ℕ :=
   all_sets.sum Finset.card
 
 def number_of_hyperedges (F : SetFamily α) [DecidablePred F.sets] : ℕ :=
-  let all_sets := (Finset.powerset F.ground).filter F.sets
-  all_sets.card
+  ((Finset.powerset F.ground).filter F.sets).card
+  --let all_sets := (Finset.powerset F.ground).filter F.sets
+  --all_sets.card
 
 def standardized_degree_sum (F : SetFamily α) [DecidablePred F.sets] : ℕ :=
   total_size_of_hyperedges F - 2 * number_of_hyperedges F
@@ -103,6 +104,7 @@ noncomputable def ideal_normalized_degree_sum {α : Type} [DecidableEq α] [Fint
 noncomputable def ideal_family_size (sf : IdealFamily α) : ℕ :=
 number_of_hyperedges sf.toSetFamily
 
+
 -- Ideal Family のサイズを計算する関数
 --def ideal_family_size (sf : IdealFamily α)[DecidablePred (to_SetFamily sf).sets] : ℕ :=
 --   number_of_hyperedges (to_SetFamily sf)
@@ -115,5 +117,7 @@ noncomputable def ideal_degree (sf : IdealFamily α) (x : α) : ℕ :=
 structure IntersectionClosedFamily (α : Type) [DecidableEq α] [Fintype α] extends SetFamily α :=
   (univ_mem : sets ground)  -- 全体集合が含まれる
   (intersection_closed : ∀ {s t : Finset α}, sets s→ sets t → sets (s ∩ t) ) -- 条件2: 共通部分で閉じている
+
+
 
 end Mathematics

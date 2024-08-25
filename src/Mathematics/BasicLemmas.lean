@@ -116,8 +116,39 @@ by
     --  x ∈ d ∨ x = v
     exact Or.inl hx
 
--- フィンセットの消去が等しいことから元のセットが等しいことを証明する補助定理
-lemma set_eq_of_erase_eq {A B : Finset α} {x : α} (hxA : x ∈ A) (hxB : x ∈ B) (h : Finset.erase A x = Finset.erase B x) : A = B :=
+--lemmaのところに移動してもよい。
+theorem erase_inj_of_mem {s t : Finset α} {x : α} (hx : x ∈ s) (ht : x ∈ t) :
+  Finset.erase s x = Finset.erase t x ↔ s = t :=
+by
+  constructor
+  -- まず、Finset.erase s x = Finset.erase t x から s = t を導きます。
+  · intro h
+    apply Finset.ext
+    intro a
+    by_cases ha : a = x
+    -- a が x に等しい場合
+    · rw [ha]
+      simp_all
+
+    -- a が x に等しくない場合
+    simp only [ha, eq_self_iff_true] at h
+    · constructor
+      intro h1 -- a ∈ s
+      have hh: a ∈ s.erase x := Finset.mem_erase_of_ne_of_mem ha h1
+      rw [h] at hh
+      exact Finset.mem_of_mem_erase hh
+      intro h2 -- a ∈ t
+      have hh: a ∈ t.erase x := Finset.mem_erase_of_ne_of_mem ha h2
+      rw [←h] at hh
+      exact Finset.mem_of_mem_erase hh
+
+  -- 次に、s = t から Finset.erase s x = Finset.erase t x を導きます。
+  · intro h
+    rw [h]
+
+-- フィンセットの消去が等しいことから元のセットが等しいことを証明する補助定理。上のerase_inj_of_memと同じ。
+--これの包含関係版も作りたい。
+lemma set_eq_of_erase_eq {A : Finset α} {B : Finset α} {x : α} (hxA : x ∈ A) (hxB : x ∈ B) (h : Finset.erase A x = Finset.erase B x) : A = B :=
   by
     apply Finset.ext
     intro y
@@ -136,6 +167,40 @@ lemma set_eq_of_erase_eq {A B : Finset α} {x : α} (hxA : x ∈ A) (hxB : x ∈
       · have h1 : y ∈ Finset.erase B x := Finset.mem_erase_of_ne_of_mem hxy hy
         rw [←h] at h1
         exact Finset.mem_of_mem_erase h1
+
+--上と同じ補題。使ってないので消して良い。
+lemma erase_eq_iff_of_mem {s₁:Finset α}{s₂:Finset α}(hx1: x ∈ s₁)(hx2: x ∈ s₂): s₁.erase x = s₂.erase x → s₁ = s₂:= by
+  intro h
+  apply Finset.ext
+  intro y
+  by_cases hy : y = x
+  · rw [hy]
+    exact ⟨λ _ => hx2, λ _ => hx1⟩
+  · have h1 : y ∈ s₁ ↔ y ∈ s₁.erase x := by
+      constructor
+      · intro hy1
+        exact Finset.mem_erase.mpr ⟨hy, hy1⟩
+      · intro hy1
+        exact Finset.mem_of_mem_erase hy1
+    have h2 : y ∈ s₂ ↔ y ∈ s₂.erase x := by
+      constructor
+      · intro hy2
+        exact Finset.mem_erase.mpr ⟨hy, hy2⟩
+      · intro hy2
+        exact Finset.mem_of_mem_erase hy2
+    --h1 : y ∈ s₁ ↔ y ∈ s₁.erase x
+    rw [h1, h2, h]
+
+lemma subset_of_erase_subset {A B : Finset α} [DecidableEq α] {x : α} (hxA : x ∈ A) (hxB : x ∈ B) (h : A.erase x ⊆ B.erase x) : A ⊆ B :=
+by
+  -- A = A.erase x ∪ {x} を利用する
+  rw [←Finset.insert_erase hxA]
+  -- B = B.erase x ∪ {x} を利用する
+  rw [←Finset.insert_erase hxB]
+  -- A.erase x ⊆ B.erase x と hxB を使って A ⊆ B を証明する
+  --goal insert x (A.erase x) ⊆ insert x (B.erase x)
+  apply Finset.insert_subset_insert x h
+
 
 --足したものにさらに足してもかわらない.
 lemma insert_union_eq (G : Finset α) (x : α) : insert x (G ∪ {x}) = G ∪ {x} :=
@@ -319,5 +384,20 @@ theorem diff_diff_eq_diff_diff (A B C : Finset α) : (A \ B) \ C = (A \ C) \ B :
         exact h.2
       -- x ∉ C
       exact h.1.2
+
+-- 命題: 空集合の部分集合は空集合である
+lemma subset_empty_eq_empty {α : Type} [DecidableEq α] {s : Finset α} (h : s ⊆ (∅ : Finset α)) : s = ∅ :=
+by
+  rw [Finset.eq_empty_iff_forall_not_mem]
+  intros x hx
+  have : x ∈ ∅ := h hx
+  exact Finset.not_mem_empty x this
+
+lemma mem_of_mem_list {α : Type} [DecidableEq α] {a : α} {l : List α} :
+  a ∈ l → a ∈ l.toFinset :=
+by
+  intros h
+  rw [List.mem_toFinset]
+  exact h
 
 end Mathematics

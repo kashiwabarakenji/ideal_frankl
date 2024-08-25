@@ -12,6 +12,9 @@ import Init.SimpLemmas
 import Mathematics.BasicDefinitions
 import Mathematics.BasicLemmas
 import LeanCopilot
+
+namespace Mathematics
+
 --import Mathlib.Data.Subtype --Subtypeは使っているが、importしなくても大丈夫かも。
 --Mathlib.Data.Subtypeに定義があるが、他のライブラリからimportされていると思われる。
 
@@ -636,3 +639,5 @@ theorem ideal_version_of_frankl_conjecture :
 
     -- 結論を得る
     exact ⟨v, h_degree_le_size⟩
+
+end Mathematics

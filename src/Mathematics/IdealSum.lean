@@ -9,6 +9,7 @@ import Mathlib.Tactic
 import Mathematics.BasicDefinitions
 import Mathematics.BasicLemmas
 import LeanCopilot
+set_option maxHeartbeats 1000000
 
 namespace Mathematics
 
@@ -92,6 +93,270 @@ lemma ground_nonempty_after_deletion {α : Type} [DecidableEq α] (ground : Fins
     rw [Finset.card_singleton] at gcard
     contradiction
 
+
+--Lemmaにもコピー
+lemma subset_of_erase_subset {A B : Finset α} [DecidableEq α] {x : α} (hxA : x ∈ A) (hxB : x ∈ B) (h : A.erase x ⊆ B.erase x) : A ⊆ B :=
+by
+  -- A = A.erase x ∪ {x} を利用する
+  rw [←Finset.insert_erase hxA]
+  -- B = B.erase x ∪ {x} を利用する
+  rw [←Finset.insert_erase hxB]
+  -- A.erase x ⊆ B.erase x と hxB を使って A ⊆ B を証明する
+  --goal insert x (A.erase x) ⊆ insert x (B.erase x)
+  apply Finset.insert_subset_insert x h
+
+--関数の定義は使わなかった。
+--def bf (ss:Finset α) (x:α): Finset α := ss.erase x
+
+-- domain00とrange00に全単射が存在することを示した。
+-- 今は他の部分では使ってなくてそれぞれ示しているが、これを利用できるはず。
+theorem bf_bijective (F : SetFamily α) (x : α) [DecidablePred F.sets](hxG: x ∈ F.ground) :
+  let domain00 : Finset (Finset α) := (Finset.powerset F.ground).filter (λ s => F.sets s ∧ x ∈ s)
+  let range00 : Finset (Finset α) := (Finset.powerset (F.ground.erase x)).filter (λ s => ∃ H, F.sets H ∧ x ∈ H ∧ s = H.erase x)
+  Function.Bijective (λ (s : { S // S ∈ domain00 }) =>
+    ⟨s.val.erase x, by
+      simp [range00]
+      rename_i inst inst_1 _ inst_3
+      simp_all only [domain00]
+      obtain ⟨val, property⟩ := s
+      simp_all only
+      simp_all only [Finset.mem_filter, Finset.mem_powerset, domain00]
+      obtain ⟨left, right⟩ := property
+      obtain ⟨left_1, right⟩ := right
+      apply And.intro
+      · intro y hy
+        simp_all only [Finset.mem_erase, ne_eq, not_false_eq_true, true_and]
+        obtain ⟨_, right_1⟩ := hy
+        exact left right_1
+      · apply Exists.intro
+        · apply And.intro
+          on_goal 2 => {
+            apply And.intro
+            on_goal 2 => {apply Eq.refl
+            }
+            · simp_all only
+          }
+          · simp_all only
+    ⟩ : { S // S ∈ domain00 } → { S // S ∈ range00 }):=
+  by
+    let domain00 : Finset (Finset α) := (Finset.powerset F.ground).filter (λ s => F.sets s ∧ x ∈ s)
+    constructor
+    --1. 関数が単射であることを証明
+    -- goal Function.Injective fun s ↦ ⟨(↑s).erase x, ⋯⟩
+    dsimp [Function.Injective]
+    -- goal ∀ ⦃a₁ a₂ : { S // S ∈ Finset.filter (fun s ↦ F.sets s ∧ x ∈ s) F.ground.powerset }⦄,
+    --⟨(↑a₁).erase x, ⋯⟩ = ⟨(↑a₂).erase x, ⋯⟩ → a₁ = a₂
+    intro a₁ a₂ h
+    -- h: ⟨(↑a₁).erase x, ⋯⟩ = ⟨(↑a₂).erase x, ⋯⟩の条件から
+    have h_erase : (a₁.val).erase x = (a₂.val).erase x := by
+     simpa using h
+    let a1p := a₁.property
+    rw [Finset.mem_filter] at a1p
+    let a2p := a₂.property
+    rw [Finset.mem_filter] at a2p
+
+
+    obtain ⟨_, _, a₁_x⟩ := a1p
+    obtain ⟨_, _, a₂_x⟩ := a2p
+    have eq_goal: a₁.val = a₂.val := by
+     exact (Mathematics.erase_inj_of_mem a₁_x a₂_x).mp h_erase
+    exact Subtype.eq eq_goal
+
+    -- 2. 関数が全射であることを証明
+    -- goal Function.Surjective fun s ↦ ⟨(↑s).erase x, ⋯⟩
+    dsimp [Function.Surjective]
+    intro b
+    -- goal ∃ a, ⟨(↑a).erase x, ⋯⟩ = b
+    -- 単に値だけでなく、propertyも同時に満たす必要がある。
+    --valの値とpropertyを満たすことを同時に示す。
+    -- goal ⟨(↑b).erase x, ⋯⟩ = b
+    let bp:= b.property
+    rw [Finset.mem_filter] at bp
+    obtain ⟨b_g, b_sets, b_x⟩ := bp
+    let original := b.val ∪ {x}
+    --originalが、domain00に属することを示す。
+    have bpro: original ∈ domain00 := by
+      simp_all only [domain00]
+      rename_i inst inst_1 _ inst_3
+      simp_all only [Finset.mem_powerset, Finset.mem_filter, Finset.mem_union, Finset.mem_erase, ne_eq,
+        not_true_eq_false, and_true, Finset.mem_singleton, or_true, original]
+      obtain ⟨val, property⟩ := b
+      obtain ⟨b_left, right⟩ := b_x
+      obtain ⟨right_1, right_2⟩ := right
+      simp_all only
+      subst right_2
+      have x_in_b: x ∈ b_sets := by
+        simp_all only [right_1]
+      have b_eq: b_sets.erase x ∪ {x} = b_sets := by
+        exact (Mathematics.erase_insert b_sets x x_in_b)
+      rw [b_eq]
+      constructor
+      --goal b_sets ⊆ F.ground
+      have b_sets_ground: b_sets ⊆ F.ground := by
+        -- bg: b_sets.erase x ⊆ F.ground.erase x
+        --からいうのがいいのか。
+        apply subset_of_erase_subset x_in_b hxG b_g
+
+      simp_all only
+      exact b_left
+
+    --goal: ∃ a, ⟨(↑a).erase x, ⋯⟩ = b
+    use ⟨original, bpro⟩
+    rename_i inst inst_1 _ inst_3
+    simp_all only [Finset.mem_powerset, original]
+    simp_all only [and_self]
+    obtain ⟨val, property⟩ := b
+    obtain ⟨left, right⟩ := b_x
+    obtain ⟨left_1, right⟩ := right
+    simp_all only [Subtype.mk.injEq]
+    simp_all only [Finset.mem_filter, Finset.mem_powerset, Finset.mem_union, Finset.mem_singleton, or_true, and_true,
+      original, domain00]
+    subst right
+    obtain ⟨_, _⟩ := bpro
+    ext1 a
+    simp_all only [Finset.mem_erase, ne_eq, Finset.mem_union, Finset.mem_singleton, and_congr_right_iff,
+      not_false_eq_true, true_and, or_false, implies_true]
+
+--これはsubtypeでない。subtypeだとうまくいかなかったので、subtypeを使わないことを選択した。
+def domain00 (F : SetFamily α) (v : α) [DecidablePred F.sets] : Finset (Finset α) :=
+  (Finset.powerset F.ground).filter (λ s => F.sets s ∧ v ∈ s)
+
+def range00 (F : SetFamily α) (v : α) [DecidablePred F.sets] :  Finset (Finset α) :=
+  (Finset.powerset (F.ground.erase v)).filter (λ s => ∃ H, F.sets H ∧ v ∈ H ∧ s = H.erase v)
+
+-- s.val.erase v が range00 に属することを示す補題 subtype版
+lemma f_mem_range00_sub (F : SetFamily α) (v : α) [DecidablePred F.sets]
+  (s : { S // S ∈ domain00 F v }) : (s.val.erase v) ∈ (range00 F v) :=
+by
+  simp [range00]
+  rename_i inst inst_1 _ inst_3
+  simp_all only [domain00]
+  obtain ⟨val, property⟩ := s
+  simp [domain00] at property
+  obtain ⟨left, right⟩ := property
+  obtain ⟨left_1, right⟩ := right
+  apply And.intro
+  · intro y hy
+    simp_all only [Finset.mem_erase, ne_eq, not_false_eq_true, true_and]
+    obtain ⟨_, right_1⟩ := hy
+    exact left right_1
+  · apply Exists.intro
+    · apply And.intro
+      on_goal 2 => {
+        apply And.intro
+        on_goal 2 => {apply Eq.refl
+        }
+        · simp_all only
+      }
+      · simp_all only
+
+lemma f_mem_range00 (F : SetFamily α) (v : α) [DecidablePred F.sets]
+  (s : Finset α) (hs : s ∈ domain00 F v) : s.erase v ∈ range00 F v := by
+  simp [range00]
+  simp_all only [domain00]
+  simp [domain00] at hs
+  obtain ⟨left, right⟩ := hs
+  obtain ⟨left_1, right⟩ := right
+  apply And.intro
+  · intro y hy
+    simp_all only [Finset.mem_erase, ne_eq, not_false_eq_true, true_and]
+    obtain ⟨_, right_1⟩ := hy
+    exact left right_1
+  · apply Exists.intro
+    · apply And.intro
+      on_goal 2 => {
+        apply And.intro
+        on_goal 2 => {apply Eq.refl}
+        · simp_all only
+      }
+      · simp_all only
+
+--subtypeバージョンなので、使ってない。
+def f (F : SetFamily α) (v : α) [DecidablePred F.sets] (s : { S // S ∈ domain00 F v }) : { S // S ∈ range00 F v } := ⟨s.val.erase v, f_mem_range00_sub F v s⟩
+
+--subtypeバージョン 結局sum_bijの時は、subtypeバージョンはうまくいかないということがわかったので、使わなかった。
+def f_wrapped_sub (F : SetFamily α) (v : α) [DecidablePred F.sets]
+  (s : { S // S ∈ domain00 F v }) : { T // T ∈ range00 F v } :=
+  ⟨s.val.erase v, f_mem_range00_sub F v s⟩
+--非subtypeバージョン
+def f_wrapped (F : SetFamily α) (v : α) [DecidablePred F.sets]
+  (s : Finset α) (_ : s ∈ domain00 F v) : Finset α :=
+  s.erase v
+
+--f_wrappedのなかに単射の証拠がはいってなくて、bf_bijectiveのなかなので、困る。
+lemma injective_f_wrapped (F : SetFamily α) (v : α) [DecidablePred F.sets] (hvG: v ∈ F.ground)
+  (a₁ : Finset α) (ha₁ : a₁ ∈ domain00 F v)
+  (a₂ : Finset α) (ha₂ : a₂ ∈ domain00 F v)
+  (h : f_wrapped F v a₁ ha₁ = f_wrapped F v a₂ ha₂) : a₁ = a₂ :=
+by
+  have bij_inj := (bf_bijective F v hvG).1
+  rw [Function.Injective] at bij_inj
+  --#check bij_inj
+  --#check Finset.card_bij
+  --単射性を示したいが、bijectiveの条件から単射性を取り出すのが意外と難しい。
+
+  --#check  a₁ f_wrappedを用いているため、これはsubtypeではない。obtainを2回行って、subtypeでない値を取り出している。
+  have v_in_a1:v ∈ a₁ := by
+    simp [domain00] at ha₁
+    obtain ⟨_, right⟩ := ha₁
+    obtain ⟨_, right⟩ := right
+    exact right
+
+  have v_in_a2:v ∈ a₂ := by
+    simp [domain00] at ha₂
+    obtain ⟨_, right⟩ := ha₂
+    obtain ⟨_, right⟩ := right
+    exact right
+
+  apply (Mathematics.erase_inj_of_mem v_in_a1 v_in_a2).mp
+  exact h
+
+lemma surjective_f_wrapped (F : SetFamily α) (v : α) [DecidablePred F.sets] (hvG: v ∈ F.ground)
+  (b : Finset α) (hb : b ∈ range00 F v) :
+  ∃ a, ∃ ha : a ∈ domain00 F v, f_wrapped F v a ha = b :=
+by
+  have bij_sur := (bf_bijective F v hvG).2
+  rw [Function.Surjective] at bij_sur
+  --#check bij_sur
+
+  -- `bij_sur` に基づいてサブタイプ `b` に対する結果を展開
+  obtain ⟨a, ha⟩ := bij_sur ⟨b, hb⟩
+  -- `a` と `ha` を `f_wrapped` に適用して全射性を証明
+  use a.val
+  use a.property
+  --refine ⟨a.val, a.property, _⟩
+  have : f_wrapped F v a.val a.property = b := by
+    simp [f_wrapped]
+    -- `congr_arg` を使用して等式を変換
+    rename_i inst inst_1 _ inst_3
+    simp_all only [Subtype.exists, Finset.mem_filter, Finset.mem_powerset, Subtype.forall, Subtype.mk.injEq,
+      exists_prop, and_imp, forall_exists_index]
+  exact this
+
+lemma card_equal (F : SetFamily α) (v : α) [DecidablePred F.sets](hvG: v ∈ F.ground) :
+  (Finset.filter (λ s => F.sets s ∧ v ∈ s) (Finset.powerset F.ground)).card =
+  (Finset.filter (λ s => ∃ H, F.sets H ∧ v ∈ H ∧ s = H.erase v) (Finset.powerset (F.ground.erase v))).card :=
+by
+  --let domain00 : Finset (Finset α) := (Finset.powerset F.ground).filter (λ s => F.sets s ∧ v ∈ s)
+  --let range00 : Finset (Finset α) := (Finset.powerset (F.ground.erase v)).filter (λ s => ∃ H, F.sets H ∧ v ∈ H ∧ s = H.erase v)
+  --let f_wrapped := λ (s : Finset α) (hs : s ∈ (domain00 F v)) => ⟨s.val.erase v, f_mem_range00 F v s⟩--(f F v ⟨s, hs⟩).val
+  --have bij := bf_bijective F v hvG
+  --#check Finset.card_bij
+  --#check (λ (s : { S // S ∈ domain00 F v })=> (f_mem_range00 F v s))
+  --#check { S // S ∈ domain00 F v }
+  let bij_inj := injective_f_wrapped F v hvG
+  let bij_sur := surjective_f_wrapped F v hvG
+
+  --subtypeを用いる方法では結局うまくいかなさそう。
+  --let Fincard_sub := @Finset.card_bij (Finset α) (Finset α) (domain00 F v) (range00 F v) (f_wrapped_sub F v)
+  let Fincard := @Finset.card_bij (Finset α) (Finset α) ( domain00 F v) (range00 F v) (f_wrapped F v) (f_mem_range00 F v) bij_inj bij_sur
+    --(∀ (s : Finset α), (s ∈ (domain00 F v))→(f_mem_range00 F v s))
+    --(∀ (s : { S // S ∈ domain00 F v }), (f_mem_range00 F v s))
+  exact Fincard
+
+  --Finset.card_bij {α : Type u_1}  {β : Type u_2}  {s : Finset α} {t : Finset β}  (i : (a : α) → a ∈ s → β) (hi : ∀ (a : α) (ha : a ∈ s), i a ha ∈ t) (i_inj : ∀ (a₁ : α) (ha₁ : a₁ ∈ s) (a₂ : α) (ha₂ : a₂ ∈ s), i a₁ ha₁ = i a₂ ha₂ → a₁ = a₂) (i_surj : ∀ b ∈ t, ∃ (a : α) (ha : a ∈ s), i a ha = b) :
+  --s.card = t.card
+
 -- Contraction操作の定義
 def contraction (F : SetFamily α) (x : α) (hx : x ∈ F.ground) (gcard: F.ground.card ≥ 2): SetFamily α :=
   { ground := F.ground.erase x,
@@ -108,7 +373,7 @@ def contraction (F : SetFamily α) (x : α) (hx : x ∈ F.ground) (gcard: F.grou
         intro y hy -- hy: y ∈ H.erase x
         rw [Finset.mem_erase] at hy
         rw [Finset.mem_erase]
-        -- goal y ≠ x ∧ y ∈ F.ground
+        -- goal y ≠ x ∧ y ∈ F.groundv
         constructor
         exact hy.1 -- x ¥neq y
         apply F.inc_ground H -- H ⊆ F.ground
@@ -119,38 +384,10 @@ def contraction (F : SetFamily α) (x : α) (hx : x ∈ F.ground) (gcard: F.grou
     nonempty_ground := ground_nonempty_after_deletion F.ground x hx gcard
   }
 
-theorem Finset.erase_inj_of_mem {s t : Finset α} {x : α} (hx : x ∈ s) (ht : x ∈ t) :
-  Finset.erase s x = Finset.erase t x ↔ s = t :=
-by
-  constructor
-  -- まず、Finset.erase s x = Finset.erase t x から s = t を導きます。
-  · intro h
-    apply Finset.ext
-    intro a
-    by_cases ha : a = x
-    -- a が x に等しい場合
-    · rw [ha]
-      simp_all
-
-    -- a が x に等しくない場合
-    simp only [ha, eq_self_iff_true] at h
-    · constructor
-      intro h1 -- a ∈ s
-      have hh: a ∈ s.erase x := Finset.mem_erase_of_ne_of_mem ha h1
-      rw [h] at hh
-      exact Finset.mem_of_mem_erase hh
-      intro h2 -- a ∈ t
-      have hh: a ∈ t.erase x := Finset.mem_erase_of_ne_of_mem ha h2
-      rw [←h] at hh
-      exact Finset.mem_of_mem_erase hh
-
-  -- 次に、s = t から Finset.erase s x = Finset.erase t x を導きます。
-  · intro h
-    rw [h]
 
 --vを含むhyperedgeの大きさの和は、vを含むhyperedgeをH-vを動かして作った集合族の大きさの和に等しい。
 --次の定理で使う補題。
-lemma sum_eq (F : SetFamily α) (v : α) [DecidablePred F.sets] :
+lemma sum_equal (F : SetFamily α) (v : α) [DecidablePred F.sets] :
   (Finset.filter (λ s => F.sets s ∧ v ∈ s) (Finset.powerset F.ground)).sum (λ s => Finset.card s - 1) =
   (Finset.filter (λ s => ∃ H, F.sets H ∧ v ∈ H ∧ s = H.erase v) (Finset.powerset (F.ground.erase v))).sum Finset.card :=
 by
@@ -180,7 +417,7 @@ by
     --theorem Finset.erase_inj {α : Type u_1}  [DecidableEq α]  {x : α}  {y : α}  (s : Finset α)  (hx : x ∈ s) :
     --Finset.erase s x = Finset.erase s y ↔ x = y
 
-    apply (Finset.erase_inj_of_mem hs.2.2 ht.2.2).mp
+    apply (Mathematics.erase_inj_of_mem hs.2.2 ht.2.2).mp
     exact h
 
   -- 4. bijectionが全射であることを証明します
@@ -313,30 +550,10 @@ lemma sum_of_size_eq_degree_plus_contraction_sum (F : SetFamily α) (v : α)
   rw [degree_eq]
 
   -- 5. 残りの和の等価性を示す
-  rw [sum_eq]
+  rw [sum_equal]
   rfl
 
-lemma erase_eq_iff_of_mem {s₁:Finset α}{s₂:Finset α}(hx1: x ∈ s₁)(hx2: x ∈ s₂): s₁.erase x = s₂.erase x → s₁ = s₂:= by
-  intro h
-  apply Finset.ext
-  intro y
-  by_cases hy : y = x
-  · rw [hy]
-    exact ⟨λ _ => hx2, λ _ => hx1⟩
-  · have h1 : y ∈ s₁ ↔ y ∈ s₁.erase x := by
-      constructor
-      · intro hy1
-        exact Finset.mem_erase.mpr ⟨hy, hy1⟩
-      · intro hy1
-        exact Finset.mem_of_mem_erase hy1
-    have h2 : y ∈ s₂ ↔ y ∈ s₂.erase x := by
-      constructor
-      · intro hy2
-        exact Finset.mem_erase.mpr ⟨hy, hy2⟩
-      · intro hy2
-        exact Finset.mem_of_mem_erase hy2
-    --h1 : y ∈ s₁ ↔ y ∈ s₁.erase x
-    rw [h1, h2, h]
+
 
 lemma sumbij (F : SetFamily α) [DecidablePred F.sets] (x : α) (hx : x ∈ F.ground) :
   let domain00 : Finset (Finset α):= (Finset.powerset F.ground).filter (λ s => F.sets s ∧ x ∈ s)
@@ -393,7 +610,8 @@ lemma sumbij (F : SetFamily α) [DecidablePred F.sets] (x : α) (hx : x ∈ F.gr
          --h: s₁.erase x = s₂.erase x
          let h1 := hs₁.2.2
          let h2 := hs₂.2.2
-         exact erase_eq_iff_of_mem h1 h2 h
+         exact Mathematics.set_eq_of_erase_eq h1 h2 h
+         --exact erase_eq_iff_of_mem h1 h2 h
      -- goal  ∀ (a₁ : Finset α) (ha₁ : a₁ ∈ domain0) (a₂ : Finset α) (ha₂ : a₂ ∈ domain0),
      -- (fun s hs ↦ s.erase x) a₁ ha₁ = (fun s hs ↦ s.erase x) a₂ ha₂ → a₁ = a₂
      exact index3 --微妙な引数の順番の違いでエラーが出ていた。
@@ -558,11 +776,133 @@ lemma sumbij (F : SetFamily α) [DecidablePred F.sets] (x : α) (hx : x ∈ F.gr
    simp at ap
    rw [ap]
 
-/-
+def ff (s: Finset α): ℕ := Finset.card s - 1
+
+lemma contraction_family_size (F : SetFamily α) [DecidablePred F.sets] (x : α)
+  (hx : x ∈ F.ground) (gcard: F.ground.card ≥ 2) : total_size_of_hyperedges (Mathematics.contraction F x hx gcard) = (Finset.filter (fun s ↦ ∃ H, F.sets H ∧ x ∈ H ∧ s = H.erase x) (F.ground.erase x).powerset).sum Finset.card :=
+  by
+    rw [total_size_of_hyperedges]
+    dsimp [Mathematics.contraction]
+    rw [Finset.filter_congr_decidable]
+
 lemma contraction_total_size (F : SetFamily α) [DecidablePred F.sets] (x : α)
   (hx : x ∈ F.ground) (gcard: F.ground.card ≥ 2) :
   total_size_of_hyperedges (Mathematics.contraction F x hx gcard) =
-    ((Finset.powerset F.ground).filter (λ s => F.sets s ∧ x ∈ s)).sum (λ s => Finset.card s - 1)
--/
+    ((Finset.powerset F.ground).filter (λ s => F.sets s ∧ x ∈ s)).sum (λ s => Finset.card s - 1) :=
+  by
+    rw [total_size_of_hyperedges]
+    let largeset:= Finset.filter (fun s ↦ F.sets s ∧ x ∈ s) F.ground.powerset
+    --have largesethave: largeset = Finset.filter (fun s ↦ F.sets s ∧ x ∈ s) F.ground.powerset := by rfl
+    let smallset:= Finset.filter (fun s ↦ ∃ H, F.sets H ∧ x ∈ H ∧ s = H.erase x) (F.ground.erase x).powerset
+    --have smallsethave: smallset = Finset.filter (fun s ↦ ∃ H, F.sets H ∧ x ∈ H ∧ s = H.erase x) (F.ground.erase x).powerset := by rfl
+    have sum_eq0 := sum_of_size_eq_degree_plus_contraction_sum F x gcard
+    have sum_eq2 := sumbij F x hx
+    simp_all
+
+    have substitute1: (Finset.filter (λ s => F.sets s ∧ x ∈ s) (Finset.powerset F.ground)).sum (λ s => Finset.card s - 1) = largeset.sum (λ s => Finset.card s - 1) := by rfl
+    have substitute2: (Finset.filter (λ s => ∃ H, F.sets H ∧ x ∈ H ∧ s = H.erase x) (Finset.powerset (F.ground.erase x))).sum Finset.card = smallset.sum Finset.card := by rfl
+    rw [←substitute1]
+    have sum_eq3 : ∑ s ∈ largeset, (s.card - 1) = largeset.sum (λ s => s.card - 1) := by rfl
+    rw [←sum_eq3]
+
+    have f_eq : ∀ s ∈ largeset, ff s = Finset.card s - 1 := by
+        intros s _
+        simp only [ff]
+
+    have sum_eq3: largeset.sum (λ s => s.card - 1) = largeset.sum ff := by rfl
+    have sum_eq5: largeset.sum (ff) + largeset.card = largeset.sum (λ s => ff s + 1) := by
+      rw [Finset.sum_add_distrib]
+      rw [Finset.sum_const]
+      rename_i inst inst_1 _ inst_3 sum_eq3_1
+      simp_all only [ge_iff_le, Finset.mem_filter, Finset.mem_powerset, Finset.one_le_card, and_imp, Pi.sub_apply,
+        Pi.one_apply, smul_eq_mul, mul_one, smallset, largeset]
+
+    let contset := (Finset.filter (contraction F x hx gcard).sets (contraction F x hx gcard).ground.powerset)
+    have contsethave: contset = (Finset.filter (contraction F x hx gcard).sets (contraction F x hx gcard).ground.powerset) := by rfl
+    rw [←contsethave]
+
+    have substitute3: (Finset.filter (contraction F x hx gcard).sets (contraction F x hx gcard).ground.powerset).sum Finset.card = contset.sum Finset.card := by rfl
+    rw [substitute3]
+    have sum_eq4 : ∑ s ∈ largeset, (s.card - 1) = largeset.sum (λ s => s.card - 1) := by rfl
+    rw [←sum_eq4]
+    rw [sum_eq3]
+    rw [substitute2] at sum_eq0
+    rw [substitute2] at sum_eq0
+    have substitute4: (Finset.filter (fun s ↦ ∃ H, F.sets H ∧ x ∈ H ∧ s = H.erase x) (F.ground.erase x).powerset).card  = smallset.card := by rfl
+    rw [substitute4] at sum_eq0
+    --#check sum_eq0 --smallset.sum Finset.card + smallset.card = degree F x + smallset.sum Finset.card
+
+    let sumbijlocal := sumbij F x hx
+    -- let domain00 := Finset.filter (fun s ↦ F.sets s ∧ x ∈ s) F.ground.powerset;
+    have sumbijihave :largeset.sum Finset.card = smallset.sum Finset.card + smallset.card := sumbij F x hx
+
+    let contsizelocal := contraction_family_size F x hx gcard
+    dsimp [total_size_of_hyperedges] at contsizelocal
+    rw [substitute3] at contsizelocal
+    rw [substitute2] at contsizelocal
+    rw [contsizelocal]
+    --goal  smallset.sum Finset.card = largeset.sum ff
+    --sumbijhave: largeset.sum Finset.card = smallset.sum Finset.card + smallset.card
+    --goalは、sumbijhaveを移項したもの。よって、あとは、largeset.sum Finset.card 　>=  smallset.cardがわかればよい。
+
+    have positive: ∀ s ∈ largeset, s.card ≥ 1 := by
+      intros s hs
+      simp only [Finset.mem_filter] at hs
+      rename_i inst _ _ _
+      simp_all only [ge_iff_le, Finset.mem_filter, Finset.mem_powerset, Finset.one_le_card, smallset, largeset]
+      obtain ⟨_, right⟩ := hs
+      obtain ⟨_, right⟩ := right
+      exact ⟨x, right⟩
+
+    have largesum_lt_smallcard: largeset.sum Finset.card >= largeset.card := by
+      have largesum_ge_1: ∀ s ∈ largeset, s.card >= 1 := by
+        intros s hs
+        simp only [Finset.mem_filter] at hs
+        exact positive s hs
+      calc
+        largeset.sum Finset.card = largeset.sum (λ s=> s.card) := by simp
+        _ >= largeset.sum (λ s => 1) := Finset.sum_le_sum largesum_ge_1
+        _ = largeset.card * 1 := by
+          rename_i inst inst_1 _ inst_3 _
+          simp_all only [Finset.mem_filter, Finset.mem_powerset, ge_iff_le, and_self, and_imp, implies_true,
+            Finset.one_le_card, Finset.sum_const, smul_eq_mul, mul_one, smallset, sumbijlocal, largeset, contset]
+        _ = largeset.card := by simp
+
+    have largecard_eq_smallcard: largeset.card = smallset.card := by
+        dsimp [largeset]
+        dsimp [smallset]
+        exact (card_equal F x hx)
+
+    rw [largecard_eq_smallcard] at largesum_lt_smallcard
+    rw [ge_iff_le] at largesum_lt_smallcard
+    --#check largesum_lt_smallcard
+    --#check (Nat.sub_sub_self largesum_lt_smallcard).symm
+    --sumbijhave: largeset.sum Finset.card = smallset.sum Finset.card + smallset.card
+    --goal: smallset.sum Finset.card = largeset.sum ff = largeset.sum Finset.card - smallset.card
+
+    have calc0 : (largeset.sum Finset.card) - smallset.card = smallset.sum Finset.card := by
+      calc
+        largeset.sum Finset.card -smallset.card
+            = (smallset.sum Finset.card + smallset.card) - smallset.card := by rw [sumbijihave]
+          _ = smallset.sum Finset.card  := by rw [Nat.add_sub_cancel]
+
+    rw [←calc0]
+    rw [←largecard_eq_smallcard]
+
+    have sum_subst: largeset.sum (λ s => ff s + 1) = largeset.sum Finset.card := by
+      dsimp [ff]
+      apply Finset.sum_congr rfl
+      intro s hs
+      -- s.card - 1 + 1 = s.card を示す
+      rw [Nat.sub_add_cancel (positive s hs)]
+
+    rw [sum_subst] at sum_eq5
+    -- sum_eq5: largeset.sum ff + largeset.card = largeset.sum Finset.card
+    -- goal largeset.sum Finset.card - largeset.card = largeset.sum ff
+    rw [←sum_eq5]
+    --goal largeset.sum ff + largeset.card - largeset.card = largeset.sum ff
+    rw [Nat.add_sub_cancel]
+
+
 
 end Mathematics
