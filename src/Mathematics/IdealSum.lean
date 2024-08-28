@@ -93,21 +93,6 @@ lemma ground_nonempty_after_deletion {α : Type} [DecidableEq α] (ground : Fins
     rw [Finset.card_singleton] at gcard
     contradiction
 
-
---Lemmaにもコピー
-lemma subset_of_erase_subset {A B : Finset α} [DecidableEq α] {x : α} (hxA : x ∈ A) (hxB : x ∈ B) (h : A.erase x ⊆ B.erase x) : A ⊆ B :=
-by
-  -- A = A.erase x ∪ {x} を利用する
-  rw [←Finset.insert_erase hxA]
-  -- B = B.erase x ∪ {x} を利用する
-  rw [←Finset.insert_erase hxB]
-  -- A.erase x ⊆ B.erase x と hxB を使って A ⊆ B を証明する
-  --goal insert x (A.erase x) ⊆ insert x (B.erase x)
-  apply Finset.insert_subset_insert x h
-
---関数の定義は使わなかった。
---def bf (ss:Finset α) (x:α): Finset α := ss.erase x
-
 -- domain00とrange00に全単射が存在することを示した。
 -- 今は他の部分では使ってなくてそれぞれ示しているが、これを利用できるはず。
 theorem bf_bijective (F : SetFamily α) (x : α) [DecidablePred F.sets](hxG: x ∈ F.ground) :
