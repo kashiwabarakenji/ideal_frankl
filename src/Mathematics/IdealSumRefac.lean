@@ -1,4 +1,9 @@
---ChatGPTにリファクタリングしてもらって作った補題。だいたいできたけど、heartbeatsが足りないのか、エラーが出る。
+--IdealSum.leanをChatGPTにリファクタリングしてもらって作った補題のつもりだったけど、途中で方向性が変わって、sum_bijの実験。
+--基本的に、全単射の対応としては、subtypeのBijectionを用いた。でも単射性、全射性はsubtypeでない証明を求められた。
+--それで、subtypeのBijectiveの条件から、subtypeでない単射性、全射性を証明する関数を作った。
+--だいたいできたけど、heartbeatsが足りないのか、エラーが出る。よって実用性がない。
+--いまのところ、subtypeを用いないものidealSumなどを用いた方がよい。
+--surjのマッチがうまくいかない。surj_to_sum_bij_format_refac5の証明がうまくいかない。
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Fintype.Basic
@@ -9,7 +14,7 @@ import Mathlib.Tactic
 import Mathematics.BasicDefinitions
 import Mathematics.BasicLemmas
 import LeanCopilot
-set_option maxHeartbeats 4000000
+set_option maxHeartbeats 40000000
 --set_option diagnostics true
 
 namespace Mathematics
@@ -200,6 +205,44 @@ lemma inj_to_sum_bij_format (F : SetFamily α) (x : α) (hx : x ∈ F.ground) :
 def surj (F : SetFamily α) (x : α) (hx : x ∈ F.ground) :=
   (bijective_map_erase_x F x hx).right
 
+lemma surj_to_sum_bij_format_refac5 (F : SetFamily α) (x : α) (hx : x ∈ F.ground) :
+  ∀ b : Finset α, b ∈ range00 F x → ∃ a : {a // a ∈ domain00 F x}, (a).val.erase x = b :=
+by
+  intros b hb
+  obtain ⟨⟨a, ha⟩, ha2⟩ := surj F x hx ⟨b, hb⟩ -- Use subtype explicitly here
+  use ⟨a, ha⟩
+  --rw [f_wrapped]
+  simp only [Finset.mem_erase, ne_eq, not_true_eq_false, false_and, not_false_eq_true, Finset.erase_eq_of_not_mem]
+  dsimp [f] at ha2
+  simp only [Subtype.mk.injEq] at ha2
+  exact ha2
+
+lemma surj_to_sum_bij_format_refac4 (F : SetFamily α) (x : α) (hx : x ∈ F.ground) :
+  ∀ b : Finset α, b ∈ range00 F x → ∃ a : Finset α, ∃ ha : a ∈ domain00 F x, (f_wrapped F x a ha).erase x = b :=
+by
+  intros b hb
+  obtain ⟨⟨a, ha⟩, ha2⟩ := surj F x hx ⟨b, hb⟩ -- `subtype` を用いていることを明示
+  use a
+  use ha
+  rw [f_wrapped]
+  simp only [Finset.mem_erase, ne_eq, not_true_eq_false, false_and, not_false_eq_true, Finset.erase_eq_of_not_mem]
+  dsimp [f] at ha2
+  simp only [Subtype.mk.injEq] at ha2
+  exact ha2
+
+--goalのほうに合わせると、rangeがsubtypeでなく、domianがsubtypeになっている。
+-- Bijective.2の条件を使った証明が本来の意図のはず。
+lemma surj_to_sum_bij_format_refac3 (F : SetFamily α) (x : α) (hx : x ∈ F.ground) :
+  ∀ b : Finset α, b ∈ range00 F x → ∃ a : {a // a ∈ domain00 F x}, (f_wrapped F x a.val a.property).erase x = b :=
+by
+  intros b hb
+  obtain ⟨a, ha1, ha2⟩ := surj F x hx ⟨b, hb⟩
+  use a -- `subtype` を用いて `a` を包む
+  rw [f_wrapped]
+  rename_i inst inst_1 _
+  simp only [Finset.mem_erase, ne_eq, not_true_eq_false, false_and, not_false_eq_true, Finset.erase_eq_of_not_mem]
+
+
 --suj(Surjective)の条件をsum_bijのsurjectiveに書き換える関数
 --surjectiveのゴール ∀ b ∈ range00 F x, ∃ a, ∃ (_ : a ∈ ?m.35483), (↑a).erase x = b
 --これを証明する必要。 ∃ a, ∃ (ha : a ∈ domain00 F x)この書き方がポイントだった。ゴールから逆算して補題を作る。
@@ -230,7 +273,7 @@ lemma finset_val_erase_eq_self (F : SetFamily α) (x : α) (asub : { S // S ∈ 
       dsimp [f]
       simp only [Finset.mem_erase, ne_eq, not_true_eq_false, false_and, not_false_eq_true] --全部必要。
     rw [Finset.erase_eq_of_not_mem nx]
-    
+
 lemma surj_to_sum_bij_format_refac2 (F : SetFamily α) (x : α) (hx : x ∈ F.ground) :
   ∀ b : Finset α, b ∈ range00 F x → ∃ (a : Finset α) (ha : a ∈ domain00 F x), (f_wrapped F x a ha).erase x = b :=
   by
@@ -427,6 +470,12 @@ lemma surj_to_sum_bij_format_if (F : SetFamily α) (x : α) (hx : x ∈ F.ground
   ⟩
 -/
 
+lemma conv (F : SetFamily α) [DecidablePred F.sets] (x : α)
+  (s : ∀ b : Finset α, b ∈ range00 F x → ∃ a : {a // a ∈ domain00 F x}, a.val.erase x = b) :
+  ∀ (bb : Finset α), bb ∈ range00 F x → ∃ (a : Finset α), ∃ (_ : a ∈ domain00 F x), a.erase x = bb :=
+λ bb hbb =>
+  let ⟨a, ha⟩ := s bb hbb
+  ⟨a.val, a.property, ha⟩
 
 def g_pub (F : SetFamily α) (x : α) (s: {S // S ∈ domain00 F x}) : ℕ := Finset.card (s.val)
 def h_pub (F : SetFamily α) (x : α)  (s: {S // S ∈ (range00 F x)}) : ℕ := (Finset.card s.val) + 1
@@ -438,7 +487,8 @@ lemma sum_bijection (F : SetFamily α) [DecidablePred F.sets] (x : α) (hx : x �
    --(g_pub: {S // S ∈ domain00 F x}  → Nat) --Finset.card s.val)
   -- (h_pub F x)--: {T // T ∈ range00 F x}  → Nat) --(Finset.card t.val) + 1)
   -- goal (domain00 F x).sum Finset.card = (range00 F x).sum Finset.card + (range00 F x).card
-  let surj0 := surj_to_sum_bij_format_refac2 F x hx
+  let surj0 := surj_to_sum_bij_format_refac5 F x hx
+  --dsimp [f_wrapped] at surj0
   let sumbij := Finset.sum_bij
    (f F x)
    (by
@@ -449,7 +499,19 @@ lemma sum_bijection (F : SetFamily α) [DecidablePred F.sets] (x : α) (hx : x �
    -- 単射性の証明 --なぜかsubtypeでない方の証明が必要になる。
    (inj_to_sum_bij_format F x hx)
    -- 全射性の証明　--なぜかsubtypeでない方の証明が必要になる。
-   (surj0)
+   (by
+      --rw [←conv] at surj0
+      convert conv F x
+      congr
+      simp [surj0]
+      suggest_tactics
+
+
+
+
+
+
+   )
    --(surj_to_sum_bij_format_refac2 F x hx)
    -- 最後の等式の証明
    (by
