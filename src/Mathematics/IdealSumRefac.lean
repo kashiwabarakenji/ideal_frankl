@@ -487,9 +487,15 @@ lemma sum_bijection (F : SetFamily α) [DecidablePred F.sets] (x : α) (hx : x �
    --(g_pub: {S // S ∈ domain00 F x}  → Nat) --Finset.card s.val)
   -- (h_pub F x)--: {T // T ∈ range00 F x}  → Nat) --(Finset.card t.val) + 1)
   -- goal (domain00 F x).sum Finset.card = (range00 F x).sum Finset.card + (range00 F x).card
-  let surj0 := surj_to_sum_bij_format_refac5 F x hx
+
+  let surj1 := surj_to_sum_bij_format_refac F x hx
+  simp at surj1
+  dsimp [f_wrapped] at surj1
+  simp at surj1
+  #check surj1
+  --let surj0 : (∀ b ∈ range00 F x, ∃ a : {a // a ∈ domain00 F x}, (a).val.erase x = b) := surj_to_sum_bij_format_refac5 F x hx
   --dsimp [f_wrapped] at surj0
-  let sumbij := Finset.sum_bij
+  #check Finset.sum_bij
    (f F x)
    (by
       intros s hs
@@ -500,18 +506,8 @@ lemma sum_bijection (F : SetFamily α) [DecidablePred F.sets] (x : α) (hx : x �
    (inj_to_sum_bij_format F x hx)
    -- 全射性の証明　--なぜかsubtypeでない方の証明が必要になる。
    (by
-      --rw [←conv] at surj0
-      convert conv F x
-      congr
-      simp [surj0]
-      suggest_tactics
-
-
-
-
-
-
-   )
+    simp
+    exact surj1)
    --(surj_to_sum_bij_format_refac2 F x hx)
    -- 最後の等式の証明
    (by
@@ -529,5 +525,3 @@ lemma sum_bijection (F : SetFamily α) [DecidablePred F.sets] (x : α) (hx : x �
 
      exact hl ss
    )
-
-   #check sumbij
