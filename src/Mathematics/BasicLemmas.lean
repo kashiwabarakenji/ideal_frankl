@@ -2,7 +2,7 @@ import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Data.Finset.Powerset
-import Mathlib.Init.Data.Nat.Basic
+import Mathlib.Init.Data.Nat.Lemmas
 import Mathlib.Tactic
 import Mathematics.BasicDefinitions
 import LeanCopilot
@@ -14,10 +14,11 @@ namespace Mathematics
 variable {α : Type} [DecidableEq α] [Fintype α] [Nonempty α]
 
 -- 空集合と全体集合が異なることの証明
+omit [DecidableEq α] in
 theorem empty_ne_univ : (∅ : Finset α) ≠ Finset.univ :=
   by
     -- 各型クラスのインスタンスを取得
-    rename_i _ inst_1 inst_2
+    --rename_i _ inst_1 inst_2
     -- 証明を進めるために必要な簡約
     simp_all only [ne_eq]
     -- 矛盾を導く
@@ -28,6 +29,7 @@ theorem empty_ne_univ : (∅ : Finset α) ≠ Finset.univ :=
 
 --3つ同じ定理がある。
 --下と同じ定理。こちらを使う。
+omit [Fintype α] [Nonempty α] in
 theorem erase_union_singleton (H : Finset α) (h1 : d = H.erase v) (h2 : v ∈ H) : H = d ∪ {v} :=
 by
   -- 仮定 h1 を使って hd3 を書き換える
@@ -44,6 +46,7 @@ by
       -- x ≠ v の場合
   · simp [h]
 
+omit [Fintype α] [Nonempty α]
 lemma erase_insert_eq (H G : Finset α) (x : α) : x ∈ H → Finset.erase H x = G → H = G ∪ {x} :=
   by
     intro a a_1
@@ -69,7 +72,7 @@ lemma erase_insert': ∀ (s : Finset α) (x : α), x ∈ s → (s.erase x) ∪ {
   tauto
   simp only [mem_erase, mem_union]
   contrapose!
-  rename_i inst _ _
+  --rename_i inst _ _
   intro a
   simp_all only [ne_eq, mem_singleton, not_false_eq_true]
 
@@ -191,7 +194,7 @@ lemma erase_eq_iff_of_mem {s₁:Finset α}{s₂:Finset α}(hx1: x ∈ s₁)(hx2:
     --h1 : y ∈ s₁ ↔ y ∈ s₁.erase x
     rw [h1, h2, h]
 
-lemma subset_of_erase_subset {A B : Finset α} [DecidableEq α] {x : α} (hxA : x ∈ A) (hxB : x ∈ B) (h : A.erase x ⊆ B.erase x) : A ⊆ B :=
+lemma subset_of_erase_subset {A B : Finset α}  {x : α} (hxA : x ∈ A) (hxB : x ∈ B) (h : A.erase x ⊆ B.erase x) : A ⊆ B :=
 by
   -- A = A.erase x ∪ {x} を利用する
   rw [←Finset.insert_erase hxA]
@@ -230,6 +233,7 @@ lemma ssubset_insert (G : Finset α) (x : α) : x ∉ G → G ⊂ G ∪ {x} :=
     exact Finset.ssubset_iff_subset_ne.mpr ⟨subset, neq⟩
 
 --非空と、要素数が1以上であることの同値性
+omit [DecidableEq α] in
 lemma card_ne_zero_iff_nonempty (s : Finset α) : s.card ≠ 0 ↔ s ≠ ∅ :=
   by
     constructor
@@ -244,6 +248,7 @@ lemma card_ne_zero_iff_nonempty (s : Finset α) : s.card ≠ 0 ↔ s ≠ ∅ :=
 -- ここから集合族っぽい定理集--
 
 --　最大要素の存在
+omit [DecidableEq α] in
 lemma exists_max_card (S : Finset (Finset α))(h : S ≠ ∅):
   ∃ T ∈ S, T.card = S.sup (λ s => s.card) :=
   by
@@ -346,18 +351,21 @@ lemma card_union_singleton_sub_one {G : Finset α} {x : α} : x ∉ G → x ∈ 
         exact Finset.card_erase_of_mem gxH
     exact ggg
 
+omit [DecidableEq α] in
 theorem ne_implies_not_mem_singleton (x y: α)(h : y ≠ x) : y ∉ ({x} : Finset α) :=
   by
     intro h1
     rw [mem_singleton] at h1
     contradiction
 
+omit [DecidableEq α] in
 theorem not_mem_singleton_implies_ne (h : y ∉ ({x} : Finset α)) : y ≠ x :=
   by
     intro heq
     rw [heq] at h
     simp at h
 
+omit [DecidableEq α] in
 theorem my_card_le_of_subset {s t:Finset α} (h : s ⊆ t) : s.card ≤ t.card :=
   Finset.card_le_card h
 

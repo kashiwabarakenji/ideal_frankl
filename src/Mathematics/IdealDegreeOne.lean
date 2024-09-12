@@ -3,7 +3,7 @@ import Mathlib.Data.Finset.Card
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Data.Finset.Powerset
 import Mathlib.Tactic
-import Mathlib.Init.Function
+--import Mathlib.Init.Function
 import Mathlib.Init.Logic
 import Mathematics.BasicDefinitions
 import Mathematics.BasicLemmas
@@ -38,7 +38,7 @@ lemma degree_calculation {α : Type} [DecidableEq α] [Fintype α] (F : SetFamil
     simp_all only [degree, all_subsets, Finset.card_filter]
     simp [Finset.filter]
 
---vの次数が1であれば、全体集合以外のhyperedgeは、vを通らない。
+--vの次数が1であれば、全体集合以外のhyperedgeは、vを通らない。IdealSimple.leanでも同様なことを証明。
 lemma hyperedges_not_through_v {α : Type} [DecidableEq α] [Fintype α]
   (F : SetFamily α) (v : α) (hv: v ∈ F.ground) (deg1: degree F v = 1) (hasGround: F.sets F.ground) :
   ∀ s, F.sets s → s ≠ F.ground → v ∉ s :=
@@ -149,7 +149,7 @@ by
             -- hh: x ∈ s
             -- sg: s ∪ {v} ⊆ F.ground
             have sg2: s ⊆ F.ground := by
-              rename_i α_1 _ _ _ inst_3 inst_4
+              --rename_i α_1 _ _ _ inst_3 inst_4
               simp_all only [not_false_eq_true, or_true, and_self]
               intro y hy
               exact sg (s.subset_union_left hy)

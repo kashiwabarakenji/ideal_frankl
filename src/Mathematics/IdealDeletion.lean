@@ -3,7 +3,7 @@ import Mathlib.Data.Finset.Card
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Data.Finset.Powerset
 import Mathlib.Tactic
-import Mathlib.Init.Function
+--import Mathlib.Init.Function
 import Mathlib.Init.Logic
 import Mathematics.BasicDefinitions
 import Mathematics.BasicLemmas
@@ -103,6 +103,7 @@ def deletion {α : Type} [DecidableEq α] [Fintype α](F : SetFamily α) (x : α
 
 infixl:65 " ∖ " => deletion
 
+-- IdealFamilyに対するdeletion操作がIdealFamilyになることの証明。定義の中に証明がある。
 def idealdeletion {α : Type} [DecidableEq α] [Fintype α] (F : IdealFamily α) (x : α) (hx: x ∈ F.ground) (gcard: F.ground.card ≥ 2): IdealFamily α :=
 {
     ground := F.ground.erase x,

@@ -3,9 +3,9 @@ open Lake DSL
 
 package mathematics {
   -- Settings applied to both builds and interactive editing
-  leanOptions := #[
-    ⟨`pp.unicode.fun, true⟩ -- pretty-prints `fun a ↦ b`
-  ]
+  --leanOptions := #[
+  --  ⟨`pp.unicode.fun, true⟩ -- pretty-prints `fun a ↦ b`
+ -- ]
   moreLinkArgs := #[
    "-L./.lake/packages/LeanCopilot/.lake/build/lib/",
    "-lctranslate2"
@@ -13,13 +13,13 @@ package mathematics {
 }
 @[default_target]
 lean_lib «Mathematics» where
-  roots := #[`Mathematics.BasicDefinitions, `Mathematics.BasicLemmas, `Mathematics]
-  --roots:= #[`Mathematics,`Mathematics.BasicDefinitions, `Mathematics.BasicLemmas, `Mathematics.IdealTrace]
+  --roots := #[`Mathematics.BasicDefinitions, `Mathematics.BasicLemmas, `Mathematics]
+  roots:= #[`Mathematics]--`Mathematics.BasicDefinitions, `Mathematics.BasicLemmas, `Mathematics.IdealTrace]
   srcDir := "src"
 require mathlib from git
-  "https://github.com/leanprover-community/mathlib4.git"  @ "v4.10.0-rc2" -- "v4.8.0"
+  "https://github.com/leanprover-community/mathlib4.git"  @ "v4.11.0" -- "v4.8.0"
 require LeanCopilot from git
-  "https://github.com/lean-dojo/LeanCopilot.git" @ "v1.4.1"
+  "https://github.com/lean-dojo/LeanCopilot.git" @ "v1.6.0"
 
 --mathlibのバージョンは、lean --versionで表示されるものに合わせる必要。
 -- https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh

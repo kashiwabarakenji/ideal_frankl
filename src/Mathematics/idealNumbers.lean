@@ -3,7 +3,7 @@ import Mathlib.Data.Finset.Card
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Data.Finset.Powerset
 import Mathlib.Tactic
-import Mathlib.Init.Function
+--import Mathlib.Init.Function
 import Mathlib.Init.Logic
 import Mathematics.BasicDefinitions
 import Mathematics.BasicLemmas
@@ -202,7 +202,7 @@ by
             simp
             constructor
             · -- left goal: F.sets ssev
-              rename_i α_1 _ _ _ inst_3 inst_4
+              --rename_i α_1 _ _ _ inst_3 inst_4
               simp_all only [ge_iff_le, Finset.mem_val, Finset.mem_powerset, right_side, left_side, f, ssev]
               obtain ⟨val, property⟩ := ss
               simp_all only
@@ -211,7 +211,7 @@ by
               obtain ⟨_, right⟩ := hx
               exact sss_subset right
             · -- right goal: ssev ⊆ F.ground.erase v
-              rename_i α_1 _ _ _ inst_3 inst_4
+              --rename_i α_1 _ _ _ inst_3 inst_4
               simp_all only [ge_iff_le, Finset.mem_val, Finset.mem_powerset, right_side, left_side, f, ssev]
               obtain ⟨val, property⟩ := ss
               simp_all only
@@ -234,7 +234,7 @@ by
           have rw_rule := Mathematics.erase_insert' ss.val v ss_erase
           constructor
           -- goal: F.sets ssev
-          rename_i α_1 _ _ _ inst_3 inst_4
+          --rename_i α_1 _ _ _ inst_3 inst_4
           simp [rw_rule]
           -- goal: ssev ∪ {v} = ss.val
           simpa [rw_rule] -- simpもsimpaも両方とも必要みたい。
@@ -283,7 +283,7 @@ by
     simp
     exact hs
 
--- 補題 2: 元の集合族における次数の定義
+-- 補題 2: 元の集合族における次数の定義。いらないかも。
 lemma degree_definition {α : Type} [DecidableEq α] [Fintype α]
   (F : SetFamily α) (v : α) :
   degree F v = Finset.card (Finset.filter (λ s => F.sets s = true ∧ v ∈ s) (Finset.powerset F.ground)) :=
@@ -427,5 +427,182 @@ by
 
   exact disj
   --原因不明でexact disjができなかったが、原因不明でできるようになった。
+
+theorem hyperedge_count_deletion_contraction {α : Type} [DecidableEq α] [Fintype α]
+  (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (gcard: F.ground.card ≥ 2)
+  [DecidablePred F.sets] (hx_hyperedge : F.sets (F.ground \ {x})) :
+  number_of_hyperedges F.toSetFamily =
+  number_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily +
+  number_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard) :=
+by
+--theorem degree_eq_contraction_degree {α : Type} [DecidableEq α] [Fintype α]
+--F : SetFamily α) (v : α) (hv : v ∈ F.ground) (gcard: F.ground.card ≥ 2):
+--  degree F v = number_of_hyperedges (IdealDeletion.contraction F v hv gcard) :=
+--hyperedge_count_split {α : Type} [DecidableEq α] [Fintype α]
+--  (F : SetFamily α) (v : α) (hv : v ∈ F.ground) (gcard: F.ground.card ≥ 2):
+--  number_of_hyperedges F = number_of_hyperedges (IdealDeletion.deletion F v hv gcard) + degree F v
+-- calcで計算できるかも。
+  --#check hyperedge_count_split F.toSetFamily x hx gcard
+  have sub1: number_of_hyperedges F.toSetFamily = number_of_hyperedges ((F.toSetFamily ∖ x) hx gcard) + degree F.toSetFamily x := by
+    rw [←hyperedge_count_split F.toSetFamily x hx gcard]
+    congr
+
+  have sub2: (IdealDeletion.idealdeletion F x hx gcard).toSetFamily = (IdealDeletion.deletion F.toSetFamily x hx gcard) := by
+    dsimp [IdealDeletion.idealdeletion]
+    dsimp [IdealDeletion.deletion]
+    congr
+    --rename_i α_1 inst inst_1 inst_2 inst_3 inst_4 inst_5
+    ext x_1 : 2
+    simp_all only [or_iff_left_iff_imp, Finset.mem_erase, ne_eq, not_true_eq_false, and_true, not_false_eq_true]
+    intro a
+    subst a
+    convert hx_hyperedge
+    ext1 a
+    simp_all only [Finset.mem_erase, ne_eq, Finset.mem_sdiff, Finset.mem_singleton]
+    apply Iff.intro
+    · intro a_1
+      simp_all only [not_false_eq_true, and_self]
+    · intro a_1
+      simp_all only [not_false_eq_true, and_self]
+
+  calc
+    number_of_hyperedges F.toSetFamily
+    _ = number_of_hyperedges (IdealDeletion.deletion F.toSetFamily x hx gcard) + degree F.toSetFamily x := by rw [sub1]
+    _ = number_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily + degree F.toSetFamily x := by rw [←sub2]
+    _ = number_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily + number_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard) := by
+      rw [degree_eq_contraction_degree F.toSetFamily x hx gcard]
+
+theorem hyperedge_count_deletion_contraction_none {α : Type} [DecidableEq α] [Fintype α]
+  (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (gcard: F.ground.card ≥ 2)
+  [DecidablePred F.sets] (hx_hyperedge_not : ¬ F.sets (F.ground \ {x})) :
+  number_of_hyperedges F.toSetFamily + 1=
+  number_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily  +
+  number_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard) :=
+  by
+    have sub1: number_of_hyperedges F.toSetFamily = number_of_hyperedges ((F.toSetFamily ∖ x) hx gcard) + degree F.toSetFamily x := by
+      rw [←hyperedge_count_split F.toSetFamily x hx gcard]
+      congr
+
+    have sub2:∀(s : Finset α),(IdealDeletion.idealdeletion F x hx gcard).toSetFamily.sets s ↔ (IdealDeletion.deletion F.toSetFamily x hx gcard).sets s  ∨ (s = F.ground \ {x}):= by
+      dsimp [IdealDeletion.idealdeletion]
+      dsimp [IdealDeletion.deletion]
+      intro s
+      --congr
+      apply Iff.intro
+      · intro a
+        cases a with
+        | inl h => simp_all only [not_false_eq_true, and_self, true_or]
+        | inr h_1 =>
+          subst h_1
+          simp_all only [Finset.mem_erase, ne_eq, not_true_eq_false, and_true, not_false_eq_true]
+          apply Or.inr
+          ext1 a
+          simp_all only [Finset.mem_erase, ne_eq, Finset.mem_sdiff, Finset.mem_singleton]
+          apply Iff.intro
+          · intro a_1
+            simp_all only [not_false_eq_true, and_self]
+          · intro a_1
+            simp_all only [not_false_eq_true, and_self]
+      · intro a
+        cases a with
+        | inl h => simp_all only [not_false_eq_true, and_self, true_or]
+        | inr h_1 =>
+          subst h_1
+          simp_all only [Finset.mem_sdiff, Finset.mem_singleton, not_true_eq_false, and_false, not_false_eq_true,
+            and_true, false_or]
+          ext1 a
+          simp_all only [Finset.mem_sdiff, Finset.mem_singleton, Finset.mem_erase, ne_eq]
+          apply Iff.intro
+          · intro a_1
+            simp_all only [not_false_eq_true, and_self]
+          · intro a_1
+            simp_all only [not_false_eq_true, and_self]
+
+    --なくすと影響がある？
+    have : ∀(s : Finset α) (a : α), a ∉ s → (insert a s).card = s.card + 1 := by
+      intro s a h
+      exact Finset.card_insert_of_not_mem h
+
+
+    have card_insert_of_not_mem_set: ∀(s : Finset (Finset α)) (a : Finset α), a ∉ s → (insert a s).card = s.card + 1 := by
+      intro s a h
+      exact Finset.card_insert_of_not_mem h
+
+    --#check (Finset.filter (fun s ↦ F.sets s ∧ x ∉ s) (F.ground.erase x).powerset)
+    --#check (Finset.filter (fun (s:Finset α) ↦ F.sets s ∧ x ∉ s ∨ s = F.ground.erase x) (F.ground.erase x).powerset)
+    have hx_not: (F.ground \ {x}) ∉ Finset.filter (fun s ↦ F.sets s ∧ x ∉ s) (F.ground.erase x).powerset:=
+      by
+        rw [←Finset.sdiff_singleton_eq_erase]
+        simp_all only [not_false_eq_true, Finset.card_insert_of_not_mem, implies_true, Finset.mem_filter,
+          Finset.mem_powerset, Finset.mem_sdiff, Finset.mem_singleton, not_true_eq_false, and_false, and_true]
+
+    let sub3 := card_insert_of_not_mem_set (Finset.filter (fun (s:Finset α) ↦ F.sets s ∧ x ∉ s) (F.ground.erase x).powerset)  (F.ground \ {x}) hx_not
+
+    have sub5:  (insert (F.ground \ {x}) (Finset.filter (fun s ↦ F.sets s ∧ x ∉ s) (F.ground.erase x).powerset)) = (Finset.filter (fun (s:Finset α) ↦ F.sets s ∧ x ∉ s ∨ s = F.ground.erase x) (F.ground.erase x).powerset) := by
+      ext1 a
+      simp_all only [Finset.mem_insert, Finset.mem_filter, Finset.mem_powerset, Finset.mem_sdiff, Finset.mem_singleton]
+      apply Iff.intro
+      intro a_1
+      simp_all only [not_false_eq_true, Finset.card_insert_of_not_mem, implies_true]
+      cases a_1 with
+      | inl h =>
+        subst h
+        simp_all only [Finset.mem_sdiff, Finset.mem_singleton, not_true_eq_false, and_false, not_false_eq_true,
+          and_true, false_or]
+        apply And.intro
+        · rw [Finset.sdiff_singleton_eq_erase]
+        · rw [Finset.sdiff_singleton_eq_erase]
+      | inr h_1 => simp_all only [not_false_eq_true, and_self, true_or]
+      intro a_1
+      simp_all only [not_false_eq_true, Finset.card_insert_of_not_mem, implies_true, true_and]
+      obtain ⟨left, right⟩ := a_1
+      cases right with
+      | inl h => simp_all only [not_false_eq_true, and_self, or_true]
+      | inr h_1 =>
+        subst h_1
+        simp_all only [Finset.Subset.refl, Finset.mem_erase, ne_eq, not_true_eq_false, and_true, not_false_eq_true]
+        apply Or.inl
+        ext1 a
+        simp_all only [Finset.mem_erase, ne_eq, Finset.mem_sdiff, Finset.mem_singleton]
+        apply Iff.intro
+        · intro a_1
+          simp_all only [not_false_eq_true, and_self]
+        · intro a_1
+          simp_all only [not_false_eq_true, and_self]
+
+    have sub4: number_of_hyperedges (IdealDeletion.deletion F.toSetFamily x hx gcard) + 1 =  (number_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily) :=
+      by
+        dsimp [number_of_hyperedges]
+        dsimp [IdealDeletion.deletion]
+        dsimp [IdealDeletion.idealdeletion]
+        dsimp [IdealDeletion.deletion] at sub2
+        dsimp [IdealDeletion.idealdeletion] at sub2
+        simp_all
+        rw [Finset.sdiff_singleton_eq_erase]
+        rw [Finset.sdiff_singleton_eq_erase] at sub3
+        simp_all
+        rw [Finset.sdiff_singleton_eq_erase]
+        rw [Finset.sdiff_singleton_eq_erase] at sub5
+
+        rw [sub5] at sub3
+        rw [sub3]
+        simp_all
+        congr
+
+        -- goal (Finset.filter (fun s ↦ F.sets s ∧ x ∉ s) (F.ground.erase x).powerset).card + 1 =
+        -- (Finset.filter (fun s ↦ F.sets s ∧ x ∉ s ∨ s = F.ground.erase x) (F.ground.erase x).powerset).card
+        --hx_hyperedge_not : ¬F.sets (F.ground \ {x})
+        --exact Finset.card_insert_of_not_mem hyperedge_notをつかうとよい。
+
+    calc
+        number_of_hyperedges F.toSetFamily + 1
+    _ = number_of_hyperedges (IdealDeletion.deletion F.toSetFamily x hx gcard) + degree F.toSetFamily x + 1 := by rw [sub1]
+    _= number_of_hyperedges (IdealDeletion.deletion F.toSetFamily x hx gcard) + 1 + degree F.toSetFamily x := by ring
+    _ = number_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily + degree F.toSetFamily x := by rw [sub4]
+    _ = number_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily + number_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard) := by
+      rw [degree_eq_contraction_degree F.toSetFamily x hx gcard]
+
+
+
 
 end Mathematics

@@ -7,7 +7,7 @@ import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Tactic
-import Mathlib.Init.Function
+--import Mathlib.Init.Function
 import Init.SimpLemmas
 import Mathematics.BasicDefinitions
 import Mathematics.BasicLemmas
@@ -26,6 +26,7 @@ variable {α : Type} [DecidableEq α] [Fintype α][Nonempty α]
 def is_maximal_hyperedge (i : IdealFamily α) (H : Finset α): Prop :=
   i.sets H = true ∧ H ≠ i.ground ∧ (∀ (A: Finset α), (i.sets A → H ⊂ A → A = i.ground))
 
+omit [DecidableEq α] [Fintype α] [Nonempty α] in
 lemma max_card_eq_sup  (elements : Finset (Finset α)) (H : Finset α) (H_mem : H ∈ elements) (H_max : (∀ s, s ∈ elements → s.card ≤ H.card)) :
   H.card = elements.sup (λ s => s.card) :=
   by
@@ -35,6 +36,7 @@ lemma max_card_eq_sup  (elements : Finset (Finset α)) (H : Finset α) (H_mem : 
     · simp_all only [Finset.sup_le_iff, implies_true]
 
 -- Ideal集合族に対する極大ハイパーエッジの存在定理
+omit [Nonempty α] in
 theorem exists_maximal_hyperedge (sf : IdealFamily α) :
   ∃ H : Finset α, H ≠ sf.ground ∧ sf.sets H ∧ ∀ ⦃A : Finset α⦄, sf.sets A → H ⊆ A → (A = H ∨ A = sf.ground) :=
 by
@@ -123,6 +125,7 @@ def map_hyperedge (sf : IdealFamily α) (x : α) (G: Finset α)(H : Finset α) :
 
 -- x notin Gのときにmap_hyperedgeで移った先がhyperedgeであることの定理
 -- Gが極大である条件の代わりに、少し弱いGがhyperedgeである条件を引数にした。
+omit [Nonempty α] in
 theorem map_hyperedge_is_hyperedge (sf : IdealFamily α) (x : α) (G : Finset α) (gsets : sf.sets G) (H : Finset α) :
   (sf.sets H) → x ∉ G → (sf.sets (map_hyperedge sf x G H)) :=
 by
@@ -155,8 +158,7 @@ by
     rw [if_neg h_univ]
     exact hH''
 
-
-
+omit [Nonempty α] in
 lemma G_union_x_hyperedge_or_univ (sf : IdealFamily α) (x : α) (G : Finset α) (imh : is_maximal_hyperedge sf G) :
   x ∉ G → ¬sf.sets (G ∪ {x}) ∨ G ∪ {x} = sf.ground :=
   by
@@ -180,9 +182,8 @@ lemma G_union_x_hyperedge_or_univ (sf : IdealFamily α) (x : α) (G : Finset α)
     · left
       exact h
 
-
-
 -- H1が全体集合の場合の矛盾を示す補助定理
+omit [Nonempty α] in
 lemma map_hyperedge_univ_eq (sf : IdealFamily α) (x : α) (G : Finset α) (imh : is_maximal_hyperedge sf G) (H : Finset α) :
   x ∈ H → sf.sets H → x ∉ G → H ≠ sf.ground → map_hyperedge sf x G H ≠ G :=
   by
@@ -221,6 +222,7 @@ lemma map_hyperedge_univ_eq (sf : IdealFamily α) (x : α) (G : Finset α) (imh 
         contradiction
 
 -- 非全体集合同士の結果が等しい場合の条件を示す補助定理
+omit [Nonempty α] in
 lemma map_hyperedge_nonuniv_eq (sf : IdealFamily α) (x : α) (G : Finset α) (H1 H2 : Finset α) :
 x ∈ H1→ x ∈ H2 → x ∉ G → H1 ≠ sf.ground → H2 ≠ sf.ground → map_hyperedge sf x G H1 = map_hyperedge sf x G H2 → Finset.erase H1 x = Finset.erase H2 x :=
   by
@@ -233,6 +235,7 @@ x ∈ H1→ x ∈ H2 → x ∉ G → H1 ≠ sf.ground → H2 ≠ sf.ground → m
     exact h_map
 
 -- サブタイプの等式を証明する補助定理
+omit [Nonempty α] in
 theorem subtype_eq_of_val_eq (sf : IdealFamily α) (x : α) (H1 H2 : { H // sf.sets H ∧ x ∈ H }) :
   H1.1 = H2.1 → H1 = H2 :=
   by
@@ -247,6 +250,7 @@ theorem subtype_eq_of_val_eq (sf : IdealFamily α) (x : α) (H1 H2 : { H // sf.s
 
 -- map_hyperedge の単射性を証明する補題
 --map_hyperedge_univ_eqを呼ぶ時にimhを本質的に利用している。
+omit [Nonempty α] in
 lemma map_hyperedge_injective (sf : IdealFamily α) (x : α) (G: Finset α) (imh : is_maximal_hyperedge sf G)  :
   x ∉ G → Function.Injective (λ H : {H // sf.sets H  ∧ x ∈ H} => map_hyperedge sf x G H.1):=
   by
@@ -302,6 +306,7 @@ lemma map_hyperedge_injective (sf : IdealFamily α) (x : α) (G: Finset α) (imh
         exact set_eq_of_erase_eq  H1.2.2 H2.2.2 result
     exact subtype_eq_of_val_eq sf x H1 H2 h_erase_eq
 
+omit [Nonempty α] in
 lemma card_filter_add_card_filter_compl (sf : IdealFamily α) (v : α) [DecidablePred sf.sets]  :
   (Finset.filter (λ H=> sf.sets H ∧ v ∈ H) (all_subsets sf.ground)).card +
   (Finset.filter (λ H=> sf.sets H ∧ v ∉ H) (all_subsets sf.ground)).card =
@@ -359,6 +364,7 @@ lemma card_filter_add_card_filter_compl (sf : IdealFamily α) (v : α) [Decidabl
     rw [Finset.card_union_of_disjoint h_disjoint]
 
 -- hyperedges_without_v の位数は family_size_sf - degree_v であることを示す補題
+omit [Nonempty α] in
 lemma card_hyperedges_without_v (sf : IdealFamily α) (v : α) [DecidablePred sf.sets]:
   Finset.card ((all_subsets sf.ground).filter (λ H => sf.sets H ∧ v ∉ H)) =
   ideal_family_size sf - ideal_degree sf v :=
@@ -395,6 +401,7 @@ lemma card_hyperedges_without_v (sf : IdealFamily α) (v : α) [DecidablePred sf
     omega
 
 -- hyperedges_with_v の位数は degree_v であることを示す補題
+omit [Nonempty α]
 lemma card_hyperedges_with_v (sf : IdealFamily α) (v : α) :
   Finset.card ((all_subsets sf.ground).filter (λ H => sf.sets H ∧ v ∈ H)) = ideal_degree sf v :=
   by
@@ -407,6 +414,7 @@ lemma card_hyperedges_with_v (sf : IdealFamily α) (v : α) :
     simp [decide_eq_true_eq]
 
 --ここのFinset.univをsf.groundに変える必要あり。
+omit [Fintype α] in
 lemma exists_element_not_in_univ (H : Finset α)(U: Finset α):(H ⊆ U) → (H ≠ U) → ∃ x ∈ U, x ∉ H :=
   by
     -- H が全体集合でないことから、U と H の差集合が空でないことを示す
@@ -440,6 +448,7 @@ lemma exists_element_not_in_univ (H : Finset α)(U: Finset α):(H ⊆ U) → (H 
     contradiction
 
 --
+omit [Fintype α] in
 lemma strict_subset_implies_univ (H A U: Finset α):
   ((H ⊂ A → A = U) ↔ (H ⊆ A → A = H ∨ A = U)) :=
   by
