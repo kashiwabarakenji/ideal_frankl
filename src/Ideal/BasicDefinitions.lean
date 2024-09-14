@@ -7,7 +7,7 @@ import Mathlib.Data.Bool.Basic
 import Mathlib.Tactic
 import LeanCopilot
 
-namespace Mathematics
+namespace Ideal
 
 variable {α : Type} [DecidableEq α] [Fintype α] [Nonempty α]
 
@@ -39,15 +39,15 @@ def number_of_hyperedges (F : SetFamily α) [DecidablePred F.sets] : ℕ :=
   --let all_sets := (Finset.powerset F.ground).filter F.sets
   --all_sets.card
 
-def standardized_degree_sum (F : SetFamily α) [DecidablePred F.sets] : ℕ :=
-  total_size_of_hyperedges F - 2 * number_of_hyperedges F
+--def standardized_degree_sum (F : SetFamily α) [DecidablePred F.sets] : ℕ :=
+--  2*total_size_of_hyperedges F - F.ground.card * number_of_hyperedges F
 
--- 任意の型 α に対する部分集合の集合を全て列挙する関数
+-- 任意の型 α に対する部分集合の集合を全て列挙する関数。powersetを使えばいらないかも。
 def all_subsets {α : Type} [DecidableEq α] (s : Finset α) : Finset (Finset α) :=
   s.powerset
 
 noncomputable def degree (sf : SetFamily α) (v : α) : ℕ :=
-  Finset.card (Finset.filter (λ s => sf.sets s = true ∧ v ∈ s) (all_subsets sf.ground))
+  Finset.card (Finset.filter (λ s => sf.sets s = true ∧ v ∈ s) (sf.ground.powerset))
 
 --使ってない。trueの要素を数える関数
 def count_true_sets  (G : Finset α) (sets : Finset α → Prop) [∀ s, Decidable (sets s)] : Nat :=
@@ -97,7 +97,7 @@ noncomputable def normalized_degree_sum {α : Type} [DecidableEq α] [Fintype α
 noncomputable def ideal_normalized_degree_sum {α : Type} [DecidableEq α] [Fintype α] (F : IdealFamily α) : ℕ :=
   let total_size := total_size_of_hyperedges F.toSetFamily
   let num_sets := number_of_hyperedges F.toSetFamily
-  let base_set_size := Fintype.card α
+  let base_set_size := Fintype.card F.ground
   total_size * 2 - num_sets * base_set_size
 
 -- Ideal_family_size_sf関数の定義 必要なのか？
@@ -109,7 +109,7 @@ number_of_hyperedges sf.toSetFamily
 --def ideal_family_size (sf : IdealFamily α)[DecidablePred (to_SetFamily sf).sets] : ℕ :=
 --   number_of_hyperedges (to_SetFamily sf)
 
--- Ideal Family の頂点の次数を計算する関数
+-- Ideal Family の頂点の次数を計算する関数。必要ないかも。
 noncomputable def ideal_degree (sf : IdealFamily α) (x : α) : ℕ :=
   degree (sf.toSetFamily) x
 
@@ -120,4 +120,4 @@ structure IntersectionClosedFamily (α : Type) [DecidableEq α] [Fintype α] ext
 
 
 
-end Mathematics
+end Ideal

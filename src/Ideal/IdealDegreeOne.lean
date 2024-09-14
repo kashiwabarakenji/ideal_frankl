@@ -5,14 +5,14 @@ import Mathlib.Data.Finset.Powerset
 import Mathlib.Tactic
 --import Mathlib.Init.Function
 import Mathlib.Init.Logic
-import Mathematics.BasicDefinitions
-import Mathematics.BasicLemmas
-import Mathematics.IdealTrace
+import Ideal.BasicDefinitions
+import Ideal.BasicLemmas
+import Ideal.IdealTrace
 import LeanCopilot
 
 variable {α : Type} [DecidableEq α] [Fintype α] [Nonempty α]
 
-namespace Mathematics
+namespace Ideal
 
 def hasDegreeOneSetFamily (F : SetFamily α) : Prop :=
   ∃ (v : α), degree F v = 1
@@ -226,4 +226,4 @@ by
       rw [ground2]
       exact hasGround
 
-end Mathematics
+end Ideal

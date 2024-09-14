@@ -2,18 +2,18 @@ import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Data.Finset.Powerset
-import Mathlib.Init.Data.Nat.Basic
+import Mathlib.Init.Data.Nat.Lemmas
 import Mathlib.Data.Bool.Basic
 import Mathlib.Tactic
-import Mathematics.BasicDefinitions
-import Mathematics.BasicLemmas
+import Ideal.BasicDefinitions
+import Ideal.BasicLemmas
 import LeanCopilot
 
 variable {α : Type} [DecidableEq α] [Fintype α] [Nonempty α]
 
 open Finset
 
-namespace Mathematics.IdealTrace
+namespace Ideal.IdealTrace
 
 --deletionに限らないかも。名前を変えてBasicLemmasに移動するかも。
 lemma ground_nonempty_after_deletion {α : Type} [DecidableEq α] (ground : Finset α) (x : α) (hx: x ∈ ground) (gcard: ground.card ≥ 2) : (ground.erase x).Nonempty :=
@@ -76,7 +76,7 @@ def trace {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) (x : α) 
   }
 
 
-
+omit [Fintype α] [Nonempty α] in
 theorem union_erase_singleton2 (d : Finset α) (v : α) (dd:v ∉ d): (d ∪ {v}).erase v = d :=
 by
   ext x
@@ -249,4 +249,4 @@ instance trace_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x} ) (gc
         contradiction
 }
 
-end Mathematics.IdealTrace
+end Ideal.IdealTrace

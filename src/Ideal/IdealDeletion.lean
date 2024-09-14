@@ -5,11 +5,11 @@ import Mathlib.Data.Finset.Powerset
 import Mathlib.Tactic
 --import Mathlib.Init.Function
 import Mathlib.Init.Logic
-import Mathematics.BasicDefinitions
-import Mathematics.BasicLemmas
+import Ideal.BasicDefinitions
+import Ideal.BasicLemmas
 import LeanCopilot
 
-namespace Mathematics.IdealDeletion
+namespace Ideal.IdealDeletion
 -- 型変数と必要な型クラスの宣言 この宣言は必要。もともとUだったのをαに変えた。
 variable {α : Type} [DecidableEq α] [Fintype α][Nonempty α]
 
@@ -414,4 +414,4 @@ instance contraction_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x}
     exact thisF_setsA
 }
 
-end Mathematics.IdealDeletion
+end Ideal.IdealDeletion

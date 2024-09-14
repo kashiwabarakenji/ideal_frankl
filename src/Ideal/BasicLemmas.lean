@@ -4,12 +4,12 @@ import Mathlib.Data.Fintype.Basic
 import Mathlib.Data.Finset.Powerset
 import Mathlib.Init.Data.Nat.Lemmas
 import Mathlib.Tactic
-import Mathematics.BasicDefinitions
+import Ideal.BasicDefinitions
 import LeanCopilot
 
 open Finset
 
-namespace Mathematics
+namespace Ideal
 
 variable {α : Type} [DecidableEq α] [Fintype α] [Nonempty α]
 
@@ -17,8 +17,6 @@ variable {α : Type} [DecidableEq α] [Fintype α] [Nonempty α]
 omit [DecidableEq α] in
 theorem empty_ne_univ : (∅ : Finset α) ≠ Finset.univ :=
   by
-    -- 各型クラスのインスタンスを取得
-    --rename_i _ inst_1 inst_2
     -- 証明を進めるために必要な簡約
     simp_all only [ne_eq]
     -- 矛盾を導く
@@ -408,4 +406,4 @@ by
   rw [List.mem_toFinset]
   exact h
 
-end Mathematics
+end Ideal

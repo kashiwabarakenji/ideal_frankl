@@ -9,11 +9,11 @@ import Mathlib.Data.Fintype.Basic
 import Mathlib.Tactic
 --import Mathlib.Init.Function
 import Init.SimpLemmas
-import Mathematics.BasicDefinitions
-import Mathematics.BasicLemmas
+import Ideal.BasicDefinitions
+import Ideal.BasicLemmas
 import LeanCopilot
 
-namespace Mathematics
+namespace Ideal
 
 --import Mathlib.Data.Subtype --Subtypeは使っているが、importしなくても大丈夫かも。
 --Mathlib.Data.Subtypeに定義があるが、他のライブラリからimportされていると思われる。
@@ -339,9 +339,6 @@ lemma card_filter_add_card_filter_compl (sf : IdealFamily α) (v : α) [Decidabl
            --obtain ⟨h_sets, h_v⟩ := h --with_vのほう。
            rw [wv] at hl
            simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_union] at hl
-           --have hall: H ∈ all_subsets sf.ground := by
-           --   simp_all only [Finset.mem_filter, Finset.mem_univ, true_and, and_self, not_true_eq_false, and_false,
-           --   or_false, with_v, without_v, all]
            exact Finset.mem_filter.mpr ⟨hl.1, hl.2.1⟩
           |inr hr =>
            simp [all, Finset.mem_filter.mp hr]
@@ -366,14 +363,13 @@ lemma card_filter_add_card_filter_compl (sf : IdealFamily α) (v : α) [Decidabl
 -- hyperedges_without_v の位数は family_size_sf - degree_v であることを示す補題
 omit [Nonempty α] in
 lemma card_hyperedges_without_v (sf : IdealFamily α) (v : α) [DecidablePred sf.sets]:
-  Finset.card ((all_subsets sf.ground).filter (λ H => sf.sets H ∧ v ∉ H)) =
+  Finset.card ((sf.ground.powerset).filter (λ H => sf.sets H ∧ v ∉ H)) =
   ideal_family_size sf - ideal_degree sf v :=
   by
-    let with_v := Finset.filter (λ H => sf.sets H ∧ v ∈ H) (all_subsets sf.ground)
-    have wv:with_v = Finset.filter (λ H=> sf.sets H ∧ v ∈ H) (all_subsets sf.ground) := rfl
-    let without_v := Finset.filter (λ H => sf.sets H ∧ v ∉ H) (all_subsets sf.ground)
-    let all := Finset.filter (λ H => sf.sets H) (all_subsets sf.ground)
-    --have w:all = Finset.filter (λ H=> sf.sets H) (all_subsets sf.ground) := rfl
+    let with_v := Finset.filter (λ H => sf.sets H ∧ v ∈ H) (sf.ground.powerset)
+    have wv:with_v = Finset.filter (λ H=> sf.sets H ∧ v ∈ H) (sf.ground.powerset) := rfl
+    let without_v := Finset.filter (λ H => sf.sets H ∧ v ∉ H) (sf.ground.powerset)
+    let all := Finset.filter (λ H => sf.sets H) (sf.ground.powerset)
 
     have h_card_add : with_v.card + without_v.card = all.card :=
       by exact card_filter_add_card_filter_compl sf v
@@ -385,7 +381,6 @@ lemma card_hyperedges_without_v (sf : IdealFamily α) (v : α) [DecidablePred sf
       rw [degree]
       simp_all only [Finset.powerset_univ, with_v, without_v, all]
       --rw [Finset.filter_congr_decidable]
-      --rw [all_subsets]
       simp [decide_eq_true_eq]
 
     have h_card_all : all.card = ideal_family_size sf :=
@@ -419,10 +414,6 @@ lemma exists_element_not_in_univ (H : Finset α)(U: Finset α):(H ⊆ U) → (H 
   by
     -- H が全体集合でないことから、U と H の差集合が空でないことを示す
     intro h hne
-    --have h_ssub : H ⊂ Finset.univ :=
-    --  by
-    --    rw [← Finset.ssubset_univ_iff] at h
-    --    exact h
 
     -- 真部分集合の定義から、H ⊆ U かつ H ≠ U を得る
     --obtain ⟨_, hneq⟩ := Finset.ssubset_iff_subset_ne.mp h
@@ -649,4 +640,4 @@ theorem ideal_version_of_frankl_conjecture :
     -- 結論を得る
     exact ⟨v, h_degree_le_size⟩
 
-end Mathematics
+end Ideal

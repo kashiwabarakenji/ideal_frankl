@@ -5,14 +5,14 @@ import Mathlib.Data.Finset.Powerset
 import Mathlib.Tactic
 --import Mathlib.Init.Function
 import Mathlib.Init.Logic
-import Mathematics.BasicDefinitions
-import Mathematics.BasicLemmas
-import Mathematics.IdealDeletion
+import Ideal.BasicDefinitions
+import Ideal.BasicLemmas
+import Ideal.IdealDeletion
 import Mathlib.Data.Multiset.Basic
 import LeanCopilot
 --set_option maxHeartbeats 500000 -- Increase the heartbeat limit
 
-namespace Mathematics
+namespace Ideal
 variable {α : Type} [DecidableEq α] [Fintype α] [Nonempty α]
 
 --この部分は、汎用に使えるので、後日、BasicLemmasに移動する。
@@ -125,7 +125,7 @@ by
 
           have Fssv: F.sets (s.val ∪ {v}) := by
             rw [hh4]
-            rw [Mathematics.erase_insert H1 v hH3]
+            rw [Ideal.erase_insert H1 v hH3]
             exact H2
           exact Fssv
 
@@ -165,8 +165,8 @@ by
             exact h_eq
           have h_erase_eq : (a.val ∪ {v}).erase v = (b.val ∪ {v}).erase v := by
              rw [h_eq2]
-          rw [Mathematics.union_erase_singleton a.val v v_not_in_a] at h_erase_eq
-          rw [Mathematics.union_erase_singleton b.val v v_not_in_b] at h_erase_eq
+          rw [Ideal.union_erase_singleton a.val v v_not_in_a] at h_erase_eq
+          rw [Ideal.union_erase_singleton b.val v v_not_in_b] at h_erase_eq
           have h_eq3 : a.val = b.val := by
             simp [h_erase_eq]
           exact Subtype.eq h_eq3
@@ -231,7 +231,7 @@ by
           simp_all
           use element_in_right_side
           simp only [ssev, Finset.mem_erase]
-          have rw_rule := Mathematics.erase_insert' ss.val v ss_erase
+          have rw_rule := Ideal.erase_insert' ss.val v ss_erase
           constructor
           -- goal: F.sets ssev
           --rename_i α_1 _ _ _ inst_3 inst_4
@@ -605,4 +605,4 @@ theorem hyperedge_count_deletion_contraction_none {α : Type} [DecidableEq α] [
 
 
 
-end Mathematics
+end Ideal

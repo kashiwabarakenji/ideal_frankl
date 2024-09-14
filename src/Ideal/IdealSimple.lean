@@ -8,11 +8,11 @@ import Mathlib.Data.Finset.Card
 import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Data.List.Basic
 import Mathlib.Tactic
-import Mathematics.BasicDefinitions
-import Mathematics.BasicLemmas
+import Ideal.BasicDefinitions
+import Ideal.BasicLemmas
 import LeanCopilot
 
-namespace Mathematics
+namespace Ideal
 
 variable {α : Type} [DecidableEq α] [Fintype α] [Nonempty α]
 
@@ -153,8 +153,4 @@ theorem degree_one_if_not_hyperedge {α : Type} {x :α} [DecidableEq α] [Fintyp
           apply F.univ_mem
         exact h1
         trivial
-    --rename_i α_1 inst inst_1 inst_2 inst_3 inst_4 h_relevant_sets_1
-    simp_all only [eq_iff_iff, iff_true, relevant_sets]
-    refine Finset.card_eq_one.mpr ?_
-    apply Exists.intro
-    · exact h_relevant_sets
+    simp_all only [eq_iff_iff, iff_true, Finset.card_singleton, relevant_sets]
