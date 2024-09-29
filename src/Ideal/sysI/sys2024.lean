@@ -150,12 +150,12 @@ example {y : ℝ} : (∀(x : ℝ), x*x ≥ y*y) ↔ y = 0 :=
       apply mul_self_nonneg
 
 -- P(x)とは書かずに P xと書く。
-example {α : Type} {P: α → Prop} {Q: α → Prop}: (∀ x : α, P x → Q x) → ((∀ x : α, P x) → (∀ x : α, Q x)) :=
+example {P: α → Prop} {Q: α → Prop}: (∀ x : α, P x → Q x) → ((∀ x : α, P x) → (∀ x : α, Q x)) :=
   by --ここで　α　は型変数
     intro h1 h2 --h1 : ∀ (x : α), P x → Q x, h2 : ∀ (x : α), P x
-    intro x
-    apply h1
-    apply h2
+    intro x --allの除去・goalはQ x
+    apply h1 --goalがP xに。
+    apply h2 --h2を適用してゴールが得られるので証明完了。
 
 --上と同じ命題の証明を、ラムダ式で証明を書いたもの。
 example {α : Type} {P: α → Prop} {Q: α → Prop}:
@@ -208,6 +208,13 @@ example {α : Type} {P: α → Prop} {Q: α → Prop}: (∀x,(P x → Q x)) → 
     intro a a_1 --a : ∀ (x : α), P x → Q x, a_1 : ∃ (x : α), P x
     obtain ⟨w, h⟩ := a_1 --a1の中身をwとhに分解 a1 : ∃ (x : α), P x , w : α, h : P w
     exact ⟨w, a w h⟩ --a wは、P w → Q w
+
+example {α : Type} {P: α → Prop} {Q: α → Prop}: (∀x,(P x → Q x)) → ((∃x, P x) → ∃x, Q x) :=
+  by
+    intro a a_1 --a : ∀ (x : α), P x → Q x, a_1 : ∃ (x : α), P x
+    obtain ⟨w, h⟩ := a_1 --a1の中身をwとhに分解 a1 : ∃ (x : α), P x , w : α, h : P w
+    use w -- exists　xとしてwを使う。
+    exact a w h --a wは、P w → Q w
 
 --スライド　useを使う例。existsの中身を与える。
 example {α : Type} {P: α → Prop} {A: Prop}:(∃x,(A ∧ P x)) → (A ∧ ∃x,P x) :=
@@ -300,15 +307,15 @@ example {α : Type} (A B C : Set α) : A ∪ (B ∩ C) = (A ∪ B) ∩ (A ∪ C)
 --simoを利用した証明の例
 example {α : Type} (A B C : Set α) : A ∩ (B ∪ C) = (A ∩ B) ∪ (A ∩ C) :=
   by
-    ext x
+    ext x --要素が含まれるかの議論に変換。
     --goal x ∈ A ∩ (B ∪ C) ↔ x ∈ A ∩ B ∪ A ∩ C
     simp only [Set.mem_inter_iff, Set.mem_union]
     -- Set.mem_inter_iff.{u} {α : Type u} (x : α) (a b : Set α) : x ∈ a ∩ b ↔ x ∈ a ∧ x ∈ b
     -- Set.mem_union.{u} {α : Type u} (x : α) (a b : Set α) : x ∈ a ∪ b ↔ x ∈ a ∨ x ∈ b
     --goal: x ∈ A ∧ (x ∈ B ∨ x ∈ C) ↔ x ∈ A ∧ x ∈ B ∨ x ∈ A ∧ x ∈ C
     --ここにtautoを入れると、その時点で証明が終わってしまう。
-    apply Iff.intro
-    · intro a
+    apply Iff.intro --左から右の証明との証明に分解
+    · intro a --左から右。goal: x ∈ A ∧ x ∈ B ∨ x ∈ A ∧ x ∈ C
       cases a with
       | intro hA hBC => --hA : x ∈ A, hBC : x ∈ B ∨ x ∈ C
         cases hBC with
@@ -316,9 +323,9 @@ example {α : Type} (A B C : Set α) : A ∩ (B ∪ C) = (A ∩ B) ∪ (A ∩ C)
           exact Or.inl ⟨hA, hB⟩
         | inr hC => --hC : x ∈ C
           exact Or.inr ⟨hA, hC⟩
-    · intro a
+    · intro a --右から左。goal: x ∈ A ∧ x ∈ B ∨ x ∈ A ∧ x ∈ C
       cases a with
-      | inl h => simp_all only [true_or, and_self] --constructorで分割しても良い。
+      | inl h => simp_all only [true_or, and_self] 
       | inr h_1 => simp_all only [or_true, and_self]
 
 
@@ -888,3 +895,5 @@ example {A B C : Type} (f : A → B) (g : B → C)
   -- 合成関数の値 g(f(a)) = c となる
   use a
   rw [Function.comp_apply, ha, hb]
+
+  
