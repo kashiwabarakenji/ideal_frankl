@@ -13,6 +13,8 @@ import Ideal.IdealDeletion
 import Ideal.IdealRare
 import Ideal.IdealSum
 import Ideal.IdealNumbers
+import Ideal.IdealSimple
+import Ideal.IdealDegreeOne
 import LeanCopilot
 set_option maxHeartbeats 1000000
 
@@ -396,8 +398,7 @@ theorem injective_image_injective {α β : Type} [DecidableEq α] [DecidableEq �
   (f : α → β) (hf : Function.Injective f) :
   Function.Injective (λ (s : Finset α)=> Finset.image f s) :=
   by
-     -- 関数が可逆であることを示すため、任意の集合 s, t に対して
-    -- s.image f = t.image f ならば s = t であることを示す
+     -- 関数が可逆であることを示すため、任意の集合 s, t に対してs.image f = t.image f ならば s = t であることを示す
     intro s t hs
     -- 集合の等価性を示すために ext を適用し、要素ごとの等価性を確認する
     apply Finset.ext
@@ -481,90 +482,13 @@ lemma imageEq_card {n : ℕ} (nposi : n ≥ 1)
       rw [Finset.mem_filter] at hs
       exact finExpand_not_in nposi v s
       simp_all only [Finset.mem_filter, Finset.mem_powerset, left_set, to_fun]
-/-
-  have bij13 : ∀ s ∈ left_set, ∃ t ∈ right_set, to_fun s = t := by
-    intro s hs
-    rw [Finset.mem_filter] at hs
-    obtain ⟨left, right⟩ := hs
-    simp_all only [Finset.mem_filter, Finset.mem_powerset, Finset.mem_image, not_exists, not_and, and_true, and_imp,
-      exists_eq_right', true_and, left_set, to_fun, right_set]
-    intro x a
-    apply Aesop.BuiltinRules.not_intro
-    intro a_1
-    have : finExpand v x = finExpand v x := rfl
-    simp_all only
-    have : finExpand v x = finExpand v x := by rw [← a_1]
-    simp_all only
-    have a_2 : finExpand v x = finExpand v x := rfl
-    simp_all only
-    have : finExpand v x = finExpand v x := by simp
-    simp_all only
-    have := bij1_proof s
-    simp_all only [bij1_proof]
--/
-/-
-  have bij1expected: (a : Finset (Fin n)) → a ∈ Finset.filter (fun s => F.sets (Finset.image (finExpand v) s))
-          (Finset.image (finDrop nposi v) F.ground).powerset → Finset (Fin (n + 1)) := by
-    intro a
-    intro ha
-    simp_all only [Finset.mem_filter, Finset.mem_powerset, Finset.mem_image, not_exists, not_and, and_true, and_imp,
-      left_set, to_fun, right_set, inv_fun]
-    obtain ⟨left, right⟩ := ha
-    simp_all only [exists_eq_right', Finset.mem_image, not_exists, not_and, and_true, true_and]
-    apply to_fun
-    exact a
 
-
-  -- 2. inv_fun は right_set の要素を left_set の要素に写すことを証明
-  have bij2 : ∀ (s : Finset (Fin (n + 1))) (hs : s ∈ right_set), Finset (Fin n) :=
-  λ s hs => inv_fun s
-
-  have bij2_proof : ∀ s ∈ right_set, inv_fun s ∈ left_set := by
-    intro s hs
-    dsimp [left_set]
-    rw [Finset.mem_filter]
-    constructor
-    -- inv_fun s ⊆ Finset.image finDrop F.ground
-    · simp_all only [Finset.mem_filter, Finset.mem_powerset, Finset.mem_image, not_exists, not_and, and_true, and_imp,
-      left_set, to_fun, right_set, inv_fun]
-      obtain ⟨left, right⟩ := hs
-      obtain ⟨left_1, right⟩ := right
-      intro x hx
-      simp_all only [Finset.mem_image]
-      obtain ⟨w, h⟩ := hx
-      obtain ⟨left_2, right_1⟩ := h
-      subst right_1
-      exact ⟨w, left left_2, rfl⟩
-
-
-    -- F.sets ((inv_fun s).image finExpand v)
-    · have : (s.image (finDrop nposi v)).image (finExpand v) = s := by
-        rw [finExpand_drop_inverse nposi v s]
-        rw [Finset.filter_eq_self (λ x => x ≠ v) hs.1]
-      simp_all only [Finset.mem_filter, Finset.mem_powerset, Finset.mem_image, not_exists, not_and, and_true, and_imp,
-        left_set, to_fun, right_set, inv_fun]
-  -/
-  -- 3. to_fun ∘ inv_fun = id on right_set を証明
-  /-
-  have bij3 : ∀ s ∈ right_set, to_fun (inv_fun s) = s := by
-    intro s hs
-    rw [finExpand_drop_inverse nposi v s]
-    rw [Finset.filter_eq_self (λ x => x ≠ v) hs.1]
-  -/
 
   have bij3new : ∀ (a1), a1 ∈ left_set → ∀ (a2), a2 ∈ left_set → to_fun a1 = to_fun a2 → a1 = a2 := by
     intro a1 _
     intro ha1 _
     intro h
     exact injective_image_injective (finExpand v) (finExpand_injective v) h
-
-  -- 4. inv_fun ∘ to_fun = id on left_set を証明。いや、全射性を示す必要がある。以下はま違い。
-  /-
-  have bij4 : ∀ s ∈ left_set, inv_fun (to_fun s) = s := by
-    intro s hs
-    dsimp [to_fun, inv_fun]
-    exact finDrop_expand_inverse_set nposi v s
-  -/
 
   have bij4new :  ∀ b ∈ Finset.filter (fun ss => v ∉ ss ∧ F.sets ss) F.ground.powerset,
     ∃ a, ∃ (_ :a ∈ Finset.filter (fun s => F.sets (Finset.image (finExpand v) s))
@@ -628,6 +552,8 @@ def deletionToN {n : ℕ} (nposi : n ≥ 1) (F : SetFamily (Fin (n + 1))) (v : F
     simp_all only [ge_iff_le, Finset.one_le_card, Finset.image_nonempty, new_ground]
  }
 
+
+--こっちはidealFamilyからidealFamilyへの写像
 def IdealFamily.deletionToN {n : ℕ} (nposi : n ≥ 1)
   (F : IdealFamily (Fin (n + 1))) (v : Fin (n + 1)) (hvf : v ∉ F.ground)
   (gcard : F.ground.card ≥ 1) : IdealFamily (Fin n) :=
@@ -754,208 +680,200 @@ lemma IdealFamily.deletionToN_number {n : ℕ} (nposi : n ≥ 1)
   intro a_3
   exact hvf (a_1 a_3)
 
--- 仮定として、IdealFamilyが定義されているとします。
--- 必要に応じて、適切なインポートや定義を追加してください。
-
-variable {n : ℕ}
-variable (F : IdealFamily (Fin (n+1)))
-variable (nposi : n ≥ 1)
-variable (v : Fin (n+1))
-variable (hvf : v ∉ F.ground)
-variable (gcard : F.ground.card ≥ 1)
-
--- finDrop は v を含まない部分集合に対して単射である
-lemma finDrop_injective_except_v : ∀ s : Finset (Fin (n+1)), v ∉ s → Function.Injective (finDrop nposi v) :=
-by
-  -- 証明： finDrop が単射であることを示すが、v を含まない部分集合に限定
-  intros a b h hva hvb
-  by_cases h₁ : a < v
-  case pos =>
-    -- a < v の場合、 finDrop は恒等写像なので、 a = b である必要がある
-    rw [Fin.val_lt, h] at h₁
-    exact Fin.eq_of_veq h₁
-  case neg =>
-    -- a ≥ v の場合、 finDrop は a と b を -1 したもので比較するので、同様に a = b でなければならない
-    rw [Fin.val_ge, h] at h₁
-    exact Fin.eq_of_veq h₁
-
--- 証明の主定理
-theorem sum_card_eq_sum_card :
+theorem sum_card_eq_sum_card  {n : ℕ} (F : IdealFamily (Fin (n+1))) (nposi : n ≥ 1)(v : Fin (n+1)) (hvf : v ∉ F.ground) (gcard : F.ground.card ≥ 1):
   (F.ground.powerset.filter F.sets).sum Finset.card =
-    (Finset.image (finDrop nposi v) F.ground).powerset.filter (fun s => F.sets (Finset.image (finExpand v) s)).sum Finset.card :=
+    ((Finset.image (finDrop nposi v) F.ground).powerset.filter (fun s => F.sets (Finset.image (finExpand v) s))).sum Finset.card :=
 by
-  -- 定義するフィンスセットの集合
   let s_fin := F.ground.powerset.filter F.sets
-  let t_fin := (Finset.image (finDrop nposi v) F.ground).powerset.filter (λ s, F.sets (Finset.image (finExpand v) s))
+  let t_fin := (Finset.image (finDrop nposi v) F.ground).powerset.filter (λ s=> F.sets (Finset.image (finExpand v) s))
 
-  -- v を含まない集合に限定して finDrop が単射であることを利用する
-  have h1 : ∀ s ∈ s_fin, v ∉ s → Finset.image (finDrop nposi v) s ∈ t_fin :=
+  -- 1. 対応関係 i の定義
+  let i := λ (s : Finset (Fin (n+1))) (_ : s ∈ s_fin)=> Finset.image (finDrop nposi v) s
+
+  -- 2. 対応関係 i が t_fin に含まれることを証明
+  have hi : ∀ (s : Finset (Fin (n+1))) (hs : s ∈ s_fin), i s hs ∈ t_fin :=
     by
-      intros s hs hvs
-      split
-      -- finDrop '' s ⊆ finDrop(F.ground) を示す
-      exact Finset.image_subset _ hs.1
-      -- F.sets (Finset.image finExpand v (finDrop '' s)) = F.sets s を示す
-      rw [finExpand_drop_inverse_set nposi v s hvs]
+      intros s hs
+      dsimp [t_fin]
+      rw [Finset.mem_filter]
+      constructor
+      -- Finset.image (finDrop nposi v) s が t_fin に含まれることを示す
+      simp_all only [Finset.mem_powerset, i, s_fin]
+      simp_all only [Finset.mem_filter, Finset.mem_powerset, s_fin]
+      obtain ⟨left, _⟩ := hs
+      intro x hx
+      simp_all only [Finset.mem_image]
+      obtain ⟨w, h⟩ := hx
+      obtain ⟨left_1, right_1⟩ := h
+      subst right_1
+      exact ⟨w, left left_1, rfl⟩
+
+      -- F.sets (Finset.image finExpand v (Finset.image (finDrop nposi v) s)) = F.sets s を示す
+      dsimp [s_fin] at hs
+      rw [Finset.mem_filter] at hs
+      simp_all only [Finset.mem_powerset]
+      dsimp [i]
+      have v_notin_s : v ∉ s := by
+        apply Aesop.BuiltinRules.not_intro
+        intro a
+        have : v ∈ F.ground := by
+           exact hs.1 a
+        exact hvf this
+
+      rw [finExpand_drop_inverse_set nposi v s v_notin_s]
       exact hs.2
 
-  -- finDrop が v を含まない部分集合に対して単射であることを示す
-  have h2 : ∀ s t ∈ s_fin, v ∉ s → v ∉ t → Finset.image (finDrop nposi v) s = Finset.image (finDrop nposi v) t → s = t :=
+  -- Injectivity の証明　内容が単射性の証明になっていない。消す。
+  have h_injective_old : ∀ s ∈ s_fin, v ∉ s → Finset.image (finDrop nposi v) s ∈ t_fin :=
     by
-      intros s t hs ht hvs hvt h
-      -- finDrop が単射である部分集合での証明
-      apply Finset.ext
-      intro x
-      split
-      -- s ⊆ t を示す
-      intros hx
-      rw [Finset.mem_image] at hx
-      cases hx with y hy
-      rw [← hy.2] at h
-      rw [Finset.mem_image] at h
-      cases h with z hz
-      rw [hz.2] at hy
-      exact Finset.mem_of_mem_filter_left hy.1
-      -- t ⊆ s を示す
-      intros hx
-      rw [Finset.mem_image] at hx
-      cases hx with y hy
-      rw [← hy.2] at h
-      rw [Finset.mem_image] at h
-      cases h with z hz
-      rw [hz.2] at hy
-      exact Finset.mem_of_mem_filter_left hy.1
+      intros s hs hvs
+      dsimp [t_fin]
+      rw [Finset.mem_filter]
+      constructor
+      -- finDrop '' s ⊆ finDrop(F.ground) を示す
+      rw [Finset.mem_filter] at hs
+      rw [Finset.mem_powerset] at hs
+      simp_all only [Finset.mem_powerset]
+      obtain ⟨left, _⟩ := hs
+      intro x hx
+      simp_all only [Finset.mem_image]
+      obtain ⟨w, h⟩ := hx
+      obtain ⟨left_1, right_1⟩ := h
+      subst right_1
+      exact ⟨w, left left_1, rfl⟩
+      -- F.sets (Finset.image finExpand v (finDrop '' s)) = F.sets s を示す
+      rw [finExpand_drop_inverse_set nposi v s hvs]
+      dsimp [s_fin] at hs
+      rw [Finset.mem_filter] at hs
+      exact hs.2
 
-  -- finExpand が surjective であることを示す
-  have h3 : ∀ t ∈ t_fin, ∃ s ∈ s_fin, v ∉ s ∧ Finset.image (finDrop nposi v) s = t :=
+  have h_injective: ∀ (a₁ : Finset (Fin (n + 1))) (ha₁ : a₁ ∈ s_fin) (a₂ : Finset (Fin (n + 1))) (ha₂ : a₂ ∈ s_fin),
+  i a₁ ha₁ = i a₂ ha₂ → a₁ = a₂ :=
+    by
+      intros a₁ ha₁ a₂ ha₂ h
+      simp_all only [Finset.mem_filter, Finset.mem_powerset, and_imp, s_fin]
+      dsimp [i] at h
+      simp_all only [ge_iff_le, Finset.one_le_card, Finset.mem_filter, Finset.mem_powerset, and_imp, and_self, implies_true,
+      s_fin, i, t_fin]
+      obtain ⟨left, _⟩ := ha₁
+      obtain ⟨left_1, _⟩ := ha₂
+
+      have v_notin_a₁ : v ∉ a₁ := by
+        intro h₁
+        have : v ∈ F.ground := Finset.mem_of_subset left h₁
+        exact hvf this
+
+      have v_notin_a₂ : v ∉ a₂ := by
+        intro h₂
+        have : v ∈ F.ground := Finset.mem_of_subset left_1 h₂
+        exact hvf this
+
+      -- 仮定 h : Finset.image (finDrop nposi v) a₁ = Finset.image (finDrop nposi v) a₂ を利用
+      have h_expand : Finset.image (finExpand v) (Finset.image (finDrop nposi v) a₁) =
+                Finset.image (finExpand v) (Finset.image (finDrop nposi v) a₂) := by
+         rw [h]
+
+      -- finExpand_drop_inverse_set を適用して、元の集合が再現されることを示す
+      rw [finExpand_drop_inverse_set nposi v a₁ v_notin_a₁] at h_expand
+      rw [finExpand_drop_inverse_set nposi v a₂ v_notin_a₂] at h_expand
+
+      -- よって、a₁ = a₂ が成立
+      exact h_expand
+
+  -- Surjectivity の証明の前のバージョン。消す。
+  have h_surjective_org : ∀ t ∈ t_fin, ∃ s ∈ s_fin, v ∉ s ∧ Finset.image (finDrop nposi v) s = t :=
     by
       intros t ht
       -- s = finExpand '' t として、 s が存在することを示す
       use Finset.image (finExpand v) t
-      split
+      constructor
       -- s ∈ s_fin を示す
-      split
+      dsimp [s_fin]
+      rw [Finset.mem_filter]
+      constructor
       -- finExpand '' t ⊆ F.ground を示す
-      exact Finset.image_subset (finDrop nposi v) F.set_subset_ground
+      dsimp [t_fin] at ht
+      simp_all only [Finset.mem_filter, Finset.mem_powerset, and_imp, s_fin, t_fin]
+      obtain ⟨_, right⟩ := ht
+      exact F.inc_ground (Finset.image (finExpand v) t) right
+
+      --goal F.sets (Finset.image (finExpand v) t)
+      simp_all only [Finset.mem_filter, Finset.mem_powerset, and_imp, s_fin, t_fin]
       -- F.sets (Finset.image finExpand v (finDrop '' (finExpand '' t))) = F.sets (finExpand '' t) を示す
-      rw [finExpand_drop_inverse_set nposi v t (Finset.not_mem_image_of_mem (fun x => Finset.mem_of_mem_powerset ht.1))]
-      exact ht.2
+      simp_all only [Finset.mem_filter, Finset.mem_powerset, and_imp, Finset.mem_image, not_exists, not_and, s_fin,
+        t_fin]
+      --obtain ⟨left, right⟩ := ht
+      apply And.intro
+      · intro x _
+        apply Aesop.BuiltinRules.not_intro
+        intro a_1
+        --lemma finExpand_not_in {n : ℕ} (nposi : n ≥ 1) (v : Fin (n + 1)) (s : Finset (Fin n)):v ∉ s.image (finExpand  v)
+        apply finExpand_not_in nposi v {x}
+        simp_all only [Finset.mem_image]
+        use x
+        constructor
+        simp_all only [Finset.mem_singleton]
+        exact a_1
 
-  -- 重み関数が一致することを示す
-  have h4 : ∀ s ∈ s_fin, v ∉ s → Finset.card s = Finset.card (Finset.image (finDrop nposi v) s) :=
+      · exact finDrop_expand_inverse_set  nposi  v t
+
+  have h_surjective :  ∀ b ∈ Finset.filter (fun s => F.sets (Finset.image (finExpand v) s)) (Finset.image (finDrop nposi v) F.ground).powerset,
+    ∃ a, ∃ (ha : a ∈ s_fin), i a ha = b := by
+    intro b
+    intro hb
+    rw [Finset.mem_filter] at hb
+    obtain ⟨left, right⟩ := hb
+    dsimp [s_fin]
+    dsimp [i]
+    have nnposi: n + 1 ≥ 1 := by omega
+    --use Finset.image (finDrop nnposi v) b
+    use Finset.image (finExpand v) b
+    constructor
+    exact finDrop_expand_inverse_set nposi v b
+    rw [Finset.mem_filter]
+    constructor
+    swap
+    exact right
+    simp_all only [Finset.mem_powerset, Finset.mem_image, Finset.mem_filter, Finset.mem_powerset, Finset.mem_image, not_exists, not_and, and_true, and_imp,
+      exists_eq_right', true_and, s_fin, i, t_fin]
+    exact F.inc_ground (Finset.image (finExpand v) b) right
+
+  have h_com: ∀ (a : Finset (Fin (n + 1))) (ha : a ∈ s_fin), a.card = (i a ha).card :=
     by
-      intros s hs hvs
-      -- finDrop が injective であるため、Finset.card s = Finset.card (finDrop '' s)
-      exact Finset.card_image_of_injective s (finDrop_injective_except_v s hvs)
-
-  -- これらの補題を基にして、Finset.sum_bij を適用
-  apply Finset.sum_bij (λ s : Finset (Fin (n+1)), Finset.image (finDrop nposi v) s)
-  exact h1
-  exact h2
-  exact h3
-  exact h4
-
-lemma finDrop_injective {n : ℕ} (nposi : n ≥ 1) (v : Fin (n+1)) :
-  Function.Injective (finDrop nposi v) :=
-by
-  intros a b h
-  unfold finDrop at h
-  split_ifs at h with h1 h2
-  -- どちらも a.val と b.val が v.val 未満のケース
-  case h1 h2 => exact Fin.eq_of_veq h
-  -- どちらも a.val と b.val が v.val 以上のケース
-  case neg neg => exact Fin.eq_of_veq (nat.succ_injective h)
-  -- 一方が v.val 未満、もう一方が v.val 以上の場合
-  case h1 neg => exfalso; apply nat.lt_asymm h1 h
-  case neg h2 => exfalso; apply nat.lt_asymm h2 h
-
-theorem sum_card_eq_sum_card :
-  (F.ground.powerset.filter F.sets).sum Finset.card =
-    (Finset.image (finDrop nposi v) F.ground).powerset.filter (fun s => F.sets (Finset.image (finExpand v) s)).sum Finset.card :=
-by
-  -- 定義するフィンスセットの集合
-  let s_fin := F.ground.powerset.filter F.sets
-  let t_fin := (Finset.image (finDrop nposi v) F.ground).powerset.filter (λ s, F.sets (Finset.image (finExpand v) s))
-
-  -- Injectivity の証明
-  have h_injective : ∀ s ∈ s_fin, v ∉ s → Finset.image (finDrop nposi v) s ∈ t_fin :=
-    by
-      intros s hs hvs
-      split
-      -- finDrop '' s ⊆ finDrop(F.ground) を示す
-      exact Finset.image_subset _ hs.1
-      -- F.sets (Finset.image finExpand v (finDrop '' s)) = F.sets s を示す
-      rw [finExpand_drop_inverse_set nposi v s hvs]
-      exact hs.2
-
-  -- Surjectivity の証明
-  have h_surjective : ∀ t ∈ t_fin, ∃ s ∈ s_fin, v ∉ s ∧ Finset.image (finDrop nposi v) s = t :=
-    by
-      intros t ht
-      -- s = finExpand '' t として、 s が存在することを示す
-      use Finset.image (finExpand v) t
-      split
-      -- s ∈ s_fin を示す
-      split
-      -- finExpand '' t ⊆ F.ground を示す
-      exact Finset.image_subset (finDrop nposi v) F.set_subset_ground
-      -- F.sets (Finset.image finExpand v (finDrop '' (finExpand '' t))) = F.sets (finExpand '' t) を示す
-      rw [finExpand_drop_inverse_set nposi v t (Finset.not_mem_image_of_mem (fun x => Finset.mem_of_mem_powerset ht.1))]
-      exact ht.2
+      intros s hs
+      simp_all only [s_fin, i]
+      have v_notin_s : v ∉ s := by
+        intro h
+        dsimp [s_fin] at hs
+        rw [Finset.mem_filter] at hs
+        simp only [Finset.mem_powerset] at hs
+        exact hvf (hs.1 h)
+      exact (finDropCardEq nposi v s v_notin_s).symm
+      --goal s.card = (Finset.image (finDrop nposi v) s).card
 
   -- Finset.sum_bij の適用
   apply Finset.sum_bij
   -- bijective 関係の定義
+    fun s => i s
+    --
+  exact hi
   exact h_injective
-  -- 単射性
-  exact fun s t hs ht hvs hvt h => Finset.ext fun x => ⟨Finset.mem_of_mem_image_left, Finset.mem_of_mem_image_right⟩
-  -- 全射性
+
   exact h_surjective
-  -- 重み関数の一致
-  intros s hs hvs
-  exact Finset.card_image_of_injective s (finDrop_injective_except_v s hvs)
+    -- 重み関数の一致
+  --goal ∀ (a : Finset (Fin (n + 1))) (ha : a ∈ s_fin), a.card = (i a ha).card
+  exact h_com
 
-lemma IdealFamily.deletionToN_total {n : ℕ} (nposi : n ≥ 1)
-  (F : IdealFamily (Fin (n + 1))) (v : Fin (n + 1)) (hvf : v ∉ F.ground)
-  (gcard : F.ground.card ≥ 1) : total_size_of_hyperedges (@IdealFamily.deletionToN (Fin n) n nposi F v hvf gcard).toSetFamily = total_size_of_hyperedges F.toSetFamily := by
-  rw [total_size_of_hyperedges]
-  simp_all only [IdealFamily.deletionToN]
-  rw [total_size_of_hyperedges]
-  simp
-  apply Eq.symm
-  have : (Finset.filter F.sets F.ground.powerset) =
-         (Finset.filter (fun s => F.sets (Finset.image (finExpand v) s))
-                        (Finset.image (finDrop nposi v) F.ground).powerset) := by
-
-
-  #check Finset.sum_congr
-  apply Finset.sum_congr
-  -- まず、集合の等式を示す。
-  -- finDrop と finExpand が互いに逆写像であることから、フィルター条件が一致する。
-  {
-    -- ゴールのセットが同一であることを示す
-    have : Finset.image (finDrop nposi v) (Finset.image (finExpand v) F.ground.powerset) = F.ground.powerset := by
-      exact finDrop_expand_inverse_set nposi v F.ground.powerset
-    rw [this]
-    simp
-
-
-
-  }
-  -- 各集合のカーディナリティが等しいことを示す。
-  {
-    intros s hs
-    -- s の各カードが同一であることは Finset.card に依存するため、すべてのフィルタリング後のカードは同じ。
-    search_proof
-  }
-
-
-
-
-
+lemma deletion_total: ∀ (n : ℕ) (F : IdealFamily (Fin (n + 1))) (nposi : n ≥ 1) (v : Fin (n + 1)) (hvf : v ∉ F.ground) (gcard : F.ground.card ≥ 1),
+  total_size_of_hyperedges (@IdealFamily.deletionToN (Fin n) n nposi F v hvf gcard).toSetFamily = total_size_of_hyperedges F.toSetFamily :=
+  by
+    intros n F nposi v hvf gcard
+    simp only [total_size_of_hyperedges]
+    simp only [IdealFamily.deletionToN]
+    have h2 := sum_card_eq_sum_card F nposi v hvf gcard
+    rw [h2]
 
 def P (x:Nat) : Prop := x ≥ 2  ∧ ∀ (F: IdealFamily (Fin x)), F.ground.card = x → normalized_degree_sum F.toSetFamily ≤ 0
-
 
 theorem induction_step {n:Nat} (hn: n >= 2) (h: P n) : P (n+1) := by
   -- ここでFintypeインスタンスを明示的に使用
@@ -982,19 +900,14 @@ theorem induction_step {n:Nat} (hn: n >= 2) (h: P n) : P (n+1) := by
   obtain ⟨hv_left, hv_right⟩ := hv
 
   by_cases hv_singleton: F.sets {v}
-  case pos =>
+  · case pos =>
 
-  classical
-  by_cases hv_hyperedge:(F.sets (F.ground \ {v}))
-  case pos =>
-    have h_sum_have := (hyperedge_average_have F v hv_left hcard0) hv_hyperedge
-    --have h_idealdeletion := (IdealDeletion.idealdeletion F v hv_left hcard0)
     set Fdel := IdealDeletion.idealdeletion F v hv_left hcard0
     have Fvx: v ∉ Fdel.ground := by
       intro h
       simp_all only [ge_iff_le]
       dsimp [Fdel] at h
-      simp_all only [Fdel]
+      --simp_all only [Fdel]
       dsimp [IdealDeletion.idealdeletion] at h
       simp_all only [Finset.mem_erase, ne_eq, not_true_eq_false, and_true]
 
@@ -1007,22 +920,26 @@ theorem induction_step {n:Nat} (hn: n >= 2) (h: P n) : P (n+1) := by
     have hcard2: Fdel.ground.card ≥ 1 := by
       simp_all only [ge_iff_le]
 
-    #check IdealFamily.deletionToN nposi Fdel v Fvx hcard2
+    --#check IdealFamily.deletionToN nposi Fdel v Fvx hcard2
     set h_idealdeletion := IdealFamily.deletionToN nposi Fdel v Fvx hcard2
     --IdealFamily (Fin (n + 1))になっているがFin nになってほしい。
 
     have hcard3: h_idealdeletion.ground.card = n := by
       dsimp [h_idealdeletion]
       dsimp [IdealFamily.deletionToN]
-      --rw [Finset.card_image_of_injective]
       rw  [finDropCardEq nposi v Fdel.ground Fvx]
       exact hcard1
+
+    have h_del_card: (@IdealFamily.deletionToN (Fin n) n nposi (IdealDeletion.idealdeletion F v hv_left hcard0) v Fvx
+                hcard2).ground.card = n := by
+      simp_all only [ge_iff_le]
+      simp_all only [ge_iff_le, implies_true, imp_self, forall_true_left, Fdel, h_idealdeletion]
+      exact hcard3
 
     set Fcont :=  (IdealDeletion.contraction_ideal_family F v hv_singleton hcard0)
     have h_cont: Fcont.ground.card = n := by
       simp_all only [ge_iff_le]
-      simp_all only [IdealDeletion.contraction]
-      rename_i hcard1_1 h_ind_2 h_sum_have_2
+      --simp_all only [IdealDeletion.contraction]
       simp_all only [ge_iff_le, implies_true, sub_left_inj, add_left_inj, add_right_inj, Fdel, Fcont]
       rw [IdealDeletion.contraction_ideal_family]
       simp_all only [Finset.card_erase_of_mem, add_tsub_cancel_right]
@@ -1044,173 +961,471 @@ theorem induction_step {n:Nat} (hn: n >= 2) (h: P n) : P (n+1) := by
     have h_cont_card: Fcont.ground.card = n := by
       simp_all only [ge_iff_le]
 
+    have h_cont_card2: (IdealDeletion.contraction_ideal_family F v hv_singleton hcard0).ground.card = n:= by
+      simp_all only [ge_iff_le]
+
     set h_contraction := IdealFamily.deletionToN nposi Fcont v Fvx2 h_cont2
-    have h_cont_card2: h_contraction.ground.card = n := by
+    have h_cont_card3: h_contraction.ground.card = n := by
       simp_all only [ge_iff_le]
       dsimp [h_contraction]
       dsimp [IdealFamily.deletionToN]
       rw [finDropCardEq nposi v Fcont.ground Fvx2]
       exact h_cont_card
 
-    rw [h_sum_have]
     dsimp [Fdel] at hcard1
-    #check (h_ind h_idealdeletion) hcard3
+    --#check (h_ind h_idealdeletion) hcard3
     let h_idealdeletion2 := h_ind h_idealdeletion hcard3
-    #check h_ind h_contraction
-    let h_contraction2 := (h_ind h_contraction) h_cont_card2
+    --#check h_ind h_contraction
+    let h_contraction2 := (h_ind h_contraction) h_cont_card3
 
-    let sum_have := hyperedge_average_have F v hv_left hcard0 hv_hyperedge
-    let number_have :=  hyperedge_count_deletion_contraction_have_z F v hv_left hcard0 hv_hyperedge
+    have eq1: ideal_degree F v = degree F.toSetFamily v := by
+      simp only [ideal_degree, degree]
+      
+    have eq2: ideal_family_size F = number_of_hyperedges F.toSetFamily := by
+      simp only [ideal_family_size, total_size_of_hyperedges]
 
-    simp only [ge_iff_le, tsub_le_iff_right, zero_add, Fdel, Fcont] at h_idealdeletion2 h_contraction2 sum_have number_have  ⊢
-    simp only [normalized_degree_sum, IdealFamily.toSetFamily] at h_idealdeletion2 h_contraction2 sum_have number_have ⊢
-    --simp only [IdealFamily.deletionToN] at h_idealdeletion2 h_contraction2 sum_have number_have  ⊢
+    simp only [ge_iff_le, tsub_le_iff_right, zero_add, Fdel, Fcont] at h_idealdeletion2 h_contraction2  ⊢
+    simp only [normalized_degree_sum] at h_idealdeletion2 h_contraction2  ⊢
 
     rw [IdealFamily.deletionToN_number nposi Fdel v Fvx hcard2] at h_idealdeletion2
     rw [IdealFamily.deletionToN_number nposi Fcont v Fvx2 h_cont2] at h_contraction2
-    --上はIdealFamily.deletionToNしても、hyperedgeの数がかわらないこと
-    --numberの方は上で置き換わったが、sumの方は置き換わっていない。
-    --ground setの大きさもdeletionToNで変わらないことを示す必要がある。
+    dsimp [h_idealdeletion] at h_idealdeletion2
+    dsimp [h_contraction] at h_contraction2
+    rw [deletion_total] at h_idealdeletion2 h_contraction2
+    dsimp [Fdel] at h_idealdeletion2
+    dsimp [Fcont] at h_contraction2
+    rw [h_del_card] at h_idealdeletion2
 
-    --今になって考えてみれば、Fin nを使わずにground setの大きさで議論する方法の方が良かった。
-
+    --以下の部分も場合分けの前に移動したほうがよいかも。
     --let total_del := (total_size_of_hyperedges ((@IdealFamily.deletionToN (Fin n) n nposi Fdel v Fvx hcard2):IdealFamily (Fin n)).1)
     set total_del := total_size_of_hyperedges (IdealDeletion.idealdeletion F v hv_left hcard0).1 with h_total_del
     --set number_del := (number_of_hyperedges (@IdealFamily.deletionToN (Fin n) n nposi Fdel v Fvx hcard2).1) with number_del
     set number_del := (number_of_hyperedges (IdealDeletion.idealdeletion F v hv_left hcard0).1) with h_number_del
     --let total_cont := (total_size_of_hyperedges (@IdealFamily.deletionToN (Fin n) n nposi Fcont v Fvx2 h_cont2).1)
-    set total_cont := total_size_of_hyperedges (IdealDeletion.contraction F.1 v hv_left hcard0) with h_total_cont
+    --set total_cont := total_size_of_hyperedges (IdealDeletion.contraction F.1 v hv_left hcard0) with h_total_cont
+    set total_cont := total_size_of_hyperedges (IdealDeletion.contraction_ideal_family F v hv_singleton hcard0).toSetFamily with h_total_cont
     --let number_cont := (number_of_hyperedges (@IdealFamily.deletionToN (Fin n) n nposi Fcont v Fvx2 h_cont2).1)
-    set number_cont := (number_of_hyperedges (IdealDeletion.contraction F.1 v hv_left hcard0)) with h_number_cont
-    let total := (total_size_of_hyperedges F.toSetFamily)
-    let number := (number_of_hyperedges F.toSetFamily)
-    let degreev := (degree F.toSetFamily v)
+    --set number_cont := (number_of_hyperedges (IdealDeletion.contraction F.1 v hv_left hcard0)) with h_number_cont
+    set number_cont := (number_of_hyperedges (IdealDeletion.contraction_ideal_family F v hv_singleton hcard0).toSetFamily) with h_number_cont
+    set total := (total_size_of_hyperedges F.toSetFamily) with h_total
+    set  number := (number_of_hyperedges F.toSetFamily) with h_number
+    set degreev := (degree F.toSetFamily v) with h_degreev
 
-    rw  [←h_total_del] at *
-    rw [←h_number_del] at *
-    rw [←h_total_cont] at *
-    rw [←h_number_cont] at *
-    rw [hcard1] at *
-    --#check h_cont_card
-    dsimp [Fcont] at h_cont_card
-    dsimp [IdealDeletion.contraction_ideal_family] at h_cont_card
-    rw [h_cont_card] at *
-    --rw [←total]
-    --subst number
-    --subst degreev
-    --rw [h_idealdeletion2, h_contraction2, sum_have, number_have]
-    linarith
-    --linarith --[h_idealdeletion2, h_contraction2, hv_right,sum_have,number_have]
-  case neg =>
-    sorry
-
-/-
---以下はChatGPTが生成した台集合の大きさに関する帰納法のテンプレート。
--- 台集合の大きさが 2 以上の場合の帰納法。上がうまくいけばこちらは消す。
-theorem set_family_induction_card {X : Finset α} (P : Finset α → Prop)
-  (h_base : ∀ a b : α, a ≠ b → P ({a, b}))  -- Base case: |X| = 2 の場合
-  (h_inductive : ∀ (a : α) (S : Finset α), a ∉ S → P S → P (insert a S)) :
-  X.card ≥ 2 → P X :=
-by
-  induction X.card with
-  | zero =>
-    -- |X| = 0 の場合: このケースは X.card ≥ 2 の仮定に反するので証明不要
-    intro h_card
-    linarith  -- 矛盾: |X| が 0 のとき |X| ≥ 2 は成立しない
-  | succ n ih =>
-    cases n with
-    | zero =>
-      -- |X| = 1 の場合: これは X.card ≥ 2 に反するので除外
-      intro h_card
-      linarith  -- 矛盾: |X| が 1 のとき |X| ≥ 2 は成立しない
-    | succ m =>
-      -- |X| = m + 2 の場合: これが実際に証明すべきケース
-      intro h_card
-      -- S は X から任意の要素 x を取り除いた集合
-      --obtain ⟨x, S, hx, hXS⟩ := Finset.card_succ_iff.mp h_card
-      have hS_card : S.card = m + 1 := by
-        rw [hXS]
-        exact Finset.card_erase_of_mem hx
-      -- 帰納法の仮定を S に適用 (S の要素数は m + 1 ≥ 2 である)
-      apply h_inductive x S hx
-      apply ih m _  -- 帰納仮定を使って S に対して命題 P(S) を証明
-      linarith  -- S の要素数 m + 1 が 2 以上であることを確認
-
--- 台集合の大きさが 2 以上の場合の帰納法。集合そのものでstrongInductionを使うバージョン。消して良い。
-theorem set_family_induction_large {X : Finset α} (P : Finset α → Prop)
-  (h_base : ∀ a b : α, a ≠ b → P ({a, b}))  -- Base case: |X| = 2 の場合
-  (h_inductive : ∀ (a : α) (S : Finset α), a ∉ S → S.card ≥ 2 → P S → P (insert a S)) :
-  X.card ≥ 2 → P X :=
-by
-  intro h_size  -- 仮定: |X| ≥ 2
-  induction X using Finset.strongInduction with
-  | empty =>
-    -- |X| = 0 の場合はここに来ない（h_sizeにより除外される）
-    cases h_size
-  | insert x S h_ind ih =>
-    have hS : |S| ≥ 1 := by linarith  -- Sの要素数に関する仮定
-    cases Nat.eq_or_lt_of_le hS with
-    | eq =>
-      -- Base case: |S| = 1 の場合（つまり |X| = 2 の場合）
-      cases S with
-      | cons a t hat =>
-        rw [Finset.insert_eq_of_mem hat]
-        apply h_base x a
-        intro h_eq
-        -- S の要素が異なることを示すための証明
-        -- 省略: x ≠ a の証明
-    | lt =>
-      -- Inductive step: |S| ≥ 2 の場合
-      apply h_inductive x S
-      exact h_ind
-      linarith  -- Sの要素数の仮定から |S| ≥ 2 を導出
-      apply ih hS  -- 帰納法の仮定を適用
-
-
--- Theorem: For IdealFamily with ground set of size n, the normalized degree sum is non-positive.
-theorem normalized_degree_sum_non_positive (F : IdealFamily α) :
-  F.ground.card >= 2 → normalized_degree_sum F.toSetFamily ≤ 0 :=
-by-- Induction on the size of the ground set
-  intros h_card_pos
-  match F.ground.card with
-  | 0 =>
-    -- Base case: ground set is empty, contradiction because ground is nonempty
-    sorry
-  | k + 1 => --帰納法の仮定がどこに入っている？
-    rename_i h_card into h_card_pos
-      -- Inductive step: ground set has n + 1 elements
-    -- Obtain the element v guaranteed by ideal_version_of_frankl_conjecture
-    obtain ⟨v, hv⟩ := ideal_version_of_frankl_conjecture F
-    --#check hv
-    obtain ⟨hv_left, hv_right⟩ := hv
-
-      -- Case 1: G \ {v} is a hyperedge
     classical
-    by_cases hv_hyperedge:(F.sets (F.ground \ {v})) --with hv_hyperedge
-    case pos =>
-        -- Apply the hyperedge_average_have lemma
-        have h_sum_have := (hyperedge_average_have F v hv_left h_card_pos) hv_hyperedge
-        #check h_sum_have
-        -- Use the inductive hypothesis on idealdeletion and contraction
-        have h_idealdeletion :=  (IdealDeletion.idealdeletion F v hv_left h_card_pos)
-        have h_contraction :=  (IdealDeletion.contraction F.toSetFamily v hv_left h_card_pos)
-        --これらが非正であるという帰納法の仮定を使う。今は不等号になっていない。どうやって使うか？
+    by_cases hv_hyperedge:(F.sets (F.ground \ {v}))
+    ·   case pos =>
+        have h_sum_have := (hyperedge_average_have F v hv_left hcard0) hv_hyperedge hv_singleton
+        --have h_idealdeletion := (IdealDeletion.idealdeletion F v hv_left hcard0)
+        --#check sum_have
+        let number_have :=  hyperedge_count_deletion_contraction_have_z F v hv_left hcard0 hv_hyperedge hv_singleton
 
-        -- Since degree satisfies 2 * degree F v ≤ number_of_hyperedges F (Frankl's conjecture),
-        -- we conclude normalized_degree_sum F ≤ 0
-        rw [h_sum_have]
-        linarith [h_idealdeletion, h_contraction, hv_right]
+        simp only [ge_iff_le, tsub_le_iff_right, zero_add, Fdel, Fcont] at h_sum_have number_have 
+        simp only [normalized_degree_sum] at h_sum_have number_have 
+      
+        --今になって考えてみれば、Fin nを使わずにground setの大きさで議論する方法の方が良かった。
+        simp_all only [ge_iff_le, tsub_le_iff_right, zero_add, Nat.cast_add, Nat.cast_one, degreev, number,
+          h_idealdeletion, Fdel, Fcont, h_contraction, total_del, number_del, total_cont, number_cont, total, number_have]
+        linarith
+        /-
+        rw [←h_total_del] at *
+        rw [←h_number_del] at *
+        rw [←h_total_cont] at *
+        rw [←h_number_cont] at *
+        --#check h_cont_card
+        dsimp [Fcont] at h_cont_card
+        --(IdealDeletion.contraction_ideal_family F v hv_singleton hcard0).toSetFamily)　　.. h_contraction2の中身。
+        --number_of_hyperedges (IdealDeletion.contraction F.toSetFamily v hv_left hcard0) ..ゴールはこれ。
+        --でずれている。{x}がhyperedgeと仮定しないとcontraction_ideal_familyに統一できない。ここでは、hv_singletonが仮定されているので問題ない。
+        --idealSumのtheorem hyperedge_average_have {α : Type} [DecidableEq α] [Fintype α]aの言明を変える。
 
-    -- Case 2: G \ {v} is not a hyperedge
-      case neg =>
-      -- Apply the hyperedge_average_none lemma
-        have h_sum_none := hyperedge_average_none F v hv.1 h_card_pos hv_hyperedge
-      -- Use the inductive hypothesis on idealdeletion and contraction
-        have h_idealdeletion := ih (IdealDeletion.idealdeletion F v hv.1 h_card_pos)
-        have h_contraction := ih (IdealDeletion.contraction F.toSetFamily v hv.1 h_card_pos)
+        --rw [←h_total]
+        rw [←h_number] at *
+        rw [←h_degreev] at *
+        --subst degreev
+        --rw [h_idealdeletion2, h_contraction2, sum_have, number_have]
+        rw [hcard] at *
+        rw [hcard1] at * -- (IdealDeletion.idealdeletion F v hv_left hcard0).ground.card = n
+        dsimp [IdealDeletion.contraction_ideal_family] at h_cont_card --(IdealDeletion.contraction F.toSetFamily v ⋯ hcard0).ground.card = n
+        rw [h_cont_card] at *
+        rw [h_cont_card2] at * --↑(total_size_of_hyperedges h_cont✝.toSetFamily) * 2 - ↑(number_of_hyperedges Fcont✝¹.toSetFamily) * ↑n ≤ 0
+        rw [h_cont_card3] at * --(IdealFamily.deletionToN nposi Fcont v Fvx2 h_cont2).ground.card = n
+        clear hcard hcard1 hcard2 hcard3 h_cont_card h_cont_card2 h_cont_card3 hn h_ge2 h_ind hcard0 
+        clear h_contraction hv_hyperedge h_idealdeletion 
+        clear Fvx2 h_cont h_cont2 
 
-        -- From the sum equation and the inductive hypothesis, we conclude normalized_degree_sum F ≤ 0
-        rw [h_sum_none]
-        linarith [h_idealdeletion, h_contraction, hv]
--/
+        linarith --[h_idealdeletion2, h_contraction2, hv_right,sum_have,number_have] hv_rightは使う？
+        -/
+    ·   case neg =>
+        --hv_hyperedge:(F.sets (F.ground \ {v}))が成り立たないケース。hv_singleton : ¬F.sets {v}のケースかも。どちらも未解決。
+        have h_sum_none := hyperedge_average_none F v hv_left hcard0 hv_hyperedge hv_singleton
+        have number_none := hyperedge_count_deletion_contraction_none F v hv_left hcard0 hv_hyperedge hv_singleton
+
+        simp only [ge_iff_le, tsub_le_iff_right, zero_add, Fdel, Fcont] at h_sum_none number_none 
+        simp only [normalized_degree_sum] at h_sum_none number_none
+        simp_all only [ge_iff_le, tsub_le_iff_right, zero_add, Nat.cast_add, Nat.cast_one, degreev, number, h_idealdeletion,
+        Fdel, Fcont, h_contraction, total_del, number_del, total_cont, number_cont, total]
+        linarith
+
+  --case negがもう一つある。hv_singleton:(F.sets {v})が成り立たないケース。
+  --hv_singleton:(F.sets {v})が成り立たないケース。tabでインデントを調整して見えるようになった。
+  · case neg =>
+    have degree_one: degree F.toSetFamily v = 1 := by
+      exact degree_one_if_not_hyperedge F hv_left hv_singleton
+    --次数1があったからといって、normalized_degree_sumが負になるとはすぐに言えない。ただし、次数1があるということは、vは全体集合のみを含む。
+    --goal normalized_degree_sum F.toSetFamily ≤ 0
+    rw [normalized_degree_sum]
+    by_cases hv_hyperedge:(F.sets (F.ground \ {v}))
+    · case pos =>
+      have Fsets: ∀ s ∈ F.ground.powerset, F.sets s ↔ v ∉ s ∨ s = F.ground := by
+        intro s hs
+        simp_all only [ge_iff_le, Nat.reduceLeDiff, Finset.mem_powerset]
+        apply Iff.intro
+        · intro a
+          let ground_assum := (hyperedges_not_through_v F.toSetFamily v hv_left degree_one F.univ_mem) s a
+          tauto
+        · intro a
+          cases a with
+          | inl h => 
+            have sinc: s ⊆ F.ground.erase v := by
+              intro x hx
+              simp_all only [Finset.mem_erase, ne_eq]
+              apply And.intro
+              · apply Aesop.BuiltinRules.not_intro
+                intro a
+                subst a
+                simp_all only
+              · exact hs hx
+            have FsetG: F.sets (F.ground.erase v) := by
+              convert hv_hyperedge
+              ext1 a
+              simp_all only [Finset.mem_erase, ne_eq, Finset.mem_sdiff, Finset.mem_singleton]
+              apply Iff.intro
+              · intro a_1
+                simp_all only [not_false_eq_true, and_self]
+              · intro a_1
+                simp_all only [not_false_eq_true, and_self]
+            have hsng: F.ground.erase v ≠ F.ground := by
+              intro a
+              simp_all only [Finset.erase_eq_self, not_true_eq_false]
+             
+            exact F.down_closed s (F.ground.erase v) FsetG hsng sinc
+          | inr h_1 =>
+            subst h_1
+            simp_all only [subset_refl]
+            exact F.univ_mem
+      
+      --setsが完全に分かったので、normalized_degree_sumを計算する。ファイルを分けるべきかもしれない。
+      have number_eq: number_of_hyperedges F.toSetFamily = 2^(F.ground.card - 1) + 1 := by
+        rw [Ideal.number_of_hyperedges]
+     
+        -- `v` を含まない部分集合を取り出す
+        let A := Finset.filter (λ s=> v ∉ s) F.ground.powerset
+        -- `s = F.ground` を満たす唯一の部分集合を取り出す
+        let B : Finset (Finset (Fin (n + 1))) := {F.ground}
+
+        -- `A` と `B` が互いに素であることを示す
+        have h_disjoint : Disjoint A B :=
+         by
+           rw [Finset.disjoint_iff_ne]
+           intros s₁ hs₁ s₂ hs₂ h_eq
+           rw [Finset.mem_filter] at hs₁
+           have h₁ : v ∉ s₁ := hs₁.2
+           rw [Finset.mem_singleton] at hs₂
+           subst hs₂
+           subst h_eq
+           simp_all only [ge_iff_le, Nat.reduceLeDiff]
+
+        -- `A ∪ B = F.sets` であることを示す
+        have h_union : A ∪ B = Finset.filter F.sets F.ground.powerset :=
+          by
+            rw [Finset.ext]
+            intro s
+            rw [Finset.mem_union, Finset.mem_filter, Finset.mem_filter, Finset.mem_singleton]
+            constructor
+            -- A または B に属する場合
+            intro h
+            cases h
+            simp_all only [ge_iff_le, Nat.reduceLeDiff, Finset.mem_powerset, Finset.singleton_subset_iff,
+              Finset.mem_singleton, not_true_eq_false, false_or, Finset.sdiff_subset, Finset.mem_sdiff, and_false,
+              not_false_eq_true, sdiff_eq_left, Finset.disjoint_singleton_right, or_false, Finset.mem_filter,
+              subset_refl, true_or, and_self, A, B]
+            rename_i h
+            subst h
+            simp_all only [ge_iff_le, Nat.reduceLeDiff, Finset.mem_powerset, Finset.singleton_subset_iff,
+              Finset.mem_singleton, not_true_eq_false, false_or, Finset.sdiff_subset, Finset.mem_sdiff, and_false,
+              not_false_eq_true, sdiff_eq_left, Finset.disjoint_singleton_right, or_false, Finset.mem_filter,
+              subset_refl, or_true, and_self, A, B]
+            -- F.sets に属する場合
+            intro hs
+            simp_all only [ge_iff_le, Nat.reduceLeDiff, Finset.mem_powerset, Finset.singleton_subset_iff,
+              Finset.mem_singleton, not_true_eq_false, false_or, Finset.sdiff_subset, Finset.mem_sdiff, and_false,
+              not_false_eq_true, sdiff_eq_left, Finset.disjoint_singleton_right, or_false, Finset.mem_filter,
+              subset_refl, true_and, A, B]
+            obtain ⟨left, right⟩ := hs
+            simp_all only
+    
+
+        -- `A` のカードは `2 ^ (F.ground.card - 1)` であることを示す
+        have h_A_card : A.card = 2 ^ (F.ground.card - 1) :=
+          by
+            dsimp [A]
+            --rw [Finset.card_filter]
+            have sub_lem: ∀ s :Finset (Fin (n+1)),s ∈ (Finset.filter (fun s => v ∉ s) F.ground.powerset) ↔ s ⊆ F.ground.erase v := by
+              intro s
+              simp_all only [Finset.mem_filter, Finset.mem_powerset]
+              apply Iff.intro
+              intro a
+              simp_all only [ge_iff_le, Nat.reduceLeDiff, Finset.singleton_subset_iff, Finset.mem_singleton,
+                not_true_eq_false, false_or, Finset.sdiff_subset, Finset.mem_sdiff, and_false, not_false_eq_true,
+                sdiff_eq_left, Finset.disjoint_singleton_right, or_false, Finset.mem_filter, Finset.mem_powerset,
+                subset_refl, A, B]
+              obtain ⟨left, right⟩ := a
+              intro x hx
+              simp_all only [Finset.mem_erase, ne_eq]
+              apply And.intro
+              · apply Aesop.BuiltinRules.not_intro
+                intro a
+                subst a
+                simp_all only
+              · exact left hx
+              · intro h
+                simp_all only [ge_iff_le, Nat.reduceLeDiff]
+                exact Finset.subset_erase.mp h
+
+            have sub_lem2: (Finset.filter (fun s => v ∉ s) F.ground.powerset).card = (Finset.filter (fun s => s ⊆ F.ground.erase v) F.ground.powerset).card := by
+              simp_all only [ge_iff_le, Nat.reduceLeDiff, Finset.mem_powerset, Finset.singleton_subset_iff,
+                 Finset.mem_singleton, not_true_eq_false, false_or, Finset.sdiff_subset, Finset.mem_sdiff, and_false,
+                 not_false_eq_true, sdiff_eq_left, Finset.disjoint_singleton_right, or_false, Finset.mem_filter, A, B]
+              apply Finset.card_bij (fun s hs => s)
+
+               (by
+                intro s hs
+                simp_all only [ge_iff_le, Nat.reduceLeDiff, Finset.mem_powerset, Finset.singleton_subset_iff,
+                  Finset.mem_singleton, not_true_eq_false, false_or, Finset.sdiff_subset, Finset.mem_sdiff, and_false,
+                  not_false_eq_true, sdiff_eq_left, Finset.disjoint_singleton_right, or_false, Finset.mem_filter, A, B]
+                constructor
+                rw [Finset.mem_filter] at hs
+                rw [Finset.mem_powerset] at hs
+                exact hs.1
+                simp_all only [Finset.mem_filter, Finset.mem_powerset]
+                
+               )
+               (by
+                intro s hs
+                simp_all only [ge_iff_le, Nat.reduceLeDiff, Finset.mem_powerset, Finset.singleton_subset_iff,
+                  Finset.mem_singleton, not_true_eq_false, false_or, Finset.sdiff_subset, Finset.mem_sdiff, and_false,
+                  not_false_eq_true, sdiff_eq_left, Finset.disjoint_singleton_right, or_false, Finset.mem_filter, A, B]
+                intro a₂ ha₂ a
+                subst a
+                trivial
+                
+               )
+               /-
+               (by --単車性
+                intro s₁ hs₁ s₂ hs₂ h_eq
+                simp_all only [ge_iff_le, Nat.reduceLeDiff, Finset.mem_powerset, Finset.singleton_subset_iff,
+                  Finset.mem_singleton, not_true_eq_false, false_or, Finset.sdiff_subset, Finset.mem_sdiff, and_false,
+                  not_false_eq_true, sdiff_eq_left, Finset.disjoint_singleton_right, or_false, Finset.mem_filter, A, B]
+                exact h_eq
+               )
+               -/
+               (by
+                intro s hs
+                simp_all only [ge_iff_le, Nat.reduceLeDiff, Finset.mem_powerset, Finset.singleton_subset_iff,
+                  Finset.mem_singleton, not_true_eq_false, false_or, Finset.sdiff_subset, Finset.mem_sdiff, and_false,
+                  not_false_eq_true, sdiff_eq_left, Finset.disjoint_singleton_right, or_false, Finset.mem_filter, A, B]
+                constructor
+                simp_all only [exists_prop]
+                apply And.intro
+                on_goal 2 => {rfl
+                }
+                · simp_all only
+               )
+
+            rw [sub_lem2]
+            
+            have h_eq : Finset.filter (fun s => s ⊆ F.ground.erase v) F.ground.powerset = (F.ground.erase v).powerset := by
+               apply Finset.ext
+               intro s
+               constructor
+               { -- (→) s ∈ Finset.filter (s ⊆ FG.erase v) FG.powerset ならば s ∈ (FG.erase v).powerset
+                 intro hs
+                 simp_all only [ge_iff_le, Nat.reduceLeDiff, Finset.mem_powerset, Finset.singleton_subset_iff,
+                   Finset.mem_singleton, not_true_eq_false, false_or, Finset.sdiff_subset, Finset.mem_sdiff,
+                   and_false, not_false_eq_true, sdiff_eq_left, Finset.disjoint_singleton_right, or_false,
+                   Finset.mem_filter, A, B]
+               }
+               { -- (←) s ∈ (FG.erase v).powerset ならば s ∈ Finset.filter (s ⊆ FG.erase v) FG.powerset
+                 intro hs
+                 rw [Finset.mem_powerset] at hs
+                 
+                 rw [Finset.mem_filter]
+                 constructor
+                 { -- s ⊆ FG.erase v
+                    rw [Finset.mem_powerset]
+                    exact (Finset.subset_erase.mp hs).1
+                 }
+                 { -- s ∈ FG.powerset
+                    exact hs
+                 }
+               }
+  
+            -- 2. 冪集合のカーディナリティを計算する
+            rw [h_eq] -- フィルタリングされた集合を FG.erase v の冪集合に置き換える
+            rw [Finset.card_powerset] -- 冪集合のカーディナリティは 2^n
+  
+            -- 3. FG.erase v のカーディナリティが FG.card - 1 であることを示す
+            have h_card : (F.ground.erase v).card = F.ground.card - 1 := Finset.card_erase_of_mem hv_left
+            rw [h_card] -- 2^(FG.erase v).card を 2^(FG.card - 1) に置き換える
+            --intro s
+            
+      
+
+        -- `B` のカードは 1 であることを示す
+        have h_B_card : B.card = 1 := Finset.card_singleton F.ground
+
+        -- 最後に、カードの合計を求める
+        --search_proof h_A_card h_B_card h_disjoint h_union number
+        --rw [←(Finset.card_union), h_disjoint, h_union, h_A_card, h_B_card]
+        rw [←h_union]
+        rw [Finset.card_union_of_disjoint h_disjoint]
+        rw [h_A_card,h_B_card]
+      --ここまででnumberが求まった。これからtotalの方を求める。
+
+      --AとBに分けて、それぞれのtotalを求める。Finset.sum_card_powersetを使う。
+      have total_eq: total_size_of_hyperedges F.toSetFamily = (F.ground.card - 1)*2^(F.ground.card - 2) + F.ground.card := by
+        rw [Ideal.total_degone_card F.toSetFamily v hv_left degree_one F.univ_mem hcard0]
+        simp_all only [ge_iff_le, Nat.reduceLeDiff, Finset.mem_powerset, Finset.singleton_subset_iff, Finset.mem_singleton,
+         not_true_eq_false, false_or, Finset.sdiff_subset, Finset.mem_sdiff, and_false, not_false_eq_true, sdiff_eq_left,
+         Finset.disjoint_singleton_right, or_false, add_tsub_cancel_right, Nat.reduceSubDiff, add_left_inj]
+        --goal (Finset.filter (fun s => F.sets s ∧ v ∉ s) F.ground.powerset).sum Finset.card = n * 2 ^ (n - 1)
+        let A := Finset.filter (λ s=> v ∉ s) F.ground.powerset
+        -- `s = F.ground` を満たす唯一の部分集合を取り出す
+        let B : Finset (Finset (Fin (n + 1))) := {F.ground}
+        have total_lem: (Finset.filter (fun s => F.sets s ∧ v ∉ s) F.ground.powerset) = (F.ground.erase v).powerset := by
+          apply Finset.ext
+          intro s
+          constructor
+          { -- (→) s ∈ Finset.filter (s ⊆ FG.erase v) FG.powerset ならば s ∈ (FG.erase v).powerset
+            intro hs
+            simp_all only [ge_iff_le, Nat.reduceLeDiff, Finset.mem_powerset, Finset.singleton_subset_iff,
+              Finset.mem_singleton, not_true_eq_false, false_or, Finset.sdiff_subset, Finset.mem_sdiff,
+              and_false, not_false_eq_true, sdiff_eq_left, Finset.disjoint_singleton_right, or_false,
+              Finset.mem_filter, A, B]
+            obtain ⟨left, right⟩ := hs
+            obtain ⟨left_1, right⟩ := right
+            simp_all only [not_false_eq_true, true_or]
+            intro x hx
+            simp_all only [Finset.mem_erase, ne_eq]
+            apply And.intro
+            · apply Aesop.BuiltinRules.not_intro
+              intro a
+              subst a
+              simp_all only
+            · exact left hx
+          }
+          { -- (←) s ∈ (FG.erase v).powerset ならば s ∈ Finset.filter (s ⊆ FG.erase v) FG.powerset
+            intro hs
+            rw [Finset.mem_powerset] at hs
+            rw [Finset.mem_filter]
+            constructor
+            { -- s ⊆ FG.erase v
+              rw [Finset.mem_powerset]
+              exact (Finset.subset_erase.mp hs).1
+            }
+            { -- s ∈ FG.powerset
+              
+              let hxg := (Finset.subset_erase.mp hs).1
+              let fx := Fsets s hxg
+              let hxs := (Finset.subset_erase.mp hs).2
+              constructor
+              exact fx.mpr (Or.inl hxs)
+              exact hxs
+            }
+          }
+        rw [total_lem]
+
+        have formula  :(F.ground.erase v).powerset.sum Finset.card = (F.ground.erase v).card * 2 ^ ((F.ground.erase v).card - 1) :=
+          by
+            
+           -- 各要素が 2^(FG.card - 1) 回出現することを利用。hv_left : v ∈ F.groundも使うかも。
+           --rw [← Finset.sum_const_nat]
+           
+           simp [Finset.card_powerset, mul_comm]
+           --goal (F.ground.erase v).powerset.sum Finset.card = n * 2 ^ (n - 1)
+        --#check Finset.sum_powersetCard
+        --convert Finset.sum_powersetCard (F.ground.erase v)
+
+        
+
+        
+          
+
+    simp only [ge_iff_le, tsub_le_iff_right, zero_add, Nat.cast_add, Nat.cast_one] at hv_singleton degree_one ⊢ 
+    --lemma total_degone_card {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) (v : α) (hv: v ∈ F.ground) (deg1: degree F v = 1) (hasGround: F.sets F.ground)(gcard: F.ground.card ≥ 2) :
+    --total_size_of_hyperedges F = (F.ground.powerset.filter (λ s => F.sets s ∧ v ∉ s )).sum Finset.card + F.ground.card 
+    rw [Ideal.total_degone_card F.toSetFamily v hv_left degree_one F.univ_mem hcard0]
+    rw [Ideal.erase_ground_card F.toSetFamily v hv_left degree_one]
+    let delF := IdealDeletion.deletion F.toSetFamily v hv_left hcard0
+    have hvf: v ∉ delF.ground := by
+      intro h
+      simp_all only [ge_iff_le]
+      dsimp [delF] at h
+      rw [IdealDeletion.deletion] at h
+      simp_all only [Finset.mem_erase, ne_eq, not_true_eq_false, and_true]
+    have hcard1: delF.ground.card = n := by
+      simp_all only [ge_iff_le]
+      simp_all only [delF]
+      rw [IdealDeletion.idealdeletion]
+      simp_all only [Finset.card_erase_of_mem, add_tsub_cancel_right]
+    have hcard2: delF.ground.card ≥ 1 := by
+      simp_all only [ge_iff_le, delF]
+
+    let ineq := h_ind  (@IdealFamily.deletionToN (Fin n) n nposi delF v hvf hcard2) (by
+      simp_all only [ge_iff_le]
+      simp_all only [IdealFamily.deletionToN]
+      simp_all only [ge_iff_le, delF]
+      -- hcard F.ground.card = n + 1
+      --#check Ideal.IdealDeletion.ground_deletion F v hv_left hcard0
+      --(IdealDeletion.idealdeletion F v hv_left hcard0).ground.card = F.ground.card - 1
+      --#check finDropCardEq nposi v (IdealDeletion.idealdeletion F v hv_left hcard0).ground hvf
+      --Ideal.finDropCardEq {n : ℕ} (nposi : n ≥ 1) (v : Fin (n + 1)) (s : Finset (Fin (n + 1))) (hvx : v ∉ s) :
+      -- (Finset.image (finDrop nposi v) s).card = s.card - 1
+      calc
+        (Finset.image (finDrop nposi v) (IdealDeletion.idealdeletion F v hv_left hcard0).ground).card
+      = ((IdealDeletion.idealdeletion F v hv_left hcard0).ground).card := by
+          exact finDropCardEq nposi v (IdealDeletion.idealdeletion F v hv_left hcard0).ground hvf
+    _ = n := by
+          simp_all only [ge_iff_le]
+    )
+    rw [normalized_degree_sum] at ineq
+    simp only [ge_iff_le, tsub_le_iff_right, zero_add, Nat.cast_add, Nat.cast_one] at ineq
+    --rw [Ideal.total_degone_card] at ineq
+    --Fin nとFin n+1の変換にIdealFamily.deletionToN_numberは必要かも。不等式系はFin n+1の世界にそろえればいいか。
+    rw [IdealFamily.deletionToN_number nposi delF v hvf hcard2] at ineq
+    --ineqの方の変数と、ゴールの方の変数が同じものを指すものがあるので、それを補題として示す。
+    --集合族のレベルでなく数のレベルで示すとなると、また全単車を構成する必要がある。既存の定理が利用できないか。
+    have total_eq: total_size_of_hyperedges (@IdealFamily.deletionToN (Fin n) n nposi delF v hvf hcard2).toSetFamily = (Finset.filter (fun s => v ∉ s ∧ F.sets s) F.ground.powerset).sum Finset.card := by
+      simp_all only [ge_iff_le]
+      --simp_all only [IdealFamily.deletionToN]
+      rw [deletion_total]
+      dsimp [delF]
+      dsimp [total_size_of_hyperedges]
+      dsimp [IdealDeletion.idealdeletion]
+
+      simp_all only [ge_iff_le, delF]
+      --#check Ideal.total_degone_card
+      --Ideal.total_degone_card {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) (v : α) (hv: v ∈ F.ground) (deg1: degree F v = 1) (hasGround: F.sets F.ground)(gcard: F.ground.card ≥ 2) :
+      --total_size_of_hyperedges F = (F.ground.powerset.filter (λ s => F.sets s ∧ v ∉ s )).sum Finset.card + F.ground.card 
+      dsimp [total_size_of_hyperedges]
+      dsimp [IdealFamily.deletionToN]
+      
+      --(imageEq_card nposi F.toSetFamily v)はcardなのでsumでは使えない。imageEqのsum版なのでsum_bijが必要かも。その他の方法が思い浮かばない。
+      apply sum_bij
+      --bijective関係の証明
+       fun s => finDrop nposi v s
+      --goal ∀ (a : Finset (Fin n)) (ha : a ∈ (Finset.filter (λ (s : Finset (Fin (n + 1))), F.sets s) (F.ground.powerset)), finDrop nposi v a ∈ (Finset.filter (λ (s : Finset (Fin n)), F.sets s ∧ v ∉ s) (F.ground.powerset))
+       intro s hs
+       simp_all only [Finset.mem_filter, Finset.mem_powerset, and_imp, and_self, implies_true, and_true, Finset.mem_image, Finset.mem_powerset, not_exists, not_and]
+
 end Ideal
