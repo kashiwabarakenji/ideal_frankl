@@ -414,4 +414,28 @@ instance contraction_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x}
     exact thisF_setsA
 }
 
+omit [Nonempty α] in
+lemma ground_deletion  (F : IdealFamily α) (x : α) (hx: x ∈ F.ground) (gcard: F.ground.card ≥ 2):
+  (idealdeletion F x hx gcard).ground.card = F.ground.card - 1 :=
+
+  by
+    rw [idealdeletion]
+    rw [Finset.card_erase_of_mem hx]
+
+omit [Nonempty α] in
+lemma ground_contraction  (F : IdealFamily α) (x : α) (hx: x ∈ F.ground) (gcard: F.ground.card ≥ 2):
+  (contraction F.toSetFamily x hx gcard).ground.card = F.ground.card - 1 :=
+  by
+    rw [contraction]
+    rw [Finset.card_erase_of_mem hx]
+
+omit [Nonempty α] in
+lemma ground_contraction_family  (F : IdealFamily α) (x : α) (gcard: F.ground.card ≥ 2)(hx_singleton: F.sets {x}):
+  (contraction_ideal_family F x hx_singleton gcard).ground.card = F.ground.card - 1 :=
+  by
+    rw [contraction_ideal_family]
+    rw [ground_contraction]
+
+
+
 end Ideal.IdealDeletion

@@ -154,3 +154,5 @@ theorem degree_one_if_not_hyperedge {α : Type} {x :α} [DecidableEq α] [Fintyp
         exact h1
         trivial
     simp_all only [eq_iff_iff, iff_true, Finset.card_singleton, relevant_sets]
+
+

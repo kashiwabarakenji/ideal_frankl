@@ -9,8 +9,9 @@ import Ideal.BasicDefinitions
 import Ideal.BasicLemmas
 import Ideal.IdealDeletion
 import Ideal.IdealSumBasic
+import Ideal.IdealNumbers
 import LeanCopilot
-set_option maxHeartbeats 1000000
+--set_option maxHeartbeats 1000000
 
 namespace Ideal
 
@@ -181,10 +182,12 @@ by
 ---F.sets (F.ground \ {x}))が成り立つかどうかでidealdeletionとdeletionの関係を書く。TODO:
 theorem hyperedge_totalsize_deletion_contraction{α : Type} [DecidableEq α] [Fintype α]
   (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (gcard: F.ground.card ≥ 2)
-  [DecidablePred F.sets]  :
-  total_size_of_hyperedges F.toSetFamily =
-  total_size_of_hyperedges (IdealDeletion.deletion F.toSetFamily x hx gcard)  +
-  total_size_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard) + degree F.toSetFamily x:=
+  [DecidablePred F.sets] (hx_singleton :F.sets {x}) :
+  ((total_size_of_hyperedges F.toSetFamily):ℤ) =
+  ((total_size_of_hyperedges (IdealDeletion.deletion F.toSetFamily x hx gcard)):ℤ)  +
+  --((total_size_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard)):ℤ)
+  ((total_size_of_hyperedges (IdealDeletion.contraction_ideal_family F x hx_singleton gcard).toSetFamily:ℤ))
+  + ((degree F.toSetFamily x):ℤ):=
 by
     have sub1 :  total_size_of_hyperedges { F with sets := λ s => F.sets s ∧ x ∈ s, inc_ground := λ s hs => F.inc_ground s (hs.1) } =
     (Finset.filter (λ s => F.sets s ∧ x ∈ s) (Finset.powerset F.ground)).sum Finset.card := by
@@ -208,10 +211,11 @@ by
       exact hx
 
     calc
-      total_size_of_hyperedges F.toSetFamily
-          = total_size_of_hyperedges { F with sets := λ s => F.sets s ∧ x ∈ s, inc_ground := λ s hs => F.inc_ground s (hs.1) } +
-            total_size_of_hyperedges { F with sets := λ s => F.sets s ∧ x ∉ s, inc_ground := λ s hs => F.inc_ground s (hs.1) } := by
+      ((total_size_of_hyperedges F.toSetFamily:ℤ))
+          = ((total_size_of_hyperedges { F with sets := λ s => F.sets s ∧ x ∈ s, inc_ground := λ s hs => F.inc_ground s (hs.1) }):ℤ) +
+            ((total_size_of_hyperedges { F with sets := λ s => F.sets s ∧ x ∉ s, inc_ground := λ s hs => F.inc_ground s (hs.1) }):ℤ) := by
               rw [←(sum_partition_by_v F.toSetFamily x)]
+              simp_all only [Nat.cast_add, Nat.cast_sum]
        _  = (Finset.filter (λ s => F.sets s ∧ x ∈ s) (Finset.powerset F.ground)).sum Finset.card +
             (Finset.filter (λ s => F.sets s ∧ x ∉ s) (Finset.powerset F.ground)).sum Finset.card := by
               rw [sub1]
@@ -219,6 +223,7 @@ by
        _  = degree F.toSetFamily x + (Finset.filter (λ s => ∃ H, F.sets H ∧ x ∈ H ∧ s = H.erase x) (Finset.powerset (F.ground.erase x))).sum Finset.card +
             (Finset.filter (λ s => F.sets s ∧ x ∉ s) (Finset.powerset F.ground)).sum Finset.card := by
               rw [sum_of_size_eq_degree_plus_contraction_sum F.toSetFamily x gcard]
+              simp_all only [Nat.cast_add, Nat.cast_sum]
        _  = degree F.toSetFamily x + total_size_of_hyperedges  (IdealDeletion.contraction F.toSetFamily x hx gcard)
                + (Finset.filter (λ s => F.sets s ∧ x ∉ s) (Finset.powerset F.ground)).sum Finset.card := by
               rw [sub3]
@@ -299,6 +304,17 @@ theorem hyperedge_totalsize_deletion_contraction_have {α : Type} [DecidableEq �
        _  = total_size_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily +
             total_size_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard) +(degree F.toSetFamily x):= by
               ring
+
+
+theorem hyperedge_totalsize_deletion_contraction_have_z {α : Type} [DecidableEq α] [Fintype α]
+  (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (gcard: F.ground.card ≥ 2)
+  [DecidablePred F.sets] (hx_hyperedge : F.sets (F.ground \ {x})) :
+  ((total_size_of_hyperedges F.toSetFamily):ℤ) =
+  ((total_size_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily):ℤ)   +
+  ((total_size_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard)):ℤ)  + ((degree F.toSetFamily x):ℤ):=
+  by
+    rw [hyperedge_totalsize_deletion_contraction_have F x hx gcard hx_hyperedge]
+    congr
 
 omit [Fintype α] [Nonempty α] in
 theorem filter_powerset_sum {A : Finset α} (h : x ∈ A):
@@ -569,67 +585,229 @@ lemma ideal_and_deletion {α : Type} [DecidableEq α] [Fintype α] (F : IdealFam
       h_rhs1, h_lhs_e, h_rhs_e, h_rhs0_e]
     convert goal_e
 
+lemma ideal_and_deletion_z {α : Type} [DecidableEq α] [Fintype α] (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (gcard: F.ground.card ≥ 2) (hx_hyperedge_not : ¬ F.sets (F.ground \ {x})) :
+  (total_size_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily:ℤ) = (total_size_of_hyperedges (IdealDeletion.deletion F.toSetFamily x hx gcard):ℤ) + ((F.ground.card:ℤ) - 1):=
+  by
+    rw [ideal_and_deletion F x hx gcard hx_hyperedge_not]
+    simp_all
+    rw [Int.natCast_sub]
+    simp_all only [ge_iff_le, Nat.cast_one]
+    exact Nat.le_of_succ_le gcard
 
 theorem hyperedge_totalsize_deletion_contraction_none {α : Type} [DecidableEq α] [Fintype α]
   (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (gcard: F.ground.card ≥ 2)
-  [DecidablePred F.sets] (hx_hyperedge_not : ¬ F.sets (F.ground \ {x})) :
-  total_size_of_hyperedges F.toSetFamily + (F.ground.card - 1)=
-  total_size_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily  +
-  total_size_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard) + degree F.toSetFamily x :=
+  [DecidablePred F.sets] (hx_hyperedge_not : ¬ F.sets (F.ground \ {x})) (hx_singleton : F.sets {x}) :
+  ((total_size_of_hyperedges F.toSetFamily):ℤ) + ((F.ground.card:ℤ) - 1)=
+  (total_size_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily:ℤ)  +
+  (total_size_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard):ℤ) + ((degree F.toSetFamily x):ℤ) :=
   by
     calc
-      (total_size_of_hyperedges F.toSetFamily) + (F.ground.card - 1)
-          = total_size_of_hyperedges (IdealDeletion.deletion F.toSetFamily x hx gcard)  +
-            total_size_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard) + degree F.toSetFamily x + (F.ground.card - 1) := by
-             rw [hyperedge_totalsize_deletion_contraction F x hx gcard]
+      ((total_size_of_hyperedges F.toSetFamily):ℤ) + ((F.ground.card:ℤ) - 1)
+          = (total_size_of_hyperedges (IdealDeletion.deletion F.toSetFamily x hx gcard):ℤ)  +
+            (total_size_of_hyperedges (IdealDeletion.contraction_ideal_family F x hx_singleton gcard).toSetFamily:ℤ) + ((degree F.toSetFamily x):ℤ) + ((F.ground.card:ℤ) - 1) := by
+             rw [hyperedge_totalsize_deletion_contraction F x hx gcard hx_singleton]
 
-       _  = (total_size_of_hyperedges (IdealDeletion.deletion F.toSetFamily x hx gcard)  + (F.ground.card - 1)) +
-            total_size_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard) + degree F.toSetFamily x  := by
+       _  = ((total_size_of_hyperedges (IdealDeletion.deletion F.toSetFamily x hx gcard):ℤ)  + ((F.ground.card:ℤ) - 1)) +
+            (total_size_of_hyperedges (IdealDeletion.contraction_ideal_family F x hx_singleton gcard).toSetFamily:ℤ) + ((degree F.toSetFamily x ):ℤ) := by
              ring
 
-       _  = total_size_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily  +
-            total_size_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard) + degree F.toSetFamily x := by
-              simp_all only [ideal_and_deletion F x hx gcard hx_hyperedge_not]
-/-
+       _  = ((total_size_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily):ℤ)  +
+            (total_size_of_hyperedges (IdealDeletion.contraction_ideal_family F x hx_singleton gcard).toSetFamily:ℤ) + ((degree F.toSetFamily x):ℤ) := by
+              simp_all only [ideal_and_deletion_z F x hx gcard hx_hyperedge_not]
+
+omit [Nonempty α] in
+lemma conv_deletion (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (gcard: F.ground.card ≥ 2) :
+   normalized_degree_sum (IdealDeletion.idealdeletion F x hx gcard).toSetFamily =2*total_size_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily  - (IdealDeletion.idealdeletion F x hx gcard).toSetFamily.ground.card*number_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily :=
+  by
+    rw [normalized_degree_sum]
+    simp_all
+    ring_nf
+
+omit [Nonempty α] in
+lemma conv_contraction (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (gcard: F.ground.card ≥ 2) :
+   normalized_degree_sum (IdealDeletion.contraction F.toSetFamily x hx gcard) =2*total_size_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard)  - (IdealDeletion.contraction F.toSetFamily x hx gcard).ground.card*number_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard) :=
+  by
+    rw [normalized_degree_sum]
+    simp_all
+    ring_nf
+
+omit [Nonempty α] in
+lemma conv_contraction_family (F : IdealFamily α) (x : α) (gcard: F.ground.card ≥ 2)(hx_singleton: F.sets {x}) :
+   normalized_degree_sum (IdealDeletion.contraction_ideal_family F x hx_singleton gcard).toSetFamily =2*total_size_of_hyperedges (IdealDeletion.contraction_ideal_family F x hx_singleton gcard).toSetFamily  - (IdealDeletion.contraction_ideal_family F x hx_singleton gcard).ground.card*number_of_hyperedges (IdealDeletion.contraction_ideal_family F x hx_singleton gcard).toSetFamily :=
+  by
+    rw [normalized_degree_sum]
+    simp_all
+    ring_nf
+
+
 theorem hyperedge_average_none {α : Type} [DecidableEq α] [Fintype α]
   (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (gcard: F.ground.card ≥ 2)
-  [DecidablePred F.sets] (hx_hyperedge_not : ¬ F.sets (F.ground \ {x})) :
-  normalized_degree_sum F.toSetFamily + 2*(F.ground.card - 1)=
+  [DecidablePred F.sets] (hx_hyperedge_not : ¬ F.sets (F.ground \ {x})) (hx_singleton : F.sets {x}) :
+  normalized_degree_sum F.toSetFamily + (F.ground.card:ℤ)=
   normalized_degree_sum (IdealDeletion.idealdeletion F x hx gcard).toSetFamily  +
-  normalized_degree_sum (IdealDeletion.contraction F.toSetFamily x hx gcard) + 2*degree F.toSetFamily - number_of_hyperedges F.toSetFamily :=
+  --normalized_degree_sum (IdealDeletion.contraction F.toSetFamily x hx gcard)
+  normalized_degree_sum (IdealDeletion.contraction_ideal_family F x hx_singleton gcard).toSetFamily
+  + 2*((degree F.toSetFamily x):ℤ) - ((number_of_hyperedges F.toSetFamily):ℤ) + 1 :=
   by
-    have sub: normalized_degree_sum ((IdealDeletion.idealdeletion F x hx gcard).toSetFamily) = (2*total_size_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily  - (F.ground.card - 1)*number_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily):=
-      by
-        rw [normalized_degree_sum]
-        simp_all
-        ring_nf
-
-
-
+    --#check hyperedge_totalsize_deletion_contraction_none F x hx gcard hx_hyperedge_not
+    --#check hyperedge_count_deletion_contraction_none_z F x hx gcard hx_hyperedge_not
 
     calc
-     normalized_degree_sum F.toSetFamily + 2*(F.ground.card - 1)
-    = 2*total_size_of_hyperedges F.toSetFamily - (F.ground.card)*number_of_hyperedges F.toSetFamily + 2*(F.ground.card - 1) :=
-      by dsimp [normalized_degree_sum]
-  _ = 2*(total_size_of_hyperedges F.toSetFamily + (F.ground.card - 1)) - (F.ground.card)*number_of_hyperedges F.toSetFamily := by
-    ring
-  _ = 2*(total_size_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily  +
-            total_size_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard) + degree F.toSetFamily x) - (F.ground.card)*number_of_hyperedges F.toSetFamily := by
-    rw [hyperedge_totalsize_deletion_contraction_none F x hx gcard hx_hyperedge_not]
-  _ = 2*(total_size_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily) +
-            2*(total_size_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard)) + 2*(degree F.toSetFamily x)- (F.ground.card)*((number_of_hyperedges F.toSetFamily+1)-1) := by
+     normalized_degree_sum F.toSetFamily + (F.ground.card:ℤ)
+    = 2*((total_size_of_hyperedges F.toSetFamily):ℤ) - (F.ground.card:ℤ)*((number_of_hyperedges F.toSetFamily):ℤ) + (F.ground.card:ℤ) :=
+      by
+        dsimp [normalized_degree_sum]
+        simp_all
+        ring_nf
+        have comm0: (F.ground.card:ℤ)*(number_of_hyperedges F.toSetFamily:ℤ) = (number_of_hyperedges F.toSetFamily:ℤ)*(F.ground.card:ℤ) := by
+         ring_nf
+        rw [comm0]
+        rw [sub_eq_add_neg]
+        rw [add_comm]
+        congr
+  _ = 2*((total_size_of_hyperedges F.toSetFamily:ℤ) + ((F.ground.card:ℤ) - 1)) - (F.ground.card:ℤ)*(number_of_hyperedges F.toSetFamily:ℤ) - (F.ground.card:ℤ) + 2:= by
+    ring_nf
+    -- 2*(F.ground.card - 1) >=
+  _ = 2*(((total_size_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily):ℤ)  +
+            (total_size_of_hyperedges (IdealDeletion.contraction_ideal_family F x hx_singleton gcard).toSetFamily:ℤ) + ((degree F.toSetFamily x):ℤ)) - (F.ground.card:ℤ)*((number_of_hyperedges F.toSetFamily):ℤ)  - (F.ground.card:ℤ) + 2:= by
+      rw [hyperedge_totalsize_deletion_contraction_none F x hx gcard hx_hyperedge_not hx_singleton]
+      simp_all only [add_left_inj, sub_left_inj, mul_eq_mul_left_iff, add_right_inj, Nat.cast_inj,
+        OfNat.ofNat_ne_zero, or_false]
+      rfl
+
+  _ = 2*((total_size_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily):ℤ) +
+            2*((total_size_of_hyperedges (IdealDeletion.contraction_ideal_family F x hx_singleton gcard).toSetFamily):ℤ) + 2*((degree F.toSetFamily x):ℤ) - ((F.ground.card):ℤ)*((((number_of_hyperedges F.toSetFamily):ℤ)+1)-1) - (F.ground.card:ℤ) + 2 := by
+            simp_all only [add_sub_cancel_right, add_left_inj, sub_left_inj]
             ring
-  _ =  2*total_size_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily  +
-            2*total_size_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard) + 2*(degree F.toSetFamily x)
-             - (F.ground.card)*(number_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily  +  number_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard)-1) := by
-              rw [hyperedge_count_deletion_contraction_none F x hx gcard hx_hyperedge_not]
-  --number_of_hyperedges F.toSetFamily + 1=  number_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily  +  number_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard)
-  _= (2*total_size_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily  - (F.ground.card - 1)*number_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily)
-     + (2*total_size_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard) - (F.ground.card - 1)*number_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard))
-       +2*(degree F.toSetFamily x)-(number_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily - number_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard))
-       + (F.ground.card - 1) := by ring
+
+  _ =  2*((total_size_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily):ℤ)  +
+            2*((total_size_of_hyperedges (IdealDeletion.contraction_ideal_family F x hx_singleton gcard).toSetFamily):ℤ) + 2*((degree F.toSetFamily x):ℤ)
+             - ((F.ground.card):ℤ)*((number_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily:ℤ)  +  (((number_of_hyperedges (IdealDeletion.contraction_ideal_family F x hx_singleton gcard).toSetFamily):ℤ)-1)) - (F.ground.card:ℤ) + 2:= by
+            rw [hyperedge_count_deletion_contraction_none_z F x hx gcard hx_hyperedge_not hx_singleton]
+            simp_all only [add_left_inj, sub_left_inj, sub_right_inj, mul_eq_mul_left_iff, Nat.cast_eq_zero,
+              Finset.card_eq_zero]
+            apply Or.inl
+            ring
+  _ = (2*((total_size_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily):ℤ)  - ((F.ground.card:ℤ) - 1)*((number_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily):ℤ))
+     + (2*((total_size_of_hyperedges (IdealDeletion.contraction_ideal_family F x hx_singleton gcard).toSetFamily):ℤ) - ((F.ground.card:ℤ) - 1)*((number_of_hyperedges (IdealDeletion.contraction_ideal_family F x hx_singleton gcard).toSetFamily):ℤ))
+       +2*((degree F.toSetFamily x):ℤ)-((number_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily):ℤ) - ((number_of_hyperedges (IdealDeletion.contraction_ideal_family F x hx_singleton gcard).toSetFamily):ℤ)
+       + 2:= by
+          simp_all only [add_left_inj]
+          ring_nf
+
+  _ = (2*((total_size_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily):ℤ)  - (((IdealDeletion.idealdeletion F x hx gcard).toSetFamily.ground.card):ℤ)*((number_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily):ℤ))
+     + (2*((total_size_of_hyperedges (IdealDeletion.contraction_ideal_family F x hx_singleton gcard).toSetFamily):ℤ) - (((IdealDeletion.contraction_ideal_family F x hx_singleton gcard).ground.card:ℤ))*((number_of_hyperedges (IdealDeletion.contraction_ideal_family F x hx_singleton gcard).toSetFamily):ℤ))
+       +2*((degree F.toSetFamily x):ℤ)-((number_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily):ℤ) - ((number_of_hyperedges (IdealDeletion.contraction_ideal_family F x hx_singleton gcard).toSetFamily):ℤ)
+        + 2:= by
+         rw [IdealDeletion.ground_deletion]
+
+         rw [IdealDeletion.ground_contraction_family]
+         congr
+         simp_all only [ge_iff_le]
+         omega
+         simp_all only [ge_iff_le]
+         omega
   _ = normalized_degree_sum ((IdealDeletion.idealdeletion F x hx gcard).toSetFamily)  +
-            normalized_degree_sum (IdealDeletion.contraction F.toSetFamily x hx gcard) + 2*degree F.toSetFamily - number_of_hyperedges F.toSetFamily := by
-            simp_all only [normalized_degree_sum]
--/
+          normalized_degree_sum (IdealDeletion.contraction_ideal_family F x hx_singleton gcard).toSetFamily  +2*((degree F.toSetFamily x):ℤ)
+          -(number_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily + number_of_hyperedges (IdealDeletion.contraction_ideal_family F x hx_singleton gcard).toSetFamily)
+          + 2:= by
+           simp_all only [conv_deletion, conv_contraction_family]
+           ring_nf
+  _ = normalized_degree_sum ((IdealDeletion.idealdeletion F x hx gcard).toSetFamily)  +
+          normalized_degree_sum (IdealDeletion.contraction F.toSetFamily x hx gcard)
+          +2*((degree F.toSetFamily x):ℤ) - (((number_of_hyperedges F.toSetFamily):ℤ)+1) + 2:= by
+           rw [←(hyperedge_count_deletion_contraction_none_z F x hx gcard hx_hyperedge_not hx_singleton)]
+           simp_all only [add_left_inj, sub_left_inj, add_right_inj]
+           rfl
+  _ = normalized_degree_sum (IdealDeletion.idealdeletion F x hx gcard).toSetFamily  +
+       normalized_degree_sum (IdealDeletion.contraction F.toSetFamily x hx gcard)
+       +2*((degree F.toSetFamily x):ℤ) - ((number_of_hyperedges F.toSetFamily):ℤ) + 1 :=
+        by
+          ring_nf
+
+  --{x}がhyperedgeと仮定しないとIdealDeletion.contraction_ideal_familyに揃えられない。
+  theorem hyperedge_average_have {α : Type} [DecidableEq α] [Fintype α]
+  (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (gcard: F.ground.card ≥ 2)
+  [DecidablePred F.sets] (hx_hyperedge : F.sets (F.ground \ {x})) (hx_singleton : F.sets {x}) :
+  normalized_degree_sum F.toSetFamily =
+  normalized_degree_sum (IdealDeletion.idealdeletion F x hx gcard).toSetFamily  +
+  --normalized_degree_sum (IdealDeletion.contraction F.toSetFamily x hx gcard)
+  normalized_degree_sum (IdealDeletion.contraction_ideal_family F x hx_singleton gcard).toSetFamily
+  +2*((degree F.toSetFamily x):ℤ) - ((number_of_hyperedges F.toSetFamily):ℤ) :=
+  by
+    --#check hyperedge_count_deletion_contraction_have_z F x hx gcard hx_hyperedge
+    calc
+     normalized_degree_sum F.toSetFamily
+    = 2*((total_size_of_hyperedges F.toSetFamily):ℤ) - (F.ground.card:ℤ)*((number_of_hyperedges F.toSetFamily):ℤ) :=
+      by
+        dsimp [normalized_degree_sum]
+        simp_all
+        ring_nf
+        have comm0: (F.ground.card:ℤ)*(number_of_hyperedges F.toSetFamily:ℤ) = (number_of_hyperedges F.toSetFamily:ℤ)*(F.ground.card:ℤ) := by
+         ring_nf
+        rw [comm0]
+        rw [sub_eq_add_neg]
+        rw [add_comm]
+        congr
+  _ = 2*((total_size_of_hyperedges F.toSetFamily:ℤ) + ((F.ground.card:ℤ) - 1)) - (F.ground.card:ℤ)*((number_of_hyperedges F.toSetFamily):ℤ) - 2*(F.ground.card:ℤ) + 2:= by
+    ring_nf
+  _ = 2*(((total_size_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily):ℤ)  +
+            ((total_size_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard)):ℤ) + ((degree F.toSetFamily x):ℤ) + ((F.ground.card:ℤ) - 1))
+            - (F.ground.card:ℤ)*((number_of_hyperedges F.toSetFamily):ℤ) - 2*(F.ground.card:ℤ) + 2:= by
+              rw [hyperedge_totalsize_deletion_contraction_have_z F x hx gcard hx_hyperedge]
+  _ = 2*((total_size_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily):ℤ) + 2*((total_size_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard)):ℤ)
+      + 2*  ((degree F.toSetFamily x):ℤ)  - (F.ground.card:ℤ)*((number_of_hyperedges F.toSetFamily):ℤ) :=
+      by
+        ring_nf
+  _ =  2*((total_size_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily):ℤ)  + 2*((total_size_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard)):ℤ)
+      + 2*((degree F.toSetFamily x):ℤ)
+      - ((F.ground.card):ℤ)*(((number_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily):ℤ)  +  ((number_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard)):ℤ)) :=
+             by
+               rw [hyperedge_count_deletion_contraction_have_z F x hx gcard hx_hyperedge hx_singleton]
+               simp_all only [sub_right_inj, mul_eq_mul_left_iff, add_right_inj, Nat.cast_inj, Nat.cast_eq_zero,
+                 Finset.card_eq_zero]
+               apply Or.inl
+               rfl
+  _ = 2*((total_size_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily):ℤ) -  (((F.ground.card):ℤ) - 1)*((number_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily):ℤ)
+     + 2*((total_size_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard)):ℤ) - (((F.ground.card):ℤ) - 1)*((number_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard)):ℤ)
+     + 2*((degree F.toSetFamily x):ℤ) - ((number_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily):ℤ) - ((number_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard)):ℤ) :=
+     by
+       ring_nf
+  _ = 2*((total_size_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily):ℤ) - (((IdealDeletion.idealdeletion F x hx gcard).toSetFamily.ground.card:ℤ))*((number_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily):ℤ)
+     + 2*((total_size_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard)):ℤ) - (((IdealDeletion.contraction F.toSetFamily x hx gcard).ground.card:ℤ))*((number_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard)):ℤ)
+     + 2*((degree F.toSetFamily x):ℤ) - ((number_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily):ℤ) - ((number_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard)):ℤ) :=
+     by
+       rw [IdealDeletion.ground_deletion]
+       rw [IdealDeletion.ground_contraction]
+       congr
+       simp_all only [ge_iff_le]
+       omega
+       simp_all only [ge_iff_le]
+       omega
+  _ = normalized_degree_sum ((IdealDeletion.idealdeletion F x hx gcard).toSetFamily)  +
+          normalized_degree_sum (IdealDeletion.contraction F.toSetFamily x hx gcard)
+          +2*((degree F.toSetFamily x):ℤ)
+          -(number_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily + number_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard)) :=
+        by
+          simp_all only [conv_deletion, conv_contraction]
+          ring_nf
+  _ = normalized_degree_sum ((IdealDeletion.idealdeletion F x hx gcard).toSetFamily)  + normalized_degree_sum (IdealDeletion.contraction F.toSetFamily x hx gcard)
+       +2*((degree F.toSetFamily x):ℤ) - ((number_of_hyperedges F.toSetFamily):ℤ) :=
+        by
+          rw [hyperedge_count_deletion_contraction_have_z F x hx gcard hx_hyperedge hx_singleton]
+          simp_all only [sub_right_inj, add_right_inj, Nat.cast_inj]
+          rfl
+  _ = normalized_degree_sum (IdealDeletion.idealdeletion F x hx gcard).toSetFamily  +
+       normalized_degree_sum (IdealDeletion.contraction F.toSetFamily x hx gcard)
+       +2*((degree F.toSetFamily x):ℤ) - ((number_of_hyperedges F.toSetFamily):ℤ) :=
+        by
+          ring_nf
+
+
+
+
+
+
+
+
 end Ideal

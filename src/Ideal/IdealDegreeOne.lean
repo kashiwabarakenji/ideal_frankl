@@ -93,6 +93,32 @@ lemma hyperedges_not_through_v {α : Type} [DecidableEq α] [Fintype α]
   rw [deg1 ] at deg2
   contradiction
 
+lemma degree_one_hyperedges_partition {α : Type} [DecidableEq α] [Fintype α]
+  (F : IdealFamily α) (x : α) (hx: x ∈ F.ground) (h_not_hyperedge : ¬ F.sets {x}):
+   ∀ (s:Finset α), (F.sets s) → ((s ≠ F.ground) ↔ x ∉ s) := by
+  intro s hs
+  apply Iff.intro
+  · intro h
+    by_contra h2
+    have h3 := hyperedges_not_through_v F.toSetFamily x hx (degree_one_if_not_hyperedge F hx h_not_hyperedge) F.univ_mem s hs h
+    contradiction
+  · intro h
+    simp_all only [ne_eq]
+    apply Aesop.BuiltinRules.not_intro
+    intro a
+    subst a
+    simp_all only
+
+lemma degree_one_hyperedges_partition2 {α : Type} [DecidableEq α] [Fintype α]
+  (F : IdealFamily α) (x : α) (hx: x ∈ F.ground):
+   ∀ (s:Finset α),  s ∈ F.ground.powerset → ¬ ((x ∉ s ∧ F.sets s) ∧ (s = F.ground)):= by
+  intro s
+  intro sf
+  by_contra h
+  obtain ⟨h1, h2⟩ := h
+  subst h2
+  simp_all only
+
 --次数が1である性質でいえること。本来は、次数が1なので、全体集合以外は、traceしてもhyperedgeの数も大きさもかわらないことを証明すればよい。
 --lemma degree_one_property {α : Type} [DecidableEq α] [Fintype α]
 --  (F : SetFamily α) (x : α) (hx: x ∈ F.ground) (deg1: degree F x = 1) :
@@ -351,7 +377,7 @@ lemma ground_minus_v_ideal_sets {α : Type} [DecidableEq α] [Fintype α] (F : I
             simp_all only [subset_refl]
             exact F.univ_mem
 
-lemma ground_minus_v_ideal_number {α : Type} [DecidableEq α] [Fintype α] (F : IdealFamily α) (v : α) (hv: v ∈ F.ground) (hv_singleton:  ¬F.sets {v}) (hv_hyperedge:F.sets (F.ground \ {v})):
+lemma ground_minus_v_ideal_number {α : Type} [DecidableEq α] [Fintype α] (F : IdealFamily α) (v : α) (hv: v ∈ F.ground)  (hv_hyperedge:F.sets (F.ground \ {v}))(hv_singleton:  ¬F.sets {v}):
     number_of_hyperedges F.toSetFamily = 2^(F.ground.card - 1) + 1 :=
     by
       rw [Ideal.number_of_hyperedges]
@@ -719,7 +745,7 @@ lemma sum_filter_eq_card {α : Type} [DecidableEq α][Fintype α]  (s : Finset �
   (s.filter p).sum (λ a => 1) = (s.filter p).card := by
   simp_all only [sum_const, smul_eq_mul, mul_one]
 
-def f (a : α) (s : Finset α): Nat := if a ∈ s then 1 else 0
+def fn (a : α) (s : Finset α): Nat := if a ∈ s then 1 else 0
 -- 和の数える順番の補題。
 lemma sum_card_powerset_eq_sum_subsets_containing {α : Type} [DecidableEq α] [Fintype α] {FG : Finset α} :
   FG.powerset.sum (λ s => ∑ a ∈ s, 1) = FG.sum (λ a => (FG.powerset.filter (λ S => a ∈ S)).card) :=
@@ -733,12 +759,12 @@ by
     simp_all only [sum_const, smul_eq_mul, mul_one, sum_boole, Nat.cast_id]
   rw [rewrite]
 
-  have rewrite2 : ∑ a ∈ FG, ∑ x ∈ (filter (fun S => a ∈ S) FG.powerset), 1 = ∑ a ∈ FG, ∑ x ∈ FG.powerset, f a x := by
+  have rewrite2 : ∑ a ∈ FG, ∑ x ∈ (filter (fun S => a ∈ S) FG.powerset), 1 = ∑ a ∈ FG, ∑ x ∈ FG.powerset, fn a x := by
     simp_all only [sum_const, smul_eq_mul, mul_one]
-    have rewrite3:  ∀ a, ∑ x ∈ (filter (fun S => a ∈ S) FG.powerset), 1 = ∑ x ∈ FG.powerset, f a x := by
+    have rewrite3:  ∀ a, ∑ x ∈ (filter (fun S => a ∈ S) FG.powerset), 1 = ∑ x ∈ FG.powerset, fn a x := by
        intro a
        simp [sum_congr rfl]
-       dsimp [f]
+       dsimp [fn]
        simp
     congr
     ext a : 2
@@ -746,8 +772,8 @@ by
 
   rw [rewrite2]
 
-  have rewrite4: ∑ s ∈ FG.powerset, ∑ a ∈ s, 1 = ∑ s ∈ FG.powerset, ∑ a ∈ FG, f a s := by
-    dsimp [f]
+  have rewrite4: ∑ s ∈ FG.powerset, ∑ a ∈ s, 1 = ∑ s ∈ FG.powerset, ∑ a ∈ FG, fn a s := by
+    dsimp [fn]
     apply sum_congr
     rfl
     intro x a
@@ -819,7 +845,7 @@ theorem powerset_sum_card_eq_card_mul_pow {α : Type} [DecidableEq α][Fintype �
   -- 補題2と補題1の結果を組み合わせる
   rw [sum_eq_sum, sum_contrib]
 
-lemma ground_minus_v_ideal_total {α : Type} [DecidableEq α] [Fintype α] (F : IdealFamily α) (v : α) (hv: v ∈ F.ground) (hv_singleton:  ¬F.sets {v}) (hv_hyperedge:F.sets (F.ground \ {v}))(hcard0: F.ground.card >= 2):
+lemma ground_minus_v_ideal_total {α : Type} [DecidableEq α] [Fintype α] (F : IdealFamily α) (v : α) (hv: v ∈ F.ground)  (hv_hyperedge:F.sets (F.ground \ {v}))(hv_singleton:  ¬F.sets {v})(hcard0: F.ground.card >= 2):
   total_size_of_hyperedges F.toSetFamily = (F.ground.card - 1)*2^(F.ground.card - 2) + F.ground.card := by
         have degree_one: degree F.toSetFamily v = 1 := by
             exact degree_one_if_not_hyperedge F hv hv_singleton
@@ -890,5 +916,253 @@ lemma ground_minus_v_ideal_total {α : Type} [DecidableEq α] [Fintype α] (F : 
           not_false_eq_true, pow_right_inj]
         apply Or.inl
         rfl
+
+lemma degree_one_singleton {α : Type} [DecidableEq α] [Fintype α] (F: IdealFamily α) (v : α) (hv: v ∈ F.ground)(hcard0: F.ground.card >= 2):
+  degree F.toSetFamily v = 1 ↔ ¬F.sets {v} := by
+    apply Iff.intro
+     -- degree F v = 1 → ¬F.sets {v}
+    · intro h
+      intro a
+      --dsimp [degree] at h
+      --hv: v ∈ F.ground
+      --F.univ_mem:F.sets F.ground
+      have v_self: v ∈ ({v} : Finset α) := by
+        simp_all only [Finset.mem_singleton]
+      -- a:F.sets {v}
+      have hcard_s: ({v} : Finset α).card = 1 := by
+        simp_all only [Finset.card_singleton]
+      have neqv: {v} ≠ F.ground := by
+        intro hh
+        rw [hh] at hcard_s
+        rw [hcard_s] at hcard0
+        linarith
+
+      have v_filtered: {v} ∈ F.ground.powerset.filter (λ (s:Finset α) => (F.sets s ∧ v ∈ s)) := by
+        simp_all only [Finset.mem_filter, Finset.mem_powerset]
+        simp
+        exact hv
+      have g_filtered: F.ground ∈ F.ground.powerset.filter (λ (s:Finset α) => (F.sets s ∧ v ∈ s)) := by
+        simp_all only [Finset.mem_filter, Finset.mem_powerset]
+        simp
+        exact F.univ_mem
+
+      have lem_subset: (insert ({v}:Finset α) (singleton F.ground)) ⊆ F.ground.powerset.filter (λ (s:Finset α) => (F.sets s ∧ v ∈ s))  := by
+        simp_all only [Finset.subset_iff, Finset.mem_singleton, Finset.mem_filter, Finset.mem_powerset]
+        intro s
+        intro hs
+        constructor
+        · intro x1
+          intro a_1
+          simp_all only [ge_iff_le, eq_iff_iff, iff_true, card_singleton, ne_eq, implies_true, and_self, and_true,
+            true_and, mem_insert, mem_singleton]
+          cases hs
+          case inl h_1 =>
+            subst h_1
+            simp_all only [mem_singleton]
+          case inr h_2 =>
+            subst h_2
+            simp_all only
+        · simp_all only [ge_iff_le, eq_iff_iff, iff_true, card_singleton, ne_eq, implies_true, and_self, and_true,
+            true_and, mem_insert, mem_singleton]
+          cases hs with
+          | inl h_1 =>
+            subst h_1
+            simp_all only [mem_singleton, and_self]
+          | inr h_2 =>
+            subst h_2
+            simp_all only [and_self]
+
+      have hcard2: ((insert ({v}:Finset α) (singleton F.ground)):Finset (Finset α)).card = 2 := by
+        simp_all only [Finset.card_insert_of_not_mem, Finset.card_singleton]
+        simp_all only [ge_iff_le, eq_iff_iff, iff_true, mem_singleton, ne_eq, mem_filter, mem_powerset,
+          singleton_subset_iff, and_self, subset_refl, and_true, true_and, not_false_eq_true, card_insert_of_not_mem,
+          card_singleton, Nat.reduceAdd]
+
+      --#check (F.ground.powerset.filter (λ (s:Finset α) => (F.sets s ∧ v ∈ s))).card
+      have card_le0: ((insert ({v}:Finset α) (singleton F.ground)):Finset (Finset α)).card ≤ (F.ground.powerset.filter (λ (s:Finset α) => (F.sets s ∧ v ∈ s))).card := by
+        --rw [hcard2]
+        exact Finset.card_le_card lem_subset
+
+      have card_le1: (F.ground.powerset.filter (λ (s:Finset α) => (F.sets s ∧ v ∈ s))).card >= 2 := by
+        rw [←hcard2]
+        exact card_le0
+
+      have card_le2: degree F.toSetFamily v >= 2 := by
+        dsimp [degree]
+        simp_all only [ge_iff_le, eq_iff_iff, iff_true, card_singleton, ne_eq, implies_true, and_self, and_true,
+          true_and, mem_insert, mem_singleton]
+
+      rw [h] at card_le2
+      linarith
+    · intro fs
+      --IdealSimpleのdegree_one_if_not_hyperedge で証明済みだった。
+      -- hの仮定より全体集合以外にもvを含むhyperedgeがある。down_closedを使って、F.sets {v}が得られる。
+      exact degree_one_if_not_hyperedge F hv fs
+
+lemma degree_one_ground {α : Type} [DecidableEq α] [Fintype α] (F: IdealFamily α) (v : α) (hv: v ∈ F.ground)(hcard0: F.ground.card >= 2):
+  degree F.toSetFamily v = 1 → ∀ (s:Finset α), F.sets s → v ∈ s → s = F.ground := by
+    intro h
+    intro s
+    intro fs
+    intro vs
+    have h2: ¬F.sets {v} := by
+      exact (degree_one_singleton F v hv hcard0).mp h
+    by_contra h3
+    have v_sub_s: {v} ⊆ s := by
+      simp_all only [Finset.singleton_subset_iff, Finset.mem_singleton]
+    have h4: F.sets {v} := by
+      exact F.down_closed {v} s fs h3 v_sub_s
+    exact h2 h4
+
+--(v : α) (hv: v ∈ F.ground) (deg1: degree F v = 1) (hasGround: F.sets F.ground)(gcard: F.ground.card ≥ 2)
+lemma filter_sum {α : Type} [DecidableEq α] [Fintype α] (P Q : Finset α → Prop) [DecidablePred P] [DecidablePred Q] (S : Finset (Finset α))  :
+  (∀ (s:Finset α), s ∈ S → ¬(P s ∧ Q s)) →
+    (Finset.filter (λ (s : Finset α) => P s ∨ Q s) S).sum Finset.card
+   = ((Finset.filter (λ (s : Finset α) => P s) S).sum Finset.card) +
+    (Finset.filter (λ (s : Finset α) => Q s) S).sum Finset.card := by
+    intro disj
+    set domain := (Finset.filter (λ (s : Finset α) => P s ∨ Q s) S)
+    set rangeP := (Finset.filter (λ (s : Finset α) => P s) S)
+    set rangeQ := (Finset.filter (λ (s : Finset α) => Q s) S)
+    have d_union:domain = rangeP ∪ rangeQ := by
+      apply Finset.ext
+      intro x
+      constructor
+      intro a
+      simp_all only [not_and, mem_filter, mem_union, true_and, domain, rangeP, rangeQ]
+      intro a
+      simp_all only [not_and, mem_union, mem_filter, rangeP, rangeQ, domain]
+      cases a with
+      | inl h => simp_all only [or_false, and_self]
+      | inr h_1 => simp_all only [or_true, and_self]
+    have disjoint: rangeP ∩ rangeQ = ∅ := by
+      apply Finset.eq_empty_of_forall_not_mem
+      intro x
+      simp_all only [Finset.mem_inter, Finset.mem_filter]
+      intro h
+      obtain ⟨hP, hQ⟩ := h
+      simp_all only [not_and, mem_filter, and_false, rangeP, rangeQ]
+    have disjoint0: Disjoint rangeP rangeQ := by
+      dsimp [Disjoint]
+      intro x
+      intro xrp xrq
+      have xsub: x ⊆ rangeP ∩ rangeQ := by
+        --simp_all only [Finset.mem_inter, Finset.mem_filter]
+        exact Finset.subset_inter xrp xrq
+        --exact ⟨xrp, xrq⟩
+      rw [disjoint] at xsub
+      exact xsub
+
+    --#check Finset.card_union_of_disjoint disjoint0
+    convert (@Finset.sum_disjUnion _ _  rangeP rangeQ (λ s => s.card) _ disjoint0)
+    simp
+    rw [d_union]
+
+lemma filter_sum_func {α : Type} [DecidableEq α] [Fintype α] {P Q : Finset α → Prop} [DecidablePred P] [DecidablePred Q] (S : Finset (Finset α))(g: Finset α → Nat):
+  (∀ (s:Finset α), s ∈ S → ¬(P s ∧ Q s)) →
+    (Finset.filter (λ (s : Finset α) => P s ∨ Q s) S).sum g
+   = ((Finset.filter (λ (s : Finset α) => P s) S).sum g) +
+    (Finset.filter (λ (s : Finset α) => Q s) S).sum g := by
+    intro disj
+    set domain := (Finset.filter (λ (s : Finset α) => P s ∨ Q s) S)
+    set rangeP := (Finset.filter (λ (s : Finset α) => P s) S)
+    set rangeQ := (Finset.filter (λ (s : Finset α) => Q s) S)
+    have d_union:domain = rangeP ∪ rangeQ := by
+      apply Finset.ext
+      intro x
+      constructor
+      intro a
+      simp_all only [not_and, mem_filter, mem_union, true_and, domain, rangeP, rangeQ]
+      intro a
+      simp_all only [not_and, mem_union, mem_filter, rangeP, rangeQ, domain]
+      cases a with
+      | inl h => simp_all only [or_false, and_self]
+      | inr h_1 => simp_all only [or_true, and_self]
+    have disjoint: rangeP ∩ rangeQ = ∅ := by
+      apply Finset.eq_empty_of_forall_not_mem
+      intro x
+      simp_all only [Finset.mem_inter, Finset.mem_filter]
+      intro h
+      obtain ⟨hP, hQ⟩ := h
+      simp_all only [not_and, mem_filter, and_false, rangeP, rangeQ]
+    have disjoint0: Disjoint rangeP rangeQ := by
+      dsimp [Disjoint]
+      intro x
+      intro xrp xrq
+      have xsub: x ⊆ rangeP ∩ rangeQ := by
+        --simp_all only [Finset.mem_inter, Finset.mem_filter]
+        exact Finset.subset_inter xrp xrq
+        --exact ⟨xrp, xrq⟩
+      rw [disjoint] at xsub
+      exact xsub
+
+    --#check Finset.card_union_of_disjoint disjoint0
+    convert (@Finset.sum_disjUnion _ _  rangeP rangeQ (λ s => g s) _ disjoint0)
+    simp
+    rw [d_union]
+
+--結果的にtotal degree cardと同じことを示している。
+--lemma total_degone_card {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) (v : α) (hv: v ∈ F.ground) (deg1: degree F v = 1) (hasGround: F.sets F.ground)(gcard: F.ground.card ≥ 2) :
+--  total_size_of_hyperedges F = (F.ground.powerset.filter (λ s => F.sets s ∧ v ∉ s )).sum Finset.card + F.ground.card
+  lemma filter_sum_one {α : Type} [DecidableEq α] [Fintype α] (F: IdealFamily α) (v : α) (hv: v ∈ F.ground) (deg1: degree F.toSetFamily v = 1) (hasGround: F.sets F.ground)(gcard: F.ground.card ≥ 2):
+    (Finset.filter (λ (s : Finset α) => F.sets s) F.ground.powerset).sum Finset.card = (Finset.filter (λ (s : Finset α) => (F.sets s ∧ v ∉ s)) F.ground.powerset).sum Finset.card + F.ground.card := by
+
+  have degv: ¬ F.sets {v}:= by
+        exact (degree_one_singleton F v hv gcard).mp deg1
+
+  have eq: ∀ (s:Finset α), ((F.sets s ∧ v ∉ s) ∨ s = F.ground) ↔ F.sets s := by
+    intro s
+    apply Iff.intro
+    swap
+    · intro fsf
+      by_cases h: v ∈ s
+      · right
+        apply Finset.ext
+        intro x
+        constructor
+        intro a
+        rw [←(degree_one_ground F v hv gcard deg1 s fsf h)]
+        exact a
+        intro a
+        simp_all only [ge_iff_le]
+        rw [(degree_one_ground F v hv gcard deg1 s fsf h)]
+        exact a
+      · left
+        simp_all only [ge_iff_le, not_false_eq_true, and_self]
+    · intro a
+      simp_all only [ge_iff_le]
+      cases a with
+      | inl h => simp_all only
+      | inr h_1 =>
+        subst h_1
+        simp_all only
+
+  have disj: ∀ (s:Finset α), s ∈ F.ground.powerset → ¬((F.sets s ∧ v ∉ s) ∧ s = F.ground) := by
+    intro s sh
+    intro h
+    obtain ⟨h1, h2⟩ := h
+    --let dohp := degree_one_hyperedges_partition2 F v hv s
+    obtain ⟨left, right⟩ := h2
+    exact h1.2 hv
+
+  have ground_lem: F.ground.card = (filter (fun s => s = F.ground) F.ground.powerset).sum card := by
+    --simp_all only [ge_iff_le, not_and, and_imp]
+    rw [filter_eq']
+    simp
+
+    --simp_all only [mem_powerset, subset_refl, ↓reduceIte, sum_singleton]
+
+  rw [ground_lem]
+
+  have eqn0: (filter (fun s => F.sets s) F.ground.powerset) = (filter (fun s => (F.sets s ∧ v ∉ s) ∨ s = F.ground) F.ground.powerset) := by
+    apply filter_congr
+    intro s
+    rw [Finset.mem_powerset]
+    intro _
+    rw [eq s]
+
+  rw [eqn0]
+
+  exact filter_sum (λ s => (F.sets s ∧ v ∉ s)) (λ s => s = F.ground) (F.ground.powerset) disj
 
 end Ideal

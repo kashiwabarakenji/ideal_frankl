@@ -16,6 +16,7 @@ structure SetFamily (α : Type) [DecidableEq α] [Fintype α] :=
   (sets : Finset α → Prop)
   (inc_ground : ∀ s, sets s → s ⊆ ground)
   (nonempty_ground : ground.Nonempty)
+  [fintype_ground : Fintype ground]
 
 -- SetFamily 構造体の定義 Boolバージョン
 --structure SetFamily (α : Type) :=
@@ -43,8 +44,8 @@ def number_of_hyperedges (F : SetFamily α) [DecidablePred F.sets] : ℕ :=
 --  2*total_size_of_hyperedges F - F.ground.card * number_of_hyperedges F
 
 -- 任意の型 α に対する部分集合の集合を全て列挙する関数。powersetを使えばいらないかも。
-def all_subsets {α : Type} [DecidableEq α] (s : Finset α) : Finset (Finset α) :=
-  s.powerset
+--def all_subsets {α : Type} [DecidableEq α] (s : Finset α) : Finset (Finset α) :=
+--  s.powerset
 
 noncomputable def degree (sf : SetFamily α) (v : α) : ℕ :=
   Finset.card (Finset.filter (λ s => sf.sets s = true ∧ v ∈ s) (sf.ground.powerset))
@@ -88,17 +89,18 @@ noncomputable instance [DecidableEq α] (sf : SetFamily α) : DecidablePred sf.s
 
 -- 標準化次数和を計算する関数を定義 上のinstanceの定義のあとにする必要あり。
 -- IdealFamilyでない場合に定義する。
-noncomputable def normalized_degree_sum {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) : ℕ :=
-  let total_size := total_size_of_hyperedges F
-  let num_sets := number_of_hyperedges F
-  let base_set_size := Fintype.card α
+noncomputable def normalized_degree_sum {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) : ℤ :=
+  let total_size := (total_size_of_hyperedges F: ℤ)
+  let num_sets := (number_of_hyperedges F: ℤ)
+  let base_set_size := (F.ground.card: ℤ)
   total_size * 2 - num_sets * base_set_size
 
-noncomputable def ideal_normalized_degree_sum {α : Type} [DecidableEq α] [Fintype α] (F : IdealFamily α) : ℕ :=
-  let total_size := total_size_of_hyperedges F.toSetFamily
-  let num_sets := number_of_hyperedges F.toSetFamily
-  let base_set_size := Fintype.card F.ground
-  total_size * 2 - num_sets * base_set_size
+--以下はいらないかも。
+--oncomputable def ideal_normalized_degree_sum {α : Type} [DecidableEq α] [Fintype α] (F : IdealFamily α) : ℕ :=
+--  let total_size := total_size_of_hyperedges F.toSetFamily
+--  let num_sets := number_of_hyperedges F.toSetFamily
+--  let base_set_size := Fintype.card F.ground
+--  total_size * 2 - num_sets * base_set_size
 
 -- Ideal_family_size_sf関数の定義 必要なのか？
 noncomputable def ideal_family_size (sf : IdealFamily α) : ℕ :=

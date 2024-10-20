@@ -308,16 +308,16 @@ lemma map_hyperedge_injective (sf : IdealFamily α) (x : α) (G: Finset α) (imh
 
 omit [Nonempty α] in
 lemma card_filter_add_card_filter_compl (sf : IdealFamily α) (v : α) [DecidablePred sf.sets]  :
-  (Finset.filter (λ H=> sf.sets H ∧ v ∈ H) (all_subsets sf.ground)).card +
-  (Finset.filter (λ H=> sf.sets H ∧ v ∉ H) (all_subsets sf.ground)).card =
-  (Finset.filter (λ H=> sf.sets H) (all_subsets sf.ground)).card :=
+  (Finset.filter (λ H=> sf.sets H ∧ v ∈ H) (sf.ground.powerset)).card +
+  (Finset.filter (λ H=> sf.sets H ∧ v ∉ H) (sf.ground.powerset)).card =
+  (Finset.filter (λ H=> sf.sets H) (sf.ground.powerset)).card :=
   by
-    let with_v := Finset.filter (λ H=> sf.sets H ∧ v ∈ H) (all_subsets sf.ground)
-    have wv:with_v = Finset.filter (λ H=> sf.sets H ∧ v ∈ H) (all_subsets sf.ground) := rfl
-    let without_v := Finset.filter (λ H=> sf.sets H ∧ v ∉ H) (all_subsets sf.ground)
-    have wov:without_v = Finset.filter (λ H=> sf.sets H ∧ v ∉ H) (all_subsets sf.ground) := rfl
-    let all := Finset.filter (λ H=> sf.sets H) (all_subsets sf.ground)
-    have w:all = Finset.filter (λ H=> sf.sets H) (all_subsets sf.ground) := rfl
+    let with_v := Finset.filter (λ H=> sf.sets H ∧ v ∈ H) (sf.ground.powerset)
+    have wv:with_v = Finset.filter (λ H=> sf.sets H ∧ v ∈ H) (sf.ground.powerset) := rfl
+    let without_v := Finset.filter (λ H=> sf.sets H ∧ v ∉ H) (sf.ground.powerset)
+    have wov:without_v = Finset.filter (λ H=> sf.sets H ∧ v ∉ H) (sf.ground.powerset) := rfl
+    let all := Finset.filter (λ H=> sf.sets H) (sf.ground.powerset)
+    have w:all = Finset.filter (λ H=> sf.sets H) (sf.ground.powerset) := rfl
 
     -- `with_v` と `without_v` は交わらない
     have h_disjoint : Disjoint with_v without_v :=
@@ -398,12 +398,12 @@ lemma card_hyperedges_without_v (sf : IdealFamily α) (v : α) [DecidablePred sf
 -- hyperedges_with_v の位数は degree_v であることを示す補題
 omit [Nonempty α]
 lemma card_hyperedges_with_v (sf : IdealFamily α) (v : α) :
-  Finset.card ((all_subsets sf.ground).filter (λ H => sf.sets H ∧ v ∈ H)) = ideal_degree sf v :=
+  Finset.card ((sf.ground.powerset).filter (λ H => sf.sets H ∧ v ∈ H)) = ideal_degree sf v :=
   by
     rw [ideal_degree]
     rw [degree]
     --rw [Finset.powerset_univ]
-    rw [all_subsets]
+    --rw [all_subsets]
     rw [Finset.filter_congr_decidable]
     --dsimp [hyperedges_with_v]
     simp [decide_eq_true_eq]
@@ -503,7 +503,7 @@ lemma map_hyperedge_excludes_x (sf : IdealFamily α) (x : α) (G : Finset α)  (
 theorem ideal_version_of_frankl_conjecture :
   --∀ (U : Type) [DecidableEq U] [Fintype U] [Nonempty U],
   ∀ (sf : IdealFamily α),
-    ∃ (v : α), 2 * ideal_degree sf v ≤ ideal_family_size sf :=
+    ∃ (v : α), v ∈ sf.ground ∧ 2 * ideal_degree sf v ≤ ideal_family_size sf :=
   by
     -- 型変数と必要な型クラスの宣言
     intros sf
@@ -531,8 +531,8 @@ theorem ideal_version_of_frankl_conjecture :
           exact G_max hA
 
     -- hyperedges_with_v と hyperedges_without_v を定義
-    let hyperedges_with_v := (all_subsets (sf.ground)).filter (λ H => sf.sets H ∧ v ∈ H)
-    let hyperedges_without_v := (all_subsets (sf.ground)).filter (λ H => sf.sets H ∧ v ∉ H)
+    let hyperedges_with_v := ((sf.ground.powerset)).filter (λ H => sf.sets H ∧ v ∈ H)
+    let hyperedges_without_v := ((sf.ground.powerset)).filter (λ H => sf.sets H ∧ v ∉ H)
 
     -- 写像の単射性を示す
     have map_injective : Function.Injective (λ H : {H // sf.sets H ∧ v ∈ H}=> map_hyperedge sf v G H.1) :=
@@ -550,8 +550,7 @@ theorem ideal_version_of_frankl_conjecture :
           map_hyperedge_is_hyperedge sf v G G_in_sf H hH.2.1 v_not_in_G
         have h2 : v ∉ (map_hyperedge sf v G  H) :=
           map_hyperedge_excludes_x sf v G  H hH.2.1 v_not_in_G hH.2.2
-        rw [all_subsets]
-        rw [Finset.mem_powerset]
+        --        rw [Finset.mem_powerset]
         constructor
         --have h1' : sf.sets (map_hyperedge sf v G H) := by
         --  rw [h1]
@@ -608,8 +607,8 @@ theorem ideal_version_of_frankl_conjecture :
       intro x -- xはdomainの要素という条件は？
       simp [hyperedges_with_v]
       intro sfx _
-      rw [all_subsets]
-      rw [Finset.mem_powerset]
+      --rw [all_subsets]
+      --rw [Finset.mem_powerset]
       exact sf.inc_ground x sfx
 
     -- (Finset.univ : Finset codomain).card が hyperedges_without_v.card に等しいことを示す
@@ -620,8 +619,8 @@ theorem ideal_version_of_frankl_conjecture :
       intro x
       simp [hyperedges_without_v]
       intro sfx _
-      rw [all_subsets]
-      rw [Finset.mem_powerset]
+      --rw [all_subsets]
+      --rw [Finset.mem_powerset]
       exact sf.inc_ground x sfx
 
     -- hyperedges_without_v.card ≥ hyperedges_with_v.card を示す
@@ -638,6 +637,9 @@ theorem ideal_version_of_frankl_conjecture :
         linarith
 
     -- 結論を得る
-    exact ⟨v, h_degree_le_size⟩
+    simp_all only [ne_eq, Finset.mem_filter, and_imp, Finset.card_univ, ge_iff_le, hyperedges_with_v,
+      hyperedges_without_v, domain, codomain, f]
+    use v
+
 
 end Ideal

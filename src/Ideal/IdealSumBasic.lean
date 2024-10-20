@@ -708,4 +708,6 @@ lemma sumbij (F : SetFamily α) [DecidablePred F.sets] (x : α) (hx : x ∈ F.gr
    simp at ap
    rw [ap]
 
+
+
    end Ideal
