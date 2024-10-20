@@ -1038,7 +1038,7 @@ theorem induction_step {n:Nat} (hn: n >= 2) (h_ind: P n) : P (n+1) := by
         --total_size_of_hyperedges (@IdealFamily.deletionToN (Fin n) n nposi F v hvf gcard).toSetFamily = total_size_of_hyperedges F.toSetFamily
         have eqcard_total: total_size_of_hyperedges idealDelF.toSetFamily = total_size_of_hyperedges idealDelFn.toSetFamily := by
           exact Eq.symm (deletion_total n idealDelF nposi v hvfideal h_assum_card1)
-        rw [←eqcard_number] at result
+        rw [←eqcard_number] at result ⊢
         rw [←eqcard_total] at result
         dsimp [idealDelF] at result
         --dsimp [IdealFamily.deletionToN]
@@ -1051,6 +1051,22 @@ theorem induction_step {n:Nat} (hn: n >= 2) (h_ind: P n) : P (n+1) := by
           simp_all only [subset_refl, Finset.singleton_subset_iff, Finset.sdiff_subset, idealDelFn, idealDelF,
             idealDelFn2]
         --基本的な変数を文字でおいて整理する。--ゴールとresultを[idealDelFn]を使って書き換える。
-        linarith
+        have subs1: idealDelF = IdealDeletion.idealdeletion F v hv_left hcard0:= by
+          rfl
+        have subs2: number_of_hyperedges idealDelF.toSetFamily = number_of_hyperedges (IdealDeletion.idealdeletion F v hv_left hcard0).toSetFamily := by
+           rfl
+        have subs3: total_size_of_hyperedges idealDelF.toSetFamily = total_size_of_hyperedges (IdealDeletion.idealdeletion F v hv_left hcard0).toSetFamily := by
+           rfl
+
+        rw [←subs1] at result
+        simp
+        ring_nf
+        rw [←subs2]
+        rw [←subs3]
+
+        --result : ↑(total_size_of_hyperedges idealDelF.toSetFamily) * 2 ≤ ↑(number_of_hyperedges idealDelF.toSetFamily) * ↑n
+        --goal : 2 + total_size_of_hyperedges (IdealDeletion.idealdeletion F v hv_left hcard0).toSetFamily * 2 ≤ number_of_hyperedges idealDelF.toSetFamily + number_of_hyperedges idealDelF.toSetFamily * n
+        convert result
+        search_proof
 
 end Ideal
