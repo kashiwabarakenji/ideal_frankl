@@ -406,4 +406,56 @@ by
   rw [List.mem_toFinset]
   exact h
 
+theorem hyperedges_card_ge_two {α : Type} [DecidableEq α] [Fintype α]
+  (F : IdealFamily α) (hground : 1 ≤ F.ground.card) : 2 ≤ number_of_hyperedges F.toSetFamily :=
+by
+  -- number_of_hyperedges は空集合と全体集合を含むため、少なくとも 2 つのハイパーエッジがあることを示す
+  have h_empty : F.sets  ∅ := F.empty_mem
+  have h_univ :  F.sets F.ground := F.univ_mem
+
+  -- 空集合と全体集合が distinct（異なる）であることを確認する
+  have h_distinct : ∅ ≠ F.ground :=
+    by
+      intro h_eq
+      have : F.ground.card = 0 := by rw [←h_eq, Finset.card_empty]
+      linarith [hground]  -- 矛盾を示す
+
+  -- 空集合と全体集合の 2 つの要素が含まれているため、number_of_hyperedges は 2 以上
+  simp_all only [one_le_card, ne_eq, ge_iff_le]
+  rw [number_of_hyperedges]
+  have sublem: {∅, F.ground} ⊆ F.ground.powerset := by
+    intro x hx
+    simp_all only [mem_insert, mem_singleton, mem_powerset]
+    cases hx with
+    | inl h =>
+      subst h
+      simp_all only [empty_subset]
+    | inr h_1 =>
+      subst h_1
+      simp_all only [subset_refl]
+  have h1: (({∅} : Finset (Finset α)) ∪ {F.ground}).card ≤ F.ground.powerset.card := by exact my_card_le_of_subset sublem
+  have h2: (({∅} : Finset (Finset α)) ∪ {F.ground}).card = 2 := by
+    simp_all only [card_powerset, ge_iff_le]
+    rw [card_union_of_disjoint]
+    · simp_all only [card_singleton, Nat.reduceAdd, le_refl]
+    · simp_all only [disjoint_singleton_right, mem_singleton]
+      apply Aesop.BuiltinRules.not_intro
+      intro a
+      simp_all only [Finset.not_nonempty_empty]
+  have h3: (({∅} : Finset (Finset α)) ∪ {F.ground}) ⊆ F.ground.powerset.filter F.sets := by
+    simp_all only [card_powerset, ge_iff_le]
+    intro x hx
+    simp_all only [mem_union, mem_singleton, mem_filter, mem_powerset]
+    cases hx with
+    | inl h =>
+      subst h
+      simp_all only [empty_subset, and_self]
+    | inr h_1 =>
+      subst h_1
+      simp_all only [subset_refl, and_self]
+  simp_all only [card_powerset, ge_iff_le]
+  rw [←h2]
+  exact Finset.card_le_card h3
+
+
 end Ideal

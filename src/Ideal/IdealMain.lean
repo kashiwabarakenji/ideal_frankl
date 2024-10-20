@@ -224,18 +224,18 @@ theorem induction_step {n:Nat} (hn: n >= 2) (h_ind: P n) : P (n+1) := by
 
     --以下の部分も場合分けの前に移動したほうがよいかも。
     --let total_del := (total_size_of_hyperedges ((@IdealFamily.deletionToN (Fin n) n nposi Fdel v Fvx hcard2):IdealFamily (Fin n)).1)
-    set total_del := total_size_of_hyperedges (IdealDeletion.idealdeletion F v hv_left hcard0).1 with h_total_del
+    set total_del := total_size_of_hyperedges (IdealDeletion.idealdeletion F v hv_left hcard0).1
     --set number_del := (number_of_hyperedges (@IdealFamily.deletionToN (Fin n) n nposi Fdel v Fvx hcard2).1) with number_del
-    set number_del := (number_of_hyperedges (IdealDeletion.idealdeletion F v hv_left hcard0).1) with h_number_del
+    set number_del := (number_of_hyperedges (IdealDeletion.idealdeletion F v hv_left hcard0).1)
     --let total_cont := (total_size_of_hyperedges (@IdealFamily.deletionToN (Fin n) n nposi Fcont v Fvx2 h_cont2).1)
     --set total_cont := total_size_of_hyperedges (IdealDeletion.contraction F.1 v hv_left hcard0) with h_total_cont
-    set total_cont := total_size_of_hyperedges (IdealDeletion.contraction_ideal_family F v hv_singleton hcard0).toSetFamily with h_total_cont
+    set total_cont := total_size_of_hyperedges (IdealDeletion.contraction_ideal_family F v hv_singleton hcard0).toSetFamily
     --let number_cont := (number_of_hyperedges (@IdealFamily.deletionToN (Fin n) n nposi Fcont v Fvx2 h_cont2).1)
     --set number_cont := (number_of_hyperedges (IdealDeletion.contraction F.1 v hv_left hcard0)) with h_number_cont
-    set number_cont := (number_of_hyperedges (IdealDeletion.contraction_ideal_family F v hv_singleton hcard0).toSetFamily) with h_number_cont
-    set total := (total_size_of_hyperedges F.toSetFamily) with h_total
-    set  number := (number_of_hyperedges F.toSetFamily) with h_number
-    set degreev := (degree F.toSetFamily v) with h_degreev
+    set number_cont := (number_of_hyperedges (IdealDeletion.contraction_ideal_family F v hv_singleton hcard0).toSetFamily)
+    set total := (total_size_of_hyperedges F.toSetFamily)
+    set  number := (number_of_hyperedges F.toSetFamily)
+    set degreev := (degree F.toSetFamily v)
 
     classical
     by_cases hv_hyperedge:(F.sets (F.ground \ {v}))
@@ -285,7 +285,7 @@ theorem induction_step {n:Nat} (hn: n >= 2) (h_ind: P n) : P (n+1) := by
           induction n with
           | zero =>
             -- 基底ケース: n = 0 は不適
-            by_contra h_zero
+            by_contra _
             simp_all only [nonpos_iff_eq_zero, one_ne_zero]
 
           | succ k ih =>
@@ -326,7 +326,7 @@ theorem induction_step {n:Nat} (hn: n >= 2) (h_ind: P n) : P (n+1) := by
         induction n with
         | zero =>
           -- 基底ケース: n = 0 は不適
-          by_contra h_zero
+          by_contra _
           simp_all only [nonpos_iff_eq_zero, one_ne_zero]
         | succ k ih =>
         -- 帰納段階: n = k + 1 を証明
@@ -424,7 +424,7 @@ theorem induction_step {n:Nat} (hn: n >= 2) (h_ind: P n) : P (n+1) := by
         --(hi : ∀ (a : α) (ha : a ∈ s), i a ha ∈ t)
         --(i_inj : ∀ (a₁ : α) (ha₁ : a₁ ∈ s) (a₂ : α) (ha₂ : a₂ ∈ s), i a₁ ha₁ = i a₂ ha₂ → a₁ = a₂)
         --(i_surj : ∀ b ∈ t, ∃ a, ∃ (ha : a ∈ s), i a ha = b) : s.card = t.card
-      set i := (λ (s : Finset (Fin (n+1))) (_: s ∈ domain) => s.erase v) with h_i
+      set i := (λ (s : Finset (Fin (n+1))) (_: s ∈ domain) => s.erase v)
         --v notin sの場合はそのままで、v in sの場合はs erase vとなる。
       have hi : ∀ (s : Finset (Fin (n+1))), (hs: s ∈ domain) → (i s hs) ∈ range:= by
         intro s hs'
@@ -435,10 +435,10 @@ theorem induction_step {n:Nat} (hn: n >= 2) (h_ind: P n) : P (n+1) := by
         constructor
         · --goal s.erase v ⊆ F.ground.erase v  .. この分解はおかしくないか？orが消えている。
           simp_all only [ge_iff_le, Finset.mem_filter, Finset.mem_powerset, idealDelF, domain, i]
-          obtain ⟨left, right⟩ := hs'
+          obtain ⟨left, _⟩ := hs'
           intro x hx
           simp_all only [Finset.mem_erase, ne_eq, not_false_eq_true, true_and]
-          obtain ⟨left_1, right_1⟩ := hx
+          obtain ⟨_, right_1⟩ := hx
           exact left right_1
 
         · --goal F.sets (s.erase v) ∧ v ∉ s.erase v ∨ s.erase v = F.ground.erase v
@@ -481,7 +481,7 @@ theorem induction_step {n:Nat} (hn: n >= 2) (h_ind: P n) : P (n+1) := by
             apply Iff.intro
             · intro h
               simp_all only [ge_iff_le, Finset.mem_filter, Finset.mem_powerset, idealDelF, domain, i, hi]
-              obtain ⟨left, right⟩ := hs
+              --obtain ⟨left, right⟩ := hs
               by_cases hav: a = v
               case pos =>
                 rw [hav]
@@ -498,7 +498,7 @@ theorem induction_step {n:Nat} (hn: n >= 2) (h_ind: P n) : P (n+1) := by
                 simp_all only [Finset.mem_erase, ne_eq, not_false_eq_true, true_and]
             · intro h
               simp_all only [ge_iff_le, Finset.mem_filter, Finset.mem_powerset, idealDelF, domain, i, hi]
-              obtain ⟨left, right⟩ := hs
+              --obtain ⟨left, right⟩ := hs
               by_cases hav: a = v
               case pos =>
                 rw [hav]
@@ -599,7 +599,7 @@ theorem induction_step {n:Nat} (hn: n >= 2) (h_ind: P n) : P (n+1) := by
             false_and, not_false_eq_true, and_true, idealDelF, i]
           simp_all only [Finset.mem_filter, Finset.mem_powerset, and_imp, subset_refl, Finset.singleton_subset_iff,
             Finset.sdiff_subset, domain, range]
-          obtain ⟨left, right⟩ := hss
+          obtain ⟨_, right⟩ := hss
           apply Aesop.BuiltinRules.not_intro
           intro a
           simp_all only [subset_refl, Finset.singleton_subset_iff, Finset.sdiff_subset, not_true_eq_false,
@@ -617,8 +617,7 @@ theorem induction_step {n:Nat} (hn: n >= 2) (h_ind: P n) : P (n+1) := by
           rw [Finset.mem_filter] at hss
           rw [Finset.mem_powerset] at hss
           simp_all only [ge_iff_le, not_false_eq_true, and_true, Finset.erase_eq_of_not_mem, idealDelF, i, hi]
-          --let hsscopy := hss
-          have hsscopy := ss ∈ domain
+          --have hsscopy := ss ∈ domain
           obtain ⟨left, right⟩ := hss
           cases right with
           | inl h =>
@@ -778,10 +777,10 @@ theorem induction_step {n:Nat} (hn: n >= 2) (h_ind: P n) : P (n+1) := by
               simp_all only [subset_refl, Finset.mem_erase, ne_eq, not_true_eq_false, and_true, not_false_eq_true,
                 or_true]
           · intro a_2
-            intro a
+            intro _
             simp_all only [ge_iff_le, Finset.mem_filter, Finset.mem_powerset, idealDelF]
-
-
+        --成り立つが使ってない。
+        /-
         have lem_eq1: (Finset.filter (fun s => F.sets s ∧ v ∉ s ∨ s = F.ground.erase v) (F.ground.erase v).powerset).sum Finset.card
          = (Finset.filter (fun s => F.sets s ∨ s = F.ground.erase v) (F.ground.erase v).powerset).sum Finset.card := by
           apply Finset.sum_congr
@@ -817,10 +816,10 @@ theorem induction_step {n:Nat} (hn: n >= 2) (h_ind: P n) : P (n+1) := by
         have lem_eq2: (Finset.filter (fun s => F.sets s ∧ v ∉ s ∨ s = F.ground.erase v) (F.ground.erase v).powerset).sum Finset.card + 1
          = (Finset.filter (fun s => F.sets s ∨ s = F.ground.erase v) (F.ground.erase v).powerset).sum Finset.card + 1 := by
            rw [lem_eq1]
+        -/
 
-        --convert lem_eq2
         have lem_prop:∀ (s:Finset (Fin (n+1))), s ∈ (F.ground.erase v).powerset → ¬ ((F.sets s ∧ v ∉ s) ∧ s = F.ground.erase v) := by
-          intro s hs
+          intro s _
           intro h
           --hv_hyperedge : ¬F.sets (F.ground \ {v})単にこれを使うだけの証明かも。
           obtain ⟨left, right⟩ := h
@@ -833,8 +832,7 @@ theorem induction_step {n:Nat} (hn: n >= 2) (h_ind: P n) : P (n+1) := by
         --#check total_degone_card F.toSetFamily v hv_left degree_one F.univ_mem hcard0
         let leftset := Finset.filter (fun s => F.sets s ∧ v ∉ s) (F.ground.erase v).powerset
         let rightset := Finset.filter (fun s => s = F.ground.erase v) (F.ground.erase v).powerset
-        let hcap:= degree_one_hyperedges_partition2 F v hv_left --hv_singleton
-        --#check hcap
+        --let hcap:= degree_one_hyperedges_partition2 F v hv_left --hv_singleton
         --以下を示す方針は正しそう。
         have disjoint: leftset ∩ rightset = ∅ := by
           dsimp [leftset, rightset]
@@ -857,7 +855,7 @@ theorem induction_step {n:Nat} (hn: n >= 2) (h_ind: P n) : P (n+1) := by
           exact hv_hyperedge sgs
 
         have disjoint2: ∀ (s:Finset (Fin (n+1))), s ∈ (F.ground.erase v).powerset → ¬ ((F.sets s ∧ v ∉ s) ∧ s = F.ground.erase v) := by
-          intro s hs
+          intro s _
           intro h
           obtain ⟨left, right⟩ := h
           rw [right] at left
@@ -986,13 +984,15 @@ theorem induction_step {n:Nat} (hn: n >= 2) (h_ind: P n) : P (n+1) := by
       rw [number_eq]
       rw [total_eq]
 
+      --let tsoh := total_size_of_hyperedges idealDelF.toSetFamily
+      let noh := number_of_hyperedges idealDelF.toSetFamily
       have induction_assum: (total_size_of_hyperedges idealDelF.toSetFamily + 1) * 2 ≤
              (number_of_hyperedges idealDelF.toSetFamily) * F.ground.card := by
         have h_assum_case: idealDelF.ground.card = n := by
           omega
         have h_assum_card0: idealDelF.ground.card = F.ground.card -1 := by
-          have hcard1: idealDelF.ground.card = n := by
-            omega
+          --have hcard1: idealDelF.ground.card = n := by
+          --  omega
           rw [h_assum_case]
           rw [hcard]
           omega
@@ -1020,7 +1020,7 @@ theorem induction_step {n:Nat} (hn: n >= 2) (h_ind: P n) : P (n+1) := by
             Finset.singleton_subset_iff, exists_prop, add_tsub_cancel_right, idealDelF, domain, i, range, idealDelFn]
 
         let result := (h_ind idealDelFn) hcard2
-        #check result
+        --#check result
         dsimp [normalized_degree_sum] at result
         rw [hcard2] at result
         --deletonToNをしても、total_sizeもnumber_of_hyperedgesも変わらないという定理を最後に適用する必要がある。
@@ -1042,7 +1042,7 @@ theorem induction_step {n:Nat} (hn: n >= 2) (h_ind: P n) : P (n+1) := by
         rw [←eqcard_total] at result
         dsimp [idealDelF] at result
         --dsimp [IdealFamily.deletionToN]
-        #check (IdealFamily.deletionToN nposi (IdealDeletion.idealdeletion F v hv_left hcard0) v hvfideal h_assum_card1)
+        --#check (IdealFamily.deletionToN nposi (IdealDeletion.idealdeletion F v hv_left hcard0) v hvfideal h_assum_card1)
         let idealDelFn2 := (@IdealFamily.deletionToN (Fin (n + 1)) n nposi (IdealDeletion.idealdeletion F v hv_left hcard0) v hvfideal h_assum_card1)
         have eqlem0: idealDelFn = idealDelFn2 := by
           rfl
@@ -1065,8 +1065,47 @@ theorem induction_step {n:Nat} (hn: n >= 2) (h_ind: P n) : P (n+1) := by
         rw [←subs3]
 
         --result : ↑(total_size_of_hyperedges idealDelF.toSetFamily) * 2 ≤ ↑(number_of_hyperedges idealDelF.toSetFamily) * ↑n
-        --goal : 2 + total_size_of_hyperedges (IdealDeletion.idealdeletion F v hv_left hcard0).toSetFamily * 2 ≤ number_of_hyperedges idealDelF.toSetFamily + number_of_hyperedges idealDelF.toSetFamily * n
-        convert result
-        search_proof
+        --goal : 2 + total_size_of_hyperedges idealDelF.toSetFamily * 2 ≤ number_of_hyperedges idealDelF.toSetFamily + number_of_hyperedges idealDelF.toSetFamily * n
+
+
+        --rw [←tsoh] at result
+        --rw [←noh] at result
+        /-have idealDelF_univ_mem: idealDelF.sets (F.ground \ {v}) :=
+          by
+            have eqground: idealDelF.ground = F.ground \ {v}:= by
+              dsimp [idealDelF]
+              rw [IdealDeletion.idealdeletion]
+              simp
+              rw [hv_equal]
+            rw [←eqground]
+            exact idealDelF.univ_mem
+
+        have idealDelF_empty_mem: idealDelF.sets ∅ := by
+          exact idealDelF.empty_mem
+        --こんなことを証明しなくても、台集合の1以上のidealは、常にhyperedgeが2つ以上ある。
+        -/
+        -- 台集合 ground の大きさが 1 以上の IdealFamily で number_of_hyperedges が 2 以上であることの証明
+
+        have eqlem2: 2 ≤ noh := by
+          dsimp [noh]
+          dsimp [number_of_hyperedges]
+          --dsimp [idealDelF]
+          --F.gound - vとF.empty_memより、hyperedgeは2つ以上。
+          exact hyperedges_card_ge_two idealDelF h_assum_card1
+
+        linarith
+      rw [hcard] at induction_assum ⊢
+      ring_nf
+      ring_nf at induction_assum
+      --induction_assum : 2 + total_size_of_hyperedges idealDelF.toSetFamily * 2 ≤
+      --number_of_hyperedges idealDelF.toSetFamily + number_of_hyperedges idealDelF.toSetFamily * n
+      simp_all
+      --rw [←tsoh]
+      --rw [←noh]
+      --rw [←tsoh] at induction_assum
+      --rw [←noh] at induction_assum
+      --induction_assum : 2 + tosh * 2 ≤ noh * (n + 1)
+      --goal : 2 + tosh * 2 ≤ noh * n + noh
+      linarith
 
 end Ideal
