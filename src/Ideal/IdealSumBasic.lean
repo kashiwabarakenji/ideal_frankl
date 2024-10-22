@@ -552,7 +552,7 @@ lemma sumbij (F : SetFamily α) [DecidablePred F.sets] (x : α) (hx : x ∈ F.gr
          --h: s₁.erase x = s₂.erase x
          let h1 := hs₁.2.2
          let h2 := hs₂.2.2
-         exact Ideal.set_eq_of_erase_eq h1 h2 h
+         exact (Ideal.erase_inj_of_mem h1 h2).mp h
      -- goal  ∀ (a₁ : Finset α) (ha₁ : a₁ ∈ domain0) (a₂ : Finset α) (ha₂ : a₂ ∈ domain0),
      -- (fun s hs ↦ s.erase x) a₁ ha₁ = (fun s hs ↦ s.erase x) a₂ ha₂ → a₁ = a₂
      exact index3 --微妙な引数の順番の違いでエラーが出ていた。

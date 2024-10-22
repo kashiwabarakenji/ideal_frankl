@@ -231,7 +231,7 @@ by
           simp_all
           use element_in_right_side
           simp only [ssev, Finset.mem_erase]
-          have rw_rule := Ideal.erase_insert' ss.val v ss_erase
+          have rw_rule := Ideal.erase_insert ss.val v ss_erase
           constructor
           -- goal: F.sets ssev
           --rename_i α_1 _ _ _ inst_3 inst_4

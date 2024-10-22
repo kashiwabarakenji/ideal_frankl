@@ -50,32 +50,8 @@ lemma erase_insert_eq (H G : Finset α) (x : α) : x ∈ H → Finset.erase H x 
     intro a a_1
     exact erase_union_singleton H a_1.symm a
 
-lemma erase_insert (H : Finset α) (x : α) : x ∈ H → (H.erase x) ∪ {x} = H :=
-  by
-    intro a
-    let d := H.erase x
-    have h1 : d = H.erase x := rfl
-    rw [←h1]
-    exact (erase_union_singleton H h1 a).symm
-
---シングルトンを消してから足すと元の集合に戻る。非推奨。上と同じなので消して良い。
-lemma erase_insert': ∀ (s : Finset α) (x : α), x ∈ s → (s.erase x) ∪ {x} = s := by
-  intro s x hx
-  ext y
-  constructor
-  intro hy
-  simp_all only [mem_union, mem_erase, mem_singleton]
-  by_cases h: y = x
-  on_goal 1 => simp [*]
-  tauto
-  simp only [mem_erase, mem_union]
-  contrapose!
-  --rename_i inst _ _
-  intro a
-  simp_all only [ne_eq, mem_singleton, not_false_eq_true]
-
 --上と同じ定理。非推奨。上と同じなので消して良い。
-lemma erase_insert_eq' (H G : Finset α) (x : α) : x ∈ H → Finset.erase H x = G → H = G ∪ {x} :=
+/-lemma erase_insert_eq' (H G : Finset α) (x : α) : x ∈ H → Finset.erase H x = G → H = G ∪ {x} :=
   by
     --rename_i inst inst_1 inst_2
     intro a a_1
@@ -92,6 +68,34 @@ lemma erase_insert_eq' (H G : Finset α) (x : α) : x ∈ H → Finset.erase H x
       | inr h_1 =>
         subst h_1
         simp_all only
+-/
+
+lemma erase_insert (H : Finset α) (x : α) : x ∈ H → (H.erase x) ∪ {x} = H :=
+  by
+    intro a
+    let d := H.erase x
+    have h1 : d = H.erase x := rfl
+    rw [←h1]
+    exact (erase_union_singleton H h1 a).symm
+
+--シングルトンを消してから足すと元の集合に戻る。非推奨。上と同じなので消して良い。
+/- lemma erase_insert': ∀ (s : Finset α) (x : α), x ∈ s → (s.erase x) ∪ {x} = s := by
+  intro s x hx
+  ext y
+  constructor
+  intro hy
+  simp_all only [mem_union, mem_erase, mem_singleton]
+  by_cases h: y = x
+  on_goal 1 => simp [*]
+  tauto
+  simp only [mem_erase, mem_union]
+  contrapose!
+  --rename_i inst _ _
+  intro a
+  simp_all only [ne_eq, mem_singleton, not_false_eq_true]
+-/
+
+
 
 --シングルトンを足してから消すと元の集合に戻る。
 theorem union_erase_singleton (d : Finset α) (v : α) (dd : v ∉ d) : (d ∪ {v}).erase v = d :=
@@ -149,6 +153,7 @@ by
 
 -- フィンセットの消去が等しいことから元のセットが等しいことを証明する補助定理。上のerase_inj_of_memと同じ。
 --これの包含関係版も作りたい。
+/-
 lemma set_eq_of_erase_eq {A : Finset α} {B : Finset α} {x : α} (hxA : x ∈ A) (hxB : x ∈ B) (h : Finset.erase A x = Finset.erase B x) : A = B :=
   by
     apply Finset.ext
@@ -168,7 +173,8 @@ lemma set_eq_of_erase_eq {A : Finset α} {B : Finset α} {x : α} (hxA : x ∈ A
       · have h1 : y ∈ Finset.erase B x := Finset.mem_erase_of_ne_of_mem hxy hy
         rw [←h] at h1
         exact Finset.mem_of_mem_erase h1
-
+-/
+/-
 --上と同じ補題。使ってないので消して良い。
 lemma erase_eq_iff_of_mem {s₁:Finset α}{s₂:Finset α}(hx1: x ∈ s₁)(hx2: x ∈ s₂): s₁.erase x = s₂.erase x → s₁ = s₂:= by
   intro h
@@ -191,6 +197,7 @@ lemma erase_eq_iff_of_mem {s₁:Finset α}{s₂:Finset α}(hx1: x ∈ s₁)(hx2:
         exact Finset.mem_of_mem_erase hy2
     --h1 : y ∈ s₁ ↔ y ∈ s₁.erase x
     rw [h1, h2, h]
+    -/
 
 lemma subset_of_erase_subset {A B : Finset α}  {x : α} (hxA : x ∈ A) (hxB : x ∈ B) (h : A.erase x ⊆ B.erase x) : A ⊆ B :=
 by
@@ -242,91 +249,6 @@ lemma card_ne_zero_iff_nonempty (s : Finset α) : s.card ≠ 0 ↔ s ≠ ∅ :=
       contrapose! h
       exact Finset.card_eq_zero.mp h
 
----------------------------
--- ここから集合族っぽい定理集--
-
---　最大要素の存在
-omit [DecidableEq α] in
-lemma exists_max_card (S : Finset (Finset α))(h : S ≠ ∅):
-  ∃ T ∈ S, T.card = S.sup (λ s => s.card) :=
-  by
-    -- 空でないことを証明
-    rw [←card_ne_zero_iff_nonempty] at h
-    rw [Finset.card_ne_zero] at h
-    -- 最大の要素が存在することを示す
-    have hh := Finset.exists_mem_eq_sup S h (λ s => s.card)
-    match hh with
-    | ⟨T, hT⟩ =>
-      use T
-      constructor
-      exact hT.left
-      exact hT.right.symm
-
--- 大きさが2以上の場合は、1減らしても1以上の大きさを持つ。
-lemma ground_nonempty_after_minor {α : Type} [DecidableEq α] (ground : Finset α) (x : α) (hx: x ∈ ground) (gcard: ground.card ≥ 2) : (ground.erase x).Nonempty :=
-  by
-    rw [Finset.erase_eq]
-    apply Finset.nonempty_of_ne_empty
-    by_contra h_empty
-    by_cases hA : ground = ∅
-    rw [hA] at gcard
-    contradiction
-    -- ground.card = 1のケース
-    have g_eq_x: ground = {x} := by
-      ext y
-      constructor
-      intro hy
-      have hy' : y ∈ ground \ {x} := by
-          rw [h_empty]
-          simp_all only [ge_iff_le, sdiff_eq_empty_iff_subset, subset_singleton_iff, false_or, singleton_ne_empty,
-            not_false_eq_true, mem_singleton, not_mem_empty, card_singleton, Nat.not_ofNat_le_one]
-      rw [h_empty] at hy'
-      contradiction
-      -- y ∈ {x}のときに、groundに属することを示す
-      intro hy
-      have x_eq_y : x = y := by
-        rw [mem_singleton] at hy
-        rw [hy]
-      rw [x_eq_y] at hx
-      exact hx
-    rw [g_eq_x] at gcard
-    rw [Finset.card_singleton] at gcard
-    contradiction
-
--- IntersectionClosedにあった補題
---BasicLemmasに似たようなものがある。使っているが、置き換えれば消せる。
-lemma h_erase {G : Finset α} {x : α} :x ∉ G → (G ∪ {x}).erase x = G :=
-  by
-    intro h -- x ∉ G
-    ext y
-    simp only [Finset.mem_erase, Finset.mem_union, Finset.mem_singleton]
-    constructor -- 左辺から右辺と右辺から左辺にわける。y ∈ G ∨ y = xからy ∈ G をしめす。
-    ·intro h' -- 左辺から右辺。
-     have x_ne_y : x ≠ y := by
-       intro hH
-       rw [hH] at h
-       have hl :=h'.left.symm
-       contradiction --ここまででx neq yが証明できた。
-     cases h'.right with
-     |inl yG =>
-      exact yG  -- ここにも到達してなさそう。
-     |inr xy =>
-      rw [xy] at x_ne_y --ここに到達してなさそう。
-      contradiction --ここまででcasesの両側が証明できた?constructionの左辺から右辺も。goalが残っている。
-
-    --右辺から左辺 ゴールは、y ∈ G → y ≠ x ∧ (y ∈ G ∨ y = x)
-    intro h' --y ∈ G ゴールは、 y ≠ x ∧ (y ∈ G ∨ y = x)
-    constructor
-    -- サブゴールは、x neq y
-    have x_ne_y2 : x ≠ y := by
-      intro hH --x=y
-      rw [←hH] at h'  -- x in Gに書き換え。
-      contradiction
-    exact x_ne_y2.symm
-    -- 右側 ゴールは、(y ∈ G ∨ y = x)
-    exact Or.inl h'
-    --これで、lemmaの証明が完了した。
-
 lemma card_union_singleton_sub_one {G : Finset α} {x : α} : x ∉ G → x ∈ G ∪ {x} → G.card = (G ∪ {x}).card - 1 :=
   by
     intro xnG -- x ∉ G
@@ -336,11 +258,11 @@ lemma card_union_singleton_sub_one {G : Finset α} {x : α} : x ∉ G → x ∈ 
         -- a ∈ s → (s.erase a).card = s.card - 1
     let G' := G ∪ {x}
     have GdG: G' = G ∪ {x} := by rfl
-    have gg: G'.erase x = G := by exact h_erase xnG
+    have gg: G'.erase x = G := by exact union_erase_singleton G x xnG
     have gxH : x ∈ G' := by exact Finset.mem_union_right G (Finset.mem_singleton_self x)
     have ggg: G.card = (G ∪ {x}).card - 1 :=
       by
-        have h_erase := h_erase xnG
+        have h_erase := union_erase_singleton G x xnG
         rw [←h_erase]
         rw [gg]
         rw [←GdG]
@@ -406,6 +328,95 @@ by
   rw [List.mem_toFinset]
   exact h
 
+---------------------------
+-- ここから集合族っぽい定理集--
+
+--　最大要素の存在
+omit [DecidableEq α] in
+lemma exists_max_card (S : Finset (Finset α))(h : S ≠ ∅):
+  ∃ T ∈ S, T.card = S.sup (λ s => s.card) :=
+  by
+    -- 空でないことを証明
+    rw [←card_ne_zero_iff_nonempty] at h
+    rw [Finset.card_ne_zero] at h
+    -- 最大の要素が存在することを示す
+    have hh := Finset.exists_mem_eq_sup S h (λ s => s.card)
+    match hh with
+    | ⟨T, hT⟩ =>
+      use T
+      constructor
+      exact hT.left
+      exact hT.right.symm
+
+-- 大きさが2以上の場合は、1減らしても1以上の大きさを持つ。
+lemma ground_nonempty_after_minor {α : Type} [DecidableEq α] (ground : Finset α) (x : α) (hx: x ∈ ground) (gcard: ground.card ≥ 2) : (ground.erase x).Nonempty :=
+  by
+    rw [Finset.erase_eq]
+    apply Finset.nonempty_of_ne_empty
+    by_contra h_empty
+    by_cases hA : ground = ∅
+    rw [hA] at gcard
+    contradiction
+    -- ground.card = 1のケース
+    have g_eq_x: ground = {x} := by
+      ext y
+      constructor
+      intro hy
+      have hy' : y ∈ ground \ {x} := by
+          rw [h_empty]
+          simp_all only [ge_iff_le, sdiff_eq_empty_iff_subset, subset_singleton_iff, false_or, singleton_ne_empty,
+            not_false_eq_true, mem_singleton, not_mem_empty, card_singleton, Nat.not_ofNat_le_one]
+      rw [h_empty] at hy'
+      contradiction
+      -- y ∈ {x}のときに、groundに属することを示す
+      intro hy
+      have x_eq_y : x = y := by
+        rw [mem_singleton] at hy
+        rw [hy]
+      rw [x_eq_y] at hx
+      exact hx
+    rw [g_eq_x] at gcard
+    rw [Finset.card_singleton] at gcard
+    contradiction
+
+/-
+-- IntersectionClosedにあった補題
+--BasicLemmasに似たようなものがある。使っているが、置き換えれば消せる。
+lemma h_erase {G : Finset α} {x : α} :x ∉ G → (G ∪ {x}).erase x = G :=
+  by
+    intro h -- x ∉ G
+    ext y
+    simp only [Finset.mem_erase, Finset.mem_union, Finset.mem_singleton]
+    constructor -- 左辺から右辺と右辺から左辺にわける。y ∈ G ∨ y = xからy ∈ G をしめす。
+    ·intro h' -- 左辺から右辺。
+     have x_ne_y : x ≠ y := by
+       intro hH
+       rw [hH] at h
+       have hl :=h'.left.symm
+       contradiction --ここまででx neq yが証明できた。
+     cases h'.right with
+     |inl yG =>
+      exact yG  -- ここにも到達してなさそう。
+     |inr xy =>
+      rw [xy] at x_ne_y --ここに到達してなさそう。
+      contradiction --ここまででcasesの両側が証明できた?constructionの左辺から右辺も。goalが残っている。
+
+    --右辺から左辺 ゴールは、y ∈ G → y ≠ x ∧ (y ∈ G ∨ y = x)
+    intro h' --y ∈ G ゴールは、 y ≠ x ∧ (y ∈ G ∨ y = x)
+    constructor
+    -- サブゴールは、x neq y
+    have x_ne_y2 : x ≠ y := by
+      intro hH --x=y
+      rw [←hH] at h'  -- x in Gに書き換え。
+      contradiction
+    exact x_ne_y2.symm
+    -- 右側 ゴールは、(y ∈ G ∨ y = x)
+    exact Or.inl h'
+    --これで、lemmaの証明が完了した。
+-/
+
+
+
 theorem hyperedges_card_ge_two {α : Type} [DecidableEq α] [Fintype α]
   (F : IdealFamily α) (hground : 1 ≤ F.ground.card) : 2 ≤ number_of_hyperedges F.toSetFamily :=
 by
@@ -456,6 +467,60 @@ by
   simp_all only [card_powerset, ge_iff_le]
   rw [←h2]
   exact Finset.card_le_card h3
+
+-- 定理のステートメント
+theorem injective_image_injective {α β : Type} [DecidableEq α] [DecidableEq β]
+  (f : α → β) (hf : Function.Injective f) :
+  Function.Injective (λ (s : Finset α)=> Finset.image f s) :=
+  by
+     -- 関数が可逆であることを示すため、任意の集合 s, t に対してs.image f = t.image f ならば s = t であることを示す
+    intro s t hs
+    -- 集合の等価性を示すために ext を適用し、要素ごとの等価性を確認する
+    apply Finset.ext
+    intro x
+    -- sとtのイメージにおける要素 x の属し方が等しいことを示す
+    constructor
+    -- まず、x ∈ s ならば x ∈ t を示す
+    · intro hx
+      -- x ∈ s ならば f x ∈ s.image f
+      simp_all only
+      have fxs: f x ∈ s.image f := by
+        rw [Finset.mem_image]
+        use x
+      by_contra H
+      have fxt: f x ∉ t.image f := by
+        rw [Finset.mem_image]
+        rw [Function.Injective] at hf
+        --simp_all only [Finset.mem_image, not_true_eq_false]
+        --obtain ⟨w, h⟩ := fxs
+        --obtain ⟨left, right⟩ := h
+        by_contra hh
+        obtain ⟨w, h⟩ := hh
+        obtain ⟨left, right⟩ := h
+        have w_eq_x : w = x := hf right
+        rw [w_eq_x] at left
+        exact H left
+      rw [hs] at fxs
+      contradiction
+    -- 次に、x ∈ t ならば x ∈ s を示す
+    · intro hx
+      -- x ∈ t ならば f x ∈ t.image f = s.image f だから、sにもxが存在する
+      simp_all only
+      have fxt: f x ∈ t.image f := by
+        rw [Finset.mem_image]
+        use x
+      by_contra H
+      have fxs: f x ∉ s.image f := by
+        rw [Finset.mem_image]
+        rw [Function.Injective] at hf
+        by_contra hh
+        obtain ⟨w, h⟩ := hh
+        obtain ⟨left, right⟩ := h
+        have w_eq_x : w = x := hf right
+        rw [w_eq_x] at left
+        exact H left
+      rw [←hs] at fxt
+      contradiction
 
 
 end Ideal

@@ -389,59 +389,7 @@ lemma imageEq {n : ℕ} {s : Finset (Fin n)} (nposi : n ≥ 1)
     rw [←ht_image_finExpand]
     exact right2.2
 
--- 定理のステートメント
-theorem injective_image_injective {α β : Type} [DecidableEq α] [DecidableEq β]
-  (f : α → β) (hf : Function.Injective f) :
-  Function.Injective (λ (s : Finset α)=> Finset.image f s) :=
-  by
-     -- 関数が可逆であることを示すため、任意の集合 s, t に対してs.image f = t.image f ならば s = t であることを示す
-    intro s t hs
-    -- 集合の等価性を示すために ext を適用し、要素ごとの等価性を確認する
-    apply Finset.ext
-    intro x
-    -- sとtのイメージにおける要素 x の属し方が等しいことを示す
-    constructor
-    -- まず、x ∈ s ならば x ∈ t を示す
-    · intro hx
-      -- x ∈ s ならば f x ∈ s.image f
-      simp_all only
-      have fxs: f x ∈ s.image f := by
-        rw [Finset.mem_image]
-        use x
-      by_contra H
-      have fxt: f x ∉ t.image f := by
-        rw [Finset.mem_image]
-        rw [Function.Injective] at hf
-        --simp_all only [Finset.mem_image, not_true_eq_false]
-        --obtain ⟨w, h⟩ := fxs
-        --obtain ⟨left, right⟩ := h
-        by_contra hh
-        obtain ⟨w, h⟩ := hh
-        obtain ⟨left, right⟩ := h
-        have w_eq_x : w = x := hf right
-        rw [w_eq_x] at left
-        exact H left
-      rw [hs] at fxs
-      contradiction
-    -- 次に、x ∈ t ならば x ∈ s を示す
-    · intro hx
-      -- x ∈ t ならば f x ∈ t.image f = s.image f だから、sにもxが存在する
-      simp_all only
-      have fxt: f x ∈ t.image f := by
-        rw [Finset.mem_image]
-        use x
-      by_contra H
-      have fxs: f x ∉ s.image f := by
-        rw [Finset.mem_image]
-        rw [Function.Injective] at hf
-        by_contra hh
-        obtain ⟨w, h⟩ := hh
-        obtain ⟨left, right⟩ := h
-        have w_eq_x : w = x := hf right
-        rw [w_eq_x] at left
-        exact H left
-      rw [←hs] at fxt
-      contradiction
+
 
 lemma imageEq_card {n : ℕ} (nposi : n ≥ 1)
     (F : SetFamily (Fin (n + 1))) (v : Fin (n + 1)) :

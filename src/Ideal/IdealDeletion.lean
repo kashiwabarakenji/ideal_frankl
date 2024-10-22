@@ -14,7 +14,7 @@ namespace Ideal.IdealDeletion
 variable {α : Type} [DecidableEq α] [Fintype α][Nonempty α]
 
 open Finset
-
+/-
 lemma ground_nonempty_after_deletion {α : Type} [DecidableEq α] (ground : Finset α) (x : α) (hx: x ∈ ground) (gcard: ground.card ≥ 2) : (ground.erase x).Nonempty :=
   by
     rw [Finset.erase_eq]
@@ -44,49 +44,12 @@ lemma ground_nonempty_after_deletion {α : Type} [DecidableEq α] (ground : Fins
     rw [g_eq_x] at gcard
     rw [Finset.card_singleton] at gcard
     contradiction
+-/
 
 def deletion {α : Type} [DecidableEq α] [Fintype α](F : SetFamily α) (x : α) (hx: x ∈ F.ground) (gcard: F.ground.card ≥ 2): SetFamily α :=
   { ground := F.ground.erase x,
     sets := λ s => F.sets s ∧ ¬ x ∈ s,
     nonempty_ground := ground_nonempty_after_minor F.ground x hx gcard
-    /-      by
-        rw [Finset.erase_eq]
-        apply Finset.nonempty_of_ne_empty
-        by_contra h_empty
-        by_cases hA : F.ground = ∅
-        rw [hA] at gcard
-        --使わなかったからコメントアウト
-        --have _: F.ground.card = 0 := by
-        --  rw [hA]
-        --  exact Finset.card_empty
-        contradiction
-
-        --F.ground.card = 1のケース
-        have g_eq_x: F.ground = {x} := by
-          --h_empty : F.ground \ {x} = ∅
-          --¬F.ground = ∅
-          ext y
-          constructor
-          intro hy
-          have hy' : y ∈ F.ground \ {x} := by
-            rw [h_empty]
-            simp_all only [ge_iff_le, sdiff_eq_empty_iff_subset, subset_singleton_iff, false_or, singleton_ne_empty,
-              not_false_eq_true, mem_singleton, not_mem_empty, card_singleton, Nat.not_ofNat_le_one]
-          rw [h_empty] at hy'
-          contradiction
-
-          --y ∈ {x}のときに、F.groundに属することを示す
-          intro hy
-          have x_eq_y : x = y := by
-            rw [mem_singleton] at hy
-            rw [hy]
-          rw [x_eq_y] at hx
-          exact hx
-
-        rw [g_eq_x] at gcard
-        rw [Finset.card_singleton] at gcard
-        contradiction
-    -/
 
     inc_ground :=
 
@@ -178,7 +141,7 @@ def idealdeletion {α : Type} [DecidableEq α] [Fintype α] (F : IdealFamily α)
         rw [IdealFamily.toSetFamily]
         simp,
 
-    nonempty_ground := ground_nonempty_after_deletion F.ground x hx gcard,
+    nonempty_ground := ground_nonempty_after_minor F.ground x hx gcard,
 }
 
 -- Contraction操作の定義
@@ -205,7 +168,7 @@ def contraction (F : SetFamily α) (x : α) (hx : x ∈ F.ground) (gcard: F.grou
         exact hy.2 --y ∈ H
         --なぜexactが3つもあるのか。
 
-    nonempty_ground := ground_nonempty_after_deletion F.ground x hx gcard
+    nonempty_ground := ground_nonempty_after_minor F.ground x hx gcard
   }
 
 

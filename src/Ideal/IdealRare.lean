@@ -303,7 +303,7 @@ lemma map_hyperedge_injective (sf : IdealFamily α) (x : α) (G: Finset α) (imh
     -- H1.1.erase x = H2.1.erase x から H1.1 = H2.1 であることを示す
     have h_erase_eq : H1.1 = H2.1 :=
       by
-        exact set_eq_of_erase_eq  H1.2.2 H2.2.2 result
+        exact (erase_inj_of_mem  H1.2.2 H2.2.2).mp result
     exact subtype_eq_of_val_eq sf x H1 H2 h_erase_eq
 
 omit [Nonempty α] in
