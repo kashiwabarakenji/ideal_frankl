@@ -89,7 +89,7 @@ theorem basecase : P 2 := by
     apply Finset.eq_of_subset_of_card_le
     simp_all only [Fin.isValue]
     intro a
-    intro a_1
+    intro _
     simp_all only [Fin.isValue, Finset.mem_insert, Finset.mem_singleton]
     simp_all only [Fin.isValue, Finset.mem_singleton, zero_ne_one, not_false_eq_true, Finset.card_insert_of_not_mem,
       Finset.card_singleton, Nat.reduceAdd, le_refl]
@@ -164,7 +164,7 @@ theorem basecase : P 2 := by
     simp_all only [Fin.isValue, Finset.powerset_univ, Finset.disjoint_insert_right, Finset.mem_insert,
       Finset.mem_singleton, Finset.singleton_ne_empty, or_false, Finset.disjoint_singleton_right, one_ne_zero,
       not_false_eq_true, Finset.union_insert, Finset.insert_union, zeroone]
-    obtain ⟨left, right⟩ := zeroonedisj
+    --obtain ⟨left, right⟩ := zeroonedisj
     rfl
 
   have leftside: ∑ x in Finset.filter F.sets (Finset.powerset zeroone), x.card = 2 + (Finset.card (Finset.filter (λ x => F.sets {x}) zeroone)) := by
@@ -218,7 +218,7 @@ theorem basecase : P 2 := by
           simp_all only [Fin.isValue, Finset.powerset_univ, Finset.disjoint_insert_right, Finset.mem_insert,
             Finset.mem_singleton, Finset.singleton_ne_empty, or_false, Finset.disjoint_singleton_right,
             Finset.union_insert, Finset.insert_union, ↓reduceIte, zeroone]
-          obtain ⟨left, right⟩ := zeroonedisj
+          --obtain ⟨left, right⟩ := zeroonedisj
           symm
           simp [result0, Finset.filter_singleton]
           simp_all only [Fin.isValue, ↓reduceIte, Finset.card_singleton]
@@ -226,7 +226,7 @@ theorem basecase : P 2 := by
           simp_all only [Fin.isValue, Finset.powerset_univ, Finset.disjoint_insert_right, Finset.mem_insert,
             Finset.mem_singleton, Finset.singleton_ne_empty, or_false, Finset.disjoint_singleton_right,
             Finset.union_insert, Finset.insert_union, ↓reduceIte, zeroone]
-          obtain ⟨left, right⟩ := zeroonedisj
+          --obtain ⟨left, right⟩ := zeroonedisj
           symm
           simp_all only [Fin.isValue, Finset.card_eq_zero]
           ext1 a
@@ -240,7 +240,7 @@ theorem basecase : P 2 := by
           simp_all only [Fin.isValue, Finset.powerset_univ, Finset.disjoint_insert_right, Finset.mem_insert,
             Finset.mem_singleton, Finset.singleton_ne_empty, or_false, Finset.disjoint_singleton_right,
             Finset.union_insert, Finset.insert_union, ↓reduceIte, zeroone]
-          obtain ⟨left, right⟩ := zeroonedisj
+          --obtain ⟨left, right⟩ := zeroonedisj
           symm
           simp [result0, Finset.filter_singleton]
           simp_all only [Fin.isValue, ↓reduceIte, Finset.card_singleton]
@@ -248,7 +248,7 @@ theorem basecase : P 2 := by
           simp_all only [Fin.isValue, Finset.powerset_univ, Finset.disjoint_insert_right, Finset.mem_insert,
             Finset.mem_singleton, Finset.singleton_ne_empty, or_false, Finset.disjoint_singleton_right,
             Finset.union_insert, Finset.insert_union, ↓reduceIte, zeroone]
-          obtain ⟨left, right⟩ := zeroonedisj
+          --obtain ⟨left, right⟩ := zeroonedisj
           symm
           simp_all only [Fin.isValue, Finset.card_eq_zero]
           ext1 a
@@ -359,13 +359,49 @@ theorem basecase : P 2 := by
     Finset.mem_singleton, Finset.singleton_ne_empty, or_false, Finset.disjoint_singleton_right, one_ne_zero,
     not_false_eq_true, Finset.image_insert, Finset.image_singleton, Finset.image_empty, Finset.disjoint_empty_right,
     Finset.union_insert, Finset.union_assoc, Nat.cast_add, Nat.cast_ofNat, ge_iff_le, zeroone]
-  obtain ⟨left, right⟩ := zeroonedisj
+  --obtain ⟨left, right⟩ := zeroonedisj
+  norm_cast
+  --rw [rightside]
+  rw [leftside]
+  simp
+  have new_goal: (Finset.filter (fun x => F.sets {x}) ({0, 1}:Finset (Fin 2))).card = (Finset.filter (fun s => F.sets s) {{0}, {1}}:Finset (Finset (Fin 2))).card:= by
+    simp
+    let domain := Finset.filter (fun x => F.sets {x}) ({0, 1}:Finset (Fin 2))
+    let range := Finset.filter (fun s => F.sets s) {{0}, {1}}
+    --let i: (x :Fin 2) → x ∈ ({0, 1}: Finset (Fin 2)) → Finset (Fin 2) := λ x _ => {x}
+    let i: (x :Fin 2) → x ∈ domain → Finset (Fin 2) := λ x _ => {x}
+    --let i: (Fin 2) → Finset (Fin 2) := λ x => {x}
+    have hi: ∀ x (h:x ∈ domain), i x h ∈ range := by
+      intro x
+      intro h
+      simp_all only [Fin.isValue, Finset.mem_filter, Finset.mem_insert, Finset.mem_singleton, Finset.singleton_inj,
+        and_self, and_imp, implies_true, exists_prop, forall_eq_or_imp, exists_eq_right, zero_ne_one, or_false,
+        one_ne_zero, or_true, domain, i, range]
+      simp_all only [Fin.isValue, Finset.mem_filter, Finset.mem_insert, Finset.mem_singleton, and_self, domain]
+    have inj: ∀ (a₁ : Fin 2) (ha₁ : a₁ ∈ domain) (a₂ : Fin 2) (ha₂ : a₂ ∈ domain), i a₁ ha₁ = i a₂ ha₂ → a₁ = a₂ := by
+      intro a₁ ha₁ a₂ ha₂ a
+      simp_all only [Fin.isValue, Finset.mem_filter, Finset.mem_insert, Finset.mem_singleton, Finset.singleton_inj,
+        and_self, and_imp, implies_true, domain, i, range]
+    have surj: ∀ s ∈ range, ∃ (x : Fin 2), ∃ (h : x ∈ domain), i x h = s := by
+      intro s a
+      simp_all only [Fin.isValue, Finset.mem_filter, Finset.mem_insert, Finset.mem_singleton, and_self,
+        Finset.singleton_inj, and_imp, implies_true, exists_prop, domain, i, range]
+      obtain ⟨left_1, right_1⟩ := a
+      cases left_1 with
+      | inl h =>
+        subst h
+        simp_all only [Fin.isValue, Finset.singleton_inj, exists_eq_right, zero_ne_one, or_false, and_self]
+      | inr h_1 =>
+        subst h_1
+        simp_all only [Fin.isValue, Finset.singleton_inj, exists_eq_right, one_ne_zero, or_true, and_self]
 
-  --rw [←rightside]
-  --rw [leftside]
+
+    let cardbij := @Finset.card_bij _ _ domain range i hi inj surj
+    rw [cardbij]
+  rw [new_goal]
 
   --leftsideとrightsideを使って、goalを証明する。
-  linarith
+
 
 theorem induction_step {n:Nat} (hn: n >= 2) (h_ind: P n) : P (n+1) := by
   -- ここでFintypeインスタンスを明示的に使用
