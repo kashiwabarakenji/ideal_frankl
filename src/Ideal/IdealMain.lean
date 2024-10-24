@@ -64,6 +64,10 @@ theorem filter_union_sum (P : Finset α → Prop) [DecidablePred P] (A B : Finse
    rw [←sum_disjoint]
    rw [←filter_union_eq]
 
+--disjoint_filter_filterにあった。
+--theorem filter_disjoint (P : Finset α → Prop) [DecidablePred P] (A B : Finset (Finset α)) (disj: Disjoint A  B):
+--  Disjoint (Finset.filter P A) (Finset.filter P B) := by
+
 --def P (x:Nat) : Prop := x ≥ 2  ∧ ∀ (F: IdealFamily (Fin x)), F.ground.card = x → normalized_degree_sum F.toSetFamily ≤ 0
 
 theorem basecase : P 2 := by
@@ -129,6 +133,24 @@ theorem basecase : P 2 := by
     simp_all only [Fin.isValue, Finset.mem_inter, Finset.mem_filter, Finset.mem_singleton, Finset.not_mem_empty,
       iff_false, not_and, zero_ne_one, false_and, not_false_eq_true, and_imp, implies_true]
 
+  have zeroonedisj4: Disjoint ({0, 1}:(Finset (Fin 2))) ∅ := by
+    simp_all only [Fin.isValue, Finset.powerset_univ, Finset.disjoint_insert_right, Finset.mem_insert,
+      Finset.mem_singleton, Finset.singleton_ne_empty, or_false, Finset.disjoint_singleton_right, one_ne_zero,
+      not_false_eq_true, Finset.image_insert, Finset.image_singleton, Finset.image_empty, Finset.disjoint_empty_right,
+      zeroone]
+
+  have zeroonedisj5: Disjoint ({{0, 1}}:Finset (Finset (Fin 2))) {∅} := by
+    simp_all only [Fin.isValue, Finset.powerset_univ, Finset.disjoint_insert_right, Finset.mem_insert,
+      Finset.mem_singleton, Finset.singleton_ne_empty, or_false, Finset.disjoint_singleton_right, one_ne_zero,
+      not_false_eq_true, Finset.image_insert, Finset.image_singleton, Finset.image_empty, Finset.disjoint_empty_right,
+      zeroone]
+    obtain ⟨left, right⟩ := zeroonedisj
+    apply Aesop.BuiltinRules.not_intro
+    intro a
+    simp_all only [Fin.isValue, Finset.mem_insert, Finset.insert_eq_self, Finset.mem_singleton, zero_ne_one, or_true,
+      Finset.insert_eq_of_mem]
+    contradiction
+
   have zerooneunion: ({{0, 1}, ∅} : Finset (Finset (Fin 2))) ∪ ({{0}, {1}} : Finset (Finset (Fin 2))) = {{0, 1}, {0}, {1}, ∅} := by
     simp_all only [Fin.isValue]
     simp_all only [Fin.isValue,  zeroone]
@@ -137,6 +159,13 @@ theorem basecase : P 2 := by
   have zerooneunion2: ({0} : Finset (Fin 2)) ∪ ({1} : Finset (Fin 2)) = {0, 1} := by
     simp_all only [Fin.isValue]
     decide
+
+  have zerooneunion3: ({{0, 1}, ∅} : Finset (Finset (Fin 2))) = {{0, 1}} ∪  {∅} := by
+    simp_all only [Fin.isValue, Finset.powerset_univ, Finset.disjoint_insert_right, Finset.mem_insert,
+      Finset.mem_singleton, Finset.singleton_ne_empty, or_false, Finset.disjoint_singleton_right, one_ne_zero,
+      not_false_eq_true, Finset.union_insert, Finset.insert_union, zeroone]
+    obtain ⟨left, right⟩ := zeroonedisj
+    rfl
 
   have leftside: ∑ x in Finset.filter F.sets (Finset.powerset zeroone), x.card = 2 + (Finset.card (Finset.filter (λ x => F.sets {x}) zeroone)) := by
     rw [pow2]
@@ -166,6 +195,10 @@ theorem basecase : P 2 := by
       symm
       symm
       simp [Finset.filter_true_of_mem, *]
+      simp_all only [Fin.isValue, one_ne_zero, not_false_eq_true, Finset.image_insert, Finset.image_singleton,
+        Finset.image_empty, Finset.disjoint_empty_right, Finset.union_assoc, Finset.mem_union, Finset.mem_singleton,
+        Finset.singleton_ne_empty, or_false]
+      rfl
 
     have goal2: ∑ x ∈ Finset.filter F.sets {{0}, {1}}, x.card = (Finset.filter (fun x => F.sets {x}) zeroone).card := by
       rw [Finset.sum_filter, Finset.card_filter]
@@ -250,11 +283,86 @@ theorem basecase : P 2 := by
   --rw [leftside] 表面上一致しているが、一致しない。
   have rightside: (Finset.filter F.sets zeroone.powerset).card =  2 + (Finset.card (Finset.filter (λ s => F.sets s) {{0},{1}})) := by
     have rightside_lem: (Finset.filter F.sets zeroone.powerset).card = (Finset.card (Finset.filter (λ s => F.sets s) {zeroone, ∅})) + (Finset.card (Finset.filter (λ s => F.sets s) {{0},{1}})) := by
-      sorry
+      rw [pow2]
+      rw [←zerooneunion]
+      --lemma filter_union_eq (P : Finset α → Prop) [DecidablePred P] (A B : Finset (Finset α)) : (A ∪ B).filter P = (A.filter P) ∪ (B.filter P)
+      rw [filter_union_eq F.sets {{0, 1}, ∅} {{0}, {1}}]
+      simp_all only [Fin.isValue, Finset.powerset_univ, Finset.disjoint_insert_right, Finset.mem_insert,
+        Finset.mem_singleton, Finset.singleton_ne_empty, or_false, Finset.disjoint_singleton_right, one_ne_zero,
+        not_false_eq_true, Finset.union_insert, Finset.insert_union, zeroone]
+      obtain ⟨left, right⟩ := zeroonedisj
+      rw [Finset.card_union_of_disjoint]
+      symm
+      apply Finset.disjoint_filter_filter
+      simp_all only [Fin.isValue, Finset.union_assoc, Finset.mem_union, Finset.mem_singleton,
+        Finset.singleton_ne_empty, or_false, Finset.disjoint_union_right, Finset.disjoint_singleton_right,
+        Finset.mem_insert, Finset.insert_eq_self, zero_ne_one, not_or]
+      apply And.intro
+      · apply Aesop.BuiltinRules.not_intro
+        intro a
+        simp_all only [Fin.isValue, Finset.mem_insert, Finset.singleton_inj, zero_ne_one, Finset.mem_singleton,
+          Finset.singleton_ne_empty, or_self, or_false, Finset.insert_eq_of_mem, Finset.mem_union,
+          Finset.union_eq_left, Finset.subset_singleton_iff, one_ne_zero]
+      · apply And.intro
+        · apply Aesop.BuiltinRules.not_intro
+          intro a
+          simp_all only [Fin.isValue, Finset.mem_insert, Finset.singleton_inj, zero_ne_one, Finset.mem_singleton,
+            or_true, Finset.insert_eq_of_mem, Finset.mem_union, or_false]
+          contradiction
+        · apply Aesop.BuiltinRules.not_intro
+          intro a
+          simp_all only [Fin.isValue, Finset.mem_singleton, Finset.insert_eq_of_mem, Finset.union_idempotent]
+          contradiction
+
     have rightside_eq2:(Finset.card (Finset.filter (λ s => F.sets s) {zeroone, ∅})) = 2:= by
-      sorry
+      dsimp [zeroone]
+      rw [zerooneunion3]
+      rw [filter_union_eq F.sets {{0, 1}} {∅}]
+      --#check @Finset.disjoint_filter_filter
+      -- Ensure the correct usage of Finset.disjoint_filter_filter
+      --Finset.disjoint_filter_filter zeroonedisj
+      --#check Finset.card_union_of_disjoint (Finset.disjoint_filter_filter zeroonedisj4)
+      have disjoint_filtered := (@Finset.disjoint_filter_filter _ ({{0, 1}}:Finset (Finset (Fin 2))) {∅} F.sets F.sets) zeroonedisj5
+      rw [Finset.card_union_of_disjoint disjoint_filtered]
+      simp
+      have value2: (Finset.filter F.sets {{0, 1}}).card = 1 := by
+        have assum: ∀ x∈ ({{0,1}}:Finset (Finset (Fin 2))), F.sets x := by
+          intro x
+          simp_all only [Fin.isValue]
+          obtain ⟨val, property⟩ := x
+          intro a
+          simp_all only [Fin.isValue, Finset.mem_singleton]
+        rw [(Finset.filter_eq_self).mpr assum]
+        simp_all only [Fin.isValue, Finset.mem_singleton, forall_eq, Finset.card_singleton]
+        --hasground : F.sets {0, 1}
+
+      have value0: (Finset.filter F.sets {∅}).card = 1:= by
+        --hasempty : F.sets ∅
+        have assum: ∀ x∈ ({∅}:Finset (Finset (Fin 2))), F.sets x := by
+          intro x
+          simp_all only [Fin.isValue]
+          obtain ⟨val, property⟩ := x
+          intro a
+          simp_all only [Fin.isValue, Finset.mem_singleton]
+        rw [(Finset.filter_eq_self).mpr assum]
+        simp_all only [Fin.isValue, Finset.mem_singleton, forall_eq, Finset.card_singleton]
+
+      simp_all only [Fin.isValue, Finset.powerset_univ, Finset.disjoint_insert_right, Finset.mem_union,
+        Finset.mem_singleton, Finset.singleton_ne_empty, or_false, Finset.disjoint_singleton_right, one_ne_zero,
+        not_false_eq_true, Finset.image_insert, Finset.image_singleton, Finset.image_empty,
+        Finset.disjoint_empty_right, Finset.union_insert, Finset.union_assoc, Nat.reduceAdd, zeroone]
+
     rw [rightside_lem]
     rw [rightside_eq2]
+
+  simp_all only [Fin.isValue, Finset.powerset_univ, Finset.disjoint_insert_right, Finset.mem_union,
+    Finset.mem_singleton, Finset.singleton_ne_empty, or_false, Finset.disjoint_singleton_right, one_ne_zero,
+    not_false_eq_true, Finset.image_insert, Finset.image_singleton, Finset.image_empty, Finset.disjoint_empty_right,
+    Finset.union_insert, Finset.union_assoc, Nat.cast_add, Nat.cast_ofNat, ge_iff_le, zeroone]
+  obtain ⟨left, right⟩ := zeroonedisj
+
+  --rw [←rightside]
+  --rw [leftside]
 
   --leftsideとrightsideを使って、goalを証明する。
   linarith
