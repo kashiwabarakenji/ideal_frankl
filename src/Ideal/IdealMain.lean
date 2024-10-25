@@ -575,4 +575,19 @@ theorem induction_step {n:Nat} (hn: n >= 2) (h_ind: P n) : P (n+1) := by
           exact ⟨h_ge2, h_ind⟩
         exact degonemain n F v hv_left hv_singleton hcard0 hcard h_indPn
 
-end Ideal
+--ideal集合族が平均rareであることの定理。今回のプロジェクトのメイン定理。
+theorem P_all (x : Nat) (hx : x ≥ 2) : P x := by
+  -- x が 2 の場合は basecase を適用
+  cases x with
+  | zero => contradiction -- x が 0 の場合は矛盾
+  | succ x =>
+    cases x with
+    | zero => contradiction -- x が 1 の場合も矛盾
+    | succ n =>
+      -- x = 2 の場合
+      cases n with
+      | zero => exact basecase -- x = 2 の場合は basecase を適用
+      | succ m =>
+        -- x = m + 3 以上の場合
+        have hn : m + 2 ≥ 2 := Nat.le_add_left _ _ -- m + 2 は 2 以上
+        exact induction_step hn (P_all (m + 2) hn)
