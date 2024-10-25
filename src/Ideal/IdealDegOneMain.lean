@@ -14,14 +14,13 @@ import Ideal.IdealDegreeOne
 import Ideal.IdealFin
 import LeanCopilot
 
-
 set_option maxHeartbeats 500000
 
 namespace Ideal
 
 variable {α : Type} [DecidableEq α] [Fintype α]
 
-lemma example_ineq (k : ℕ) :
+lemma ineq_lem (k : ℕ) :
   (k + 1) * 2^(k + 1) + 2 * (k + 2) + (2 ^ (k + 1) - (k + 2)) = (2 ^ (k + 1) + 1) * (k + 2) := by
     have basic_ineq (n : ℕ) (h : 1 ≤ n) : 2^n≥n+1 :=
         by
@@ -37,7 +36,6 @@ lemma example_ineq (k : ℕ) :
           -- 2^(k + 1) = 2 * 2^k ≥ 2 * (k + 1) = k + 2
           have k_geq_0 : k ≥ 0 := by
               simp_all only [ge_iff_le, le_add_iff_nonneg_left, zero_le]
-
 
           rw [pow_succ 2 k]
 
@@ -82,7 +80,6 @@ lemma example_ineq (k : ℕ) :
       = 2^(k + 1) * (k + 1) + 2 * (k + 2) + (2 ^ (k + 1) - (k + 2)) := by ring_nf
     _ = (2^(k + 1) * (k + 1) + 2*k + 4) + (2 ^ (k + 1) - (k + 2)) := by ring_nf
     _ = ((2^(k + 1) * (k + 1) + 2*k + 4) + 2 ^ (k + 1)) - (k + 2) := by
-      --#check add_sub_assoc (2^(k + 1) * (k + 1) + 2*k + 4) (2 ^ (k + 1)) (k + 2) (basic_ineq (k+1) hh1)
       rw [add_sub_assoc (2^(k + 1) * (k + 1) + 2*k + 4) (2 ^ (k + 1)) (k + 2) (basic_ineq (k+1) hh1)]
     _ = 2^(k + 1) * (k + 1) + 2^(k + 1) + 2*k + 4 - (k + 2) := by ring_nf
     _ = 2^(k + 1) * (k + 1 + 1) + 2 * k + 4 - (k + 2) := by ring_nf
@@ -100,18 +97,18 @@ lemma example_ineq (k : ℕ) :
 
 def P (x:Nat) : Prop := x ≥ 2  ∧ ∀ (F: IdealFamily (Fin x)), F.ground.card = x → normalized_degree_sum F.toSetFamily ≤ 0
 
-theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (hv_left : v ∈ F.ground) (hv_singleton : ¬ F.sets {v}) (hcard0 : F.ground.card ≥ 2) (hcard: F.ground.card = n + 1) (h_ind: P n): normalized_degree_sum F.toSetFamily ≤ 0 :=
+theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in_ground : v ∈ F.ground) (singleton_hyperedgge_none : ¬ F.sets {v}) (ground_ge_two : F.ground.card ≥ 2) (ground_card: F.ground.card = n + 1) (h_ind: P n): normalized_degree_sum F.toSetFamily ≤ 0 :=
   by
 
     have degree_one: degree F.toSetFamily v = 1 := by
-      exact degree_one_if_not_hyperedge F hv_left hv_singleton
-    --次数1があったからといって、normalized_degree_sumが負になるとはすぐに言えない。ただし、次数1があるということは、vは全体集合のみを含む。
+      exact degree_one_if_not_hyperedge F v_in_ground singleton_hyperedgge_none
+    --次数1があるということは、vは全体集合のみを含む。
     --goal normalized_degree_sum F.toSetFamily ≤ 0
     rw [normalized_degree_sum]
-    by_cases hv_hyperedge:(F.sets (F.ground \ {v}))
+    by_cases ground_minus_v_none:(F.sets (F.ground \ {v}))
     · case pos =>
-      have total := ground_minus_v_ideal_total F v hv_left hv_hyperedge hv_singleton hcard0
-      have number := ground_minus_v_ideal_number F v hv_left hv_hyperedge hv_singleton
+      have total := ground_minus_v_ideal_total F v v_in_ground ground_minus_v_none singleton_hyperedgge_none ground_ge_two
+      have number := ground_minus_v_ideal_number F v v_in_ground ground_minus_v_none singleton_hyperedgge_none
       rw [total, number]
       simp_all only [ge_iff_le, tsub_le_iff_right, zero_add, Nat.cast_add, Nat.cast_one]
       simp_all
@@ -157,8 +154,8 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (hv_l
           omega
 
       --以下はゴールと同じ。帰納法で示す必要あり。nがゼロの時はおかしくなるので一つずらしたほうがいいかも。
-      --have inequality_example (n : ℕ) : (n * 2^(n - 1) + (n + 1)) * 2 ≤ (2^n + 1) * (n + 1) := by
-      have inequality_example (n : ℕ) : ((n+1) * (2^n) + (n + 2))* 2 ≤ (2^(n+1) + 1) * (n + 2) := by
+      --have inequality_calc (n : ℕ) : (n * 2^(n - 1) + (n + 1)) * 2 ≤ (2^n + 1) * (n + 1) := by
+      have inequality_calc (n : ℕ) : ((n+1) * (2^n) + (n + 2))* 2 ≤ (2^(n+1) + 1) * (n + 2) := by
         induction n with
         | zero =>
           simp_all only [ge_iff_le, zero_add, pow_zero, mul_one, Nat.reduceAdd, Nat.reduceMul, pow_one, le_refl]
@@ -181,13 +178,12 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (hv_l
             simp_all only [ge_iff_le]
             omega
 
-          calc  --1ずらす必要あり。
-
+          calc
               ((k + 2) * 2^(k+1) + (k + 3)) * 2
             = (k + 2) * 2^(k + 2) + 2 * (k + 3) := by ring
          _  = (k + 2) * 2^(k + 2) + 2 * (k + 3) + (2 ^ (k+2)-(k+3)) - (2^(k+2) - (k+3))   := by simp_all only [true_implies, ge_iff_le, le_add_iff_nonneg_left, zero_le, add_tsub_cancel_right]
          _  = (2^(k + 2) + 1) * (k + 3) - (2^(k+2) - (k+2)-1) := by
-               rw [example_ineq (k+1)]
+               rw [ineq_lem (k+1)]
                simp_all only [true_implies, ge_iff_le, le_add_iff_nonneg_left, zero_le]
                rfl
          _  ≤ (2^(k + 2) + 1) * (k + 3) := by
@@ -195,94 +191,69 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (hv_l
                 omega
       --goal (↑(F.ground.card - 1) * 2 ^ (F.ground.card - 2) + ↑F.ground.card) * 2 ≤ (2 ^ (F.ground.card - 1) + 1) * ↑F.ground.card
 
-
-
-
-      let result :=  inequality_example (n-1)
+      let result :=  inequality_calc (n-1)
       norm_cast at result
       norm_cast
-      rw [Nat.sub_add_cancel hcard0] at result
+      rw [Nat.sub_add_cancel ground_ge_two] at result
       have n_eq: n - 1 + 2 = n + 1 := by
         omega
       rw [n_eq] at result
       exact result
+      --by_cases ground_minus_v_none:(F.sets (F.ground \ {v}))のcase posの場合の証明おわり
 
-
-
-      --by_cases hv_hyperedge:(F.sets (F.ground \ {v}))のcase posの場合の証明おわり
-
-    · case neg => --by_cases hv_hyperedge:(F.sets (F.ground \ {v}))のcase negの場合の証明
+    · case neg => --by_cases ground_minus_v_none:(F.sets (F.ground \ {v}))のcase negの場合の証明
       --idealDelFとFでnumber_of_hyperedgesが同じになることを示す。
       --idealDelFとFでtotal_size_of_hyperedgesが1つちがいになることを示す。
       --idealDefFのnormalized_degree_sumが非負のとき、Fも非負であることを示す。
-      simp only [ge_iff_le, tsub_le_iff_right, zero_add, Nat.cast_add, Nat.cast_one] at hv_singleton degree_one ⊢
-      --lemma total_degone_card {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) (v : α) (hv: v ∈ F.ground) (deg1: degree F v = 1) (hasGround: F.sets F.ground)(gcard: F.ground.card ≥ 2) :
-      --total_size_of_hyperedges F = (F.ground.powerset.filter (λ s => F.sets s ∧ v ∉ s )).sum Finset.card + F.ground.card
-      --rw [Ideal.total_degone_card F.toSetFamily v hv_left degree_one F.univ_mem hcard0]
-      --rw [Ideal.erase_ground_card F.toSetFamily v hv_left degree_one]
+      simp only [ge_iff_le, tsub_le_iff_right, zero_add, Nat.cast_add, Nat.cast_one] at singleton_hyperedgge_none degree_one ⊢
 
-      let idealDelF := IdealDeletion.idealdeletion F v hv_left hcard0
-      --delFじゃなくidealFに統一する。
+      let idealDelF := IdealDeletion.idealdeletion F v v_in_ground ground_ge_two
 
-      have hvfideal: v ∉ idealDelF.ground := by
+      have v_notin_minor_ground: v ∉ idealDelF.ground := by
         intro h
-        --simp_all only [ge_iff_le]
         dsimp [idealDelF] at h
         rw [IdealDeletion.idealdeletion] at h
         simp_all only [Finset.mem_erase, ne_eq, not_true_eq_false, and_true]
 
-      have hcard1ideal: idealDelF.ground.card = n := by
-        --simp_all only [ge_iff_le]
+      --このあとの補題のomegaの計算に利用されているよう。
+      have minor_ground_card: idealDelF.ground.card = n := by
         simp_all only [idealDelF]
-        --goal ((F.toSetFamily ∖ v) hv_left hcard0).ground.card = n
+        --goal ((F.toSetFamily ∖ v) v_in_ground ground_ge_two).ground.card = n
         dsimp [IdealDeletion.idealdeletion]
         simp_all only [Finset.card_erase_of_mem, add_tsub_cancel_right]
 
-
-      have hcard2ideal: idealDelF.ground.card ≥ 1 := by
+      have minor_ground_card_ge_one: idealDelF.ground.card ≥ 1 := by
         simp_all only [ge_iff_le, idealDelF]
         omega
 
       dsimp [P] at h_ind
-      --#check h_ind
-      have nposi : n ≥ 1 := by
+      have n_ge_one : n ≥ 1 := by
         omega
-      let idealDelF' := @IdealFamily.deletionToN (Fin (n + 1)) n nposi idealDelF v hvfideal hcard2ideal
+      let idealDelF' := @IdealFamily.deletionToN (Fin (n + 1)) n n_ge_one idealDelF v v_notin_minor_ground minor_ground_card_ge_one
       let ineq := h_ind.2 idealDelF' (by
         simp_all only [ge_iff_le]
         dsimp [idealDelF']
         dsimp [IdealFamily.deletionToN]
         dsimp [idealDelF]
-        --simp_all only [ge_iff_le]
-        --#check finDropCardEq nposi v (IdealDeletion.idealdeletion F v hv_left hcard0).ground hvf
-        --Ideal.finDropCardEq {n : ℕ} (nposi : n ≥ 1) (v : Fin (n + 1)) (s : Finset (Fin (n + 1))) (hvx : v ∉ s) :
-        -- (Finset.image (finDrop nposi v) s).card = s.card - 1
+
         calc
-          (Finset.image (finDrop nposi v) (IdealDeletion.idealdeletion F v hv_left hcard0).ground).card
-        = ((IdealDeletion.idealdeletion F v hv_left hcard0).ground).card := by
-            exact finDropCardEq nposi v (IdealDeletion.idealdeletion F v hv_left hcard0).ground hvfideal
+          (Finset.image (finDrop n_ge_one v) (IdealDeletion.idealdeletion F v v_in_ground ground_ge_two).ground).card
+        = ((IdealDeletion.idealdeletion F v v_in_ground ground_ge_two).ground).card := by
+            exact finDropCardEq n_ge_one v (IdealDeletion.idealdeletion F v v_in_ground ground_ge_two).ground v_notin_minor_ground
       _ = n := by
             simp_all only [ge_iff_le]
       )
       rw [normalized_degree_sum] at ineq
       simp only [ge_iff_le, tsub_le_iff_right, zero_add, Nat.cast_add, Nat.cast_one] at ineq
-      --rw [Ideal.total_degone_card] at ineq
       --Fin nとFin n+1の変換にIdealFamily.deletionToN_numberは必要かも。不等式系はFin n+1の世界にそろえればいいか。
       dsimp [idealDelF'] at ineq
-      --#check IdealFamily.deletionToN_number nposi idealDelF v hvfideal hcard2ideal
-      simp [IdealFamily.deletionToN_number nposi idealDelF v hvfideal hcard2ideal] at ineq
+      --#check IdealFamily.deletionToN_number n_ge_one idealDelF v v_notin_minor_ground minor_ground_card_ge_one
+      simp [IdealFamily.deletionToN_number n_ge_one idealDelF v v_notin_minor_ground minor_ground_card_ge_one] at ineq
       --ineqの方の変数と、ゴールの方の変数が同じものを指すものがあるので、それを補題として示す。
-      --集合族のレベルでなく数のレベルで示すとなると、また全単車を構成する必要がある。既存の定理が利用できないか。
-      --以下は言明が間違っているかも。証明にはsum_bijを利用するかも。
 
       let domain := Finset.filter (λ (s:Finset (Fin (n+1))) => F.sets s) (F.ground.powerset)
       let range := Finset.filter (λ (s:Finset (Fin (n+1))) => (F.sets s ∧ v ∉ s) ∨ s = F.ground.erase v) ((F.ground.erase v).powerset)
 
-        --#check Finset.card_bij
-        --Finset.card_bij.{u_1, u_2} {α : Type u_1} {β : Type u_2} {s : Finset α} {t : Finset β} (i : (a : α) → a ∈ s → β)
-        --(hi : ∀ (a : α) (ha : a ∈ s), i a ha ∈ t)
-        --(i_inj : ∀ (a₁ : α) (ha₁ : a₁ ∈ s) (a₂ : α) (ha₂ : a₂ ∈ s), i a₁ ha₁ = i a₂ ha₂ → a₁ = a₂)
-        --(i_surj : ∀ b ∈ t, ∃ a, ∃ (ha : a ∈ s), i a ha = b) : s.card = t.card
       set i := (λ (s : Finset (Fin (n+1))) (_: s ∈ domain) => s.erase v)
         --v notin sの場合はそのままで、v in sの場合はs erase vとなる。
       have hi : ∀ (s : Finset (Fin (n+1))), (hs: s ∈ domain) → (i s hs) ∈ range:= by
@@ -305,9 +276,9 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (hv_l
           dsimp [domain] at hs'
           rw [Finset.mem_filter] at hs'
           rw [Finset.mem_powerset] at hs'
-          --hv_singletonからhyperedgeでvを含んでいるものは、全体集合のみ。
+          --singleton_hyperedgge_noneからhyperedgeでvを含んでいるものは、全体集合のみ。
           by_cases s=F.ground
-          · case pos => --rangeのまたはの条件はどこにいったのか。
+          · case pos =>
               dsimp [i,range]
               rename_i h
               subst h
@@ -377,9 +348,9 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (hv_l
                 simp_all only [not_false_eq_true, Finset.mem_erase, ne_eq, and_self]
 
           · case neg =>
-            --v in sということはsは全体集合であり、ground - vはhv_hyperedge : ¬F.sets (F.ground \ {v})の仮定よりhyperedgeではない。よって、h_inkに矛盾。
+            --v in sということはsは全体集合であり、ground - vはground_minus_v_none : ¬F.sets (F.ground \ {v})の仮定よりhyperedgeではない。よって、h_inkに矛盾。
             have neg_lem: s = F.ground := by
-              --hv_singleton : ¬F.sets {v}から言える。
+              --singleton_hyperedgge_none : ¬F.sets {v}から言える。
               by_contra h_contra
               have v_subset_s: {v} ⊆ s := by
                 simp_all only [ge_iff_le]
@@ -405,7 +376,7 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (hv_l
               --仮定htに矛盾
               rw [h2] at ht
               have : ¬F.sets (F.ground.erase v) := by
-                convert hv_hyperedge
+                convert ground_minus_v_none
                 exact Finset.erase_eq F.ground v
               dsimp [domain] at ht
               rw [Finset.mem_filter] at ht
@@ -416,9 +387,9 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (hv_l
         · case neg => -- v ∉ sの場合
           by_cases hv_in_t: v ∈ t
           · case pos =>
-            --v notin sということはsは全体集合であり、ground - vはhv_hyperedge : ¬F.sets (F.ground \ {v})の仮定よりhyperedgeではない。よって、h_inkに矛盾。
+            --v notin sということはsは全体集合であり、ground - vはground_minus_v_none : ¬F.sets (F.ground \ {v})の仮定よりhyperedgeではない。よって、h_inkに矛盾。
             have neg_lem: t = F.ground := by
-              --hv_singleton : ¬F.sets {v}から言える。
+              --singleton_hyperedgge_none : ¬F.sets {v}から言える。
               by_contra h_contra
               have v_subset_t: {v} ⊆ t := by
                 simp_all only [ge_iff_le]
@@ -440,7 +411,7 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (hv_l
             | inr h2 =>
               rw [h2] at hs
               have : ¬F.sets (F.ground.erase v) := by
-                convert hv_hyperedge
+                convert ground_minus_v_none
                 exact Finset.erase_eq F.ground v
               subst neg_lem h2
               simp_all only [ge_iff_le, Finset.mem_filter, Finset.mem_powerset, and_false, idealDelF, domain,i, hi]
@@ -518,27 +489,8 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (hv_l
       have hv_equal: F.ground.erase v = F.ground \ {v} := by
         exact Finset.erase_eq F.ground v
 
-      --示すべきものが違う可能性。number_of_hyperedgesのほうはdeletionToNを使ってなかった。
-      /-have total_eq: total_size_of_hyperedges (@IdealFamily.deletionToN (Fin n) n nposi idealDelF v hvfideal hcard2ideal).toSetFamily = (Finset.filter (fun s => v ∉ s ∧ F.sets s) F.ground.powerset).sum Finset.card := by
-        simp_all only [ge_iff_le]
-        --simp_all only [IdealFamily.deletionToN]
-        rw [deletion_total]
-        dsimp [idealDelF]
-        dsimp [total_size_of_hyperedges]
-        dsimp [IdealDeletion.idealdeletion]
-        -/
-      --degree F.toSetFamily v=1の場合。一般論から言えないか。
-      --lemma ideal_and_deletion {α : Type} [DecidableEq α] [Fintype α] (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (gcard: F.ground.card ≥ 2) (hx_hyperedge_not : ¬ F.sets (F.ground \ {x})) :
-      --total_size_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily = total_size_of_hyperedges (IdealDeletion.deletion F.toSetFamily x hx gcard) + (F.ground.card - 1
-      --は使える可能性。全体集合がなくなった分が調整されている。
-      --次が一般の場合だが、contractionが関係してくるので、一般の場合に帰着するよりも直接証明したほうがいいかも。
-      --theorem hyperedge_totalsize_deletion_contraction_have_z {α : Type} [DecidableEq α] [Fintype α]
-      -- degree oneのほうが関係してくるかも。
-      -- lemma total_degone_card {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) (v : α) (hv: v ∈ F.ground) (deg1: degree F v = 1) (hasGround: F.sets F.ground)(gcard: F.ground.card ≥ 2) :
-      -- total_size_of_hyperedges F = (F.ground.powerset.filter (λ s => F.sets s ∧ v ∉ s )).sum Finset.card + F.ground.card
-
       have total_eq: total_size_of_hyperedges F.toSetFamily = total_size_of_hyperedges idealDelF.toSetFamily + 1:= by
-        --rw [Ideal.total_degone_card F.toSetFamily v hv_left degree_one F.univ_mem hcard0]
+        --rw [Ideal.total_degone_card F.toSetFamily v v_in_ground degree_one F.univ_mem ground_ge_two]
         dsimp [total_size_of_hyperedges]
         dsimp [idealDelF]
         dsimp [IdealDeletion.idealdeletion] --分解されすぎるかも。
@@ -554,7 +506,7 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (hv_l
             dsimp [i,ff,gg]
             rw [h]
             simp
-            rw [Finset.card_erase_of_mem hv_left]
+            rw [Finset.card_erase_of_mem v_in_ground]
             omega
 
           · case neg => --h: not (s = F.ground)
@@ -566,9 +518,9 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (hv_l
             have vns: v ∉ s := by
               simp_all only [ge_iff_le]
               by_contra h_contra
-              exact h ((degree_one_ground F v hv_left hcard0 degree_one s right) h_contra)
+              exact h ((degree_one_ground F v v_in_ground ground_ge_two degree_one s right) h_contra)
 
-            --#check hyperedges_not_through_v F.toSetFamily v hv_left degree_one F.univ_mem s right hはv notin s
+            --#check hyperedges_not_through_v F.toSetFamily v v_in_ground degree_one F.univ_mem s right hはv notin s
             --goal s.card = if s.erase v = F.ground.erase v then (s.erase v).card + 1 else (s.erase v).card
             --s.erase v = F.ground.erase vを満たさないことを示したい。
             --使う仮定。degree v = 1。
@@ -581,24 +533,19 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (hv_l
               simp
               rw [not_lem2] at right
 
-              have eq_lem: F.ground.erase v = F.ground \ {v} := by
-                exact Finset.erase_eq F.ground v
+              --have eq_lem: F.ground.erase v = F.ground \ {v} := by
+              --  exact Finset.erase_eq F.ground v
 
-              rw [eq_lem] at right
-              exact hv_hyperedge right
+              rw [hv_equal] at right
+              exact ground_minus_v_none right
             · case neg =>
               rw [tmp_lem]
               rw [if_neg not_lem2]
 
         --goal (Finset.filter (fun s => F.sets s ∧ v ∉ s) F.ground.powerset).sum Finset.card + (n + 1) =
         --(Finset.filter (fun s => F.sets s ∧ v ∉ s ∨ s = F.ground.erase v) (F.ground.erase v).powerset).sum Finset.card + 1
-        --#check Finset.sum_bij i hi i_inj i_surj comm
-        --Finset.sum_bij i hi i_inj i_surj comm : ∑ x ∈ domain, ff x = ∑ x ∈ range, gg x
         let sumcard := Finset.sum_bij i hi i_inj i_surj comm
         dsimp [domain,range,ff,gg] at sumcard
-        --∑ x ∈ Finset.filter (fun s => F.sets s) F.ground.powerset, x.card =
-        -- ∑ x ∈ Finset.filter (fun s => F.sets s ∧ v ∉ s ∨ s = F.ground.erase v) (F.ground.erase v).powerset,
-        -- if x = F.ground.erase v then x.card + 1 else x.card := Finset.sum_bij i hi i_inj i_surj comm
 
         convert sumcard
 
@@ -641,74 +588,11 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (hv_l
           · intro a_1
             intro _
             rfl
-          /-
-          apply Iff.intro
-          · intro a_2
-            cases a_2 with
-            | inl h => simp_all only [true_or]
-            | inr h_1 =>
-              subst h_1
-              simp_all only [subset_refl, or_true]
-          · intro a_2
-            cases a_2 with
-            | inl h =>
-              left
-              constructor
-              exact h
-              rw [←hv_equal] at a_1
-              rw [Finset.subset_erase] at a_1
-              simp_all only [Finset.mem_filter, Finset.mem_powerset, and_self, not_false_eq_true, domain]
-            | inr h_1 =>
-              subst h_1
-              simp_all only [subset_refl, Finset.mem_erase, ne_eq, not_true_eq_false, and_true, not_false_eq_true,
-                or_true]
-          · intro a_2
-            intro _
-            simp_all only [ge_iff_le, Finset.mem_filter, Finset.mem_powerset, idealDelF]
-            -/
-        --成り立つが使ってない。
-        /-
-        have lem_eq1: (Finset.filter (fun s => F.sets s ∧ v ∉ s ∨ s = F.ground.erase v) (F.ground.erase v).powerset).sum Finset.card
-         = (Finset.filter (fun s => F.sets s ∨ s = F.ground.erase v) (F.ground.erase v).powerset).sum Finset.card := by
-          apply Finset.sum_congr
-          simp_all only [ge_iff_le, idealDelF]
-          ext1 a
-          simp_all only [Finset.mem_filter, Finset.mem_powerset, and_congr_right_iff]
-          intro a_1
-          apply Iff.intro
-          · intro a_2
-            cases a_2 with
-            | inl h => simp_all only [true_or]
-            | inr h_1 =>
-              subst h_1
-              simp_all only [subset_refl, or_true]
-          ·intro a_2
-           cases a_2 with
-           | inl h =>
-             simp_all only [true_and]
-             constructor
-             -- a_1  : a ⊆ F.ground.erase vからgoal v notin aは言えるのでは。
-             let vng :=  (Finset.not_mem_erase v F.ground)
-             by_contra h_contra
-             let vng2 := a_1 h_contra
-             apply vng
-             simp_all only [vng2]
-           | inr h_1 =>
-             subst h_1
-             simp_all only [Finset.mem_erase, ne_eq, not_true_eq_false, and_true, not_false_eq_true, or_true]
-          ·intro a_2
-           intro a
-           simp_all only [ge_iff_le, Finset.mem_filter, Finset.mem_powerset, idealDelF]
-
-        have lem_eq2: (Finset.filter (fun s => F.sets s ∧ v ∉ s ∨ s = F.ground.erase v) (F.ground.erase v).powerset).sum Finset.card + 1
-         = (Finset.filter (fun s => F.sets s ∨ s = F.ground.erase v) (F.ground.erase v).powerset).sum Finset.card + 1 := by
-           rw [lem_eq1]
-        -/
 
         have lem_prop:∀ (s:Finset (Fin (n+1))), s ∈ (F.ground.erase v).powerset → ¬ ((F.sets s ∧ v ∉ s) ∧ s = F.ground.erase v) := by
           intro s _
           intro h
-          --hv_hyperedge : ¬F.sets (F.ground \ {v})単にこれを使うだけの証明かも。
+
           obtain ⟨left, right⟩ := h
           rw [right] at left
           let left1 := left.1
@@ -716,11 +600,9 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (hv_l
           rw [hv_equal] at left1
           contradiction
 
-        --#check total_degone_card F.toSetFamily v hv_left degree_one F.univ_mem hcard0
         let leftset := Finset.filter (fun s => F.sets s ∧ v ∉ s) (F.ground.erase v).powerset
         let rightset := Finset.filter (fun s => s = F.ground.erase v) (F.ground.erase v).powerset
-        --let hcap:= degree_one_hyperedges_partition2 F v hv_left --hv_singleton
-        --以下を示す方針は正しそう。
+
         have disjoint: leftset ∩ rightset = ∅ := by
           dsimp [leftset, rightset]
           rw [Finset.eq_empty_iff_forall_not_mem]
@@ -740,7 +622,7 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (hv_l
               not_true_eq_false, and_true, not_false_eq_true, true_and, and_self, idealDelF]
           rw [sg] at sgs
           rw [hv_equal] at sgs
-          exact hv_hyperedge sgs
+          exact ground_minus_v_none sgs
 
         have disjoint2: ∀ (s:Finset (Fin (n+1))), s ∈ (F.ground.erase v).powerset → ¬ ((F.sets s ∧ v ∉ s) ∧ s = F.ground.erase v) := by
           intro s _
@@ -753,11 +635,6 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (hv_l
 
         have sum_lem:  (Finset.filter (fun s => F.sets s ∧ v ∉ s ∨ s = F.ground.erase v) (F.ground.erase v).powerset).sum gg
         = (Finset.filter (fun s => F.sets s ∧ v ∉ s) (F.ground.erase v).powerset).sum gg +  ( Finset.filter (fun s =>s = F.ground.erase v) (F.ground.erase v).powerset).sum gg:= by
-        --lemma filter_sum {α : Type} [DecidableEq α] [Fintype α] {P Q : Finset α → Prop} [DecidablePred P] [DecidablePred Q] (S : Finset (Finset α))  :
-        --(∀ (s:Finset α), ¬(P s ∧ Q s)) →
-        --(Finset.filter (λ (s : Finset α) => P s ∨ Q s) S).sum Finset.card
-        -- = ((Finset.filter (λ (s : Finset α) => P s) S).sum Finset.card) +
-        -- (Finset.filter (λ (s : Finset α) => Q s) S).sum Finset.card
           exact filter_sum_func (F.ground.erase v).powerset gg lem_prop
         rw [←hv_equal]
         rw [sum_lem]
@@ -807,7 +684,7 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (hv_l
                 exact hx.2
           rw [h_filter]
           rw [Finset.sum_singleton]
-          exact Finset.card_erase_of_mem hv_left
+          exact Finset.card_erase_of_mem v_in_ground
 
         have sum_part3: ∑ x ∈ (Finset.filter (fun s => s = F.ground) (F.ground.powerset)), x.card = F.ground.card := by
           have h_filter : Finset.filter (λ s => s = F.ground) (F.ground.powerset) = {F.ground} :=
@@ -845,7 +722,7 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (hv_l
             rw [Finset.sum_singleton]
 
             --rw [if_pos]
-            rw [Finset.card_erase_of_mem hv_left]
+            rw [Finset.card_erase_of_mem v_in_ground]
             rw [if_pos]
 
             rw [Nat.sub_add_cancel hcard1]
@@ -869,6 +746,7 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (hv_l
         rw [←eq_lem2]
         rfl
         --total_eqの証明が終わった。あとは、number_eqとtotal_eqを使って、goalを証明する。
+
       rw [number_eq]
       rw [total_eq]
 
@@ -882,69 +760,64 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (hv_l
           --have hcard1: idealDelF.ground.card = n := by
           --  omega
           rw [h_assum_case]
-          rw [hcard]
+          rw [ground_card]
           omega
         have h_assum_card1: idealDelF.ground.card ≥ 1 := by
           omega
-        --#check IdealFamily.deletionToN nposi idealDelF v hvfideal h_assum_card1
-        let idealDelFn := @IdealFamily.deletionToN (Fin (n + 1)) n nposi idealDelF v hvfideal h_assum_card1
-        --#check h_ind (IdealFamily.deletionToN nposi idealDelF v hvfideal h_assum_card1)
-        have hcard2: idealDelFn.ground.card = n := by
-          have subs: idealDelFn = @IdealFamily.deletionToN (Fin (n + 1)) n nposi idealDelF v hvfideal h_assum_card1 := by
+
+        let idealDelFn := @IdealFamily.deletionToN (Fin (n + 1)) n n_ge_one idealDelF v v_notin_minor_ground h_assum_card1
+        have minor_ground_card: idealDelFn.ground.card = n := by
+          have subs: idealDelFn = @IdealFamily.deletionToN (Fin (n + 1)) n n_ge_one idealDelF v v_notin_minor_ground h_assum_card1 := by
             rfl
           rw [subs]
 
-          have eqset: idealDelFn.ground = Finset.image (finDrop nposi v) idealDelF.ground := by
+          have eqset: idealDelFn.ground = Finset.image (finDrop n_ge_one v) idealDelF.ground := by
             rw [subs]
             dsimp [IdealFamily.deletionToN]
           have eqcard: idealDelFn.ground.card = idealDelF.ground.card := by
             rw [eqset]
-            --rw [Finset.card_image_of_injective]
-            --lemma finDropCardEq {n : ℕ} (nposi : n ≥ 1) (v : Fin (n + 1)) (s : Finset (Fin (n+1))) (hvx: v ∉ s)
-            exact finDropCardEq nposi v idealDelF.ground hvfideal
+            --lemma finDropCardEq {n : ℕ} (n_ge_one : n ≥ 1) (v : Fin (n + 1)) (s : Finset (Fin (n+1))) (hvx: v ∉ s)
+            exact finDropCardEq n_ge_one v idealDelF.ground v_notin_minor_ground
           rw [eqcard]
           simp_all only [ge_iff_le, Finset.mem_filter, Finset.mem_powerset, and_self, Finset.mem_erase, ne_eq,
             not_true_eq_false, false_and, not_false_eq_true, and_true, and_imp, subset_refl, Finset.sdiff_subset,
             Finset.singleton_subset_iff, exists_prop, add_tsub_cancel_right, idealDelF, domain, i, range, idealDelFn]
 
-        let result := (h_ind.2 idealDelFn) hcard2
-        --#check result
+        let result := (h_ind.2 idealDelFn) minor_ground_card
+
         dsimp [normalized_degree_sum] at result
-        rw [hcard2] at result
-        --dsimp [idealDelFn] at result
+        rw [minor_ground_card] at result
         --deletonToNをしても、total_sizeもnumber_of_hyperedgesも変わらないという定理を最後に適用する必要がある。
-        --lemma IdealFamily.deletionToN_number {n : ℕ} (nposi : n ≥ 1) (F : IdealFamily (Fin (n + 1))) (v : Fin (n + 1)) (hvf : v ∉ F.ground)
-        --(gcard : F.ground.card ≥ 1) : number_of_hyperedges (@IdealFamily.deletionToN (Fin n) n nposi F v hvf gcard).toSetFamily = number_of_hyperedges F.toSetFamily
+        --lemma IdealFamily.deletionToN_number {n : ℕ} (n_ge_one : n ≥ 1) (F : IdealFamily (Fin (n + 1))) (v : Fin (n + 1)) (hvf : v ∉ F.ground)
+        --(gcard : F.ground.card ≥ 1) : number_of_hyperedges (@IdealFamily.deletionToN (Fin n) n n_ge_one F v hvf gcard).toSetFamily = number_of_hyperedges F.toSetFamily
         have eqcard_number: number_of_hyperedges idealDelF.toSetFamily = number_of_hyperedges idealDelFn.toSetFamily := by
-          have hcard2_ge1: idealDelF.ground.card ≥ 1 := by
+          have minor_ground_card_ge1: idealDelF.ground.card ≥ 1 := by
             simp_all only [ge_iff_le]
-          exact Eq.symm (IdealFamily.deletionToN_number nposi idealDelF v hvfideal hcard2_ge1)
+          exact Eq.symm (IdealFamily.deletionToN_number n_ge_one idealDelF v v_notin_minor_ground minor_ground_card_ge1)
         simp only [ge_iff_le, Finset.mem_filter, Finset.mem_powerset, and_self, Finset.mem_erase, ne_eq,
           not_true_eq_false, false_and, not_false_eq_true, and_true, and_imp, subset_refl, Finset.sdiff_subset,
           Finset.singleton_subset_iff, exists_prop, add_tsub_cancel_right, tsub_le_iff_right, zero_add, idealDelF,
           idealDelFn, domain, i, range]
-        --lemma deletion_total: ∀ (n : ℕ) (F : IdealFamily (Fin (n + 1))) (nposi : n ≥ 1) (v : Fin (n + 1)) (hvf : v ∉ F.ground) (gcard : F.ground.card ≥ 1),
-        --total_size_of_hyperedges (@IdealFamily.deletionToN (Fin n) n nposi F v hvf gcard).toSetFamily = total_size_of_hyperedges F.toSetFamily
+        --lemma deletion_total: ∀ (n : ℕ) (F : IdealFamily (Fin (n + 1))) (n_ge_one : n ≥ 1) (v : Fin (n + 1)) (hvf : v ∉ F.ground) (gcard : F.ground.card ≥ 1),
+        --total_size_of_hyperedges (@IdealFamily.deletionToN (Fin n) n n_ge_one F v hvf gcard).toSetFamily = total_size_of_hyperedges F.toSetFamily
         have eqcard_total: total_size_of_hyperedges idealDelF.toSetFamily = total_size_of_hyperedges idealDelFn.toSetFamily := by
-          exact Eq.symm (deletion_total n idealDelF nposi v hvfideal h_assum_card1)
+          exact Eq.symm (deletion_total n idealDelF n_ge_one v v_notin_minor_ground h_assum_card1)
         rw [←eqcard_number] at result
         rw [←eqcard_total] at result
         dsimp [idealDelF] at result
-        --dsimp [IdealFamily.deletionToN]
-        --#check (IdealFamily.deletionToN nposi (IdealDeletion.idealdeletion F v hv_left hcard0) v hvfideal h_assum_card1)
-        let idealDelFn2 := (@IdealFamily.deletionToN (Fin (n + 1)) n nposi (IdealDeletion.idealdeletion F v hv_left hcard0) v hvfideal h_assum_card1)
+        let idealDelFn2 := (@IdealFamily.deletionToN (Fin (n + 1)) n n_ge_one (IdealDeletion.idealdeletion F v v_in_ground ground_ge_two) v v_notin_minor_ground h_assum_card1)
         have eqlem0: idealDelFn = idealDelFn2 := by
           rfl
 
-        have eqlem: number_of_hyperedges (idealDelFn.toSetFamily) = number_of_hyperedges (IdealDeletion.idealdeletion F v hv_left hcard0).toSetFamily := by
+        have eqlem: number_of_hyperedges (idealDelFn.toSetFamily) = number_of_hyperedges (IdealDeletion.idealdeletion F v v_in_ground ground_ge_two).toSetFamily := by
           simp_all only [subset_refl, Finset.singleton_subset_iff, Finset.sdiff_subset, idealDelFn, idealDelF,
             idealDelFn2]
         --基本的な変数を文字でおいて整理する。--ゴールとresultを[idealDelFn]を使って書き換える。
-        have subs1: idealDelF = IdealDeletion.idealdeletion F v hv_left hcard0:= by
+        have subs1: idealDelF = IdealDeletion.idealdeletion F v v_in_ground ground_ge_two:= by
           rfl
-        have subs2: number_of_hyperedges idealDelF.toSetFamily = number_of_hyperedges (IdealDeletion.idealdeletion F v hv_left hcard0).toSetFamily := by
+        have subs2: number_of_hyperedges idealDelF.toSetFamily = number_of_hyperedges (IdealDeletion.idealdeletion F v v_in_ground ground_ge_two).toSetFamily := by
            rfl
-        have subs3: total_size_of_hyperedges idealDelF.toSetFamily = total_size_of_hyperedges (IdealDeletion.idealdeletion F v hv_left hcard0).toSetFamily := by
+        have subs3: total_size_of_hyperedges idealDelF.toSetFamily = total_size_of_hyperedges (IdealDeletion.idealdeletion F v v_in_ground ground_ge_two).toSetFamily := by
            rfl
 
         rw [←subs1] at result
@@ -952,50 +825,21 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (hv_l
         ring_nf
         rw [←subs2]
         rw [←subs3]
-        rw [hcard]
-
-        --result : ↑(total_size_of_hyperedges idealDelF.toSetFamily) * 2 ≤ ↑(number_of_hyperedges idealDelF.toSetFamily) * ↑n
-        --goal : 2 + total_size_of_hyperedges idealDelF.toSetFamily * 2 ≤ number_of_hyperedges idealDelF.toSetFamily + number_of_hyperedges idealDelF.toSetFamily * n
-
-
-        --rw [←tsoh] at result
-        --rw [←noh] at result
-        /-have idealDelF_univ_mem: idealDelF.sets (F.ground \ {v}) :=
-          by
-            have eqground: idealDelF.ground = F.ground \ {v}:= by
-              dsimp [idealDelF]
-              rw [IdealDeletion.idealdeletion]
-              simp
-              rw [hv_equal]
-            rw [←eqground]
-            exact idealDelF.univ_mem
-
-        have idealDelF_empty_mem: idealDelF.sets ∅ := by
-          exact idealDelF.empty_mem
-        --こんなことを証明しなくても、台集合の1以上のidealは、常にhyperedgeが2つ以上ある。
-        -/
-        -- 台集合 ground の大きさが 1 以上の IdealFamily で number_of_hyperedges が 2 以上であることの証明
+        rw [ground_card]
 
         have eqlem2: 2 ≤ noh := by
           dsimp [noh]
           dsimp [number_of_hyperedges]
-          --dsimp [idealDelF]
-          --F.gound - vとF.empty_memより、hyperedgeは2つ以上。
           exact hyperedges_card_ge_two idealDelF h_assum_card1
 
         linarith
-      rw [hcard] at induction_assum ⊢
+      rw [ground_card] at induction_assum ⊢
       ring_nf
       ring_nf at induction_assum
       --induction_assum : 2 + total_size_of_hyperedges idealDelF.toSetFamily * 2 ≤
       --number_of_hyperedges idealDelF.toSetFamily + number_of_hyperedges idealDelF.toSetFamily * n
       simp_all
-      --rw [←tsoh]
-      --rw [←noh]
-      --rw [←tsoh] at induction_assum
-      --rw [←noh] at induction_assum
-      --induction_assum : 2 + tosh * 2 ≤ noh * (n + 1)
-      --goal : 2 + tosh * 2 ≤ noh * n + noh
+
       linarith
 
 end Ideal
