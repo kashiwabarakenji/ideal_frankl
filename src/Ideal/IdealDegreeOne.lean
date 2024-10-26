@@ -18,26 +18,8 @@ namespace Ideal
 def hasDegreeOneSetFamily (F : SetFamily α) : Prop :=
   ∃ (v : α), degree F v = 1
 
---次数が1の点をtraceをすると標準化次数和が下がること。
---theorem trace_does_not_decrease_normalized_degree_sum {α : Type} [DecidableEq α] [Fintype α]
---  (F : SetFamily α) (x : α) (hx: x ∈ F.ground) (gcard: F.ground.card ≥ 2) (deg1: degree F x = 1) :
---  (normalized_degree_sum (IdealTrace.trace F x hx gcard)) ≥ normalized_degree_sum F :=
---  by
-
---xでtraceするとその集合族にはxが含まれないこと。別のところで証明されている可能性あり。
---lemma trace_sets_property {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) (x : α) (hx: x ∈ F.ground) (gcard: F.ground.card ≥ 2) :
---  ∀ (s :Finset α ),(IdealTrace.trace F x hx gcard).sets s → x ∉ s :=
---  by
---    sorry
-
---degreeの定義を書き写しただけか。簡単に証明できたので証明しておいた。使わないかも。
-lemma degree_calculation {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) (x : α) :
-  degree F x = (Finset.filter (λ s => F.sets s ∧ x ∈ s) (F.ground.powerset)).card :=
-  by
-    simp_all only [degree, Finset.card_filter]
-    simp [Finset.filter]
-
 --vの次数が1であれば、全体集合以外のhyperedgeは、vを通らない。IdealSimple.leanでも同様なことを証明。
+--このファイルの他の部分で何回か利用。
 lemma hyperedges_not_through_v {α : Type} [DecidableEq α] [Fintype α]
   (F : SetFamily α) (v : α) (hv: v ∈ F.ground) (deg1: degree F v = 1) (hasGround: F.sets F.ground) :
   ∀ s, F.sets s → s ≠ F.ground → v ∉ s :=
@@ -90,38 +72,11 @@ lemma hyperedges_not_through_v {α : Type} [DecidableEq α] [Fintype α]
   rw [deg1 ] at deg2
   contradiction
 
-lemma degree_one_hyperedges_partition {α : Type} [DecidableEq α] [Fintype α]
-  (F : IdealFamily α) (x : α) (hx: x ∈ F.ground) (h_not_hyperedge : ¬ F.sets {x}):
-   ∀ (s:Finset α), (F.sets s) → ((s ≠ F.ground) ↔ x ∉ s) := by
-  intro s hs
-  apply Iff.intro
-  · intro h
-    by_contra h2
-    have h3 := hyperedges_not_through_v F.toSetFamily x hx (degree_one_if_not_hyperedge F hx h_not_hyperedge) F.univ_mem s hs h
-    contradiction
-  · intro h
-    simp_all only [ne_eq]
-    apply Aesop.BuiltinRules.not_intro
-    intro a
-    subst a
-    simp_all only
-
-lemma degree_one_hyperedges_partition2 {α : Type} [DecidableEq α] [Fintype α]
-  (F : IdealFamily α) (x : α) (hx: x ∈ F.ground):
-   ∀ (s:Finset α),  s ∈ F.ground.powerset → ¬ ((x ∉ s ∧ F.sets s) ∧ (s = F.ground)):= by
-  intro s
-  intro sf
-  by_contra h
-  obtain ⟨h1, h2⟩ := h
-  subst h2
-  simp_all only
-
 --次数が1である性質でいえること。本来は、次数が1なので、全体集合以外は、traceしてもhyperedgeの数も大きさもかわらないことを証明すればよい。
+--IdealTraceに移動してもいいが、deg1の仮定が必要なので、ここに置いておく。補題の名前もdegoneの仮定を反映しても良い。
 --lemma degree_one_property {α : Type} [DecidableEq α] [Fintype α]
 --  (F : SetFamily α) (x : α) (hx: x ∈ F.ground) (deg1: degree F x = 1) :
 --  ∃ s, s ∈ F.sets ∧ x ∈ s ∧ ∀ t ∈ F.sets, x ∈ t → t = s :=
---def trace {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) (x : α) (hx: x ∈ F.ground) (gcard: F.ground.card ≥ 2):
--- (hnot: ¬ F.sets (F.ground.erase v)) の仮定は証明に使わ下なったので、消した。
 lemma trace_hyperedge_equiv {α : Type} [DecidableEq α] [Fintype α]
   (F : SetFamily α) (v : α) (hv: v ∈ F.ground) (deg1: degree F v = 1) (hasGround: F.sets F.ground)(gcard: F.ground.card ≥ 2) :
   {s : Finset α|(IdealTrace.trace F v hv gcard).sets s} = { s : Finset α|F.sets s ∧ s ≠ F.ground } ∪ { F.ground.erase v } :=
@@ -182,10 +137,6 @@ by
           --s = F.ground.erase v を示すhaveのなか。
           -- goal x ∈ sがこのintro部分の目標。
           --hyperedges_not_through_vを使って証明する。
-          --hyperedges_not_through_v {α : Type} [DecidableEq α] [Fintype α]
-          --(F : SetFamily α) (v : α) (hv: v ∈ F.ground) (deg1: degree F v = 1) (hasGround: F.sets F.ground) :
-          -- ∀ s, F.sets s → s ≠ F.ground → v ∉ s
-          -- hs : F.sets (s ∪ {v})を利用する。
         by_cases sfground: (s ∪ {v}) = F.ground
         case pos =>
             -- sfground : s ∪ {v} = F.ground
@@ -246,48 +197,7 @@ by
       rw [ground2]
       exact hasGround
 
-lemma erase_ground_card {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) (v : α) (hv: v ∈ F.ground) (deg1: degree F v = 1) (hasGround: F.sets F.ground)(gcard: F.ground.card ≥ 2) :
-  number_of_hyperedges F = (F.ground.powerset.filter (λ s => F.sets s ∧ v ∉ s )).card + 1 := by
-  --have h1 := trace_hyperedge_equiv F v hv deg1 hasGround gcard
-  have disjoint_sets : Disjoint (Finset.filter (λ s => F.sets s ∧ s ≠ F.ground) (F.ground.powerset)) ({F.ground}) := by
-    simp_all only [ne_eq, Set.union_singleton, Finset.disjoint_singleton_right, Finset.mem_filter, Finset.mem_powerset,
-      subset_refl, not_true_eq_false, and_false, not_false_eq_true]
-  have h2 := Finset.card_union_of_disjoint disjoint_sets
-  have whole:(Finset.filter (fun s => F.sets s ∧ s ≠ F.ground) F.ground.powerset ∪ {F.ground}) = Finset.filter (fun s => F.sets s) F.ground.powerset := by
-    simp_all only [ne_eq, Set.union_singleton, Finset.disjoint_singleton_right, Finset.mem_filter,
-      Finset.mem_powerset, subset_refl, not_true_eq_false, and_false, not_false_eq_true,
-      Finset.card_union_of_disjoint, Finset.card_singleton]
-    ext1 a
-    simp_all only [Finset.mem_union, Finset.mem_filter, Finset.mem_powerset, Finset.mem_singleton]
-    apply Iff.intro
-    · intro a_1
-      cases a_1 with
-      | inl h => simp_all only [and_self]
-      | inr h_1 =>
-        subst h_1
-        simp_all only [subset_refl, and_self]
-    · intro a_1
-      simp_all only [true_and]
-      tauto
-  rw [whole] at h2
-  rw [number_of_hyperedges]
-  rw [h2]
-  simp_all only [ge_iff_le, ne_eq, Finset.disjoint_singleton_right, Finset.mem_filter, Finset.mem_powerset, subset_refl,
-    not_true_eq_false, and_false, not_false_eq_true, Finset.card_singleton, add_left_inj]
-  have h3 := hyperedges_not_through_v F v hv deg1 hasGround
-  simp_all only [Finset.card_singleton, ne_eq]
-  congr
-  ext x : 2
-  simp_all only [and_congr_right_iff]
-  intro a
-  apply Iff.intro
-  · intro a_1
-    simp_all only [not_false_eq_true]
-  · intro a_1
-    apply Aesop.BuiltinRules.not_intro
-    intro a_2
-    subst a_2
-    simp_all only
+
 
 lemma total_degone_card {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) (v : α) (hv: v ∈ F.ground) (deg1: degree F v = 1) (hasGround: F.sets F.ground)(gcard: F.ground.card ≥ 2) :
   total_size_of_hyperedges F = (F.ground.powerset.filter (λ s => F.sets s ∧ v ∉ s )).sum Finset.card + F.ground.card := by
@@ -652,98 +562,37 @@ lemma powerset_bij {α : Type} [DecidableEq α][Fintype α]  (FG : Finset α) (a
       exact goal
     )
 
-
--- 補題1: 任意の要素 a ∈ FG に対して、a を含む部分集合の数は 2^(n-1) である
+--下で利用する補題。
+-- 任意の要素 a ∈ FG に対して、a を含む部分集合の数は 2^(n-1) である
 lemma count_subsets_containing_a {α : Type} [DecidableEq α][Fintype α]
-  (FG : Finset α)
-  (n : ℕ)
-  (h_n : FG.card = n)
-  (a : α)
-  (ha : a ∈ FG) :
+  (FG : Finset α) (n : ℕ) (h_n : FG.card = n) (a : α) (ha : a ∈ FG) :
   (FG.powerset.filter (fun S => a ∈ S)).card = 2 ^ (n - 1) := by
 
-  -- 前提:
-  -- FG は型 α の Finset で、card FG = n
-  -- a は FG に属する要素である
-
-  -- 1. FG に a を含む部分集合の集合を考える
-  -- FG.powerset.filter (fun S => a ∈ S) は、FG の冪集合のうち a を含む部分集合のみを集めた Finset (Finset α) である
-
-  -- 2. a を含む部分集合は、a を固定し、残りの要素から部分集合を選ぶことと一対一対応する
-  -- つまり、FG.erase a の冪集合に対応する
-  -- ここで、FG.erase a は FG から a を取り除いた Finset α である
-
-  -- 3. この対応を形式的に示すために、フィルターされた冪集合と FG.erase a の冪集合が同じ要素数を持つことを示す
-
-  -- 4. FG.erase a の冪集合のカードは 2^(n - 1) であることを示す
-
-  -- まず、FG.erase a のカードが n - 1 であることを確認する
   have h_erase_card : (FG.erase a).card = n - 1 := by
-    -- FG.erase a は FG から a を取り除いたものであり、a は FG に含まれているため
-    -- card (FG.erase a) = card FG - 1 = n - 1
     rw [Finset.card_erase_of_mem ha]
     subst h_n
     simp_all only
 
-
-  -- 次に、FG.powerset.filter (fun S => a ∈ S) の冪集合が FG.erase a の冪集合と同型であることを示す
-  -- 具体的には、FG.powerset.filter (fun S => a ∈ S) ≃ (FG.erase a).powerset
-  -- これは、各 S ∈ FG.powerset で a ∈ S について、S = T ∪ {a} となる T ∈ (FG.erase a).powerset に対応する
-
-  -- ここでは、card_eq_powerset_erase を補助的な補題として定義し、それを用いる
   have h_powerset_eq : (FG.powerset.filter (fun S => a ∈ S)).card = (FG.erase a).powerset.card := by
-    -- フィルターされた冪集合と FG.erase a の冪集合の間に双射が存在することを利用する
-    -- 具体的には、s ↦ s.erase a が FG.powerset.filter (fun S => a ∈ S) から (FG.erase a).powerset への双射である
-    -- しかし、Lean の Mathlib には直接的な双射の構築は必要ないため、cardinality の等式を直接示す
-    -- a を含む部分集合の数は、FG.erase a の冪集合の数と等しい
     exact (powerset_bij FG a ha)
 
-  -- 補助的な補題を定義する
-  -- これは、a を含む FG の部分集合の冪集合のカードが FG.erase a の冪集合のカードに等しいことを示す
-  -- この補題は Mathlib に存在しないため、ここで定義する
-  -- 具体的には、a を含む部分集合は FG.erase a の冪集合と一対一対応するため、そのカードは同じになる
   have finset_card_powerset_filter_eq_powerset_erase : (FG.powerset.filter (fun S => a ∈ S)).card = (FG.erase a).powerset.card :=
     by
-      -- 双射を明示的に構築しなくても、部分集合の構造からカードが等しいことがわかる
-      -- 具体的には、a を含む部分集合は FG.erase a の部分集合に a を加えることで得られる
-      -- したがって、数は等しい
       exact h_powerset_eq
 
-  -- 5. FG.erase a の冪集合のカードが 2^(n -1) であることを示す
   have h_powerset_erase_card : (FG.erase a).powerset.card = 2 ^ (n - 1) := by
-    -- FG.erase a のカードは n -1 であり、Finset.powerset_card_of_card
-    -- これは、Finset.powerset (FG.erase a) のカードが 2 ^ (FG.erase a).card であることを示す
     rw [Finset.card_powerset]
     rw [h_erase_card]
-    --exact pow_one 2 ^ (n - 1)
 
-  -- 6. これらを組み合わせて、最終的な等式を導出する
-  -- (FG.powerset.filter (fun S => a ∈ S)).card = (FG.erase a).powerset.card = 2 ^ (n -1)
   rw [finset_card_powerset_filter_eq_powerset_erase]
   rw [h_powerset_erase_card]
 
--- 補助的な補題の定義 tmp_ruleで使っているが、tmp ruleをつかってない。
-lemma card_eq_sum_ones {α : Type} [DecidableEq α][Fintype α]  (s : Finset α) :
-  Finset.card s = s.sum (λ a => 1) := by
-  simp_all only [Finset.sum_const, smul_eq_mul, mul_one]
-
-lemma card_eq_sum_ones2 {α : Type} [DecidableEq α][Fintype α] {s : Finset α}: ∑ a ∈ s, 1 = s.card := by
-  simp_all only [Finset.sum_const, smul_eq_mul, mul_one]
-
---使ってない上に似たような補題がある。消す。
-lemma sum_filter_eq_card {α : Type} [DecidableEq α][Fintype α]  (s : Finset α) (p : α → Prop) [DecidablePred p] :
-  (s.filter p).sum (λ a => 1) = (s.filter p).card := by
-  simp_all only [Finset.sum_const, smul_eq_mul, mul_one]
-
-def fn (a : α) (s : Finset α): Nat := if a ∈ s then 1 else 0
 -- 和の数える順番の補題。
 lemma sum_card_powerset_eq_sum_subsets_containing {α : Type} [DecidableEq α] [Fintype α] {FG : Finset α} :
   FG.powerset.sum (λ s => ∑ a ∈ s, 1) = FG.sum (λ a => (FG.powerset.filter (λ S => a ∈ S)).card) :=
 by
+  let fn (a : α) (s : Finset α): Nat := if a ∈ s then 1 else 0
   -- 左辺を展開して、card s を ∑ a ∈ s, 1 と等しくする
-  --#check (@Finset.sum_congr (Finset α) Nat FG.powerset _ Finset.card (λ s => s.sum (λ a => 1))) rfl (λ s hs=> card_eq_sum_ones s)
-  --使ってない
-  --let tmp_rule :=  (@Finset.sum_congr (Finset α) Nat FG.powerset _ Finset.card (λ s => s.sum (λ a => 1))) rfl (λ s hs=> card_eq_sum_ones s)
 
   have rewrite : ∑ a ∈ FG, (Finset.filter (fun S => a ∈ S) FG.powerset).card = ∑ a ∈ FG, ∑ x ∈ (Finset.filter (fun S => a ∈ S) FG.powerset), 1 := by
     simp_all only [Finset.sum_const, smul_eq_mul, mul_one, Finset.sum_boole, Nat.cast_id]
@@ -773,14 +622,13 @@ by
 
   rw [rewrite4]
 
-
   -- 和の順序を入れ替える
   rw [Finset.sum_comm]
 
-lemma sum_filter_card_eq {α : Type} [DecidableEq α][Fintype α]  (FG : Finset α) (a : α) :
-  (FG.powerset.filter (λ S => a ∈ S)).sum (λ S => 1) = (FG.powerset.filter (λ S => a ∈ S)).card :=
-by
-  simp_all
+--lemma sum_filter_card_eq {α : Type} [DecidableEq α][Fintype α]  (FG : Finset α) (a : α) :
+--  (FG.powerset.filter (λ S => a ∈ S)).sum (λ S => 1) = (FG.powerset.filter (λ S => a ∈ S)).card :=
+--by
+--  simp_all
 
 -- 主定理: FG.powerset.sum Finset.card = FG.card * 2 ^ (FG.card - 1)
 theorem powerset_sum_card_eq_card_mul_pow {α : Type} [DecidableEq α][Fintype α]
@@ -794,8 +642,6 @@ theorem powerset_sum_card_eq_card_mul_pow {α : Type} [DecidableEq α][Fintype �
 
   -- 補題2: 冪集合のカードの合計を、各要素が含まれる部分集合の数の合計に置き換える
   have sum_eq_sum : FG.powerset.sum Finset.card = (FG.sum (fun a => (FG.powerset.filter (fun S => a ∈ S)).card)) := by
-
-
     --∑ s ∈ FG.powerset, ∑ a ∈ s, 1 = ∑ a ∈ FG, (filter (fun S => a ∈ S) FG.powerset).card
     have left_hand_side : FG.powerset.sum Finset.card = ∑ s ∈ FG.powerset, ∑ a ∈ s, 1:= by
       simp_all only [Finset.sum_const, smul_eq_mul, mul_one]
@@ -808,7 +654,7 @@ theorem powerset_sum_card_eq_card_mul_pow {α : Type} [DecidableEq α][Fintype �
 
     -- ∑ s ∈ FG.powerset, ∑ a ∈ s, 1 = ∑ a ∈ FG, (filter (fun S => a ∈ S) FG.powerset).card
     --#check card_eq_sum_ones2
-    simp [card_eq_sum_ones2] at scp
+    simp [Fintype.card_eq_sum_ones] at scp
     --goal ∑ x ∈ FG.powerset, x.card = ∑ a ∈ FG, (filter (fun S => a ∈ S) FG.powerset).card
     convert sum_card_powerset_eq_sum_subsets_containing
     simp_all only [Finset.one_le_card, Finset.mem_powerset, Finset.sum_const, smul_eq_mul, mul_one, n]
@@ -904,6 +750,7 @@ lemma ground_minus_v_ideal_total {α : Type} [DecidableEq α] [Fintype α] (F : 
         apply Or.inl
         rfl
 
+--下で利用
 lemma degree_one_singleton {α : Type} [DecidableEq α] [Fintype α] (F: IdealFamily α) (v : α) (hv: v ∈ F.ground)(hcard0: F.ground.card >= 2):
   degree F.toSetFamily v = 1 ↔ ¬F.sets {v} := by
     apply Iff.intro
@@ -1044,51 +891,13 @@ lemma filter_sum {α : Type} [DecidableEq α] [Fintype α] (P Q : Finset α → 
     simp
     rw [d_union]
 
-lemma filter_sum_func {α : Type} [DecidableEq α] [Fintype α] {P Q : Finset α → Prop} [DecidablePred P] [DecidablePred Q] (S : Finset (Finset α))(g: Finset α → Nat):
-  (∀ (s:Finset α), s ∈ S → ¬(P s ∧ Q s)) →
-    (Finset.filter (λ (s : Finset α) => P s ∨ Q s) S).sum g
-   = ((Finset.filter (λ (s : Finset α) => P s) S).sum g) +
-    (Finset.filter (λ (s : Finset α) => Q s) S).sum g := by
-    intro disj
-    set domain := (Finset.filter (λ (s : Finset α) => P s ∨ Q s) S)
-    set rangeP := (Finset.filter (λ (s : Finset α) => P s) S)
-    set rangeQ := (Finset.filter (λ (s : Finset α) => Q s) S)
-    have d_union:domain = rangeP ∪ rangeQ := by
-      apply Finset.ext
-      intro x
-      constructor
-      intro a
-      simp_all only [not_and, Finset.mem_filter, Finset.mem_union, true_and, domain, rangeP, rangeQ]
-      intro a
-      simp_all only [not_and, Finset.mem_union, Finset.mem_filter, rangeP, rangeQ, domain]
-      cases a with
-      | inl h => simp_all only [or_false, and_self]
-      | inr h_1 => simp_all only [or_true, and_self]
-    have disjoint: rangeP ∩ rangeQ = ∅ := by
-      apply Finset.eq_empty_of_forall_not_mem
-      intro x
-      simp_all only [Finset.mem_inter, Finset.mem_filter]
-      intro h
-      obtain ⟨hP, hQ⟩ := h
-      simp_all only [not_and, Finset.mem_filter, and_false, rangeP, rangeQ]
-    have disjoint0: Disjoint rangeP rangeQ := by
-      dsimp [Disjoint]
-      intro x
-      intro xrp xrq
-      have xsub: x ⊆ rangeP ∩ rangeQ := by
-        exact Finset.subset_inter xrp xrq
-      rw [disjoint] at xsub
-      exact xsub
 
-    --#check Finset.card_union_of_disjoint disjoint0
-    convert (@Finset.sum_disjUnion _ _  rangeP rangeQ (λ s => g s) _ disjoint0)
-    simp
-    rw [d_union]
 
---結果的にtotal degree cardと同じことを示している。
+----使ってない補題等
+--結果的にtotal degree cardと同じことを示している。使ってない。
 --lemma total_degone_card {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) (v : α) (hv: v ∈ F.ground) (deg1: degree F v = 1) (hasGround: F.sets F.ground)(gcard: F.ground.card ≥ 2) :
 --  total_size_of_hyperedges F = (F.ground.powerset.filter (λ s => F.sets s ∧ v ∉ s )).sum Finset.card + F.ground.card
-  lemma filter_sum_one {α : Type} [DecidableEq α] [Fintype α] (F: IdealFamily α) (v : α) (hv: v ∈ F.ground) (deg1: degree F.toSetFamily v = 1) (hasGround: F.sets F.ground)(gcard: F.ground.card ≥ 2):
+lemma filter_sum_one {α : Type} [DecidableEq α] [Fintype α] (F: IdealFamily α) (v : α) (hv: v ∈ F.ground) (deg1: degree F.toSetFamily v = 1) (hasGround: F.sets F.ground)(gcard: F.ground.card ≥ 2):
     (Finset.filter (λ (s : Finset α) => F.sets s) F.ground.powerset).sum Finset.card = (Finset.filter (λ (s : Finset α) => (F.sets s ∧ v ∉ s)) F.ground.powerset).sum Finset.card + F.ground.card := by
 
   have degv: ¬ F.sets {v}:= by
@@ -1144,5 +953,83 @@ lemma filter_sum_func {α : Type} [DecidableEq α] [Fintype α] {P Q : Finset α
   rw [eqn0]
 
   exact filter_sum (λ s => (F.sets s ∧ v ∉ s)) (λ s => s = F.ground) (F.ground.powerset) disj
+
+
+--使ってないよう。
+lemma degree_one_hyperedges_partition {α : Type} [DecidableEq α] [Fintype α]
+  (F : IdealFamily α) (x : α) (hx: x ∈ F.ground) (h_not_hyperedge : ¬ F.sets {x}):
+   ∀ (s:Finset α), (F.sets s) → ((s ≠ F.ground) ↔ x ∉ s) := by
+  intro s hs
+  apply Iff.intro
+  · intro h
+    by_contra h2
+    have h3 := hyperedges_not_through_v F.toSetFamily x hx (degree_one_if_not_hyperedge F hx h_not_hyperedge) F.univ_mem s hs h
+    contradiction
+  · intro h
+    simp_all only [ne_eq]
+    apply Aesop.BuiltinRules.not_intro
+    intro a
+    subst a
+    simp_all only
+
+--使ってないよう。
+lemma degree_one_hyperedges_partition2 {α : Type} [DecidableEq α] [Fintype α]
+  (F : IdealFamily α) (x : α) (hx: x ∈ F.ground):
+   ∀ (s:Finset α),  s ∈ F.ground.powerset → ¬ ((x ∉ s ∧ F.sets s) ∧ (s = F.ground)):= by
+  intro s
+  intro sf
+  by_contra h
+  obtain ⟨h1, h2⟩ := h
+  subst h2
+  simp_all only
+
+--使われてないよう。deg1を持つ集合族のhyperedge数は、vを含まないhyperedge数に1を足したもの。他の定理を使って、もっと簡単に証明できる可能性あり。
+lemma erase_ground_card {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) (v : α) (hv: v ∈ F.ground) (deg1: degree F v = 1) (hasGround: F.sets F.ground)(gcard: F.ground.card ≥ 2) :
+  number_of_hyperedges F = (F.ground.powerset.filter (λ s => F.sets s ∧ v ∉ s )).card + 1 := by
+  --have h1 := trace_hyperedge_equiv F v hv deg1 hasGround gcard
+  have disjoint_sets : Disjoint (Finset.filter (λ s => F.sets s ∧ s ≠ F.ground) (F.ground.powerset)) ({F.ground}) := by
+    simp_all only [ne_eq, Set.union_singleton, Finset.disjoint_singleton_right, Finset.mem_filter, Finset.mem_powerset,
+      subset_refl, not_true_eq_false, and_false, not_false_eq_true]
+  have h2 := Finset.card_union_of_disjoint disjoint_sets
+  have whole:(Finset.filter (fun s => F.sets s ∧ s ≠ F.ground) F.ground.powerset ∪ {F.ground}) = Finset.filter (fun s => F.sets s) F.ground.powerset := by
+    simp_all only [ne_eq, Set.union_singleton, Finset.disjoint_singleton_right, Finset.mem_filter,
+      Finset.mem_powerset, subset_refl, not_true_eq_false, and_false, not_false_eq_true,
+      Finset.card_union_of_disjoint, Finset.card_singleton]
+    ext1 a
+    simp_all only [Finset.mem_union, Finset.mem_filter, Finset.mem_powerset, Finset.mem_singleton]
+    apply Iff.intro
+    · intro a_1
+      cases a_1 with
+      | inl h => simp_all only [and_self]
+      | inr h_1 =>
+        subst h_1
+        simp_all only [subset_refl, and_self]
+    · intro a_1
+      simp_all only [true_and]
+      tauto
+  rw [whole] at h2
+  rw [number_of_hyperedges]
+  rw [h2]
+  simp_all only [ge_iff_le, ne_eq, Finset.disjoint_singleton_right, Finset.mem_filter, Finset.mem_powerset, subset_refl,
+    not_true_eq_false, and_false, not_false_eq_true, Finset.card_singleton, add_left_inj]
+  have h3 := hyperedges_not_through_v F v hv deg1 hasGround
+  simp_all only [Finset.card_singleton, ne_eq]
+  congr
+  ext x : 2
+  simp_all only [and_congr_right_iff]
+  intro a
+  apply Iff.intro
+  · intro a_1
+    simp_all only [not_false_eq_true]
+  · intro a_1
+    apply Aesop.BuiltinRules.not_intro
+    intro a_2
+    subst a_2
+    simp_all only
+
+-- 補助的な補題の定義 Fintype.card_eq_sum_onesと同じ。
+--lemma card_eq_sum_ones {α : Type} [DecidableEq α][Fintype α]  (s : Finset α) :
+--  Finset.card s = s.sum (λ a => 1) := by
+--  simp_all only [Finset.sum_const, smul_eq_mul, mul_one]
 
 end Ideal

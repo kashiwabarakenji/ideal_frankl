@@ -1,3 +1,4 @@
+-- vをtraceするオペレーション。IdealDegreeOneで使われている。
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Fintype.Basic
@@ -9,47 +10,16 @@ import Ideal.BasicDefinitions
 import Ideal.BasicLemmas
 import LeanCopilot
 
-variable {α : Type} [DecidableEq α] [Fintype α] [Nonempty α]
+variable {α : Type} [DecidableEq α] [Fintype α]
 
 open Finset
 
-namespace Ideal.IdealTrace
-
---deletionに限らないかも。名前を変えてBasicLemmasに移動するかも。
-lemma ground_nonempty_after_deletion {α : Type} [DecidableEq α] (ground : Finset α) (x : α) (hx: x ∈ ground) (gcard: ground.card ≥ 2) : (ground.erase x).Nonempty :=
-  by
-    rw [Finset.erase_eq]
-    apply Finset.nonempty_of_ne_empty
-    by_contra h_empty
-    by_cases hA : ground = ∅
-    rw [hA] at gcard
-    contradiction
-    -- ground.card = 1のケース
-    have g_eq_x: ground = {x} := by
-      ext y
-      constructor
-      intro hy
-      have hy' : y ∈ ground \ {x} := by
-          rw [h_empty]
-          simp_all only [ge_iff_le, sdiff_eq_empty_iff_subset, subset_singleton_iff, false_or, singleton_ne_empty,
-            not_false_eq_true, mem_singleton, not_mem_empty, card_singleton, Nat.not_ofNat_le_one]
-      rw [h_empty] at hy'
-      contradiction
-      -- y ∈ {x}のときに、groundに属することを示す
-      intro hy
-      have x_eq_y : x = y := by
-        rw [mem_singleton] at hy
-        rw [hy]
-      rw [x_eq_y] at hx
-      exact hx
-    rw [g_eq_x] at gcard
-    rw [Finset.card_singleton] at gcard
-    contradiction
+namespace Ideal.IdealTrace  --なぜか名前空間が違う。
 
 def trace {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) (x : α) (hx: x ∈ F.ground) (gcard: F.ground.card ≥ 2): SetFamily α :=
   { ground := F.ground.erase x,
     sets := λ s => (x ∉ s) ∧ (F.sets s ∨ F.sets (s ∪ {x})),
-    nonempty_ground := ground_nonempty_after_deletion F.ground x hx gcard,
+    nonempty_ground := ground_nonempty_after_minor F.ground x hx gcard,
     inc_ground := λ s hs =>
       by
         simp_all only [Bool.decide_and, Bool.decide_eq_true, decide_not, Bool.and_eq_true, Bool.not_eq_true',
@@ -74,10 +44,9 @@ def trace {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) (x : α) 
           intro y hy
           exact hhh (mem_union_left _ hy)
   }
-
-
-omit [Fintype α] [Nonempty α] in
-theorem union_erase_singleton2 (d : Finset α) (v : α) (dd:v ∉ d): (d ∪ {v}).erase v = d :=
+/-
+--omit [Fintype α] [Nonempty α] in
+lemma union_erase_singleton2 (d : Finset α) (v : α) (dd:v ∉ d): (d ∪ {v}).erase v = d :=
 by
   ext x
   simp only [Finset.mem_erase, Finset.mem_union, Finset.mem_singleton, Finset.mem_insert]
@@ -108,7 +77,9 @@ by
     -- x ∈ d ∨ x = v
     left
     exact h
+-/
 
+--idealという性質が、traceの演算で閉じていることの証明？
 instance trace_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x} ) (gcard: F.ground.card ≥ 2): IdealFamily α :=
 {
   trace (F.toSetFamily) x (by { exact F.inc_ground {x} hx (by simp) }) gcard with
@@ -166,17 +137,6 @@ instance trace_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x} ) (gc
           apply mem_union_right
           exact hax
 
-    /- なぜかうまくいかない。lambdaの使い方が悪いみたい。
-    have hhAB2: A ∪ {x} ⊆ B ∪ {x} :=
-      λ a ha =>
-        match mem_union.mp ha with
-        | Or.inl haA =>
-          apply mem_union_left
-          exact hAB haA
-        | Or.inr hax =>
-          apply mem_union_right
-          exact hax
-    -/
 
     match hB_sets with
     -- F.sets B
@@ -226,19 +186,7 @@ instance trace_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x} ) (gc
      case neg =>
         --goal (trace F.toSetFamily x ⋯ gcard).sets A
         simp at h --h : B ∪ {x} = F.ground
-        --成り立つが、使ってない部分をコメントアウト
-        --have _: F.sets (B ∪ {x}) := by --使ってない。
-        --  rw [h]
-        --  exact F.univ_mem
-        --have hB_neq2: B ≠ thisF.ground := by
-        --  dsimp [thisF]
-        --  exact hB_neq
-        --have GG: thisF.ground = F.ground.erase x := by
-        --  rfl
-        --rw [GG] at hB_neq2
-        --have BB: B ∪ {x} = (F.ground.erase x)∪{x} := by
-        --  rw [erase_insert F.ground x hxG]
-        --  simp [h]
+
         have fgx: F.ground ∪ {x} = F.ground := by
           simp_all [hxG]
         have bxf: B ∪ {x} = F.ground := by

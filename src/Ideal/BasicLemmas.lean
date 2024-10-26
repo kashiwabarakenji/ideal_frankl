@@ -24,8 +24,6 @@ theorem empty_ne_univ : (∅ : Finset α) ≠ Finset.univ :=
     intro a
     simp [Finset.eq_univ_iff_forall] at a
 
-
---3つ同じ定理がある。
 --下と同じ定理。こちらを使う。
 omit [Fintype α] [Nonempty α] in
 theorem erase_union_singleton (H : Finset α) (h1 : d = H.erase v) (h2 : v ∈ H) : H = d ∪ {v} :=
@@ -348,6 +346,82 @@ lemma exists_max_card (S : Finset (Finset α))(h : S ≠ ∅):
       exact hT.left
       exact hT.right.symm
 
+--IdealDegOneMainから利用している。
+lemma filter_sum_func {α : Type} [DecidableEq α] [Fintype α] {P Q : Finset α → Prop} [DecidablePred P] [DecidablePred Q] (S : Finset (Finset α))(g: Finset α → Nat):
+  (∀ (s:Finset α), s ∈ S → ¬(P s ∧ Q s)) →
+    (Finset.filter (λ (s : Finset α) => P s ∨ Q s) S).sum g
+   = ((Finset.filter (λ (s : Finset α) => P s) S).sum g) +
+    (Finset.filter (λ (s : Finset α) => Q s) S).sum g := by
+    intro disj
+    set domain := (Finset.filter (λ (s : Finset α) => P s ∨ Q s) S)
+    set rangeP := (Finset.filter (λ (s : Finset α) => P s) S)
+    set rangeQ := (Finset.filter (λ (s : Finset α) => Q s) S)
+    have d_union:domain = rangeP ∪ rangeQ := by
+      apply Finset.ext
+      intro x
+      constructor
+      intro a
+      simp_all only [not_and, Finset.mem_filter, Finset.mem_union, true_and, domain, rangeP, rangeQ]
+      intro a
+      simp_all only [not_and, Finset.mem_union, Finset.mem_filter, rangeP, rangeQ, domain]
+      cases a with
+      | inl h => simp_all only [or_false, and_self]
+      | inr h_1 => simp_all only [or_true, and_self]
+    have disjoint: rangeP ∩ rangeQ = ∅ := by
+      apply Finset.eq_empty_of_forall_not_mem
+      intro x
+      simp_all only [Finset.mem_inter, Finset.mem_filter]
+      intro h
+      obtain ⟨hP, hQ⟩ := h
+      simp_all only [not_and, Finset.mem_filter, and_false, rangeP, rangeQ]
+    have disjoint0: Disjoint rangeP rangeQ := by
+      dsimp [Disjoint]
+      intro x
+      intro xrp xrq
+      have xsub: x ⊆ rangeP ∩ rangeQ := by
+        exact Finset.subset_inter xrp xrq
+      rw [disjoint] at xsub
+      exact xsub
+
+    --#check Finset.card_union_of_disjoint disjoint0
+    convert (@Finset.sum_disjUnion _ _  rangeP rangeQ (λ s => g s) _ disjoint0)
+    simp
+    rw [d_union]
+
+lemma filter_union_distrib (P : α → Prop) [DecidablePred P] (A B : Finset α) :
+  Finset.filter P (A ∪ B)= (A.filter P) ∪ (B.filter P) := by
+  -- 両方の集合の同値性を示すために ext を使う
+  ext x
+  -- x が (A ∪ B).filter P に含まれる ⇔ A.filter P または B.filter P に含まれる
+  simp [Finset.mem_union, Finset.mem_filter]
+  -- x が A ∪ B のどちらかに属し、かつ P(x) を満たすかどうかを確認
+  tauto -- 両方の論理条件を自動的に解決
+
+lemma filter_union_eq (P : Finset α → Prop) [DecidablePred P] (A B : Finset (Finset α)) : (A ∪ B).filter P = (A.filter P) ∪ (B.filter P) := filter_union_distrib P A B
+--Finset.filter P
+lemma filter_union_eq0  (P : α → Prop) [DecidablePred P] (A B: Finset α) : Finset.filter P (A ∪ B) =  (Finset.filter P B) ∪ (Finset.filter P A)  := by
+  ext x
+  -- フィルタリングされた要素について、それがA∪Bに属するかを確認
+  simp [Finset.mem_filter, Finset.mem_union]
+  -- 両辺を示すための同値性
+  tauto
+
+
+lemma filter_union_sum (P : Finset α → Prop) [DecidablePred P] (A B : Finset (Finset α)) (disj: Disjoint A  B) :
+  ((Finset.filter P A).sum (λ x => x.card)) + ((Finset.filter P B).sum (λ x => x.card)) = (Finset.filter P (A ∪ B)).sum (λ x => x.card) := by
+
+   -- A と B が互いに素であることから、フィルタ後の A.filter P と B.filter P も互いに素
+   have filter_disj : Disjoint (A.filter P) (B.filter P) := by
+      --rw [Finset.disjoint_iff_inter_eq_empty]
+      --have disjAB : Disjoint A B := by
+      --  rw [Finset.disjoint_iff_inter_eq_empty]
+      --  exact disj
+      exact Finset.disjoint_filter_filter disj
+   --have sum_disjoint := Finset.sum (A.filter P ∪ B.filter P) (λ x => x.card)
+   have sum_disjoint := (@Finset.sum_union _ _ (A.filter P) (B.filter P)  (λ x => x.card)) filter_disj
+   rw [←sum_disjoint]
+   rw [←filter_union_eq]
+
 -- 大きさが2以上の場合は、1減らしても1以上の大きさを持つ。
 lemma ground_nonempty_after_minor {α : Type} [DecidableEq α] (ground : Finset α) (x : α) (hx: x ∈ ground) (gcard: ground.card ≥ 2) : (ground.erase x).Nonempty :=
   by
@@ -521,6 +595,60 @@ theorem injective_image_injective {α β : Type} [DecidableEq α] [DecidableEq �
         exact H left
       rw [←hs] at fxt
       contradiction
+
+--全単射があるとき、集合の要素数が等しいことを示す。
+theorem finset_card_eq_card_of_bijective {α β : Type} [DecidableEq α] [Fintype α][DecidableEq β]{s : Finset α}[DecidableEq {x // x ∈ s}] {t : Finset β}
+  (f : s → t) (hf : Function.Bijective f)  : s.card = t.card := by
+  --have h_inj : Function.Injective f := hf.1
+  have h_inj : Function.Injective f := hf.1
+
+  have h_image : t = (s.attach).image (λ ss=> (f ss).val) := Finset.ext (by
+    --simp [hf.2]
+    --gaol ∃ a_2 ∈ s, f a_2 = a
+    --fが全射なので、a ∈ t ならば、a = f a' となるa'が存在する。
+     intro a
+     constructor
+     · --goal : a ∈ t → a ∈ s.image f
+      intro ha
+      -- ha: a ∈ t
+      let surjf := hf.2
+      rw [Function.Surjective] at surjf
+      --surjf : ∀ (b : β), ∃ (a : α), f a = b
+      let surjfa := surjf ⟨a, ha⟩
+      obtain ⟨b, hb⟩ := surjfa
+      --hb : f b = ⟨a, ha⟩
+      --a ∈ Finset.image (fun s ↦ ↑(f s)) s.attach
+      rw [Finset.mem_image]
+      --goal  ∃ a_1 ∈ s.attach, ↑(f a_1) = a
+      use b
+      simp
+      simp [hb]
+     · --goal a ∈ Finset.image (fun s ↦ ↑(f s)) s.attach → a ∈ t
+      intro ha
+      --ha : a ∈ Finset.image (fun s ↦ ↑(f s)) s.attach
+      rw [Finset.mem_image] at ha
+      obtain ⟨b, _, hb2⟩ := ha
+      --hb1 : b ∈ s.attach
+      --hb2 : ↑(f b) = a
+      --a ∈ t
+      rw [←hb2]
+      subst hb2
+      simp_all only [Multiset.bijective_iff_map_univ_eq_univ, Finset.univ_eq_attach, Finset.attach_val,
+        Finset.mem_attach, Finset.coe_mem]
+    )
+
+  calc
+    s.card = s.attach.card := by rw [Finset.card_attach]
+    _ = (s.attach.image (λ ss => (f ss).val)).card := by
+      apply Eq.symm
+      apply Finset.card_image_of_injOn
+      intro x _ y _ h
+      simp only [Subtype.val_inj] at h
+      have : f x = f y := by
+        ext
+        rw [h]
+      exact h_inj this
+    _ = t.card := by rw [← h_image]
 
 
 end Ideal

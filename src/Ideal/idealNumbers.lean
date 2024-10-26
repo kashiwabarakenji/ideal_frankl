@@ -1,3 +1,4 @@
+--このファイルでは、vを通るhyperedgeの数の計算を行う。vがsingleton hyperedgeを持つ場合を扱う。ground-vを持つ場合と持たない場合に分けて計算する。
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Fintype.Basic
@@ -15,73 +16,13 @@ import LeanCopilot
 namespace Ideal
 variable {α : Type} [DecidableEq α] [Fintype α] [Nonempty α]
 
---この部分は、汎用に使えるので、後日、BasicLemmasに移動する。
---全単射があるとき、集合の要素数が等しいことを示す。
-theorem finset_card_eq_card_of_bijective {α β : Type} [DecidableEq α] [Fintype α][DecidableEq β]{s : Finset α}[DecidableEq {x // x ∈ s}] {t : Finset β}
-  (f : s → t) (hf : Function.Bijective f)  : s.card = t.card := by
-  --have h_inj : Function.Injective f := hf.1
-  have h_inj : Function.Injective f := hf.1
-
-  have h_image : t = (s.attach).image (λ ss=> (f ss).val) := Finset.ext (by
-    --simp [hf.2]
-    --gaol ∃ a_2 ∈ s, f a_2 = a
-    --fが全射なので、a ∈ t ならば、a = f a' となるa'が存在する。
-     intro a
-     constructor
-     · --goal : a ∈ t → a ∈ s.image f
-      intro ha
-      -- ha: a ∈ t
-      let surjf := hf.2
-      rw [Function.Surjective] at surjf
-      --surjf : ∀ (b : β), ∃ (a : α), f a = b
-      let surjfa := surjf ⟨a, ha⟩
-      obtain ⟨b, hb⟩ := surjfa
-      --hb : f b = ⟨a, ha⟩
-      --a ∈ Finset.image (fun s ↦ ↑(f s)) s.attach
-      rw [Finset.mem_image]
-      --goal  ∃ a_1 ∈ s.attach, ↑(f a_1) = a
-      use b
-      simp
-      simp [hb]
-     · --goal a ∈ Finset.image (fun s ↦ ↑(f s)) s.attach → a ∈ t
-      intro ha
-      --ha : a ∈ Finset.image (fun s ↦ ↑(f s)) s.attach
-      rw [Finset.mem_image] at ha
-      obtain ⟨b, _, hb2⟩ := ha
-      --hb1 : b ∈ s.attach
-      --hb2 : ↑(f b) = a
-      --a ∈ t
-      rw [←hb2]
-      subst hb2
-      simp_all only [Multiset.bijective_iff_map_univ_eq_univ, Finset.univ_eq_attach, Finset.attach_val,
-        Finset.mem_attach, Finset.coe_mem]
-    )
-
-  calc
-    s.card = s.attach.card := by rw [Finset.card_attach]
-    _ = (s.attach.image (λ ss => (f ss).val)).card := by
-      apply Eq.symm
-      apply Finset.card_image_of_injOn
-      intro x _ y _ h
-      simp only [Subtype.val_inj] at h
-      have : f x = f y := by
-        ext
-        rw [h]
-      exact h_inj this
-    _ = t.card := by rw [← h_image]
-
-
---theorem Finset.card_image_of_injective {α : Type u_1}  {β : Type u_2}  {f : α → β} [DecidableEq β]  (s : Finset α)  (H : Function.Injective f) :
---Finset.card (Finset.image f s) = Finset.card s
-
 -- 言明：頂点 v を含む hyperedge 数と、v で contraction して得られた集合族の hyperedge 数が等しいことを示す
-
-theorem degree_eq_contraction_degree {α : Type} [DecidableEq α] [Fintype α]
+-- hyperedge_count_deletion_contraction_haveなどで使われている。
+lemma degree_eq_contraction_degree {α : Type} [DecidableEq α] [Fintype α]
   (F : SetFamily α) (v : α) (hv : v ∈ F.ground) (gcard: F.ground.card ≥ 2):
   degree F v = number_of_hyperedges (IdealDeletion.contraction F v hv gcard) :=
 by
   rw [IdealDeletion.contraction, degree, number_of_hyperedges]
-  --dsimp [all_subsets]
   simp
   --leftとrightが間違って入れ替わっているので、注意。
   let left_side := Finset.filter (fun (s :Finset α) ↦ F.sets s ∧ v ∈ s) F.ground.powerset
@@ -121,7 +62,6 @@ by
         · --goal F.sets (s ∪ {v})
           --hs2 : ∃ H, F.sets H ∧ v ∈ H ∧ s = H.erase v
           rcases hs2 with ⟨H1, H2, hH3, hh4⟩
-          --obtain ⟨H, H_sets, hHH, _⟩ := hs2
 
           have Fssv: F.sets (s.val ∪ {v}) := by
             rw [hh4]
@@ -133,13 +73,10 @@ by
           -- v ∈ ↑s ∪ {v}
           simp⟩
 
-
       -- 単射を示す
       have h_injective : Function.Injective f :=
         by
           intros a b h
-          --have v_val_in : a.val ∈ right_side := by
-          --  exact a.property
           let ap := a.property
           rw [Finset.mem_filter] at ap
           obtain ⟨Ha1,Ha2, Ha_sets, Ha3,Ha4⟩ := ap
@@ -202,7 +139,6 @@ by
             simp
             constructor
             · -- left goal: F.sets ssev
-              --rename_i α_1 _ _ _ inst_3 inst_4
               simp_all only [ge_iff_le, Finset.mem_val, Finset.mem_powerset, right_side, left_side, f, ssev]
               obtain ⟨val, property⟩ := ss
               simp_all only
@@ -211,7 +147,6 @@ by
               obtain ⟨_, right⟩ := hx
               exact sss_subset right
             · -- right goal: ssev ⊆ F.ground.erase v
-              --rename_i α_1 _ _ _ inst_3 inst_4
               simp_all only [ge_iff_le, Finset.mem_val, Finset.mem_powerset, right_side, left_side, f, ssev]
               obtain ⟨val, property⟩ := ss
               simp_all only
@@ -233,21 +168,18 @@ by
           simp only [ssev, Finset.mem_erase]
           have rw_rule := Ideal.erase_insert ss.val v ss_erase
           constructor
-          -- goal: F.sets ssev
-          --rename_i α_1 _ _ _ inst_3 inst_4
+          -- goal: F.sets ssev ∪ {v}
           simp [rw_rule]
           -- goal: ssev ∪ {v} = ss.val
           simpa [rw_rule] -- simpもsimpaも両方とも必要みたい。
 
-          -- 単射性と全射性から全単射性を得る
-          --fが全単射という言明をまず証明する
+          -- 単射性と全射性から全単射性を得る。fが全単射という言明をまず証明する
       have h_bijection : Function.Bijective f :=
         by
          exact ⟨h_injective, h_surjective⟩
       --fが全単射なので、right_side と left_side の要素数は等しい。
       exact finset_card_eq_card_of_bijective f h_bijection
       --これで、Finset.card right_side = Finset.card left_side が証明された。
-  --congr たぶんcongrはだめ。両辺で対応してない。
   --goal Finset.card (Finset.filter (λ (s : Finset α), F.sets s ∧ v ∈ s) F.ground.powerset) = Finset.card (Finset.filter (λ (s : Finset α), ∃ (H : Finset α), F.sets H ∧ v ∈ H ∧ s = H.erase v) (F.ground.erase v).powerset)
   have r_eq: (Finset.filter (fun (s: Finset α) ↦ F.sets s ∧ v ∈ s) F.ground.powerset).card =left_side.card := by
     rfl
@@ -255,35 +187,12 @@ by
 
   rw [←h_bijective]
 
-  --have l_eq :(Finset.filter (fun (s: Finset α) ↦ ∃ (H:Finset α), F.sets H ∧ v ∈ H ∧ s = H.erase v) (F.ground.erase v).powerset).card = right_side.card := by
-  --  rfl
-  --rw [l_eq] うまくマッチしなかった。
-  --集合でなく、cardにして、置き換えた。
   have right_side_card_eq: right_side.card = Finset.card (Finset.filter (fun (s : Finset α) ↦ ∃ (H : Finset α), F.sets H ∧ v ∈ H ∧ s = H.erase v) (F.ground.erase v).powerset) := rfl
   rw [right_side_card_eq]
   congr
   --同じ式なのに全然マッチしてくれなかったが、ゴールを両辺が等しい形まで変形して、congrで簡約させてうまくいった。
 
-  -- 補題 1: Deletion後の集合族の性質
-lemma deletion_property {α : Type} [DecidableEq α] [Fintype α]
-  (F : SetFamily α) (v : α) (hv : v ∈ F.ground) (gcard: F.ground.card ≥ 2):
-  ∀ s, (IdealDeletion.deletion F v hv gcard).sets s ↔ F.sets s∧ v ∉ s :=
-by
-  intro s
-  constructor
-  · intro hs
-    rw [IdealDeletion.deletion] at hs
-    simp at hs
-    constructor
-    exact hs.1
-    exact hs.2
-
-  · intro hs
-    rw [IdealDeletion.deletion]
-    simp
-    exact hs
-
--- 補題 2: 元の集合族における次数の定義。いらないかも。
+-- 元の集合族における次数の定義。使われているが、いらないかも。
 lemma degree_definition {α : Type} [DecidableEq α] [Fintype α]
   (F : SetFamily α) (v : α) :
   degree F v = Finset.card (Finset.filter (λ s => F.sets s = true ∧ v ∈ s) (Finset.powerset F.ground)) :=
@@ -291,6 +200,7 @@ by
   rw [degree]
   congr
 
+--すぐあとのメイン定理を証明するのに使われる。
 lemma hyperedge_count_split {α : Type} [DecidableEq α] [Fintype α]
   (F : SetFamily α) (v : α) (hv : v ∈ F.ground) (gcard: F.ground.card ≥ 2):
   number_of_hyperedges F = number_of_hyperedges (IdealDeletion.deletion F v hv gcard) + degree F v :=
@@ -302,17 +212,6 @@ by
   -- 全ての部分集合に対するフィルタリングを行います。
   let all_sets2 := (Finset.powerset F.ground).filter F.sets
 
-  -- このフィルタリングした集合を元に、カード（要素数）を計算します。
-  --have count_all_sets : all_sets2.card = Finset.card all_sets2 := rfl
-
-  -- 同様に、deletion後の集合族のハイパーエッジ数を計算します。
-  --let deletion_sets := (Finset.powerset (F.ground.erase v)).filter (λ s => F.sets s ∧ v ∉ s)
-  --以下は動いているが、使っていない。
-  --have count_deletion_sets : number_of_hyperedges (IdealDeletion.deletion F v hv gcard) = deletion_sets.card :=
-  --  by
-  --    rw [number_of_hyperedges]
-  --    congr!
-
   -- 次に、degreeを計算します。これは、vを含む全ての部分集合の数に対応します。
   rw [degree_definition F v]
 
@@ -320,7 +219,6 @@ by
   let sets_with_v := all_sets2.filter (λ s => v ∈ s)
   let sets_without_v := all_sets2.filter (λ s => v ∉ s)
   have sets_without_v_def: sets_without_v = all_sets2.filter (λ s => v ∉ s) := rfl
-
 
   -- この分割が正確であることを確認します。
   have partition : all_sets2 = sets_with_v ∪ sets_without_v := by
@@ -354,7 +252,6 @@ by
 
   -- 最後に、全ての部分集合のカード（要素数）が、分割された集合のカード（要素数）の合計と等しいことを示します。
   --goal Finset.card all_sets = Finset.card sets_with_v + Finset.card sets_without_v
-  --simp_all
   have partition_card : all_sets2.card = (sets_with_v ∪ sets_without_v).card := by
     rw [partition]
   have term1: (Finset.filter F.sets F.ground.powerset).card = all_sets2.card := rfl
@@ -428,6 +325,7 @@ by
   exact disj
   --原因不明でexact disjができなかったが、原因不明でできるようになった。
 
+--このファイルのメイン定理。IdealMainなどで引用。ground-vは持って、singleton hyperedgeを持つ仮定なので名前に反映しても良い。
 theorem hyperedge_count_deletion_contraction_have {α : Type} [DecidableEq α] [Fintype α]
   (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (gcard: F.ground.card ≥ 2)
   [DecidablePred F.sets] (hx_hyperedge : F.sets (F.ground \ {x})) (hx_singleton: F.sets {x}):
@@ -436,14 +334,6 @@ theorem hyperedge_count_deletion_contraction_have {α : Type} [DecidableEq α] [
   --number_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard) :=
   number_of_hyperedges (IdealDeletion.contraction_ideal_family F x hx_singleton gcard).toSetFamily := by
 
---theorem degree_eq_contraction_degree {α : Type} [DecidableEq α] [Fintype α]
---F : SetFamily α) (v : α) (hv : v ∈ F.ground) (gcard: F.ground.card ≥ 2):
---  degree F v = number_of_hyperedges (IdealDeletion.contraction F v hv gcard) :=
---hyperedge_count_split {α : Type} [DecidableEq α] [Fintype α]
---  (F : SetFamily α) (v : α) (hv : v ∈ F.ground) (gcard: F.ground.card ≥ 2):
---  number_of_hyperedges F = number_of_hyperedges (IdealDeletion.deletion F v hv gcard) + degree F v
--- calcで計算できるかも。
-  --#check hyperedge_count_split F.toSetFamily x hx gcard
   have sub1: number_of_hyperedges F.toSetFamily = number_of_hyperedges ((F.toSetFamily ∖ x) hx gcard) + degree F.toSetFamily x := by
     rw [←hyperedge_count_split F.toSetFamily x hx gcard]
     congr
@@ -473,7 +363,7 @@ theorem hyperedge_count_deletion_contraction_have {α : Type} [DecidableEq α] [
     _ = number_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily + number_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard) := by
       rw [degree_eq_contraction_degree F.toSetFamily x hx gcard]
 
---hx_singleton: F.sets {x}
+--ground-vを持ち、シングルトンを持つバージョンのvを通るhyperedge数の計算。整数の計算にcastしたもの。hx_singleton: F.sets {x}
 theorem hyperedge_count_deletion_contraction_have_z {α : Type} [DecidableEq α] [Fintype α]
   (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (gcard: F.ground.card ≥ 2)
   [DecidablePred F.sets] (hx_hyperedge : F.sets (F.ground \ {x}))(hx_singleton: F.sets {x}) :
@@ -485,6 +375,7 @@ theorem hyperedge_count_deletion_contraction_have_z {α : Type} [DecidableEq α]
     simp_all only [Nat.cast_add]
     exact hx_singleton
 
+--ground-vを持たず、シングルトンを持つバージョンのvを通るhyperedge数の計算。
 theorem hyperedge_count_deletion_contraction_none {α : Type} [DecidableEq α] [Fintype α]
   (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (gcard: F.ground.card ≥ 2)
   [DecidablePred F.sets] (hx_hyperedge_not : ¬ F.sets (F.ground \ {x}))(hx_singleton: F.sets {x}) :
@@ -541,8 +432,6 @@ theorem hyperedge_count_deletion_contraction_none {α : Type} [DecidableEq α] [
       intro s a h
       exact Finset.card_insert_of_not_mem h
 
-    --#check (Finset.filter (fun s ↦ F.sets s ∧ x ∉ s) (F.ground.erase x).powerset)
-    --#check (Finset.filter (fun (s:Finset α) ↦ F.sets s ∧ x ∉ s ∨ s = F.ground.erase x) (F.ground.erase x).powerset)
     have hx_not: (F.ground \ {x}) ∉ Finset.filter (fun s ↦ F.sets s ∧ x ∉ s) (F.ground.erase x).powerset:=
       by
         rw [←Finset.sdiff_singleton_eq_erase]
@@ -605,8 +494,6 @@ theorem hyperedge_count_deletion_contraction_none {α : Type} [DecidableEq α] [
         -- goal (Finset.filter (fun s ↦ F.sets s ∧ x ∉ s) (F.ground.erase x).powerset).card + 1 =
         -- (Finset.filter (fun s ↦ F.sets s ∧ x ∉ s ∨ s = F.ground.erase x) (F.ground.erase x).powerset).card
         --hx_hyperedge_not : ¬F.sets (F.ground \ {x})
-        --exact Finset.card_insert_of_not_mem hyperedge_notをつかうとよい。
-
     calc
         number_of_hyperedges F.toSetFamily + 1
     _ = number_of_hyperedges (IdealDeletion.deletion F.toSetFamily x hx gcard) + degree F.toSetFamily x + 1 := by rw [sub1]
@@ -615,6 +502,7 @@ theorem hyperedge_count_deletion_contraction_none {α : Type} [DecidableEq α] [
     _ = number_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily + number_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard) := by
       rw [degree_eq_contraction_degree F.toSetFamily x hx gcard]
 
+--ground-vを持たず、シングルトンを持つバージョンのvを通るhyperedge数の計算を整数の計算にcastしたもの。
 theorem hyperedge_count_deletion_contraction_none_z {α : Type} [DecidableEq α] [Fintype α]
   (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (gcard: F.ground.card ≥ 2)
   [DecidablePred F.sets] (hx_hyperedge_not : ¬ F.sets (F.ground \ {x})) (hx_singleton: F.sets {x}) :
@@ -628,5 +516,24 @@ theorem hyperedge_count_deletion_contraction_none_z {α : Type} [DecidableEq α]
       norm_cast at a
     · intro a
       norm_cast
+
+-- deletion後の集合族の性質 使われてない。
+lemma deletion_property {α : Type} [DecidableEq α] [Fintype α]
+  (F : SetFamily α) (v : α) (hv : v ∈ F.ground) (gcard: F.ground.card ≥ 2):
+  ∀ s, (IdealDeletion.deletion F v hv gcard).sets s ↔ F.sets s∧ v ∉ s :=
+by
+  intro s
+  constructor
+  · intro hs
+    rw [IdealDeletion.deletion] at hs
+    simp at hs
+    constructor
+    exact hs.1
+    exact hs.2
+
+  · intro hs
+    rw [IdealDeletion.deletion]
+    simp
+    exact hs
 
 end Ideal

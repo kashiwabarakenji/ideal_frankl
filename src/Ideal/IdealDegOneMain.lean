@@ -838,7 +838,7 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
       ring_nf at induction_assum
       --induction_assum : 2 + total_size_of_hyperedges idealDelF.toSetFamily * 2 ≤
       --number_of_hyperedges idealDelF.toSetFamily + number_of_hyperedges idealDelF.toSetFamily * n
-      simp_all
+      simp_all --ないとエラーになる。
 
       linarith
 

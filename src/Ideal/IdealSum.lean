@@ -21,16 +21,16 @@ def ff (s: Finset α): ℕ := Finset.card s - 1
 
 omit [Nonempty α] in
 lemma contraction_family_size (F : SetFamily α) [DecidablePred F.sets] (x : α)
-  (hx : x ∈ F.ground) (gcard: F.ground.card ≥ 2) : total_size_of_hyperedges (contraction F x hx gcard) = (Finset.filter (fun s ↦ ∃ H, F.sets H ∧ x ∈ H ∧ s = H.erase x) (F.ground.erase x).powerset).sum Finset.card :=
+  (hx : x ∈ F.ground) (gcard: F.ground.card ≥ 2) : total_size_of_hyperedges (IdealDeletion.contraction F x hx gcard) = (Finset.filter (fun s ↦ ∃ H, F.sets H ∧ x ∈ H ∧ s = H.erase x) (F.ground.erase x).powerset).sum Finset.card :=
   by
     rw [total_size_of_hyperedges]
-    dsimp [Ideal.contraction]
+    dsimp [IdealDeletion.contraction]
     rw [Finset.filter_congr_decidable]
 
 omit [Nonempty α] in
 lemma contraction_total_size (F : SetFamily α) [DecidablePred F.sets] (x : α)
   (hx : x ∈ F.ground) (gcard: F.ground.card ≥ 2) :
-  total_size_of_hyperedges (Ideal.contraction F x hx gcard) =
+  total_size_of_hyperedges (IdealDeletion.contraction F x hx gcard) =
     ((Finset.powerset F.ground).filter (λ s => F.sets s ∧ x ∈ s)).sum (λ s => Finset.card s - 1) :=
   by
     rw [total_size_of_hyperedges]
@@ -59,11 +59,11 @@ lemma contraction_total_size (F : SetFamily α) [DecidablePred F.sets] (x : α)
       simp_all only [ge_iff_le, Finset.mem_filter, Finset.mem_powerset, Finset.one_le_card, and_imp, Pi.sub_apply,
         Pi.one_apply, smul_eq_mul, mul_one, smallset, largeset]
 
-    let contset := (Finset.filter (contraction F x hx gcard).sets (contraction F x hx gcard).ground.powerset)
-    have contsethave: contset = (Finset.filter (contraction F x hx gcard).sets (contraction F x hx gcard).ground.powerset) := by rfl
+    let contset := (Finset.filter (IdealDeletion.contraction F x hx gcard).sets (IdealDeletion.contraction F x hx gcard).ground.powerset)
+    have contsethave: contset = (Finset.filter (IdealDeletion.contraction F x hx gcard).sets (IdealDeletion.contraction F x hx gcard).ground.powerset) := by rfl
     rw [←contsethave]
 
-    have substitute3: (Finset.filter (contraction F x hx gcard).sets (contraction F x hx gcard).ground.powerset).sum Finset.card = contset.sum Finset.card := by rfl
+    have substitute3: (Finset.filter (IdealDeletion.contraction F x hx gcard).sets (IdealDeletion.contraction F x hx gcard).ground.powerset).sum Finset.card = contset.sum Finset.card := by rfl
     rw [substitute3]
     have sum_eq4 : ∑ s ∈ largeset, (s.card - 1) = largeset.sum (λ s => s.card - 1) := by rfl
     rw [←sum_eq4]
