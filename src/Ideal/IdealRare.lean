@@ -48,10 +48,10 @@ by
       use ∅
       rw [Finset.mem_filter]
       constructor
-      simp [sf.empty_mem]
+      simp [sf.has_empty]
       simp [elements, elements, Finset.filter_eq']
       constructor
-      exact sf.empty_mem
+      exact sf.has_empty
       exact sf.nonempty_ground.ne_empty.symm
 
   rw [Finset.nonempty_iff_ne_empty] at hne

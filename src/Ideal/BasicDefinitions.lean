@@ -11,6 +11,7 @@ namespace Ideal
 
 variable {α : Type} [DecidableEq α] [Fintype α] [Nonempty α]
 
+--集合族の定義
 structure SetFamily (α : Type) [DecidableEq α] [Fintype α] :=
   (ground : Finset α)
   (sets : Finset α → Prop)
@@ -18,16 +19,10 @@ structure SetFamily (α : Type) [DecidableEq α] [Fintype α] :=
   (nonempty_ground : ground.Nonempty)
   [fintype_ground : Fintype ground]
 
--- SetFamily 構造体の定義 Boolバージョン
---structure SetFamily (α : Type) :=
---  (ground : Finset α) -- 全体集合
---  (sets : (Finset α) → Bool)  -- 集合族を定義する関数
---  (inc_ground: sets s → s ⊆ ground) -- 全体集合が含まれる
---  (nonempty_ground : ground.Nonempty)
-
+--Ideal集合族の定義
 structure IdealFamily (α : Type) [DecidableEq α] [Fintype α] extends SetFamily α :=
-(empty_mem : sets ∅)  -- 空集合が含まれる
-(univ_mem : sets ground)  -- 全体集合が含まれる
+(has_empty : sets ∅)  -- 空集合が含まれる
+(has_ground : sets ground)  -- 全体集合が含まれる
 (down_closed : ∀ (A B : Finset α), sets B → B ≠ ground → A ⊆ B → sets A)
 
 --この関数のために、setsの値をBoolからPropに変換する。
@@ -35,25 +30,13 @@ def total_size_of_hyperedges (F : SetFamily α)  [DecidablePred F.sets] : ℕ :=
   let all_sets := (Finset.powerset F.ground).filter F.sets
   all_sets.sum Finset.card
 
+--集合族のhyperedgeの個数
 def number_of_hyperedges (F : SetFamily α) [DecidablePred F.sets] : ℕ :=
   ((Finset.powerset F.ground).filter F.sets).card
-  --let all_sets := (Finset.powerset F.ground).filter F.sets
-  --all_sets.card
 
---def standardized_degree_sum (F : SetFamily α) [DecidablePred F.sets] : ℕ :=
---  2*total_size_of_hyperedges F - F.ground.card * number_of_hyperedges F
-
--- 任意の型 α に対する部分集合の集合を全て列挙する関数。powersetを使えばいらないかも。
---def all_subsets {α : Type} [DecidableEq α] (s : Finset α) : Finset (Finset α) :=
---  s.powerset
-
+--頂点の次数を計算する関数
 noncomputable def degree (sf : SetFamily α) (v : α) : ℕ :=
   Finset.card (Finset.filter (λ s => sf.sets s = true ∧ v ∈ s) (sf.ground.powerset))
-
---使ってない。trueの要素を数える関数
-def count_true_sets  (G : Finset α) (sets : Finset α → Prop) [∀ s, Decidable (sets s)] : Nat :=
-  G.powerset.filter sets |>.card
-
 
 -- 空集合がセットに含まれることを定義
 def has_empty (sf : SetFamily α) : Prop :=
@@ -76,10 +59,6 @@ def is_ideal (sf : SetFamily α) : Prop :=
   has_empty sf ∧ has_univ sf ∧
   (∀ (A B : Finset α), sf.sets B → A ⊆ B → sf.sets A)
 
--- to_SetFamily関数の定義
---def to_SetFamily {α : Type*} (sf : SetFamily α) : SetFamily α :=
---sf
-
 -- DecidablePredインスタンスの提供 なくすとnormalized_degree_sumでエラーが出る。
 noncomputable instance [DecidableEq α] (sf : IdealFamily α) : DecidablePred sf.sets :=
 λ s => Classical.propDecidable (sf.sets s)
@@ -95,6 +74,34 @@ noncomputable def normalized_degree_sum {α : Type} [DecidableEq α] [Fintype α
   let base_set_size := (F.ground.card: ℤ)
   total_size * 2 - num_sets * base_set_size
 
+-- Ideal_family_size_sf関数の定義 必要なのか？
+noncomputable def ideal_family_size (sf : IdealFamily α) : ℕ :=
+number_of_hyperedges sf.toSetFamily
+
+-- Ideal Family の頂点の次数を計算する関数。必要ない気もするが、現状では使っている。
+noncomputable def ideal_degree (sf : IdealFamily α) (x : α) : ℕ :=
+  degree (sf.toSetFamily) x
+
+--IntersectionClosedFamilyの定義
+structure IntersectionClosedFamily (α : Type) [DecidableEq α] [Fintype α] extends SetFamily α :=
+  (has_ground : sets ground)  -- 全体集合が含まれる
+  (intersection_closed : ∀ {s t : Finset α}, sets s→ sets t → sets (s ∩ t) ) -- 条件2: 共通部分で閉じている
+
+-- to_SetFamily関数の定義
+--def to_SetFamily {α : Type*} (sf : SetFamily α) : SetFamily α :=
+--sf
+-- Ideal Family のサイズを計算する関数
+--def ideal_family_size (sf : IdealFamily α)[DecidablePred (to_SetFamily sf).sets] : ℕ :=
+--   number_of_hyperedges (to_SetFamily sf)
+
+-- SetFamily 構造体の定義 Boolバージョン
+--structure SetFamily (α : Type) :=
+--  (ground : Finset α) -- 全体集合
+--  (sets : (Finset α) → Bool)  -- 集合族を定義する関数
+--  (inc_ground: sets s → s ⊆ ground) -- 全体集合が含まれる
+--  (nonempty_ground : ground.Nonempty)
+--使ってない。trueの要素を数える関数
+
 --以下はいらないかも。
 --oncomputable def ideal_normalized_degree_sum {α : Type} [DecidableEq α] [Fintype α] (F : IdealFamily α) : ℕ :=
 --  let total_size := total_size_of_hyperedges F.toSetFamily
@@ -102,24 +109,7 @@ noncomputable def normalized_degree_sum {α : Type} [DecidableEq α] [Fintype α
 --  let base_set_size := Fintype.card F.ground
 --  total_size * 2 - num_sets * base_set_size
 
--- Ideal_family_size_sf関数の定義 必要なのか？
-noncomputable def ideal_family_size (sf : IdealFamily α) : ℕ :=
-number_of_hyperedges sf.toSetFamily
-
-
--- Ideal Family のサイズを計算する関数
---def ideal_family_size (sf : IdealFamily α)[DecidablePred (to_SetFamily sf).sets] : ℕ :=
---   number_of_hyperedges (to_SetFamily sf)
-
--- Ideal Family の頂点の次数を計算する関数。必要ないかも。
-noncomputable def ideal_degree (sf : IdealFamily α) (x : α) : ℕ :=
-  degree (sf.toSetFamily) x
-
---IntersectionClosedFamilyの定義
-structure IntersectionClosedFamily (α : Type) [DecidableEq α] [Fintype α] extends SetFamily α :=
-  (univ_mem : sets ground)  -- 全体集合が含まれる
-  (intersection_closed : ∀ {s t : Finset α}, sets s→ sets t → sets (s ∩ t) ) -- 条件2: 共通部分で閉じている
-
-
+--def count_true_sets  (G : Finset α) (sets : Finset α → Prop) [∀ s, Decidable (sets s)] : Nat :=
+--  G.powerset.filter sets |>.card
 
 end Ideal

@@ -78,14 +78,14 @@ lemma hyperedges_not_through_v {α : Type} [DecidableEq α] [Fintype α]
 --  (F : SetFamily α) (x : α) (hx: x ∈ F.ground) (deg1: degree F x = 1) :
 --  ∃ s, s ∈ F.sets ∧ x ∈ s ∧ ∀ t ∈ F.sets, x ∈ t → t = s :=
 lemma trace_hyperedge_equiv {α : Type} [DecidableEq α] [Fintype α]
-  (F : SetFamily α) (v : α) (hv: v ∈ F.ground) (deg1: degree F v = 1) (hasGround: F.sets F.ground)(gcard: F.ground.card ≥ 2) :
-  {s : Finset α|(IdealTrace.trace F v hv gcard).sets s} = { s : Finset α|F.sets s ∧ s ≠ F.ground } ∪ { F.ground.erase v } :=
+  (F : SetFamily α) (v : α) (hv: v ∈ F.ground) (deg1: degree F v = 1) (hasGround: F.sets F.ground)(ground_ge_two: F.ground.card ≥ 2) :
+  {s : Finset α|(IdealTrace.trace F v hv ground_ge_two).sets s} = { s : Finset α|F.sets s ∧ s ≠ F.ground } ∪ { F.ground.erase v } :=
 by
   ext s
   simp only [IdealTrace.trace, Set.mem_setOf_eq, Set.mem_union]
   constructor
   · intro h --v ∉ s ∧ (F.sets s ∨ F.sets (s ∪ {v}))
-    --have hcopy: (IdealTrace.trace F v hv gcard).sets s := h
+    --have hcopy: (IdealTrace.trace F v hv ground_ge_two).sets s := h
     have h2 := h.2
     have h1 := h.1
     show (F.sets s ∧ s ≠ F.ground) ∨ (s = F.ground.erase v)
@@ -199,7 +199,7 @@ by
 
 
 
-lemma total_degone_card {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) (v : α) (hv: v ∈ F.ground) (deg1: degree F v = 1) (hasGround: F.sets F.ground)(gcard: F.ground.card ≥ 2) :
+lemma total_degone_card {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) (v : α) (hv: v ∈ F.ground) (deg1: degree F v = 1) (hasGround: F.sets F.ground)(ground_ge_two: F.ground.card ≥ 2) :
   total_size_of_hyperedges F = (F.ground.powerset.filter (λ s => F.sets s ∧ v ∉ s )).sum Finset.card + F.ground.card := by
   rw [total_size_of_hyperedges]
   simp
@@ -247,7 +247,7 @@ lemma ground_minus_v_ideal_sets {α : Type} [DecidableEq α] [Fintype α] (F : I
         simp_all only [ge_iff_le, Nat.reduceLeDiff, Finset.mem_powerset]
         apply Iff.intro
         · intro a
-          let ground_assum := (hyperedges_not_through_v F.toSetFamily v hv degree_one F.univ_mem) s a
+          let ground_assum := (hyperedges_not_through_v F.toSetFamily v hv degree_one F.has_ground) s a
           tauto
         · intro a
           cases a with
@@ -278,7 +278,7 @@ lemma ground_minus_v_ideal_sets {α : Type} [DecidableEq α] [Fintype α] (F : I
           | inr h_1 =>
             subst h_1
             simp_all only [subset_refl]
-            exact F.univ_mem
+            exact F.has_ground
 
 lemma ground_minus_v_ideal_number {α : Type} [DecidableEq α] [Fintype α] (F : IdealFamily α) (v : α) (hv: v ∈ F.ground)  (hv_hyperedge:F.sets (F.ground \ {v}))(hv_singleton:  ¬F.sets {v}):
     number_of_hyperedges F.toSetFamily = 2^(F.ground.card - 1) + 1 :=
@@ -352,7 +352,7 @@ lemma ground_minus_v_ideal_number {α : Type} [DecidableEq α] [Fintype α] (F :
           subst h
           simp_all only [Finset.disjoint_singleton_right, Finset.mem_filter, Finset.mem_powerset, subset_refl,
             not_true_eq_false, and_false, not_false_eq_true, A, B]
-          exact F.univ_mem
+          exact F.has_ground
           -- F.sets に属する場合
           intro hs
           simp_all only [ge_iff_le, Nat.reduceLeDiff, Finset.mem_powerset, Finset.singleton_subset_iff,
@@ -682,7 +682,7 @@ lemma ground_minus_v_ideal_total {α : Type} [DecidableEq α] [Fintype α] (F : 
   total_size_of_hyperedges F.toSetFamily = (F.ground.card - 1)*2^(F.ground.card - 2) + F.ground.card := by
         have degree_one: degree F.toSetFamily v = 1 := by
             exact degree_one_if_not_hyperedge F hv hv_singleton
-        rw [Ideal.total_degone_card F.toSetFamily v hv degree_one F.univ_mem hcard0]
+        rw [Ideal.total_degone_card F.toSetFamily v hv degree_one F.has_ground hcard0]
         simp_all only [ge_iff_le, Nat.reduceLeDiff, Finset.mem_powerset, Finset.singleton_subset_iff, Finset.mem_singleton,
          not_true_eq_false, false_or, Finset.sdiff_subset, Finset.mem_sdiff, and_false, not_false_eq_true, sdiff_eq_left,
          Finset.disjoint_singleton_right, or_false, add_tsub_cancel_right, Nat.reduceSubDiff, add_left_inj]
@@ -758,7 +758,7 @@ lemma degree_one_singleton {α : Type} [DecidableEq α] [Fintype α] (F: IdealFa
     · intro h
       intro a
       --hv: v ∈ F.ground
-      --F.univ_mem:F.sets F.ground
+      --F.has_ground:F.sets F.ground
       have v_self: v ∈ ({v} : Finset α) := by
         simp_all only [Finset.mem_singleton]
       -- a:F.sets {v}
@@ -777,7 +777,7 @@ lemma degree_one_singleton {α : Type} [DecidableEq α] [Fintype α] (F: IdealFa
       have g_filtered: F.ground ∈ F.ground.powerset.filter (λ (s:Finset α) => (F.sets s ∧ v ∈ s)) := by
         simp_all only [Finset.mem_filter, Finset.mem_powerset]
         simp
-        exact F.univ_mem
+        exact F.has_ground
 
       have lem_subset: (insert ({v}:Finset α) (singleton F.ground)) ⊆ F.ground.powerset.filter (λ (s:Finset α) => (F.sets s ∧ v ∈ s))  := by
         simp_all only [Finset.subset_iff, Finset.mem_singleton, Finset.mem_filter, Finset.mem_powerset]
@@ -847,7 +847,7 @@ lemma degree_one_ground {α : Type} [DecidableEq α] [Fintype α] (F: IdealFamil
       exact F.down_closed {v} s fs h3 v_sub_s
     exact h2 h4
 
---(v : α) (hv: v ∈ F.ground) (deg1: degree F v = 1) (hasGround: F.sets F.ground)(gcard: F.ground.card ≥ 2)
+--(v : α) (hv: v ∈ F.ground) (deg1: degree F v = 1) (hasGround: F.sets F.ground)(ground_ge_two: F.ground.card ≥ 2)
 lemma filter_sum {α : Type} [DecidableEq α] [Fintype α] (P Q : Finset α → Prop) [DecidablePred P] [DecidablePred Q] (S : Finset (Finset α))  :
   (∀ (s:Finset α), s ∈ S → ¬(P s ∧ Q s)) →
     (Finset.filter (λ (s : Finset α) => P s ∨ Q s) S).sum Finset.card
@@ -895,13 +895,13 @@ lemma filter_sum {α : Type} [DecidableEq α] [Fintype α] (P Q : Finset α → 
 
 ----使ってない補題等
 --結果的にtotal degree cardと同じことを示している。使ってない。
---lemma total_degone_card {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) (v : α) (hv: v ∈ F.ground) (deg1: degree F v = 1) (hasGround: F.sets F.ground)(gcard: F.ground.card ≥ 2) :
+--lemma total_degone_card {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) (v : α) (hv: v ∈ F.ground) (deg1: degree F v = 1) (hasGround: F.sets F.ground)(ground_ge_two: F.ground.card ≥ 2) :
 --  total_size_of_hyperedges F = (F.ground.powerset.filter (λ s => F.sets s ∧ v ∉ s )).sum Finset.card + F.ground.card
-lemma filter_sum_one {α : Type} [DecidableEq α] [Fintype α] (F: IdealFamily α) (v : α) (hv: v ∈ F.ground) (deg1: degree F.toSetFamily v = 1) (hasGround: F.sets F.ground)(gcard: F.ground.card ≥ 2):
+lemma filter_sum_one {α : Type} [DecidableEq α] [Fintype α] (F: IdealFamily α) (v : α) (hv: v ∈ F.ground) (deg1: degree F.toSetFamily v = 1) (hasGround: F.sets F.ground)(ground_ge_two: F.ground.card ≥ 2):
     (Finset.filter (λ (s : Finset α) => F.sets s) F.ground.powerset).sum Finset.card = (Finset.filter (λ (s : Finset α) => (F.sets s ∧ v ∉ s)) F.ground.powerset).sum Finset.card + F.ground.card := by
 
   have degv: ¬ F.sets {v}:= by
-        exact (degree_one_singleton F v hv gcard).mp deg1
+        exact (degree_one_singleton F v hv ground_ge_two).mp deg1
 
   have eq: ∀ (s:Finset α), ((F.sets s ∧ v ∉ s) ∨ s = F.ground) ↔ F.sets s := by
     intro s
@@ -914,11 +914,11 @@ lemma filter_sum_one {α : Type} [DecidableEq α] [Fintype α] (F: IdealFamily �
         intro x
         constructor
         intro a
-        rw [←(degree_one_ground F v hv gcard deg1 s fsf h)]
+        rw [←(degree_one_ground F v hv ground_ge_two deg1 s fsf h)]
         exact a
         intro a
         simp_all only [ge_iff_le]
-        rw [(degree_one_ground F v hv gcard deg1 s fsf h)]
+        rw [(degree_one_ground F v hv ground_ge_two deg1 s fsf h)]
         exact a
       · left
         simp_all only [ge_iff_le, not_false_eq_true, and_self]
@@ -963,7 +963,7 @@ lemma degree_one_hyperedges_partition {α : Type} [DecidableEq α] [Fintype α]
   apply Iff.intro
   · intro h
     by_contra h2
-    have h3 := hyperedges_not_through_v F.toSetFamily x hx (degree_one_if_not_hyperedge F hx h_not_hyperedge) F.univ_mem s hs h
+    have h3 := hyperedges_not_through_v F.toSetFamily x hx (degree_one_if_not_hyperedge F hx h_not_hyperedge) F.has_ground s hs h
     contradiction
   · intro h
     simp_all only [ne_eq]
@@ -984,9 +984,9 @@ lemma degree_one_hyperedges_partition2 {α : Type} [DecidableEq α] [Fintype α]
   simp_all only
 
 --使われてないよう。deg1を持つ集合族のhyperedge数は、vを含まないhyperedge数に1を足したもの。他の定理を使って、もっと簡単に証明できる可能性あり。
-lemma erase_ground_card {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) (v : α) (hv: v ∈ F.ground) (deg1: degree F v = 1) (hasGround: F.sets F.ground)(gcard: F.ground.card ≥ 2) :
+lemma erase_ground_card {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) (v : α) (hv: v ∈ F.ground) (deg1: degree F v = 1) (hasGround: F.sets F.ground)(ground_ge_two: F.ground.card ≥ 2) :
   number_of_hyperedges F = (F.ground.powerset.filter (λ s => F.sets s ∧ v ∉ s )).card + 1 := by
-  --have h1 := trace_hyperedge_equiv F v hv deg1 hasGround gcard
+  --have h1 := trace_hyperedge_equiv F v hv deg1 hasGround ground_ge_two
   have disjoint_sets : Disjoint (Finset.filter (λ s => F.sets s ∧ s ≠ F.ground) (F.ground.powerset)) ({F.ground}) := by
     simp_all only [ne_eq, Set.union_singleton, Finset.disjoint_singleton_right, Finset.mem_filter, Finset.mem_powerset,
       subset_refl, not_true_eq_false, and_false, not_false_eq_true]

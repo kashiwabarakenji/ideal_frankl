@@ -19,8 +19,8 @@ variable {α : Type} [DecidableEq α] [Fintype α] [Nonempty α]
 -- 言明：頂点 v を含む hyperedge 数と、v で contraction して得られた集合族の hyperedge 数が等しいことを示す
 -- hyperedge_count_deletion_contraction_haveなどで使われている。
 lemma degree_eq_contraction_degree {α : Type} [DecidableEq α] [Fintype α]
-  (F : SetFamily α) (v : α) (hv : v ∈ F.ground) (gcard: F.ground.card ≥ 2):
-  degree F v = number_of_hyperedges (IdealDeletion.contraction F v hv gcard) :=
+  (F : SetFamily α) (v : α) (hv : v ∈ F.ground) (ground_ge_two: F.ground.card ≥ 2):
+  degree F v = number_of_hyperedges (IdealDeletion.contraction F v hv ground_ge_two) :=
 by
   rw [IdealDeletion.contraction, degree, number_of_hyperedges]
   simp
@@ -202,8 +202,8 @@ by
 
 --すぐあとのメイン定理を証明するのに使われる。
 lemma hyperedge_count_split {α : Type} [DecidableEq α] [Fintype α]
-  (F : SetFamily α) (v : α) (hv : v ∈ F.ground) (gcard: F.ground.card ≥ 2):
-  number_of_hyperedges F = number_of_hyperedges (IdealDeletion.deletion F v hv gcard) + degree F v :=
+  (F : SetFamily α) (v : α) (hv : v ∈ F.ground) (ground_ge_two: F.ground.card ≥ 2):
+  number_of_hyperedges F = number_of_hyperedges (IdealDeletion.deletion F v hv ground_ge_two) + degree F v :=
 by
  -- まず、number_of_hyperedges の定義に基づいて、全てのハイパーエッジをカウントします
   rw [number_of_hyperedges]
@@ -272,7 +272,7 @@ by
       apply Multiset.filter_congr
       tauto
 
-  have term_eq: Finset.filter ((F ∖ v) hv gcard).sets ((F ∖ v) hv gcard).ground.powerset = sets_without_v := by
+  have term_eq: Finset.filter ((F ∖ v) hv ground_ge_two).sets ((F ∖ v) hv ground_ge_two).ground.powerset = sets_without_v := by
     ext s
     simp only [Finset.mem_filter, Finset.mem_powerset, IdealDeletion.deletion, and_iff_right_iff_imp]
     constructor
@@ -327,18 +327,18 @@ by
 
 --このファイルのメイン定理。IdealMainなどで引用。ground-vは持って、singleton hyperedgeを持つ仮定なので名前に反映しても良い。
 theorem hyperedge_count_deletion_contraction_have {α : Type} [DecidableEq α] [Fintype α]
-  (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (gcard: F.ground.card ≥ 2)
-  [DecidablePred F.sets] (hx_hyperedge : F.sets (F.ground \ {x})) (hx_singleton: F.sets {x}):
+  (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (ground_ge_two: F.ground.card ≥ 2)
+  [DecidablePred F.sets] (hx_hyperedge : F.sets (F.ground \ {x})) (singleton_have: F.sets {x}):
   number_of_hyperedges F.toSetFamily =
-  number_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily +
-  --number_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard) :=
-  number_of_hyperedges (IdealDeletion.contraction_ideal_family F x hx_singleton gcard).toSetFamily := by
+  number_of_hyperedges (IdealDeletion.idealdeletion F x hx ground_ge_two).toSetFamily +
+  --number_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx ground_ge_two) :=
+  number_of_hyperedges (IdealDeletion.contraction_ideal_family F x singleton_have ground_ge_two).toSetFamily := by
 
-  have sub1: number_of_hyperedges F.toSetFamily = number_of_hyperedges ((F.toSetFamily ∖ x) hx gcard) + degree F.toSetFamily x := by
-    rw [←hyperedge_count_split F.toSetFamily x hx gcard]
+  have sub1: number_of_hyperedges F.toSetFamily = number_of_hyperedges ((F.toSetFamily ∖ x) hx ground_ge_two) + degree F.toSetFamily x := by
+    rw [←hyperedge_count_split F.toSetFamily x hx ground_ge_two]
     congr
 
-  have sub2: (IdealDeletion.idealdeletion F x hx gcard).toSetFamily = (IdealDeletion.deletion F.toSetFamily x hx gcard) := by
+  have sub2: (IdealDeletion.idealdeletion F x hx ground_ge_two).toSetFamily = (IdealDeletion.deletion F.toSetFamily x hx ground_ge_two) := by
     dsimp [IdealDeletion.idealdeletion]
     dsimp [IdealDeletion.deletion]
     congr
@@ -358,36 +358,35 @@ theorem hyperedge_count_deletion_contraction_have {α : Type} [DecidableEq α] [
 
   calc
     number_of_hyperedges F.toSetFamily
-    _ = number_of_hyperedges (IdealDeletion.deletion F.toSetFamily x hx gcard) + degree F.toSetFamily x := by rw [sub1]
-    _ = number_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily + degree F.toSetFamily x := by rw [←sub2]
-    _ = number_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily + number_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard) := by
-      rw [degree_eq_contraction_degree F.toSetFamily x hx gcard]
+    _ = number_of_hyperedges (IdealDeletion.deletion F.toSetFamily x hx ground_ge_two) + degree F.toSetFamily x := by rw [sub1]
+    _ = number_of_hyperedges (IdealDeletion.idealdeletion F x hx ground_ge_two).toSetFamily + degree F.toSetFamily x := by rw [←sub2]
+    _ = number_of_hyperedges (IdealDeletion.idealdeletion F x hx ground_ge_two).toSetFamily + number_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx ground_ge_two) := by
+      rw [degree_eq_contraction_degree F.toSetFamily x hx ground_ge_two]
 
---ground-vを持ち、シングルトンを持つバージョンのvを通るhyperedge数の計算。整数の計算にcastしたもの。hx_singleton: F.sets {x}
+--ground-vを持ち、シングルトンを持つバージョンのvを通るhyperedge数の計算。整数の計算にcastしたもの。singleton_have: F.sets {x}
 theorem hyperedge_count_deletion_contraction_have_z {α : Type} [DecidableEq α] [Fintype α]
-  (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (gcard: F.ground.card ≥ 2)
-  [DecidablePred F.sets] (hx_hyperedge : F.sets (F.ground \ {x}))(hx_singleton: F.sets {x}) :
+  (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (ground_ge_two: F.ground.card ≥ 2)
+  [DecidablePred F.sets] (hx_hyperedge : F.sets (F.ground \ {x}))(singleton_have: F.sets {x}) :
   ((number_of_hyperedges F.toSetFamily):ℤ) =
-  ((number_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily):ℤ) +
-  --((number_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard)):ℤ) := by
-  ((number_of_hyperedges (IdealDeletion.contraction_ideal_family F x hx_singleton gcard).toSetFamily) :ℤ) := by
-    rw [hyperedge_count_deletion_contraction_have F x hx gcard hx_hyperedge]
+  ((number_of_hyperedges (IdealDeletion.idealdeletion F x hx ground_ge_two).toSetFamily):ℤ) +
+  ((number_of_hyperedges (IdealDeletion.contraction_ideal_family F x singleton_have ground_ge_two).toSetFamily) :ℤ) := by
+    rw [hyperedge_count_deletion_contraction_have F x hx ground_ge_two hx_hyperedge]
     simp_all only [Nat.cast_add]
-    exact hx_singleton
+    exact singleton_have
 
 --ground-vを持たず、シングルトンを持つバージョンのvを通るhyperedge数の計算。
 theorem hyperedge_count_deletion_contraction_none {α : Type} [DecidableEq α] [Fintype α]
-  (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (gcard: F.ground.card ≥ 2)
-  [DecidablePred F.sets] (hx_hyperedge_not : ¬ F.sets (F.ground \ {x}))(hx_singleton: F.sets {x}) :
+  (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (ground_ge_two: F.ground.card ≥ 2)
+  [DecidablePred F.sets] (ground_v_none : ¬ F.sets (F.ground \ {x}))(singleton_have: F.sets {x}) :
   number_of_hyperedges F.toSetFamily + 1=
-  number_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily  +
-  number_of_hyperedges (IdealDeletion.contraction_ideal_family F x hx_singleton gcard).toSetFamily :=
+  number_of_hyperedges (IdealDeletion.idealdeletion F x hx ground_ge_two).toSetFamily  +
+  number_of_hyperedges (IdealDeletion.contraction_ideal_family F x singleton_have ground_ge_two).toSetFamily :=
   by
-    have sub1: number_of_hyperedges F.toSetFamily = number_of_hyperedges ((F.toSetFamily ∖ x) hx gcard) + degree F.toSetFamily x := by
-      rw [←hyperedge_count_split F.toSetFamily x hx gcard]
+    have sub1: number_of_hyperedges F.toSetFamily = number_of_hyperedges ((F.toSetFamily ∖ x) hx ground_ge_two) + degree F.toSetFamily x := by
+      rw [←hyperedge_count_split F.toSetFamily x hx ground_ge_two]
       congr
 
-    have sub2:∀(s : Finset α),(IdealDeletion.idealdeletion F x hx gcard).toSetFamily.sets s ↔ (IdealDeletion.deletion F.toSetFamily x hx gcard).sets s  ∨ (s = F.ground \ {x}):= by
+    have sub2:∀(s : Finset α),(IdealDeletion.idealdeletion F x hx ground_ge_two).toSetFamily.sets s ↔ (IdealDeletion.deletion F.toSetFamily x hx ground_ge_two).sets s  ∨ (s = F.ground \ {x}):= by
       dsimp [IdealDeletion.idealdeletion]
       dsimp [IdealDeletion.deletion]
       intro s
@@ -472,7 +471,7 @@ theorem hyperedge_count_deletion_contraction_none {α : Type} [DecidableEq α] [
         · intro a_1
           simp_all only [not_false_eq_true, and_self]
 
-    have sub4: number_of_hyperedges (IdealDeletion.deletion F.toSetFamily x hx gcard) + 1 =  (number_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily) :=
+    have sub4: number_of_hyperedges (IdealDeletion.deletion F.toSetFamily x hx ground_ge_two) + 1 =  (number_of_hyperedges (IdealDeletion.idealdeletion F x hx ground_ge_two).toSetFamily) :=
       by
         dsimp [number_of_hyperedges]
         dsimp [IdealDeletion.deletion]
@@ -493,24 +492,24 @@ theorem hyperedge_count_deletion_contraction_none {α : Type} [DecidableEq α] [
 
         -- goal (Finset.filter (fun s ↦ F.sets s ∧ x ∉ s) (F.ground.erase x).powerset).card + 1 =
         -- (Finset.filter (fun s ↦ F.sets s ∧ x ∉ s ∨ s = F.ground.erase x) (F.ground.erase x).powerset).card
-        --hx_hyperedge_not : ¬F.sets (F.ground \ {x})
+        --ground_v_none : ¬F.sets (F.ground \ {x})
     calc
         number_of_hyperedges F.toSetFamily + 1
-    _ = number_of_hyperedges (IdealDeletion.deletion F.toSetFamily x hx gcard) + degree F.toSetFamily x + 1 := by rw [sub1]
-    _= number_of_hyperedges (IdealDeletion.deletion F.toSetFamily x hx gcard) + 1 + degree F.toSetFamily x := by ring
-    _ = number_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily + degree F.toSetFamily x := by rw [sub4]
-    _ = number_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily + number_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx gcard) := by
-      rw [degree_eq_contraction_degree F.toSetFamily x hx gcard]
+    _ = number_of_hyperedges (IdealDeletion.deletion F.toSetFamily x hx ground_ge_two) + degree F.toSetFamily x + 1 := by rw [sub1]
+    _= number_of_hyperedges (IdealDeletion.deletion F.toSetFamily x hx ground_ge_two) + 1 + degree F.toSetFamily x := by ring
+    _ = number_of_hyperedges (IdealDeletion.idealdeletion F x hx ground_ge_two).toSetFamily + degree F.toSetFamily x := by rw [sub4]
+    _ = number_of_hyperedges (IdealDeletion.idealdeletion F x hx ground_ge_two).toSetFamily + number_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx ground_ge_two) := by
+      rw [degree_eq_contraction_degree F.toSetFamily x hx ground_ge_two]
 
 --ground-vを持たず、シングルトンを持つバージョンのvを通るhyperedge数の計算を整数の計算にcastしたもの。
 theorem hyperedge_count_deletion_contraction_none_z {α : Type} [DecidableEq α] [Fintype α]
-  (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (gcard: F.ground.card ≥ 2)
-  [DecidablePred F.sets] (hx_hyperedge_not : ¬ F.sets (F.ground \ {x})) (hx_singleton: F.sets {x}) :
+  (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (ground_ge_two: F.ground.card ≥ 2)
+  [DecidablePred F.sets] (ground_v_none : ¬ F.sets (F.ground \ {x})) (singleton_have: F.sets {x}) :
   ((number_of_hyperedges F.toSetFamily):ℤ) + 1=
-  (number_of_hyperedges (IdealDeletion.idealdeletion F x hx gcard).toSetFamily:ℤ)  +
-  (number_of_hyperedges (IdealDeletion.contraction_ideal_family F x hx_singleton gcard).toSetFamily:ℤ) :=
+  (number_of_hyperedges (IdealDeletion.idealdeletion F x hx ground_ge_two).toSetFamily:ℤ)  +
+  (number_of_hyperedges (IdealDeletion.contraction_ideal_family F x singleton_have ground_ge_two).toSetFamily:ℤ) :=
   by
-    convert hyperedge_count_deletion_contraction_none F x hx gcard hx_hyperedge_not hx_singleton
+    convert hyperedge_count_deletion_contraction_none F x hx ground_ge_two ground_v_none singleton_have
     apply Iff.intro
     · intro a
       norm_cast at a
@@ -519,8 +518,8 @@ theorem hyperedge_count_deletion_contraction_none_z {α : Type} [DecidableEq α]
 
 -- deletion後の集合族の性質 使われてない。
 lemma deletion_property {α : Type} [DecidableEq α] [Fintype α]
-  (F : SetFamily α) (v : α) (hv : v ∈ F.ground) (gcard: F.ground.card ≥ 2):
-  ∀ s, (IdealDeletion.deletion F v hv gcard).sets s ↔ F.sets s∧ v ∉ s :=
+  (F : SetFamily α) (v : α) (hv : v ∈ F.ground) (ground_ge_two: F.ground.card ≥ 2):
+  ∀ s, (IdealDeletion.deletion F v hv ground_ge_two).sets s ↔ F.sets s∧ v ∉ s :=
 by
   intro s
   constructor

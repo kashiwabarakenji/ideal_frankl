@@ -150,9 +150,7 @@ theorem degree_one_if_not_hyperedge {α : Type} {x :α} [DecidableEq α] [Fintyp
         simp_all only [Finset.Subset.refl, true_and]
         apply And.intro
         have h1 : F.sets F.ground := by
-          apply F.univ_mem
+          apply F.has_ground
         exact h1
         trivial
     simp_all only [eq_iff_iff, iff_true, Finset.card_singleton, relevant_sets]
-
-

@@ -16,10 +16,10 @@ open Finset
 
 namespace Ideal.IdealTrace  --なぜか名前空間が違う。
 
-def trace {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) (x : α) (hx: x ∈ F.ground) (gcard: F.ground.card ≥ 2): SetFamily α :=
+def trace {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) (x : α) (hx: x ∈ F.ground) (ground_ge_two: F.ground.card ≥ 2): SetFamily α :=
   { ground := F.ground.erase x,
     sets := λ s => (x ∉ s) ∧ (F.sets s ∨ F.sets (s ∪ {x})),
-    nonempty_ground := ground_nonempty_after_minor F.ground x hx gcard,
+    nonempty_ground := ground_nonempty_after_minor F.ground x hx ground_ge_two,
     inc_ground := λ s hs =>
       by
         simp_all only [Bool.decide_and, Bool.decide_eq_true, decide_not, Bool.and_eq_true, Bool.not_eq_true',
@@ -80,11 +80,11 @@ by
 -/
 
 --idealという性質が、traceの演算で閉じていることの証明？
-instance trace_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x} ) (gcard: F.ground.card ≥ 2): IdealFamily α :=
+instance trace_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x} ) (ground_ge_two: F.ground.card ≥ 2): IdealFamily α :=
 {
-  trace (F.toSetFamily) x (by { exact F.inc_ground {x} hx (by simp) }) gcard with
+  trace (F.toSetFamily) x (by { exact F.inc_ground {x} hx (by simp) }) ground_ge_two with
 
-  empty_mem := by
+  has_empty := by
     simp_all only [Bool.decide_eq_false, not_false_eq_true, decide_eq_false_iff_not]
     constructor
     intro h
@@ -92,27 +92,27 @@ instance trace_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x} ) (gc
     right
     exact hx,
 
-  univ_mem := by
-    let thisF := trace (F.toSetFamily) x (by { exact F.inc_ground {x} hx (by simp) }) gcard
+  has_ground := by
+    let thisF := trace (F.toSetFamily) x (by { exact F.inc_ground {x} hx (by simp) }) ground_ge_two
     simp_all only [Bool.decide_eq_false, not_false_eq_true, decide_eq_false_iff_not]
     unfold IdealFamily.toSetFamily
     unfold trace
     unfold SetFamily.sets
     unfold SetFamily.ground
-    --x ∉ (trace F.toSetFamily x ⋯ gcard).ground
+    --x ∉ (trace F.toSetFamily x ⋯ ground_ge_two).ground
     have sg: thisF.sets (F.ground.erase x) := by
       constructor
       intro h
       simp at h
       right
       rw [erase_insert F.ground x (by { exact F.inc_ground {x} hx (by simp) }) ]
-      exact F.univ_mem
+      exact F.has_ground
     have sgg: thisF.sets thisF.ground := by
       apply sg
     exact sgg,
 
   down_closed := by
-    let thisF := trace (F.toSetFamily) x (by { exact F.inc_ground {x} hx (by simp) }) gcard
+    let thisF := trace (F.toSetFamily) x (by { exact F.inc_ground {x} hx (by simp) }) ground_ge_two
     have hxG: x ∈ F.ground := by
       exact F.inc_ground {x} hx (by simp)
     intro A B hB hB_neq hAB
@@ -184,7 +184,7 @@ instance trace_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x} ) (gc
         --exact thisFsets
      --(B ∪ {x}) = F.groundF.sets (A ∪ {x})が成り立たつばあい hに入っている。
      case neg =>
-        --goal (trace F.toSetFamily x ⋯ gcard).sets A
+        --goal (trace F.toSetFamily x ⋯ ground_ge_two).sets A
         simp at h --h : B ∪ {x} = F.ground
 
         have fgx: F.ground ∪ {x} = F.ground := by

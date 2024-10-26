@@ -469,7 +469,7 @@ lemma imageEq_card {n : ℕ} (nposi : n ≥ 1)
   exact Finset.card_bij (λ s _ => to_fun s) bij1_proof bij3new bij4new
 
 
-def deletionToN {n : ℕ} (nposi : n ≥ 1) (F : SetFamily (Fin (n + 1))) (v : Fin (n + 1)) (_: v ∉ F.ground) (gcard: F.ground.card >= 1): SetFamily (Fin n) :=
+def deletionToN {n : ℕ} (nposi : n ≥ 1) (F : SetFamily (Fin (n + 1))) (v : Fin (n + 1)) (_: v ∉ F.ground) (ground_ge_two: F.ground.card >= 1): SetFamily (Fin n) :=
  --エラーはDecidableを除いたら消えた。
  --hvfのかていは 必要ないのか？
  let new_ground : Finset (Fin n) := Finset.image (finDrop nposi v) F.ground
@@ -500,7 +500,7 @@ def deletionToN {n : ℕ} (nposi : n ≥ 1) (F : SetFamily (Fin (n + 1))) (v : F
 --こっちはidealFamilyからidealFamilyへの写像
 def IdealFamily.deletionToN {n : ℕ} (nposi : n ≥ 1)
   (F : IdealFamily (Fin (n + 1))) (v : Fin (n + 1)) (hvf : v ∉ F.ground)
-  (gcard : F.ground.card ≥ 1) : IdealFamily (Fin n) :=
+  (ground_ge_two : F.ground.card ≥ 1) : IdealFamily (Fin n) :=
 let new_ground : Finset (Fin n) := Finset.image (finDrop nposi v) F.ground
 {
   ground := new_ground,
@@ -517,22 +517,22 @@ let new_ground : Finset (Fin n) := Finset.image (finDrop nposi v) F.ground
       exact result
     exact goal,
 
-  empty_mem := by
+  has_empty := by
     -- 空集合が必ず `sets` に含まれることを示す
     simp only [Finset.image_empty]
-    exact F.empty_mem,
+    exact F.has_empty,
 
-  univ_mem := by
+  has_ground := by
     -- 全体集合が `sets` に含まれることを示す
     simp only [Finset.univ]
     simp_all only [ge_iff_le, Finset.one_le_card, new_ground]
     rw [finExpand_drop_inverse_set nposi v]
     -- goal v ∉ F.ground
     -- goal F.sets F.ground
-    exact F.univ_mem
+    exact F.has_ground
     simp_all only [not_false_eq_true]
     --exacts [finDrop_mem nposi, hvf]
-    --exact F.univ_mem,
+    --exact F.has_ground,
 
   down_closed := by
     -- ダウンワード閉包性を示す
@@ -603,7 +603,7 @@ let new_ground : Finset (Fin n) := Finset.image (finDrop nposi v) F.ground
 
 lemma IdealFamily.deletionToN_number {n : ℕ} (nposi : n ≥ 1)
   (F : IdealFamily (Fin (n + 1))) (v : Fin (n + 1)) (hvf : v ∉ F.ground)
-  (gcard : F.ground.card ≥ 1) : number_of_hyperedges (@IdealFamily.deletionToN (Fin n) n nposi F v hvf gcard).toSetFamily = number_of_hyperedges F.toSetFamily := by
+  (ground_ge_two : F.ground.card ≥ 1) : number_of_hyperedges (@IdealFamily.deletionToN (Fin n) n nposi F v hvf ground_ge_two).toSetFamily = number_of_hyperedges F.toSetFamily := by
   rw [number_of_hyperedges]
   simp_all only [IdealFamily.deletionToN]
   rw [number_of_hyperedges]
@@ -624,7 +624,7 @@ lemma IdealFamily.deletionToN_number {n : ℕ} (nposi : n ≥ 1)
   intro a_3
   exact hvf (a_1 a_3)
 
-theorem sum_card_eq_sum_card  {n : ℕ} (F : IdealFamily (Fin (n+1))) (nposi : n ≥ 1)(v : Fin (n+1)) (hvf : v ∉ F.ground) (gcard : F.ground.card ≥ 1):
+theorem sum_card_eq_sum_card  {n : ℕ} (F : IdealFamily (Fin (n+1))) (nposi : n ≥ 1)(v : Fin (n+1)) (hvf : v ∉ F.ground) (ground_ge_two : F.ground.card ≥ 1):
   (F.ground.powerset.filter F.sets).sum Finset.card =
     ((Finset.image (finDrop nposi v) F.ground).powerset.filter (fun s => F.sets (Finset.image (finExpand v) s))).sum Finset.card :=
 by
@@ -810,13 +810,13 @@ by
 
 
 
-lemma deletion_total: ∀ (n : ℕ) (F : IdealFamily (Fin (n + 1))) (nposi : n ≥ 1) (v : Fin (n + 1)) (hvf : v ∉ F.ground) (gcard : F.ground.card ≥ 1),
-  total_size_of_hyperedges (@IdealFamily.deletionToN (Fin n) n nposi F v hvf gcard).toSetFamily = total_size_of_hyperedges F.toSetFamily :=
+lemma deletion_total: ∀ (n : ℕ) (F : IdealFamily (Fin (n + 1))) (nposi : n ≥ 1) (v : Fin (n + 1)) (hvf : v ∉ F.ground) (ground_ge_two : F.ground.card ≥ 1),
+  total_size_of_hyperedges (@IdealFamily.deletionToN (Fin n) n nposi F v hvf ground_ge_two).toSetFamily = total_size_of_hyperedges F.toSetFamily :=
   by
-    intros n F nposi v hvf gcard
+    intros n F nposi v hvf ground_ge_two
     simp only [total_size_of_hyperedges]
     simp only [IdealFamily.deletionToN]
-    have h2 := sum_card_eq_sum_card F nposi v hvf gcard
+    have h2 := sum_card_eq_sum_card F nposi v hvf ground_ge_two
     rw [h2]
 
 end Ideal

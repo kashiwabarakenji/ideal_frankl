@@ -57,9 +57,9 @@ theorem basecase : P 2 := by
 
   have hasground: F.sets {0, 1}:= by
     rw [←gr]
-    exact F.univ_mem
+    exact F.has_ground
   have hasempty: F.sets ∅ := by
-    exact F.empty_mem
+    exact F.has_empty
   have pow: (Finset.univ : Finset (Fin 2)).powerset = {{0,1}, {0}, {1}, ∅} := by
     simp_all only [Fin.isValue, Finset.powerset_univ]
     decide
@@ -345,7 +345,7 @@ theorem basecase : P 2 := by
   rw [new_goal]
 
   --leftsideとrightsideを使って、goalを証明する。
-theorem induction_step {n:Nat} (n_ge_two: n >= 2) (h_ind: P n) : P (n+1) := by
+theorem inductive_step {n:Nat} (n_ge_two: n >= 2) (h_ind: P n) : P (n+1) := by
   -- ここでFintypeインスタンスを明示的に使用
   --have fintype_ground : Fintype F.ground := finF
   have n_ge_one : n ≥ 1 := by omega
@@ -531,4 +531,4 @@ theorem P_all (x : Nat) (hx : x ≥ 2) : P x := by
       | succ m =>
         -- x = m + 3 以上の場合
         have m_ge_two : m + 2 ≥ 2 := Nat.le_add_left _ _ -- m + 2 は 2 以上
-        exact induction_step m_ge_two (P_all (m + 2) m_ge_two)
+        exact inductive_step m_ge_two (P_all (m + 2) m_ge_two)

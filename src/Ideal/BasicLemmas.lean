@@ -423,13 +423,13 @@ lemma filter_union_sum (P : Finset α → Prop) [DecidablePred P] (A B : Finset 
    rw [←filter_union_eq]
 
 -- 大きさが2以上の場合は、1減らしても1以上の大きさを持つ。
-lemma ground_nonempty_after_minor {α : Type} [DecidableEq α] (ground : Finset α) (x : α) (hx: x ∈ ground) (gcard: ground.card ≥ 2) : (ground.erase x).Nonempty :=
+lemma ground_nonempty_after_minor {α : Type} [DecidableEq α] (ground : Finset α) (x : α) (hx: x ∈ ground) (ground_ge_two: ground.card ≥ 2) : (ground.erase x).Nonempty :=
   by
     rw [Finset.erase_eq]
     apply Finset.nonempty_of_ne_empty
     by_contra h_empty
     by_cases hA : ground = ∅
-    rw [hA] at gcard
+    rw [hA] at ground_ge_two
     contradiction
     -- ground.card = 1のケース
     have g_eq_x: ground = {x} := by
@@ -449,8 +449,8 @@ lemma ground_nonempty_after_minor {α : Type} [DecidableEq α] (ground : Finset 
         rw [hy]
       rw [x_eq_y] at hx
       exact hx
-    rw [g_eq_x] at gcard
-    rw [Finset.card_singleton] at gcard
+    rw [g_eq_x] at ground_ge_two
+    rw [Finset.card_singleton] at ground_ge_two
     contradiction
 
 /-
@@ -495,8 +495,8 @@ theorem hyperedges_card_ge_two {α : Type} [DecidableEq α] [Fintype α]
   (F : IdealFamily α) (hground : 1 ≤ F.ground.card) : 2 ≤ number_of_hyperedges F.toSetFamily :=
 by
   -- number_of_hyperedges は空集合と全体集合を含むため、少なくとも 2 つのハイパーエッジがあることを示す
-  have h_empty : F.sets  ∅ := F.empty_mem
-  have h_univ :  F.sets F.ground := F.univ_mem
+  have h_empty : F.sets  ∅ := F.has_empty
+  have h_univ :  F.sets F.ground := F.has_ground
 
   -- 空集合と全体集合が distinct（異なる）であることを確認する
   have h_distinct : ∅ ≠ F.ground :=

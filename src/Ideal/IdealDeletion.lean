@@ -14,42 +14,11 @@ namespace Ideal.IdealDeletion
 variable {α : Type} [DecidableEq α] [Fintype α][Nonempty α]
 
 open Finset
-/-
-lemma ground_nonempty_after_deletion {α : Type} [DecidableEq α] (ground : Finset α) (x : α) (hx: x ∈ ground) (gcard: ground.card ≥ 2) : (ground.erase x).Nonempty :=
-  by
-    rw [Finset.erase_eq]
-    apply Finset.nonempty_of_ne_empty
-    by_contra h_empty
-    by_cases hA : ground = ∅
-    rw [hA] at gcard
-    contradiction
-    -- ground.card = 1のケース
-    have g_eq_x: ground = {x} := by
-      ext y
-      constructor
-      intro hy
-      have hy' : y ∈ ground \ {x} := by
-          rw [h_empty]
-          simp_all only [ge_iff_le, sdiff_eq_empty_iff_subset, subset_singleton_iff, false_or, singleton_ne_empty,
-            not_false_eq_true, mem_singleton, not_mem_empty, card_singleton, Nat.not_ofNat_le_one]
-      rw [h_empty] at hy'
-      contradiction
-      -- y ∈ {x}のときに、groundに属することを示す
-      intro hy
-      have x_eq_y : x = y := by
-        rw [mem_singleton] at hy
-        rw [hy]
-      rw [x_eq_y] at hx
-      exact hx
-    rw [g_eq_x] at gcard
-    rw [Finset.card_singleton] at gcard
-    contradiction
--/
 
-def deletion {α : Type} [DecidableEq α] [Fintype α](F : SetFamily α) (x : α) (hx: x ∈ F.ground) (gcard: F.ground.card ≥ 2): SetFamily α :=
+def deletion {α : Type} [DecidableEq α] [Fintype α](F : SetFamily α) (x : α) (hx: x ∈ F.ground) (ground_ge_two: F.ground.card ≥ 2): SetFamily α :=
   { ground := F.ground.erase x,
     sets := λ s => F.sets s ∧ ¬ x ∈ s,
-    nonempty_ground := ground_nonempty_after_minor F.ground x hx gcard
+    nonempty_ground := ground_nonempty_after_minor F.ground x hx ground_ge_two
 
     inc_ground :=
 
@@ -67,7 +36,7 @@ def deletion {α : Type} [DecidableEq α] [Fintype α](F : SetFamily α) (x : α
 infixl:65 " ∖ " => deletion
 
 -- IdealFamilyに対するdeletion操作がIdealFamilyになることの証明。定義の中に証明がある。
-def idealdeletion {α : Type} [DecidableEq α] [Fintype α] (F : IdealFamily α) (x : α) (hx: x ∈ F.ground) (gcard: F.ground.card ≥ 2): IdealFamily α :=
+def idealdeletion {α : Type} [DecidableEq α] [Fintype α] (F : IdealFamily α) (x : α) (hx: x ∈ F.ground) (ground_ge_two: F.ground.card ≥ 2): IdealFamily α :=
 {
     ground := F.ground.erase x,
 
@@ -119,10 +88,10 @@ def idealdeletion {α : Type} [DecidableEq α] [Fintype α] (F : IdealFamily α)
           --#check hr -- hr : s = F.ground.erase x
           rw [hr],
 
-    empty_mem :=
+    has_empty :=
       by
         --deletionしても空集合は残る。
-        have emp: F.sets ∅ := F.empty_mem
+        have emp: F.sets ∅ := F.has_empty
         unfold SetFamily.sets at emp
         simp_all only [Bool.decide_eq_true, decide_not, Bool.not_eq_true', decide_eq_false_iff_not]
         --#check emp --emp : F.toSetFamily.2 ∅ = true
@@ -130,7 +99,7 @@ def idealdeletion {α : Type} [DecidableEq α] [Fintype α] (F : IdealFamily α)
         --#check emp -- emp : F.1.2 ∅ = true
         simp,
 
-    univ_mem := -- univ = F.ground.erase x
+    has_ground := -- univ = F.ground.erase x
       by
         let newsets := λ s => (F.sets s ∧ ¬ x ∈ s) ∨ s = F.ground.erase x
         have ss: newsets (F.ground.erase x):= by
@@ -141,11 +110,11 @@ def idealdeletion {α : Type} [DecidableEq α] [Fintype α] (F : IdealFamily α)
         rw [IdealFamily.toSetFamily]
         simp,
 
-    nonempty_ground := ground_nonempty_after_minor F.ground x hx gcard,
+    nonempty_ground := ground_nonempty_after_minor F.ground x hx ground_ge_two,
 }
 
 -- Contraction操作の定義
-def contraction (F : SetFamily α) (x : α) (hx : x ∈ F.ground) (gcard: F.ground.card ≥ 2): SetFamily α :=
+def contraction (F : SetFamily α) (x : α) (hx : x ∈ F.ground) (ground_ge_two: F.ground.card ≥ 2): SetFamily α :=
   { ground := F.ground.erase x,
 
     sets := λ (s: Finset α) => ∃ (H :Finset α), F.sets H ∧ x ∈ H ∧ s = H.erase x,
@@ -168,16 +137,16 @@ def contraction (F : SetFamily α) (x : α) (hx : x ∈ F.ground) (gcard: F.grou
         exact hy.2 --y ∈ H
         --なぜexactが3つもあるのか。
 
-    nonempty_ground := ground_nonempty_after_minor F.ground x hx gcard
+    nonempty_ground := ground_nonempty_after_minor F.ground x hx ground_ge_two
   }
 
 
 
 -- IdealFamilyに対するcontraction操作がIdealFamilyになることの証明
-instance contraction_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x} ) (gcard: F.ground.card ≥ 2): IdealFamily α :=
+instance contraction_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x} ) (ground_ge_two: F.ground.card ≥ 2): IdealFamily α :=
 {
-  contraction (F.toSetFamily) x (by { exact F.inc_ground {x} hx (by simp) }) gcard with
-  empty_mem := by
+  contraction (F.toSetFamily) x (by { exact F.inc_ground {x} hx (by simp) }) ground_ge_two with
+  has_empty := by
     use {x} -- emptyを使うべきではなく、これが正解っぽい。
     constructor
     exact hx -- goal F.sets {x}
@@ -185,10 +154,10 @@ instance contraction_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x}
     simp
     simp
 
-  univ_mem := by
+  has_ground := by
     use F.ground
     constructor
-    exact F.univ_mem
+    exact F.has_ground
     constructor
     -- goal x ∈ F.ground
     exact F.inc_ground {x} hx (by simp)
@@ -197,7 +166,7 @@ instance contraction_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x}
   --(down_closed : ∀ (A B : Finset α), sets B → B ≠ ground → A ⊆ B → sets A)
   --Fのdown_closedを使って、contractionのdown_closedを証明する。
   down_closed := by
-    let thisF := contraction (F.toSetFamily) x (by { exact F.inc_ground {x} hx (by simp) }) gcard
+    let thisF := contraction (F.toSetFamily) x (by { exact F.inc_ground {x} hx (by simp) }) ground_ge_two
     --あとで使うかも。
     have thisg : thisF.ground = F.ground.erase x := by
         rfl
@@ -353,12 +322,12 @@ instance contraction_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x}
     --Fsets_down: F.sets (A ∪ {x})まで証明した。
     --最後は、thisF.sets Aを証明する。
     --thisF.sets Aは、contractionの定義から、F.sets Aがいえる。
-    --def contraction (F : SetFamily α) (x : α) (hx : x ∈ F.ground) (gcard: F.ground.card ≥ 2)
+    --def contraction (F : SetFamily α) (x : α) (hx : x ∈ F.ground) (ground_ge_two: F.ground.card ≥ 2)
     have thisF_setsA: thisF.sets A := by
       dsimp [thisF]
       unfold contraction
       unfold SetFamily.sets
-      --exact contraction (F.toSetFamily) x (by { exact F.inc_ground {x} hx (by simp) }) gcard
+      --exact contraction (F.toSetFamily) x (by { exact F.inc_ground {x} hx (by simp) }) ground_ge_two
       have thisFset: (s : Finset α) → thisF.sets s ↔ ∃ H, F.sets H ∧ x ∈ H ∧ s = H.erase x:= by
         unfold SetFamily.sets
         dsimp [thisF]
@@ -378,23 +347,23 @@ instance contraction_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x}
 }
 
 omit [Nonempty α] in
-lemma ground_deletion  (F : IdealFamily α) (x : α) (hx: x ∈ F.ground) (gcard: F.ground.card ≥ 2):
-  (idealdeletion F x hx gcard).ground.card = F.ground.card - 1 :=
+lemma ground_deletion  (F : IdealFamily α) (x : α) (hx: x ∈ F.ground) (ground_ge_two: F.ground.card ≥ 2):
+  (idealdeletion F x hx ground_ge_two).ground.card = F.ground.card - 1 :=
 
   by
     rw [idealdeletion]
     rw [Finset.card_erase_of_mem hx]
 
 omit [Nonempty α] in
-lemma ground_contraction  (F : IdealFamily α) (x : α) (hx: x ∈ F.ground) (gcard: F.ground.card ≥ 2):
-  (contraction F.toSetFamily x hx gcard).ground.card = F.ground.card - 1 :=
+lemma ground_contraction  (F : IdealFamily α) (x : α) (hx: x ∈ F.ground) (ground_ge_two: F.ground.card ≥ 2):
+  (contraction F.toSetFamily x hx ground_ge_two).ground.card = F.ground.card - 1 :=
   by
     rw [contraction]
     rw [Finset.card_erase_of_mem hx]
 
 omit [Nonempty α] in
-lemma ground_contraction_family  (F : IdealFamily α) (x : α) (gcard: F.ground.card ≥ 2)(hx_singleton: F.sets {x}):
-  (contraction_ideal_family F x hx_singleton gcard).ground.card = F.ground.card - 1 :=
+lemma ground_contraction_family  (F : IdealFamily α) (x : α) (ground_ge_two: F.ground.card ≥ 2)(singleton_have: F.sets {x}):
+  (contraction_ideal_family F x singleton_have ground_ge_two).ground.card = F.ground.card - 1 :=
   by
     rw [contraction_ideal_family]
     rw [ground_contraction]
