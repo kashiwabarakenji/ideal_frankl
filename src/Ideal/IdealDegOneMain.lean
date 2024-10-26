@@ -97,18 +97,18 @@ lemma ineq_lem (k : ℕ) :
 
 def P (x:Nat) : Prop := x ≥ 2  ∧ ∀ (F: IdealFamily (Fin x)), F.ground.card = x → normalized_degree_sum F.toSetFamily ≤ 0
 
-theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in_ground : v ∈ F.ground) (singleton_hyperedgge_none : ¬ F.sets {v}) (ground_ge_two : F.ground.card ≥ 2) (ground_card: F.ground.card = n + 1) (h_ind: P n): normalized_degree_sum F.toSetFamily ≤ 0 :=
+theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in_ground : v ∈ F.ground) (singleton_hyperedge_none : ¬ F.sets {v}) (ground_ge_two : F.ground.card ≥ 2) (ground_card: F.ground.card = n + 1) (h_ind: P n): normalized_degree_sum F.toSetFamily ≤ 0 :=
   by
 
     have degree_one: degree F.toSetFamily v = 1 := by
-      exact degree_one_if_not_hyperedge F v_in_ground singleton_hyperedgge_none
+      exact degree_one_if_not_hyperedge F v_in_ground singleton_hyperedge_none
     --次数1があるということは、vは全体集合のみを含む。
     --goal normalized_degree_sum F.toSetFamily ≤ 0
     rw [normalized_degree_sum]
     by_cases ground_minus_v_none:(F.sets (F.ground \ {v}))
     · case pos =>
-      have total := ground_minus_v_ideal_total F v v_in_ground ground_minus_v_none singleton_hyperedgge_none ground_ge_two
-      have number := ground_minus_v_ideal_number F v v_in_ground ground_minus_v_none singleton_hyperedgge_none
+      have total := ground_minus_v_ideal_total F v v_in_ground ground_minus_v_none singleton_hyperedge_none ground_ge_two
+      have number := ground_minus_v_ideal_number F v v_in_ground ground_minus_v_none singleton_hyperedge_none
       rw [total, number]
       simp_all only [ge_iff_le, tsub_le_iff_right, zero_add, Nat.cast_add, Nat.cast_one]
       simp_all
@@ -205,7 +205,7 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
       --idealDelFとFでnumber_of_hyperedgesが同じになることを示す。
       --idealDelFとFでtotal_size_of_hyperedgesが1つちがいになることを示す。
       --idealDefFのnormalized_degree_sumが非負のとき、Fも非負であることを示す。
-      simp only [ge_iff_le, tsub_le_iff_right, zero_add, Nat.cast_add, Nat.cast_one] at singleton_hyperedgge_none degree_one ⊢
+      simp only [ge_iff_le, tsub_le_iff_right, zero_add, Nat.cast_add, Nat.cast_one] at singleton_hyperedge_none degree_one ⊢
 
       let idealDelF := IdealDeletion.idealdeletion F v v_in_ground ground_ge_two
 
@@ -276,7 +276,7 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
           dsimp [domain] at hs'
           rw [Finset.mem_filter] at hs'
           rw [Finset.mem_powerset] at hs'
-          --singleton_hyperedgge_noneからhyperedgeでvを含んでいるものは、全体集合のみ。
+          --singleton_hyperedge_noneからhyperedgeでvを含んでいるものは、全体集合のみ。
           by_cases s=F.ground
           · case pos =>
               dsimp [i,range]
@@ -350,7 +350,7 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
           · case neg =>
             --v in sということはsは全体集合であり、ground - vはground_minus_v_none : ¬F.sets (F.ground \ {v})の仮定よりhyperedgeではない。よって、h_inkに矛盾。
             have neg_lem: s = F.ground := by
-              --singleton_hyperedgge_none : ¬F.sets {v}から言える。
+              --singleton_hyperedge_none : ¬F.sets {v}から言える。
               by_contra h_contra
               have v_subset_s: {v} ⊆ s := by
                 simp_all only [ge_iff_le]
@@ -389,7 +389,7 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
           · case pos =>
             --v notin sということはsは全体集合であり、ground - vはground_minus_v_none : ¬F.sets (F.ground \ {v})の仮定よりhyperedgeではない。よって、h_inkに矛盾。
             have neg_lem: t = F.ground := by
-              --singleton_hyperedgge_none : ¬F.sets {v}から言える。
+              --singleton_hyperedge_none : ¬F.sets {v}から言える。
               by_contra h_contra
               have v_subset_t: {v} ⊆ t := by
                 simp_all only [ge_iff_le]
@@ -469,7 +469,7 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
             subst h_1
             simp_all only [Finset.mem_filter, Finset.mem_powerset, and_imp, subset_refl, Finset.mem_erase, ne_eq,
               not_true_eq_false, and_true, not_false_eq_true, domain]
-            exact F.univ_mem
+            exact F.has_ground
 
 
       have number_eq: number_of_hyperedges F.toSetFamily = number_of_hyperedges idealDelF.toSetFamily := by
@@ -490,7 +490,7 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
         exact Finset.erase_eq F.ground v
 
       have total_eq: total_size_of_hyperedges F.toSetFamily = total_size_of_hyperedges idealDelF.toSetFamily + 1:= by
-        --rw [Ideal.total_degone_card F.toSetFamily v v_in_ground degree_one F.univ_mem ground_ge_two]
+        --rw [Ideal.total_degone_card F.toSetFamily v v_in_ground degree_one F.has_ground ground_ge_two]
         dsimp [total_size_of_hyperedges]
         dsimp [idealDelF]
         dsimp [IdealDeletion.idealdeletion] --分解されすぎるかも。
@@ -520,7 +520,7 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
               by_contra h_contra
               exact h ((degree_one_ground F v v_in_ground ground_ge_two degree_one s right) h_contra)
 
-            --#check hyperedges_not_through_v F.toSetFamily v v_in_ground degree_one F.univ_mem s right hはv notin s
+            --#check hyperedges_not_through_v F.toSetFamily v v_in_ground degree_one F.has_ground s right hはv notin s
             --goal s.card = if s.erase v = F.ground.erase v then (s.erase v).card + 1 else (s.erase v).card
             --s.erase v = F.ground.erase vを満たさないことを示したい。
             --使う仮定。degree v = 1。
@@ -789,7 +789,7 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
         rw [minor_ground_card] at result
         --deletonToNをしても、total_sizeもnumber_of_hyperedgesも変わらないという定理を最後に適用する必要がある。
         --lemma IdealFamily.deletionToN_number {n : ℕ} (n_ge_one : n ≥ 1) (F : IdealFamily (Fin (n + 1))) (v : Fin (n + 1)) (hvf : v ∉ F.ground)
-        --(gcard : F.ground.card ≥ 1) : number_of_hyperedges (@IdealFamily.deletionToN (Fin n) n n_ge_one F v hvf gcard).toSetFamily = number_of_hyperedges F.toSetFamily
+        --(ground_ge_two : F.ground.card ≥ 1) : number_of_hyperedges (@IdealFamily.deletionToN (Fin n) n n_ge_one F v hvf ground_ge_two).toSetFamily = number_of_hyperedges F.toSetFamily
         have eqcard_number: number_of_hyperedges idealDelF.toSetFamily = number_of_hyperedges idealDelFn.toSetFamily := by
           have minor_ground_card_ge1: idealDelF.ground.card ≥ 1 := by
             simp_all only [ge_iff_le]
@@ -798,8 +798,8 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
           not_true_eq_false, false_and, not_false_eq_true, and_true, and_imp, subset_refl, Finset.sdiff_subset,
           Finset.singleton_subset_iff, exists_prop, add_tsub_cancel_right, tsub_le_iff_right, zero_add, idealDelF,
           idealDelFn, domain, i, range]
-        --lemma deletion_total: ∀ (n : ℕ) (F : IdealFamily (Fin (n + 1))) (n_ge_one : n ≥ 1) (v : Fin (n + 1)) (hvf : v ∉ F.ground) (gcard : F.ground.card ≥ 1),
-        --total_size_of_hyperedges (@IdealFamily.deletionToN (Fin n) n n_ge_one F v hvf gcard).toSetFamily = total_size_of_hyperedges F.toSetFamily
+        --lemma deletion_total: ∀ (n : ℕ) (F : IdealFamily (Fin (n + 1))) (n_ge_one : n ≥ 1) (v : Fin (n + 1)) (hvf : v ∉ F.ground) (ground_ge_two : F.ground.card ≥ 1),
+        --total_size_of_hyperedges (@IdealFamily.deletionToN (Fin n) n n_ge_one F v hvf ground_ge_two).toSetFamily = total_size_of_hyperedges F.toSetFamily
         have eqcard_total: total_size_of_hyperedges idealDelF.toSetFamily = total_size_of_hyperedges idealDelFn.toSetFamily := by
           exact Eq.symm (deletion_total n idealDelF n_ge_one v v_notin_minor_ground h_assum_card1)
         rw [←eqcard_number] at result
