@@ -1,4 +1,5 @@
-import Mathlib.Data.Finset.Basic --hiding eq_empty_of_subset_empty
+--帰納法でFin (n+1)などを扱うのでそのための変換。そもそもFinを使う必要はなかったかも。
+import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Data.Fin.Basic

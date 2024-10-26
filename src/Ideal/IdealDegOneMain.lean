@@ -207,19 +207,19 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
       --idealDefFのnormalized_degree_sumが非負のとき、Fも非負であることを示す。
       simp only [ge_iff_le, tsub_le_iff_right, zero_add, Nat.cast_add, Nat.cast_one] at singleton_hyperedge_none degree_one ⊢
 
-      let idealDelF := IdealDeletion.idealdeletion F v v_in_ground ground_ge_two
+      let idealDelF := idealdeletion F v v_in_ground ground_ge_two
 
       have v_notin_minor_ground: v ∉ idealDelF.ground := by
         intro h
         dsimp [idealDelF] at h
-        rw [IdealDeletion.idealdeletion] at h
+        rw [idealdeletion] at h
         simp_all only [Finset.mem_erase, ne_eq, not_true_eq_false, and_true]
 
       --このあとの補題のomegaの計算に利用されているよう。
       have minor_ground_card: idealDelF.ground.card = n := by
         simp_all only [idealDelF]
         --goal ((F.toSetFamily ∖ v) v_in_ground ground_ge_two).ground.card = n
-        dsimp [IdealDeletion.idealdeletion]
+        dsimp [idealdeletion]
         simp_all only [Finset.card_erase_of_mem, add_tsub_cancel_right]
 
       have minor_ground_card_ge_one: idealDelF.ground.card ≥ 1 := by
@@ -237,9 +237,9 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
         dsimp [idealDelF]
 
         calc
-          (Finset.image (finDrop n_ge_one v) (IdealDeletion.idealdeletion F v v_in_ground ground_ge_two).ground).card
-        = ((IdealDeletion.idealdeletion F v v_in_ground ground_ge_two).ground).card := by
-            exact finDropCardEq n_ge_one v (IdealDeletion.idealdeletion F v v_in_ground ground_ge_two).ground v_notin_minor_ground
+          (Finset.image (finDrop n_ge_one v) (idealdeletion F v v_in_ground ground_ge_two).ground).card
+        = ((idealdeletion F v v_in_ground ground_ge_two).ground).card := by
+            exact finDropCardEq n_ge_one v (idealdeletion F v v_in_ground ground_ge_two).ground v_notin_minor_ground
       _ = n := by
             simp_all only [ge_iff_le]
       )
@@ -474,7 +474,7 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
 
       have number_eq: number_of_hyperedges F.toSetFamily = number_of_hyperedges idealDelF.toSetFamily := by
         dsimp [number_of_hyperedges,idealDelF]
-        rw [IdealDeletion.idealdeletion]
+        rw [idealdeletion]
         simp_all only [Finset.card_erase_of_mem, add_tsub_cancel_right]
         --goal: (Finset.filter F.sets F.ground.powerset).card =
         --(Finset.filter (fun s => F.sets s ∧ v ∉ s ∨ s = F.ground.erase v) (F.ground.erase v).powerset).card
@@ -493,7 +493,7 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
         --rw [Ideal.total_degone_card F.toSetFamily v v_in_ground degree_one F.has_ground ground_ge_two]
         dsimp [total_size_of_hyperedges]
         dsimp [idealDelF]
-        dsimp [IdealDeletion.idealdeletion] --分解されすぎるかも。
+        dsimp [idealdeletion] --分解されすぎるかも。
         simp_all only [Finset.card_erase_of_mem, add_tsub_cancel_right]
 
         let ff := λ (s:Finset (Fin (n+1))) => s.card
@@ -805,19 +805,19 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
         rw [←eqcard_number] at result
         rw [←eqcard_total] at result
         dsimp [idealDelF] at result
-        let idealDelFn2 := (@IdealFamily.deletionToN (Fin (n + 1)) n n_ge_one (IdealDeletion.idealdeletion F v v_in_ground ground_ge_two) v v_notin_minor_ground h_assum_card1)
+        let idealDelFn2 := (@IdealFamily.deletionToN (Fin (n + 1)) n n_ge_one (idealdeletion F v v_in_ground ground_ge_two) v v_notin_minor_ground h_assum_card1)
         have eqlem0: idealDelFn = idealDelFn2 := by
           rfl
 
-        have eqlem: number_of_hyperedges (idealDelFn.toSetFamily) = number_of_hyperedges (IdealDeletion.idealdeletion F v v_in_ground ground_ge_two).toSetFamily := by
+        have eqlem: number_of_hyperedges (idealDelFn.toSetFamily) = number_of_hyperedges (idealdeletion F v v_in_ground ground_ge_two).toSetFamily := by
           simp_all only [subset_refl, Finset.singleton_subset_iff, Finset.sdiff_subset, idealDelFn, idealDelF,
             idealDelFn2]
         --基本的な変数を文字でおいて整理する。--ゴールとresultを[idealDelFn]を使って書き換える。
-        have subs1: idealDelF = IdealDeletion.idealdeletion F v v_in_ground ground_ge_two:= by
+        have subs1: idealDelF = idealdeletion F v v_in_ground ground_ge_two:= by
           rfl
-        have subs2: number_of_hyperedges idealDelF.toSetFamily = number_of_hyperedges (IdealDeletion.idealdeletion F v v_in_ground ground_ge_two).toSetFamily := by
+        have subs2: number_of_hyperedges idealDelF.toSetFamily = number_of_hyperedges (idealdeletion F v v_in_ground ground_ge_two).toSetFamily := by
            rfl
-        have subs3: total_size_of_hyperedges idealDelF.toSetFamily = total_size_of_hyperedges (IdealDeletion.idealdeletion F v v_in_ground ground_ge_two).toSetFamily := by
+        have subs3: total_size_of_hyperedges idealDelF.toSetFamily = total_size_of_hyperedges (idealdeletion F v v_in_ground ground_ge_two).toSetFamily := by
            rfl
 
         rw [←subs1] at result

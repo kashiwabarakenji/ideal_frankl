@@ -9,7 +9,7 @@ import Ideal.BasicDefinitions
 import Ideal.BasicLemmas
 import LeanCopilot
 
-namespace Ideal.IdealDeletion
+namespace Ideal
 -- 型変数と必要な型クラスの宣言 この宣言は必要。もともとUだったのをαに変えた。
 variable {α : Type} [DecidableEq α] [Fintype α][Nonempty α]
 
@@ -370,4 +370,4 @@ lemma ground_contraction_family  (F : IdealFamily α) (x : α) (ground_ge_two: F
 
 
 
-end Ideal.IdealDeletion
+end Ideal

@@ -99,15 +99,15 @@ theorem hyperedge_count_deletion_contraction_have_z {α : Type} [DecidableEq α]
   (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (ground_ge_two: F.ground.card ≥ 2)
   [DecidablePred F.sets] (hx_hyperedge : F.sets (F.ground \ {x}))(singleton_have: F.sets {x}) :
   ((number_of_hyperedges F.toSetFamily):ℤ) =
-  ((number_of_hyperedges (IdealDeletion.idealdeletion F x hx ground_ge_two).toSetFamily):ℤ) +
-  ((number_of_hyperedges (IdealDeletion.contraction_ideal_family F x singleton_have ground_ge_two).toSetFamily) :ℤ)
+  ((number_of_hyperedges (idealdeletion F x hx ground_ge_two).toSetFamily):ℤ) +
+  ((number_of_hyperedges (contraction_ideal_family F x singleton_have ground_ge_two).toSetFamily) :ℤ)
 
 theorem hyperedge_count_deletion_contraction_none_z {α : Type} [DecidableEq α] [Fintype α]
   (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (ground_ge_two: F.ground.card ≥ 2)
   [DecidablePred F.sets] (ground_v_none : ¬ F.sets (F.ground \ {x})) (singleton_have: F.sets {x}) :
   ((number_of_hyperedges F.toSetFamily):ℤ) + 1 =
-  (number_of_hyperedges (IdealDeletion.idealdeletion F x hx ground_ge_two).toSetFamily:ℤ)  +
-  (number_of_hyperedges (IdealDeletion.contraction_ideal_family F x singleton_have ground_ge_two).toSetFamily:ℤ) 
+  (number_of_hyperedges (idealdeletion F x hx ground_ge_two).toSetFamily:ℤ)  +
+  (number_of_hyperedges (contraction_ideal_family F x singleton_have ground_ge_two).toSetFamily:ℤ) 
 ```
 
 #### {v}がhyperedgeのときのhyperedgeの和の計算
@@ -118,15 +118,15 @@ theorem hyperedge_totalsize_deletion_contraction_have_z {α : Type} [DecidableEq
   (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (ground_ge_two: F.ground.card ≥ 2)
   [DecidablePred F.sets] (hx_hyperedge : F.sets (F.ground \ {x})) :
   ((total_size_of_hyperedges F.toSetFamily):ℤ) =
-  ((total_size_of_hyperedges (IdealDeletion.idealdeletion F x hx ground_ge_two).toSetFamily):ℤ)   +
-  ((total_size_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx ground_ge_two)):ℤ)  + ((degree F.toSetFamily x):ℤ)
+  ((total_size_of_hyperedges (idealdeletion F x hx ground_ge_two).toSetFamily):ℤ)   +
+  ((total_size_of_hyperedges (contraction F.toSetFamily x hx ground_ge_two)):ℤ)  + ((degree F.toSetFamily x):ℤ)
 
 theorem hyperedge_totalsize_deletion_contraction_none {α : Type} [DecidableEq α] [Fintype α]
   (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (ground_ge_two: F.ground.card ≥ 2)
   [DecidablePred F.sets] (ground_v_none : ¬ F.sets (F.ground \ {x})) (singleton_have : F.sets {x}) :
   ((total_size_of_hyperedges F.toSetFamily):ℤ) + ((F.ground.card:ℤ) - 1)=
-  (total_size_of_hyperedges (IdealDeletion.idealdeletion F x hx ground_ge_two).toSetFamily:ℤ)  +
-  (total_size_of_hyperedges (IdealDeletion.contraction F.toSetFamily x hx ground_ge_two):ℤ) + ((degree F.toSetFamily x):ℤ)
+  (total_size_of_hyperedges (idealdeletion F x hx ground_ge_two).toSetFamily:ℤ)  +
+  (total_size_of_hyperedges (contraction F.toSetFamily x hx ground_ge_two):ℤ) + ((degree F.toSetFamily x):ℤ)
 ```
 #### {v}がhyperedgeのときの標準化次数和の計算
 hyperedge数と、hyperedgeの大きさの和の関係から、標準化次数和は、contractionした集合族の標準化次数和とdeletionした集合族の標準化次数和から計算できる。
@@ -135,16 +135,16 @@ theorem hyperedge_average_have {α : Type} [DecidableEq α] [Fintype α]
   (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (ground_ge_two: F.ground.card ≥ 2)
   [DecidablePred F.sets] (hx_hyperedge : F.sets (F.ground \ {x})) (singleton_have : F.sets {x}) :
   normalized_degree_sum F.toSetFamily =
-  normalized_degree_sum (IdealDeletion.idealdeletion F x hx ground_ge_two).toSetFamily  +
-  normalized_degree_sum (IdealDeletion.contraction_ideal_family F x singleton_have ground_ge_two).toSetFamily
+  normalized_degree_sum (idealdeletion F x hx ground_ge_two).toSetFamily  +
+  normalized_degree_sum (contraction_ideal_family F x singleton_have ground_ge_two).toSetFamily
   +2*((degree F.toSetFamily x):ℤ) - ((number_of_hyperedges F.toSetFamily):ℤ)
 
 theorem hyperedge_average_none {α : Type} [DecidableEq α] [Fintype α]
   (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (ground_ge_two: F.ground.card ≥ 2)
   [DecidablePred F.sets] (ground_v_none : ¬ F.sets (F.ground \ {x})) (singleton_have : F.sets {x}) :
   normalized_degree_sum F.toSetFamily + (F.ground.card:ℤ)=
-  normalized_degree_sum (IdealDeletion.idealdeletion F x hx ground_ge_two).toSetFamily  +
-  normalized_degree_sum (IdealDeletion.contraction_ideal_family F x singleton_have ground_ge_two).toSetFamily
+  normalized_degree_sum (idealdeletion F x hx ground_ge_two).toSetFamily  +
+  normalized_degree_sum (contraction_ideal_family F x singleton_have ground_ge_two).toSetFamily
   + 2*((degree F.toSetFamily x):ℤ) - ((number_of_hyperedges F.toSetFamily):ℤ) + 1 
 ```
 

@@ -20,7 +20,7 @@ import Ideal.IdealDegreeOne
 import Ideal.IdealFin
 import Ideal.IdealDegOneMain
 import LeanCopilot
-set_option maxHeartbeats 1000000
+--set_option maxHeartbeats 1000000
 
 namespace Ideal
 
@@ -372,19 +372,19 @@ theorem inductive_step {n:Nat} (n_ge_two: n >= 2) (h_ind: P n) : P (n+1) := by
   by_cases singleton_hyperedge_have: F.sets {v}
   · case pos =>
 
-    set Fdel := IdealDeletion.idealdeletion F v v_in_ground ground_ge_two
+    set Fdel := idealdeletion F v v_in_ground ground_ge_two
     have Fvx: v ∉ Fdel.ground := by
       intro h
       simp_all only [ge_iff_le]
       dsimp [Fdel] at h
       --simp_all only [Fdel]
-      dsimp [IdealDeletion.idealdeletion] at h
+      dsimp [idealdeletion] at h
       simp_all only [Finset.mem_erase, ne_eq, not_true_eq_false, and_true]
 
     have ground_Fdel_card: Fdel.ground.card = n := by
       simp_all only [ge_iff_le]
       simp_all only [Fdel]
-      rw [IdealDeletion.idealdeletion]
+      rw [idealdeletion]
       simp_all only [Finset.card_erase_of_mem, add_tsub_cancel_right]
 
     have ground_delF_card_ge_one: Fdel.ground.card ≥ 1 := by
@@ -400,20 +400,20 @@ theorem inductive_step {n:Nat} (n_ge_two: n >= 2) (h_ind: P n) : P (n+1) := by
       rw  [finDropCardEq n_ge_one v Fdel.ground Fvx]
       exact ground_Fdel_card
 
-    have h_del_card: (@IdealFamily.deletionToN (Fin n) n n_ge_one (IdealDeletion.idealdeletion F v v_in_ground ground_ge_two) v Fvx
+    have h_del_card: (@IdealFamily.deletionToN (Fin n) n n_ge_one (idealdeletion F v v_in_ground ground_ge_two) v Fvx
                 ground_delF_card_ge_one).ground.card = n := by
       simp_all only [ge_iff_le]
       simp_all only [ge_iff_le, implies_true, imp_self, forall_true_left, Fdel, h_idealdeletion]
       exact ground_delF_card
 
-    set Fcont :=  (IdealDeletion.contraction_ideal_family F v singleton_hyperedge_have ground_ge_two)
+    set Fcont :=  (contraction_ideal_family F v singleton_hyperedge_have ground_ge_two)
     have h_cont: Fcont.ground.card = n := by
       simp_all only [ge_iff_le]
-      --simp_all only [IdealDeletion.contraction]
+      --simp_all only [contraction]
       simp_all only [ge_iff_le, implies_true, sub_left_inj, add_left_inj, add_right_inj, Fdel, Fcont]
-      rw [IdealDeletion.contraction_ideal_family]
+      rw [contraction_ideal_family]
       simp_all only [Finset.card_erase_of_mem, add_tsub_cancel_right]
-      rw [IdealDeletion.contraction]
+      rw [contraction]
       simp_all only [Finset.card_erase_of_mem, add_tsub_cancel_right]
 
     have h_cont2: Fcont.ground.card ≥ 1 := by
@@ -424,14 +424,14 @@ theorem inductive_step {n:Nat} (n_ge_two: n >= 2) (h_ind: P n) : P (n+1) := by
       simp_all only [ge_iff_le]
       dsimp [Fcont] at h
       simp_all only [Fcont]
-      dsimp [IdealDeletion.contraction_ideal_family] at h
-      dsimp [IdealDeletion.contraction] at h
+      dsimp [contraction_ideal_family] at h
+      dsimp [contraction] at h
       simp_all only [Finset.mem_erase, ne_eq, not_true_eq_false, and_true]
 
     have h_cont_card: Fcont.ground.card = n := by
       simp_all only [ge_iff_le]
 
-    have h_cont_card2: (IdealDeletion.contraction_ideal_family F v singleton_hyperedge_have ground_ge_two).ground.card = n:= by
+    have h_cont_card2: (contraction_ideal_family F v singleton_hyperedge_have ground_ge_two).ground.card = n:= by
       simp_all only [ge_iff_le]
 
     set h_contraction := IdealFamily.deletionToN n_ge_one Fcont v Fvx2 h_cont2
@@ -467,15 +467,15 @@ theorem inductive_step {n:Nat} (n_ge_two: n >= 2) (h_ind: P n) : P (n+1) := by
     rw [h_del_card] at h_idealdeletion2
 
     --let total_del := (total_size_of_hyperedges ((@IdealFamily.deletionToN (Fin n) n n_ge_one Fdel v Fvx ground_delF_card_ge_one):IdealFamily (Fin n)).1)
-    set total_del := total_size_of_hyperedges (IdealDeletion.idealdeletion F v v_in_ground ground_ge_two).1
+    set total_del := total_size_of_hyperedges (idealdeletion F v v_in_ground ground_ge_two).1
     --set number_del := (number_of_hyperedges (@IdealFamily.deletionToN (Fin n) n n_ge_one Fdel v Fvx ground_delF_card_ge_one).1) with number_del
-    set number_del := (number_of_hyperedges (IdealDeletion.idealdeletion F v v_in_ground ground_ge_two).1)
+    set number_del := (number_of_hyperedges (idealdeletion F v v_in_ground ground_ge_two).1)
     --let total_cont := (total_size_of_hyperedges (@IdealFamily.deletionToN (Fin n) n n_ge_one Fcont v Fvx2 h_cont2).1)
-    --set total_cont := total_size_of_hyperedges (IdealDeletion.contraction F.1 v v_in_ground ground_ge_two) with h_total_cont
-    set total_cont := total_size_of_hyperedges (IdealDeletion.contraction_ideal_family F v singleton_hyperedge_have ground_ge_two).toSetFamily
+    --set total_cont := total_size_of_hyperedges (contraction F.1 v v_in_ground ground_ge_two) with h_total_cont
+    set total_cont := total_size_of_hyperedges (contraction_ideal_family F v singleton_hyperedge_have ground_ge_two).toSetFamily
     --let number_cont := (number_of_hyperedges (@IdealFamily.deletionToN (Fin n) n n_ge_one Fcont v Fvx2 h_cont2).1)
-    --set number_cont := (number_of_hyperedges (IdealDeletion.contraction F.1 v v_in_ground ground_ge_two)) with h_number_cont
-    set number_cont := (number_of_hyperedges (IdealDeletion.contraction_ideal_family F v singleton_hyperedge_have ground_ge_two).toSetFamily)
+    --set number_cont := (number_of_hyperedges (contraction F.1 v v_in_ground ground_ge_two)) with h_number_cont
+    set number_cont := (number_of_hyperedges (contraction_ideal_family F v singleton_hyperedge_have ground_ge_two).toSetFamily)
     set total := (total_size_of_hyperedges F.toSetFamily)
     set  number := (number_of_hyperedges F.toSetFamily)
     set degreev := (degree F.toSetFamily v)
@@ -484,7 +484,7 @@ theorem inductive_step {n:Nat} (n_ge_two: n >= 2) (h_ind: P n) : P (n+1) := by
     by_cases hv_hyperedge:(F.sets (F.ground \ {v}))
     ·   case pos =>
         have h_sum_have := (hyperedge_average_have F v v_in_ground ground_ge_two) hv_hyperedge singleton_hyperedge_have
-        --have h_idealdeletion := (IdealDeletion.idealdeletion F v v_in_ground ground_ge_two)
+        --have h_idealdeletion := (idealdeletion F v v_in_ground ground_ge_two)
         --#check sum_have
         let number_have :=  hyperedge_count_deletion_contraction_have_z F v v_in_ground ground_ge_two hv_hyperedge singleton_hyperedge_have
 

@@ -18,6 +18,58 @@ namespace Ideal
 def hasDegreeOneSetFamily (F : SetFamily α) : Prop :=
   ∃ (v : α), degree F v = 1
 
+-- {x} が hyperedge でないときに x の次数が 1 であることの証明
+lemma degree_one_if_not_hyperedge {α : Type} {x :α} [DecidableEq α] [Fintype α]
+  (F : IdealFamily α) (hx: x ∈ F.ground) (h_not_hyperedge : ¬ F.sets {x}) :
+  degree F.toSetFamily x = 1 :=
+  by
+    -- 定義に基づいて次数を計算する
+    unfold degree
+
+    -- x を含む部分集合のうち、hyperedge であるものをすべて考える
+    set  relevant_sets := Finset.filter (λ s => F.sets s ∧ x ∈ s) (Finset.powerset F.ground) with h_relevant_sets
+
+    -- relevant_sets には ground しか含まれていないことを示す
+    have h_relevant_sets : relevant_sets = {F.ground} := by
+      apply Finset.ext -- Finset の等式を証明
+      intros s
+      dsimp [relevant_sets]
+      simp only [Finset.mem_filter, Finset.mem_powerset]
+      constructor
+      -- s が relevant_sets に含まれている場合
+      · -- goal: s = F.ground
+        intro hs
+        by_contra h_s_ne_ground
+        have h_s_ne_ground' : s ≠ F.ground := by
+          intro h
+          apply h_s_ne_ground
+          rw [h]
+          subst h
+          simp_all only [Finset.Subset.refl, true_and, Finset.mem_singleton, not_true_eq_false, relevant_sets]
+        -- down_closed を使って {x} が hyperedge になる矛盾を導く
+        --sはF.groundでなく、F.sets sかつx∈sである。これらから、{x}がhyperedgeであることを導く。
+        have h_s_hyperedge : F.sets {x} := by
+          apply F.down_closed
+          simp_all
+          exact hs.2.1
+          simp_all only [Finset.mem_singleton, not_false_eq_true, ne_eq, Finset.singleton_subset_iff, relevant_sets]
+          simp_all only [Finset.mem_singleton, not_false_eq_true, ne_eq, Finset.singleton_subset_iff, relevant_sets]
+          --なぜかふたつ必要。
+        apply h_not_hyperedge
+        simp_all only [Finset.mem_singleton, relevant_sets]
+      · -- goal: s = F.ground → s ∈ {F.ground}
+        intro hs
+        simp_all only [Finset.mem_singleton, relevant_sets]
+        --rename_i α_1 inst inst_1 inst_2 inst_3 inst_4
+        subst hs
+        simp_all only [Finset.Subset.refl, true_and]
+        apply And.intro
+        have h1 : F.sets F.ground := by
+          apply F.has_ground
+        exact h1
+        trivial
+    simp_all only [eq_iff_iff, iff_true, Finset.card_singleton, relevant_sets]
+
 --vの次数が1であれば、全体集合以外のhyperedgeは、vを通らない。IdealSimple.leanでも同様なことを証明。
 --このファイルの他の部分で何回か利用。
 lemma hyperedges_not_through_v {α : Type} [DecidableEq α] [Fintype α]

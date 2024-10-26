@@ -18,7 +18,7 @@ variable {α : Type} [DecidableEq α] [Fintype α] [Nonempty α]
 
 --singletonがすべてhyperedgeであれば、台集合の要素数は、その台集合の冪集合の中でhyperedgeであるものの要素数以下である
 
--- 抽象的な例: A は Finset α、P は α 上の述語
+-- 下で使っている。
 lemma card_lemma {α : Type} [Fintype α] [DecidableEq α] (A : Finset α) (P : α → Prop) [DecidablePred P] :
   (A.filter P).card = Fintype.card { x // x ∈ A ∧ P x } :=
 by
@@ -51,6 +51,7 @@ by
   convert H2
 
 -- 任意の x ∈ F.ground に対して、{x} が hyperedgeと仮定すると、台集合の大きさは、hyperedge数以下である。
+--使ってない。
 omit [Nonempty α] in
 theorem card_le_of_singletons_in_family  (F : SetFamily α) [DecidablePred F.sets]
   (hF : ∀ x : α, x ∈ F.ground → F.sets ({x})) :
@@ -102,55 +103,3 @@ by
     Finset.coe_mem, and_self, implies_true, f]
 
 ------
-
--- {x} が hyperedge でないときに x の次数が 1 であることの証明
-theorem degree_one_if_not_hyperedge {α : Type} {x :α} [DecidableEq α] [Fintype α]
-  (F : IdealFamily α) (hx: x ∈ F.ground) (h_not_hyperedge : ¬ F.sets {x}) :
-  degree F.toSetFamily x = 1 :=
-  by
-    -- 定義に基づいて次数を計算する
-    unfold degree
-
-    -- x を含む部分集合のうち、hyperedge であるものをすべて考える
-    set  relevant_sets := Finset.filter (λ s => F.sets s ∧ x ∈ s) (Finset.powerset F.ground) with h_relevant_sets
-
-    -- relevant_sets には ground しか含まれていないことを示す
-    have h_relevant_sets : relevant_sets = {F.ground} := by
-      apply Finset.ext -- Finset の等式を証明
-      intros s
-      dsimp [relevant_sets]
-      simp only [Finset.mem_filter, Finset.mem_powerset]
-      constructor
-      -- s が relevant_sets に含まれている場合
-      · -- goal: s = F.ground
-        intro hs
-        by_contra h_s_ne_ground
-        have h_s_ne_ground' : s ≠ F.ground := by
-          intro h
-          apply h_s_ne_ground
-          rw [h]
-          subst h
-          simp_all only [Finset.Subset.refl, true_and, Finset.mem_singleton, not_true_eq_false, relevant_sets]
-        -- down_closed を使って {x} が hyperedge になる矛盾を導く
-        --sはF.groundでなく、F.sets sかつx∈sである。これらから、{x}がhyperedgeであることを導く。
-        have h_s_hyperedge : F.sets {x} := by
-          apply F.down_closed
-          simp_all
-          exact hs.2.1
-          simp_all only [Finset.mem_singleton, not_false_eq_true, ne_eq, Finset.singleton_subset_iff, relevant_sets]
-          simp_all only [Finset.mem_singleton, not_false_eq_true, ne_eq, Finset.singleton_subset_iff, relevant_sets]
-          --なぜかふたつ必要。
-        apply h_not_hyperedge
-        simp_all only [Finset.mem_singleton, relevant_sets]
-      · -- goal: s = F.ground → s ∈ {F.ground}
-        intro hs
-        simp_all only [Finset.mem_singleton, relevant_sets]
-        --rename_i α_1 inst inst_1 inst_2 inst_3 inst_4
-        subst hs
-        simp_all only [Finset.Subset.refl, true_and]
-        apply And.intro
-        have h1 : F.sets F.ground := by
-          apply F.has_ground
-        exact h1
-        trivial
-    simp_all only [eq_iff_iff, iff_true, Finset.card_singleton, relevant_sets]
