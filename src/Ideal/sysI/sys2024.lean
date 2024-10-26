@@ -1,7 +1,6 @@
 import LeanCopilot
 import Mathlib.Tactic.ByContra
 import Mathlib.Init.Data.Nat.Lemmas
---import Mathlib.Init.Data.Nat.Basic
 import Mathlib.Data.Real.Basic
 import Mathlib.Data.Set.Basic
 import Mathlib.Order.SymmDiff
@@ -42,7 +41,7 @@ example {A:Prop} {B:Prop} : A → (B → (A ∧ B)) :=
     exact ⟨hA, hB⟩
 
 
-  example {A B C D:Prop} : ((A → C) ∧ (B → D)) → ((A ∨ B) → (C ∨ D)):=
+example {A B C D:Prop} : ((A → C) ∧ (B → D)) → ((A ∨ B) → (C ∨ D)):=
   by
     intro hACBD --goal : (A ∨ B) → (C ∨ D).    仮定hACBDの内容は ((A → C) ∧ (B → D))
     intro hAB --goal : C ∨ D.  仮定hABの内容は、 (A ∨ B)
@@ -51,6 +50,14 @@ example {A:Prop} {B:Prop} : A → (B → (A ∧ B)) :=
       exact Or.inl (hACBD.left hA) -- goal (C ∨ D)の左側Cを示す。
     | inr hB => --右の場合。 hBにBが入る。
       exact Or.inr (hACBD.right hB) -- goal (C ∨ D)の右側Dを示す。
+
+--ラムダ式を使った場合
+example {A B C D : Prop}: ((A → C) ∧ (B → D)) → ((A ∨ B) → (C ∨ D)) :=
+  fun h =>
+    fun hab =>
+      hab.elim
+        (fun ha => Or.inl (h.left ha))
+        (fun hb => Or.inr (h.right hb))
 
 example {A:Prop} {B:Prop} {C:Prop} : (A ∨ B → C) → (( A → C) ∧ (B → C)) :=
   by
@@ -138,7 +145,7 @@ example {y : ℝ} : (∀(x : ℝ), x*x ≥ y*y) ↔ y = 0 :=
   by
     apply Iff.intro
     · intro h --goal : y ≥ 0
-      simp_all only [ge_iff_le, le_refl]
+      simp_all only [ge_iff_le]
       contrapose! h
       use 0
       simp_all only [mul_zero, mul_self_pos, ne_eq]
@@ -148,6 +155,23 @@ example {y : ℝ} : (∀(x : ℝ), x*x ≥ y*y) ↔ y = 0 :=
       subst h
       simp_all only [mul_zero, ge_iff_le]
       apply mul_self_nonneg
+
+example (y : ℝ) : (∀ x, x ^ 2 ≥ y ^ 2) ↔ y = 0 :=
+  Iff.intro
+    (fun h => by
+      -- h: ∀x, x² ≥ y²
+      -- 特にx = 0の場合、0 ≥ y² なので y² ≤ 0 となり y = 0
+     contrapose! h
+     use 0
+     simp_all only [ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow]
+     positivity
+      )
+    (fun h x =>
+      by
+        subst h       -- h: y = 0 を代入
+        simp_all only [ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow]
+        positivity
+    )
 
 -- P(x)とは書かずに P xと書く。
 example {P: α → Prop} {Q: α → Prop}: (∀ x : α, P x → Q x) → ((∀ x : α, P x) → (∀ x : α, Q x)) :=
@@ -325,7 +349,7 @@ example {α : Type} (A B C : Set α) : A ∩ (B ∪ C) = (A ∩ B) ∪ (A ∩ C)
           exact Or.inr ⟨hA, hC⟩
     · intro a --右から左。goal: x ∈ A ∧ x ∈ B ∨ x ∈ A ∧ x ∈ C
       cases a with
-      | inl h => simp_all only [true_or, and_self] 
+      | inl h => simp_all only [true_or, and_self]
       | inr h_1 => simp_all only [or_true, and_self]
 
 
@@ -896,4 +920,23 @@ example {A B C : Type} (f : A → B) (g : B → C)
   use a
   rw [Function.comp_apply, ha, hb]
 
-  
+-- 任意の型 X と Y を宣言します
+variable {X Y : Type}
+
+-- f: X → Y の写像を仮定します
+variable (f : X → Y)
+
+-- 同値関係を定義します: x ~ y は f(x) = f(y) とする
+def rel (x y : X) : Prop := f x = f y
+
+  -- intro を使った同値関係の証明
+example : Equivalence (rel f) :=
+by
+
+  constructor
+  · intro x
+    rfl
+  · intro x y a
+    exact a.symm
+  · intro x y z a a_1
+    exact a.trans a_1

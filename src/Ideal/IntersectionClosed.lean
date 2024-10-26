@@ -22,17 +22,6 @@ namespace Ideal
 
 variable {α : Type} [DecidableEq α] [Fintype α]
 
-
---structure SetFamily (U : Type) [DecidableEq U] [Fintype U] :=
---  (sets : Finset (Finset U)) -- Uの部分集合の有限集合
-
--- ideal集合族を定義 以下はもともとの定義なので消して良い。今はdownwardじゃなくて、down_closedになっている。
---structure IdealFamily (U : Type) [DecidableEq U] [Fintype U] extends SetFamily U:=
---  --(sets : Finset (Finset U)) -- Uの部分集合の有限集合
---  (has_univ : Finset.univ ∈ sets) -- 条件1: 全体集合を要素として持つ
---  (has_empty : (∅ : Finset U) ∈ sets) -- 条件1: 空集合を要素として持つ
---  (downward_closed : ∀ {s : Finset U}, s ∈ sets → s ≠ Finset.univ → ∀ {t : Finset U}, t ⊆ s → t ∈ sets) -- 条件2: 全体集合以外の要素に対しては、その任意の部分集合も要素になっている
-
 -- IdealFamily が冪集合族かどうかをチェックする関数
 noncomputable def isPowerSet {α : Type} [DecidableEq α] [Fintype α] (family : IdealFamily α) : Prop :=
    (Finset.powerset family.ground).toSet ⊆ {H : Finset α | family.toSetFamily.sets H}
@@ -55,20 +44,6 @@ lemma inter_univ_subset_right {α : Type} [DecidableEq α] [Fintype α] (t : Fin
     intros x hx
     obtain ⟨_, hx_t⟩ := Finset.mem_inter.1 hx
     exact hx_t
-
-/-
--- 補題: Finset.univ ∩ t = t を証明
-example {α : Type} [DecidableEq α] [Fintype α] (t : Finset α)(s : Finset α)(hst: t ⊆ s) :
-  s ∩ t = t := by
-  ext x
-  constructor
-  -- x ∈ Finset.univ ∩ t → x ∈ t
-  · intro h
-    exact (Finset.mem_inter.mp h).right
-  -- x ∈ t → x ∈ Finset.univ ∩ t
-  · intro h
-    exact Finset.mem_inter.mpr ⟨Finset.mem_univ x, h⟩
--/
 
 --#check @isIntersectionClosedFamily
 -- IdealFamilyがIntersectionClosedFamilyであることの定理
@@ -119,33 +94,6 @@ instance : Fintype {x // x ∈ example_U} :=
   complete := λ x => by simp
 }
 
-/-
--- IdealFamily の具体例を定義 setsの参照がうまくいかないのでコメントアウト
-def example_ideal_family : IdealFamily {x // x ∈ example_U} where
-  sets := λ s => s = Finset.univ ∨ s = ∅
-  empty_mem := by
-    have h : example_ideal_family.sets = (λ s => s = Finset.univ ∨ s = ∅) := by
-      simp_all
-    --empty_memのなかからsetの定義にアクセスできない。
-
-  univ_mem := by
-    simp [sets]
-    left
-    rfl
-  down_closed := by --全体集合と空集合のみだから動くだけ。
-    intros s hs hsu t hts
-    simp at *
-    cases hs with
-    | inl h => contradiction
-    | inr h =>
-      rw [h] at hts
-      rw [Finset.subset_empty.mp hts]
-      simp
--/
-
-
-
-
 -- IdealFamily の具体例の sets を定義
 def example_ideal_family2_sets : Finset (Finset {x // x ∈ example_U}) :=
   { example_U.attach,
@@ -171,7 +119,7 @@ by
   exact Finset.mem_singleton_self _
 
 def isAbundant {α : Type} [DecidableEq α] [Fintype α] (family : SetFamily α) (x : α) : Prop :=
-  let hyperedges := Finset.filter (λ A => family.sets A = true) (all_subsets family.ground)
+  let hyperedges := Finset.filter (λ A => family.sets A = true) (family.ground.powerset)
   let countContainsX := (hyperedges.filter (λ e => x ∈ e)).card
   let countNotContainsX := (hyperedges.filter (λ e => x ∉ e)).card
   countContainsX > countNotContainsX
@@ -188,8 +136,8 @@ def existsRareVertex {α : Type} [DecidableEq α] [Fintype α] (family : IdealFa
 def pair_superior {α : Type} [DecidableEq α] [Fintype α]
   (F : SetFamily α) (x y : α) : Prop :=
   let pair := ({x, y} : Finset α)
-  let contains_pair := (all_subsets F.ground).filter (λ A => F.sets A = true ∧ pair ⊆ A)
-  let disjoint_pair := (all_subsets F.ground).filter (λ B => F.sets B = true ∧ {x, y} ∩ B = ∅)
+  let contains_pair := (F.ground.powerset).filter (λ A => F.sets A = true ∧ pair ⊆ A)
+  let disjoint_pair := (F.ground.powerset).filter (λ B => F.sets B = true ∧ {x, y} ∩ B = ∅)
   contains_pair.card > disjoint_pair.card
 
 -- 使用例
@@ -226,21 +174,6 @@ lemma Finset.card_ne_zero_iff_nonempty (s : Finset α) : s.card ≠ 0 ↔ s ≠ 
     · intro h
       contrapose! h
       exact Finset.card_eq_zero.mp h
-/-
--- 最大要素の存在を示す補題 使ってない？
-lemma exists_max_card {α : Type} [DecidableEq α] [Fintype α] (S : Finset (Finset α))(h : S ≠ ∅):
-  ∃ T ∈ S, T.card = S.sup (λ s => s.card) :=
-by
-  rw [←Finset.card_ne_zero_iff_nonempty] at h
-  rw [Finset.card_ne_zero] at h
-  have hh := Finset.exists_mem_eq_sup S h (λ s => s.card)
-  match hh with
-  | ⟨T, hT⟩ =>
-    use T
-    constructor
-    exact hT.left
-    exact hT.right.symm
--/
 
 --variable {α : Type} [DecidableEq α] [Fintype α]
 

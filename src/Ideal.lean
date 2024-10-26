@@ -1,12 +1,12 @@
---import Mathematics.BasicDefinitions
---import Mathematics.BasicLemmas
---import Mathematics.IdealTrace
---import Mathematics.IdealDeletion
+--import Ideal.BasicDefinitions
+--import Ideal.BasicLemmas
+--import Ideal.IdealTrace
+--import Ideal.IdealDeletion
 
---export Mathematics.BasicDefinitions (*)
---export Mathematics.BasicLemmas (*)
---export Mathematics.IdealTrace (trace)
---export Mathematics.IdealDeletion (deletion)
---export Mathematics.IdealDeletion (idealdeletion)
---export Mathematics.IdealDeletion (contraction)
+--export Ideal.BasicDefinitions (*)
+--export Ideal.BasicLemmas (*)
+--export Ideal.IdealTrace (trace)
+--export Ideal.IdealDeletion (deletion)
+--export Ideal.IdealDeletion (idealdeletion)
+--export Ideal.IdealDeletion (contraction)
 --lake build
