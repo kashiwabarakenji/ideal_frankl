@@ -13,7 +13,7 @@ import Ideal.IdealDegreeOne
 import Ideal.IdealFin
 import LeanCopilot
 
---set_option maxHeartbeats 500000 --コメントアウトするとsimp_allなどでエラー。原因追及が必要。
+set_option maxHeartbeats 300000 --コメントアウトするとnumber_of_hyperedgesなどでエラー。原因追及が必要。
 --set_option trace.Meta.Tactic.simp.rewrite true
 
 namespace Ideal
@@ -296,7 +296,7 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
         | succ k ih =>
           rw [pow_succ 2 k]
           simp_all only [ge_iff_le, implies_true, le_add_iff_nonneg_left, zero_le]
-          have k_ge_0 : k ≥ 0 := Nat.zero_le k
+          --have _ : k ≥ 0 := Nat.zero_le k
 
           by_cases h1: k = 0
           · -- k = 0 の場合
@@ -319,52 +319,6 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
                 simp_all only [imp_self, ge_iff_le, zero_le, add_le_add_iff_left]
               _ ≥ (k + 1) + 1 := by
                 simp_all only [imp_self, ge_iff_le, zero_le, add_le_add_iff_left, Nat.one_le_ofNat]
-
-
-/-
-      have basic_ineq (n : ℕ) (h : 1 ≤ n) : 2^n≥n+1 :=
-        by
-          induction n with
-          | zero =>
-            -- 基底ケース: n = 0 は不適
-            by_contra _
-            simp_all only [nonpos_iff_eq_zero, one_ne_zero]
-
-          | succ k ih =>
-          have k_geq_1 : k ≥ 0 := by
-              simp_all only [ge_iff_le, le_add_iff_nonneg_left, zero_le]
-
-          rw [pow_succ 2 k]
-
-          by_cases h1: k = 0
-          case pos =>
-            rw [h1]
-            simp_all only [Nat.one_pow, Nat.one_add]
-            omega
-          case neg =>
-          have hh1: k ≥ 1 := by
-            simp_all only [ge_iff_le]
-            omega
-              -- 2^(k + 1) = 2 * 2^k
-          have : 2 * 2^k ≥ 2 * (k + 1) := mul_le_mul_of_nonneg_left (ih hh1) (by norm_num)
-
-          -- 2 * (k + 1) = k + 1 + k + 1 = 2k + 2 ≥ k + 2  これは k ≥ 0 で常に成り立つ
-          have : 2 * (k + 1) ≥ k + 2 := by
-           calc
-             2 * (k + 1) = k + 1 + k + 1 := by ring
-             _ = (k + k) + (1 + 1) := by
-               simp_all only [ge_iff_le, true_implies, le_add_iff_nonneg_left, zero_le, Nat.ofNat_pos, mul_le_mul_left,
-               Nat.reduceAdd, add_left_inj]
-               omega
-             _ ≥ k + 2  := by
-                simp_all only [ge_iff_le, le_add_iff_nonneg_left, zero_le]
-                omega
-          simp_all only [ge_iff_le, true_implies, le_add_iff_nonneg_left, zero_le, Nat.ofNat_pos, mul_le_mul_left]
-          omega
-      -/
-
-
-
 
       --以下はゴールと同じ。帰納法で示す必要あり。nがゼロの時はおかしくなるので一つずらしたほうがいいかも。
       --have inequality_calc (n : ℕ) : (n * 2^(n - 1) + (n + 1)) * 2 ≤ (2^n + 1) * (n + 1) := by
@@ -838,6 +792,7 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
         --基本的な変数を文字でおいて整理する。--ゴールとresultを[idealDelFn]を使って書き換える。
         have subs1: idealDelF = idealdeletion F v v_in_ground ground_ge_two:= by
           rfl
+        --ここでheartbeatがかかる。
         have subs2: number_of_hyperedges idealDelF.toSetFamily = number_of_hyperedges (idealdeletion F v v_in_ground ground_ge_two).toSetFamily := by
            rfl
         have subs3: total_size_of_hyperedges idealDelF.toSetFamily = total_size_of_hyperedges (idealdeletion F v v_in_ground ground_ge_two).toSetFamily := by
