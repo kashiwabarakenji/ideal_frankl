@@ -65,6 +65,8 @@ def P (x:Nat) : Prop := x ≥ 2  ∧ ∀ (F: IdealFamily (Fin x)), F.ground.card
 
 ## Ideal集合族のマイナー操作
 
+ideal集合族から1点台集合が小さいideal集合族を作る操作には、deletionとcontractionとtraceの3種類がある。
+
 集合族に対して、頂点vによるcontractionは、vを含むhyperedge Hを動かして、H-vを集めた集合族である。
 {v}がhyperedgeであることに、Ideal集合族のcontractionはまたIdeal集合族になる。
 
@@ -153,29 +155,31 @@ theorem hyperedge_average_none {α : Type} [DecidableEq α] [Fintype α]
   + 2*((degree F.toSetFamily x):ℤ) - ((number_of_hyperedges F.toSetFamily):ℤ) + 1 
 ```
 
-### {v}がhyperedgeでないときの計算。
-{v}がhyperedgeでないidealは、vの次数が1になる。このときは、vをtraceした集合族がideal集合族になる。
+### {v}がhyperedgeでないときの計算
+{v}がhyperedgeでないideal集合族は、vの次数が1になる。このときは、vをtraceした集合族がideal集合族になることが示せる。
 もともとの集合族のhyperedge数とtraceした集合族のhyperedge数の関係が、ground-vがhyperedgeの場合と、そうでない場合でそれぞれで計算できる。また、もともとの集合族のhyperedgeの大きさの和と、traceした集合族のhyperedgeの大きさの和の関係が、ground-vがhyperedgeの場合と、そうでない場合でそれぞれで計算できる。
 
-そもそもground-vがhyperedgeで、{v}がhyperedgeでない場合は、集合族がnの大きさだけで決まるので、標準化次数和が計算できて、非負であることも確認できる。(IdealDegreeOne.lean)
+そもそもground-vがhyperedgeで、{v}がhyperedgeでない場合は、Ideal集合族がnの大きさだけで決まるので、標準化次数和が計算できて、非負であることも確認できる。(IdealDegreeOne.lean)
 
-{v}がhyperedgeでなくて、ground-vがhyperedgeでないときを考えると、IdealDegOneMain.leanにあるように。vをtraceした集合族は、hyperedge数は元の集合族と変わらずに、hyperedgeの大きさの和は元の集合族に比べて1少ない。帰納法の仮定より、traceした集合族で、標準化次数和が非負であることより、元の集合族でも標準化次数和が非負であることがわかる。
+{v}がhyperedgeでなくて、ground-vがhyperedgeでないときのケースは、IdealDegOneMain.leanにて議論されている。vをtraceした集合族は、hyperedge数は元の集合族と変わらずに、hyperedgeの大きさの和は元の集合族に比べて1少ない。帰納法の仮定より、traceした集合族で、標準化次数和が非負であることより、元の集合族でも標準化次数和が非負であることがわかる。
 
 ## leanのファイル構成
 
-BasicDefinitions.lean  基本的な定義
-BasicLemmas.lean  基本的な補題
+Idealフォルダにleanファイルがある。
 
-IdealDegOneMain.lean {v}がhyperedgeでないときのメイン
-IdealDegreeOne.lean {v}がhyperedgeでないときの補題。さらにground-vがhyperedgeである場合も含む。
-IdealDeletion.lean  deletionとcontractionに関する定義や補題
-IdealTrace.lean  traceに関する定義や補題
-IdealNumbers.lean {v}がhyperedgeであるケースのhyperedgeの数に関する議論
-IdealSum.lean {v}がhyperedgeであるケースのhyperedgeの大きさの和に関する議論
-IdealSumBasic.lean IdealSumで使う補題を集めたもの。
-IdealRare.lean  Ideal集合族がrareな頂点を持つことを示している。
-IdealFin.lean 帰納法で(Fin n)と(Fin (n+1))を使ったのでその変換
-IntersectionClosed.lean 今回示した定理には直接関係ないが、Ideal集合族が共通部分で閉じていることの証明。
+- BasicDefinitions.lean  基本的な定義
+- BasicLemmas.lean  基本的な補題
+
+- IdealDegOneMain.lean {v}がhyperedgeでないときのメイン
+- IdealDegreeOne.lean {v}がhyperedgeでないときの補題。さらにground-vがhyperedgeである場合も含む。
+- IdealDeletion.lean  deletionとcontractionに関する定義や補題
+- IdealTrace.lean  traceに関する定義や補題
+- IdealNumbers.lean {v}がhyperedgeであるケースのhyperedgeの数に関する議論
+- IdealSum.lean {v}がhyperedgeであるケースのhyperedgeの大きさの和に関する議論
+- IdealSumBasic.lean IdealSumで使う補題を集めたもの。
+- IdealRare.lean  Ideal集合族がrareな頂点を持つことを示している。
+- IdealFin.lean 帰納法で(Fin n)と(Fin (n+1))を使ったのでその変換
+- IntersectionClosed.lean 今回示した定理には直接関係ないが、Ideal集合族が共通部分で閉じていることの証明。
 
 ## leanの環境
 
