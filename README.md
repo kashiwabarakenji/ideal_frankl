@@ -190,4 +190,13 @@ importでもLean Copilotを読み込んでいる。Lean Copilotに対応して�
 ```
 git clone https://github.com/kashiwabarakenji/ideal_frankl.git
 ```
-で取り込めるはず。
+でローカルなマシンに取り込むことができる。すでにelan等でleanがインストールされている環境であれば、
+```
+cd ideal_frankl
+elan override set leanprover/lean4:v4.11.0
+lake update
+lake build
+```
+などのあとに、Lean 4の機能拡張がインストールされたVisual Studio Codeでideal_franklのフォルダを開けばよい。
+適宜、start leanfileのボタンを押すとよい。
+
