@@ -13,7 +13,7 @@ import Ideal.IdealDegreeOne
 import Ideal.IdealFin
 import LeanCopilot
 
-set_option maxHeartbeats 300000 --コメントアウトするとnumber_of_hyperedgesなどでエラー。原因追及が必要。
+--set_option maxHeartbeats 300000 --コメントアウトするとnumber_of_hyperedgesなどでエラー。原因追及が必要。
 --set_option trace.Meta.Tactic.simp.rewrite true
 
 namespace Ideal
@@ -97,7 +97,7 @@ lemma ineq_lem (k : ℕ) :
 
 def P (x:Nat) : Prop := x ≥ 2  ∧ ∀ (F: IdealFamily (Fin x)), F.ground.card = x → normalized_degree_sum F.toSetFamily ≤ 0
 
-
+-- heartbeas問題に対応するために、証明を分離した。この部分は解決したが、他の部分でエラーになっている。
 lemma total_eq_lem (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in_ground : v ∈ F.ground)(ground_minus_v_none : ¬F.sets (F.ground \ {v})) (ground_ge_two : F.ground.card ≥ 2) (ground_card: F.ground.card = n + 1) (h_ind: P n): ∑ x ∈ Finset.filter (fun s => F.sets s ∧ v ∉ s ∨ s = F.ground \ {v}) (F.ground \ {v}).powerset, x.card + 1 =
   ∑ x ∈ Finset.filter (fun s => F.sets s ∧ v ∉ s ∨ s = F.ground.erase v) (F.ground.erase v).powerset,
     if x = F.ground.erase v then x.card + 1 else x.card :=
@@ -269,6 +269,78 @@ lemma total_eq_lem (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
     rw [sum_part1]
     rw [←eq_lem2]
     rfl
+
+--この部分をメインの証明から分離。分離することでheartbeatsの問題を解決した。
+lemma induction_assum_lem (n : Nat) (F: IdealFamily (Fin (n+1))) (idealDelF : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in_ground : v ∈ F.ground) (n_ge_one: n >= 1) (v_notin_minor_ground: v ∉ idealDelF.ground) (ground_ge_two : F.ground.card ≥ 2) (ground_card: F.ground.card = n + 1) (h_ind: P n):
+  idealDelF = idealdeletion F v v_in_ground ground_ge_two → (total_size_of_hyperedges  idealDelF.toSetFamily + 1) * 2 ≤
+             (number_of_hyperedges idealDelF.toSetFamily) * F.ground.card := by
+    intro h
+    have h_assum_case: idealDelF.ground.card = n := by
+      subst h
+      simp [idealdeletion]
+      simp_all only [ge_iff_le, Nat.reduceLeDiff, Finset.card_erase_of_mem, add_tsub_cancel_right]
+    have h_assum_card0: idealDelF.ground.card = F.ground.card -1 := by
+      rw [h_assum_case]
+      rw [ground_card]
+      omega
+    have h_assum_card1: idealDelF.ground.card ≥ 1 := by
+      omega
+
+    let idealDelFn := @IdealFamily.deletionToN (Fin (n + 1)) n n_ge_one idealDelF v v_notin_minor_ground h_assum_card1
+    have minor_ground_card: idealDelFn.ground.card = n := by
+      have subs: idealDelFn = @IdealFamily.deletionToN (Fin (n + 1)) n n_ge_one idealDelF v v_notin_minor_ground h_assum_card1 := by
+        rfl
+      rw [subs]
+
+      have eqset: idealDelFn.ground = Finset.image (finDrop n_ge_one v) idealDelF.ground := by
+        rw [subs]
+        dsimp [IdealFamily.deletionToN]
+      have eqcard: idealDelFn.ground.card = idealDelF.ground.card := by
+        rw [eqset]
+        --lemma finDropCardEq {n : ℕ} (n_ge_one : n ≥ 1) (v : Fin (n + 1)) (s : Finset (Fin (n+1))) (hvx: v ∉ s)
+        exact finDropCardEq n_ge_one v idealDelF.ground v_notin_minor_ground
+      rw [eqcard]
+      have eqcard2: idealDelF.ground.card = n := by
+        subst h
+        simp_all only [add_tsub_cancel_right, idealDelFn]
+      exact eqcard2
+
+    let result := (h_ind.2 idealDelFn) minor_ground_card
+
+    dsimp [normalized_degree_sum] at result
+    rw [minor_ground_card] at result
+    --deletonToNをしても、total_sizeもnumber_of_hyperedgesも変わらないという定理を最後に適用する必要がある。
+    --lemma IdealFamily.deletionToN_number {n : ℕ} (n_ge_one : n ≥ 1) (F : IdealFamily (Fin (n + 1))) (v : Fin (n + 1)) (hvf : v ∉ F.ground)
+    --(ground_ge_two : F.ground.card ≥ 1) : number_of_hyperedges (@IdealFamily.deletionToN (Fin n) n n_ge_one F v hvf ground_ge_two).toSetFamily = number_of_hyperedges F.toSetFamily
+    have eqcard_number: number_of_hyperedges idealDelF.toSetFamily = number_of_hyperedges idealDelFn.toSetFamily := by
+      have minor_ground_card_ge1: idealDelF.ground.card ≥ 1 := by
+        subst h
+        simp_all only [add_tsub_cancel_right, tsub_le_iff_right, zero_add, ge_iff_le, idealDelFn]
+      exact Eq.symm (IdealFamily.deletionToN_number n_ge_one idealDelF v v_notin_minor_ground minor_ground_card_ge1)
+    have eqcard_total: total_size_of_hyperedges idealDelF.toSetFamily = total_size_of_hyperedges idealDelFn.toSetFamily := by
+      exact Eq.symm (deletion_total n idealDelF n_ge_one v v_notin_minor_ground h_assum_card1)
+    rw [←eqcard_number] at result
+    rw [←eqcard_total] at result
+
+    rw [ground_card]
+    rw [h]
+    --goal (total_size_of_hyperedges (idealdeletion F v v_in_ground ground_ge_two).toSetFamily + 1) * 2 ≤
+    --  number_of_hyperedges (idealdeletion F v v_in_ground ground_ge_two).toSetFamily * (n + 1)
+    --ここでheartbeatがかかる。文字を置くとか、補題として分割するとか対処のしようはあるかも。
+    have subs2: number_of_hyperedges idealDelF.toSetFamily = number_of_hyperedges (idealdeletion F v v_in_ground ground_ge_two).toSetFamily := by
+      rw [h]
+    have subs3: total_size_of_hyperedges idealDelF.toSetFamily = total_size_of_hyperedges (idealdeletion F v v_in_ground ground_ge_two).toSetFamily := by
+      rw [h]
+    simp
+    rw [←subs2]
+    rw [←subs3]
+    --goal (total_size_of_hyperedges idealDelF.toSetFamily + 1) * 2 ≤ number_of_hyperedges idealDelF.toSetFamily * (n + 1)
+
+    have eqlem2: 2 ≤ number_of_hyperedges idealDelF.toSetFamily:= by
+      dsimp [number_of_hyperedges]
+      exact hyperedges_card_ge_two idealDelF h_assum_card1
+
+    linarith
 
 theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in_ground : v ∈ F.ground) (singleton_hyperedge_none : ¬ F.sets {v}) (ground_ge_two : F.ground.card ≥ 2) (ground_card: F.ground.card = n + 1) (h_ind: P n): normalized_degree_sum F.toSetFamily ≤ 0 :=
   by
@@ -586,7 +658,7 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
           · case neg =>
             simp_all only [ge_iff_le, not_false_eq_true, Finset.erase_eq_of_not_mem, idealDelF, i, hi]
 
-        --示すものが違う気がする。
+
       have i_surj : ∀ (ss:Finset (Fin (n+1))), ss ∈ range → ∃ (s:Finset (Fin (n+1))), ∃ (hs : s ∈ domain), i s hs = ss := by
         intro ss hss
         have hv_notin_is: v ∉ ss:= by
@@ -724,7 +796,10 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
       rw [total_eq]
 
       --let tsoh := total_size_of_hyperedges idealDelF.toSetFamily
+      let induction_assum := induction_assum_lem n F idealDelF v v_in_ground n_ge_one v_notin_minor_ground ground_ge_two ground_card h_ind
+      /- 以下を独立させたい。induction_assume_lemとして独立させたので、消して良い。
       let noh := number_of_hyperedges idealDelF.toSetFamily
+
       have induction_assum: (total_size_of_hyperedges idealDelF.toSetFamily + 1) * 2 ≤
              (number_of_hyperedges idealDelF.toSetFamily) * F.ground.card := by
         have h_assum_case: idealDelF.ground.card = n := by
@@ -792,7 +867,7 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
         --基本的な変数を文字でおいて整理する。--ゴールとresultを[idealDelFn]を使って書き換える。
         have subs1: idealDelF = idealdeletion F v v_in_ground ground_ge_two:= by
           rfl
-        --ここでheartbeatがかかる。
+        --ここでheartbeatがかかる。文字を置くとか、補題として分割するとか対処のしようはあるかも。
         have subs2: number_of_hyperedges idealDelF.toSetFamily = number_of_hyperedges (idealdeletion F v v_in_ground ground_ge_two).toSetFamily := by
            rfl
         have subs3: total_size_of_hyperedges idealDelF.toSetFamily = total_size_of_hyperedges (idealdeletion F v v_in_ground ground_ge_two).toSetFamily := by
@@ -805,19 +880,22 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
         rw [←subs3]
         rw [ground_card]
 
-        have eqlem2: 2 ≤ noh := by
-          dsimp [noh]
+        have eqlem2: 2 ≤ number_of_hyperedges idealDelF.toSetFamily:= by
           dsimp [number_of_hyperedges]
           exact hyperedges_card_ge_two idealDelF h_assum_card1
 
         linarith
+        -/
       rw [ground_card] at induction_assum ⊢
       ring_nf
       ring_nf at induction_assum
       --induction_assum : 2 + total_size_of_hyperedges idealDelF.toSetFamily * 2 ≤
       --number_of_hyperedges idealDelF.toSetFamily + number_of_hyperedges idealDelF.toSetFamily * n
-      simp_all --ないとエラーになる。
-
+      --simp_all --ないとエラーになる。
+      simp at induction_assum
+      --induction_assum: 2 + total_size_of_hyperedges idealDelF.toSetFamily * 2 ≤ number_of_hyperedges idealDelF.toSetFamily + number_of_hyperedges idealDelF.toSetFamily * n
+      --goal ↑(1 + total_size_of_hyperedges idealDelF.toSetFamily) * 2 ≤ ↑(number_of_hyperedges idealDelF.toSetFamily) * ↑(1 + n)
+      simp
       linarith
 
 end Ideal
