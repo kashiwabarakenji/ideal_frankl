@@ -34,4 +34,6 @@ src/test/tmp.lean
 src/misc/Math.lean
 src/misc/MyModule.lean
 src/test/finset_example.lean
-src/Ideal.lean
+src/Ideal/.DS_Store
+src/.DS_Store
+.DS_Store
