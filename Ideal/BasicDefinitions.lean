@@ -46,7 +46,7 @@ def has_empty (sf : SetFamily α) : Prop :=
 def has_univ (sf : SetFamily α) : Prop :=
   sf.sets Finset.univ
 
--- セットが交差に対して閉じていることを定義
+-- hyperedgeがが共通部分に対して閉じていることを定義
 def is_closed_under_intersection (sf : SetFamily α) : Prop :=
   ∀ (A B : Finset α), sf.sets A → sf.sets B → sf.sets (A ∩ B)
 

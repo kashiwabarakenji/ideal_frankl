@@ -31,6 +31,14 @@ structure SetFamily (α : Type) [DecidableEq α] [Fintype α] :=
   (nonempty_ground : ground.Nonempty)
   [fintype_ground : Fintype ground]
 
+-- hyperedgeがが共通部分に対して閉じていることを定義
+def is_closed_under_intersection (sf : SetFamily α) : Prop :=
+  ∀ (A B : Finset α), sf.sets A → sf.sets B → sf.sets (A ∩ B)
+
+-- 頂点がレアであることを定義
+def is_rare (sf : SetFamily α) (v : α)  [DecidablePred sf.sets]  : Prop :=
+  2 * degree sf v ≤ number_of_hyperedges sf
+
 --イデアル集合族
 structure IdealFamily (α : Type) [DecidableEq α] [Fintype α] extends SetFamily α :=
 (has_empty : sets ∅)  -- 空集合が含まれる
@@ -77,11 +85,12 @@ ideal集合族から1点台集合が小さいideal集合族を作る操作には
 
 ## 定理の証明
 
-Ideal集合族が平均rareになるという言明の証明の概略を述べる。
+Ideal集合族は必ず、平均rareになるという言明(P)がこの研究の主定理となる。
+この定理の証明の概略を述べる。
 
 基本的には、台集合の大きさに関する帰納法を用いる。
 
-ベースケースとしては、n = 2の場合を証明した。IdealMain.leanにそのbasecaseの言明(theorem basecase)がある。
+ベースケースとしては、n = 2の場合を証明した(P 2)。IdealMain.leanにそのbasecaseの言明(theorem basecase)がある。
 
 以下は、帰納的ステップの証明である。つまり、台集合がnの場合に言明が成り立つことを仮定する。
 この時に、台集合の大きさがn+1のIdeal集合族に対して、言明が成り立つことを証明する。つまり、標準化次数和((hyperedgeの大きさの合計)*2-(台集合の大きさ)*(hyperedge数))が負であることを証明すれば良い。(IdealMain.leanのinductive_step)
@@ -199,4 +208,11 @@ lake build
 ```
 などのあとに、Lean 4の機能拡張がインストールされたVisual Studio Codeでideal_franklのフォルダを開けばよい。
 適宜、start leanfileのボタンを押すとよい。
+
+## TODO
+
+- 平均rareであれば、rareな頂点が証明することのleanによる証明を作成する。
+- READMEにおいて、自然言語による言明の証明を完結しているものにする。
+- 証明のリファクタリングをする。変数名をわかりやすいものにする、コメントを整理するなど。
+- READMEなどを英語にする。
 
