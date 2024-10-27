@@ -13,9 +13,9 @@ package Ideal {
 }
 @[default_target]
 lean_lib «Ideal» where
-  --roots := #[`Ideal.BasicDefinitions, `Ideal.BasicLemmas, `Ideal]
-  roots:= #[`Ideal] --`Ideal.BasicDefinitions, `Ideal.BasicLemmas, `Ideal.IdealTrace]
-  srcDir := "src"
+  --もともとの設定は以下で、src/Idealの下にファイルが置かれていた。
+  --roots:= #[`Ideal]
+  --srcDir := "src"
 require mathlib from git
   "https://github.com/leanprover-community/mathlib4.git"  @ "v4.11.0" -- "v4.8.0"
 require LeanCopilot from git
