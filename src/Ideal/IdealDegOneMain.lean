@@ -13,7 +13,7 @@ import Ideal.IdealDegreeOne
 import Ideal.IdealFin
 import LeanCopilot
 
-set_option maxHeartbeats 500000 --コメントアウトするとsimp_allなどでエラー。原因追及が必要。
+--set_option maxHeartbeats 500000 --コメントアウトするとsimp_allなどでエラー。原因追及が必要。
 --set_option trace.Meta.Tactic.simp.rewrite true
 
 namespace Ideal
@@ -98,7 +98,177 @@ lemma ineq_lem (k : ℕ) :
 def P (x:Nat) : Prop := x ≥ 2  ∧ ∀ (F: IdealFamily (Fin x)), F.ground.card = x → normalized_degree_sum F.toSetFamily ≤ 0
 
 
+lemma total_eq_lem (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in_ground : v ∈ F.ground)(ground_minus_v_none : ¬F.sets (F.ground \ {v})) (ground_ge_two : F.ground.card ≥ 2) (ground_card: F.ground.card = n + 1) (h_ind: P n): ∑ x ∈ Finset.filter (fun s => F.sets s ∧ v ∉ s ∨ s = F.ground \ {v}) (F.ground \ {v}).powerset, x.card + 1 =
+  ∑ x ∈ Finset.filter (fun s => F.sets s ∧ v ∉ s ∨ s = F.ground.erase v) (F.ground.erase v).powerset,
+    if x = F.ground.erase v then x.card + 1 else x.card :=
+  by
+    have hv_equal: F.ground.erase v = F.ground \ {v} := by
+      exact Finset.erase_eq F.ground v
+    let gg := λ (s:Finset (Fin (n+1))) => if s = F.ground.erase v then s.card + 1 else s.card
 
+    have lem_prop:∀ (s:Finset (Fin (n+1))), s ∈ (F.ground.erase v).powerset → ¬ ((F.sets s ∧ v ∉ s) ∧ s = F.ground.erase v) := by
+      intro s _
+      intro h
+
+      obtain ⟨left, right⟩ := h
+      rw [right] at left
+      let left1 := left.1
+
+      rw [hv_equal] at left1
+      -- exact ground_minus_v_none left1
+      -- Define or import the missing lemma or function here
+      -- For now, we will assume it is a lemma that states ¬F.sets (F.ground \ {v})
+      subst right
+      simp_all only [not_true_eq_false]
+
+
+    let leftset := Finset.filter (fun s => F.sets s ∧ v ∉ s) (F.ground.erase v).powerset
+    let rightset := Finset.filter (fun s => s = F.ground.erase v) (F.ground.erase v).powerset
+
+    have disjoint: leftset ∩ rightset = ∅ := by
+      dsimp [leftset, rightset]
+      rw [Finset.eq_empty_iff_forall_not_mem]
+      by_contra h_contra
+      rw [not_forall] at h_contra
+      push_neg at h_contra
+      obtain ⟨s, hs⟩ := h_contra
+      rw [Finset.mem_inter] at hs
+      rw [Finset.mem_filter] at hs
+      rw [Finset.mem_filter] at hs
+      rw [Finset.mem_powerset] at hs
+      have sg: s = F.ground.erase v := by
+        simp_all only [hv_equal]
+        --simp_all only [ge_iff_le]
+      have sgs: F.sets s := by
+        subst sg
+        simp_all only [ge_iff_le, Finset.mem_powerset, not_and, and_imp, subset_refl, true_and,
+          and_self, and_true]
+      rw [sg] at sgs
+      rw [hv_equal] at sgs
+      exact ground_minus_v_none sgs
+
+    have disjoint2: ∀ (s:Finset (Fin (n+1))), s ∈ (F.ground.erase v).powerset → ¬ ((F.sets s ∧ v ∉ s) ∧ s = F.ground.erase v) := by
+      intro s _
+      intro h
+      obtain ⟨left, right⟩ := h
+      rw [right] at left
+      let left1 := left.1
+      rw [hv_equal] at left1
+      contradiction
+
+    have sum_lem:  (Finset.filter (fun s => F.sets s ∧ v ∉ s ∨ s = F.ground.erase v) (F.ground.erase v).powerset).sum gg
+    = (Finset.filter (fun s => F.sets s ∧ v ∉ s) (F.ground.erase v).powerset).sum gg +  ( Finset.filter (fun s =>s = F.ground.erase v) (F.ground.erase v).powerset).sum gg:= by
+      exact filter_sum_func (F.ground.erase v).powerset gg lem_prop
+    rw [←hv_equal]
+    rw [sum_lem]
+
+    rw [filter_sum  (λ s => (F.sets s ∧ v ∉ s)) (λ s => s = F.ground.erase v) (F.ground.erase v).powerset disjoint2]
+
+    dsimp [gg]
+    simp_all only [Finset.mem_filter, Finset.mem_powerset, and_self, Finset.mem_erase, ne_eq, not_true_eq_false,
+      false_and, not_false_eq_true, and_true, and_imp, subset_refl, exists_prop, Finset.singleton_subset_iff,
+      Finset.sdiff_subset]
+
+    have sum_part1: ∑ x ∈ Finset.filter (fun s => F.sets s ∧ v ∉ s) (F.ground \ {v}).powerset, x.card = (∑ x ∈ Finset.filter (fun s => F.sets s ∧ v ∉ s) (F.ground \ {v}).powerset,
+      if x = F.ground \ {v} then (F.ground \ {v}).card + 1 else x.card) := by
+    --not F.sets(F.ground \ {v})なので、ifが満たされることはない。
+      apply Finset.sum_congr rfl
+      intro x hx
+      have hx_filtered := Finset.mem_filter.mp hx
+      by_cases hx_eq : x = F.ground \ {v}
+      · case pos =>
+        rw [hx_eq]
+        simp
+        rw [hx_eq] at hx_filtered
+        have x_card: x.card = (F.ground \ {v}).card := by
+          subst hx_eq
+          simp_all only [ge_iff_le, Finset.mem_filter, Finset.mem_powerset, Finset.sdiff_subset, and_self,
+            not_true_eq_false]
+        subst hx_eq
+        simp_all only [ge_iff_le, Finset.mem_filter, Finset.mem_powerset, Finset.sdiff_subset, and_self,
+          not_true_eq_false]
+      · case neg =>
+        --x.card = if x = F.ground \ {v} then (F.ground \ {v}).card + 1 else x.card
+        simp [hx_eq]
+
+    have sum_part2: ∑ x ∈ (Finset.filter (fun s => s = F.ground.erase v) (F.ground.erase v).powerset), x.card = F.ground.card - 1 := by
+      have h_filter : Finset.filter (λ s => s = F.ground.erase v) (F.ground.erase v).powerset = {F.ground.erase v} :=
+        by
+          ext s
+          simp [Finset.mem_powerset, Finset.mem_filter]
+          rw [Finset.subset_iff]
+          intro hh
+          intro x hx
+          rw [Finset.mem_erase]
+          constructor
+          · rw [hh] at hx
+            rw [Finset.mem_erase] at hx
+            exact hx.1
+          · rw [hh] at hx
+            rw [Finset.mem_erase] at hx
+            exact hx.2
+      rw [h_filter]
+      rw [Finset.sum_singleton]
+      exact Finset.card_erase_of_mem v_in_ground
+
+    have sum_part3: ∑ x ∈ (Finset.filter (fun s => s = F.ground) (F.ground.powerset)), x.card = F.ground.card := by
+      have h_filter : Finset.filter (λ s => s = F.ground) (F.ground.powerset) = {F.ground} :=
+        by
+          ext s
+          simp [Finset.mem_powerset, Finset.mem_filter, Finset.subset_iff]
+          intro hh
+          intro x hx
+          rw [hh] at hx
+          exact hx
+      rw [h_filter]
+      rw [Finset.sum_singleton]
+
+    have hcard1: F.ground.card >= 1 := by
+        omega
+
+    have sum_part4: (∑ (x ∈ (Finset.filter (fun s => s = F.ground.erase v) (F.ground.erase v).powerset)),
+        (if x = F.ground.erase v then ((F.ground.erase v).card + 1) else x.card)) = F.ground.card :=
+      by
+        have h_filter4 : Finset.filter (fun s => s = F.ground.erase v) (F.ground.erase v).powerset = {F.ground.erase v} :=
+          by
+            ext s
+            simp [Finset.mem_powerset, Finset.mem_filter, Finset.subset_iff]
+            intro hh
+            intro x hx
+            constructor
+            · rw [hh] at hx
+              rw [Finset.mem_erase] at hx
+              exact hx.1
+            · rw [hh] at hx
+              rw [Finset.mem_erase] at hx
+              exact hx.2
+
+        rw [h_filter4]
+        rw [Finset.sum_singleton]
+
+        rw [Finset.card_erase_of_mem v_in_ground]
+        rw [if_pos]
+
+        rw [Nat.sub_add_cancel hcard1]
+        rfl
+    rw [hv_equal] at sum_part4
+
+    set termA := ∑ x ∈ Finset.filter (fun s => F.sets s ∧ v ∉ s) (F.ground \ {v}).powerset, x.card
+    set termB := (∑ x ∈ Finset.filter (fun s => s = F.ground \ {v}) (F.ground \ {v}).powerset, x.card)
+    set termC := (∑ x ∈ Finset.filter (fun s => F.sets s ∧ v ∉ s) (F.ground \ {v}).powerset,
+      if x = F.ground \ {v} then (F.ground \ {v}).card + 1 else x.card)
+    set termD :=  ∑ x ∈ Finset.filter (fun s => s = F.ground \ {v}) (F.ground \ {v}).powerset,
+      if x = F.ground \ {v} then (F.ground \ {v}).card + 1 else x.card
+    rw [hv_equal] at sum_part2
+    have eq_lem1:termB = F.ground.card - 1:= by
+      exact sum_part2
+    have eq_lem2: termB + 1 = termD := by
+      rw [eq_lem1]
+      rw [sum_part4]
+      exact Nat.sub_add_cancel hcard1
+    rw [sum_part1]
+    rw [←eq_lem2]
+    rfl
 
 theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in_ground : v ∈ F.ground) (singleton_hyperedge_none : ¬ F.sets {v}) (ground_ge_two : F.ground.card ≥ 2) (ground_card: F.ground.card = n + 1) (h_ind: P n): normalized_degree_sum F.toSetFamily ≤ 0 :=
   by
@@ -593,207 +763,8 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
         convert sumcard
 
         clear i hi i_inj i_surj comm sumcard ineq
-        /-
-        have lem_eq: (Finset.filter (fun s => (F.sets s ∧ v ∉ s) ∨ s = F.ground.erase v) (F.ground.erase v).powerset).sum Finset.card
-         =  (Finset.filter (fun s => F.sets s ∨ s = F.ground.erase v) (F.ground.erase v).powerset).sum Finset.card := by
-          apply Finset.sum_congr
-          simp_all only [ge_iff_le, idealDelF]
-          ext1 a
-          rw [Finset.mem_filter]
-          rw [Finset.mem_powerset]
-          rw [Finset.mem_filter]
-          rw [Finset.mem_powerset]
-          constructor
-          · intro a_1
-            constructor
-            exact a_1.1
-            --#check a_1.right
-            cases a_1.right with
-            | inl lt =>
-              exact Or.inl lt.left
-            | inr ri =>
-              cases a_1.right with
-              | inl left =>
-                exact Or.inl left.1
-              | inr right =>
-                exact Or.inr right
-          · intro a_1
-            constructor
-            exact a_1.1
-            have vna: v ∉ a := by
-              let a11 := a_1.1
-              rw [←hv_equal] at a11
-              rw [Finset.subset_erase] at a11
-              exact a11.2
-            cases a_1.2 with
-            | inl lt =>
-              exact Or.inl ⟨lt, vna⟩
-            | inr ri =>
-              exact Or.inr ri
-          · intro a_1
-            intro _
-            rfl
-        -/
 
-        have lem_prop:∀ (s:Finset (Fin (n+1))), s ∈ (F.ground.erase v).powerset → ¬ ((F.sets s ∧ v ∉ s) ∧ s = F.ground.erase v) := by
-          intro s _
-          intro h
-
-          obtain ⟨left, right⟩ := h
-          rw [right] at left
-          let left1 := left.1
-
-          rw [hv_equal] at left1
-          contradiction
-
-        let leftset := Finset.filter (fun s => F.sets s ∧ v ∉ s) (F.ground.erase v).powerset
-        let rightset := Finset.filter (fun s => s = F.ground.erase v) (F.ground.erase v).powerset
-
-        have disjoint: leftset ∩ rightset = ∅ := by
-          dsimp [leftset, rightset]
-          rw [Finset.eq_empty_iff_forall_not_mem]
-          by_contra h_contra
-          rw [not_forall] at h_contra
-          push_neg at h_contra
-          obtain ⟨s, hs⟩ := h_contra
-          rw [Finset.mem_inter] at hs
-          rw [Finset.mem_filter] at hs
-          rw [Finset.mem_filter] at hs
-          rw [Finset.mem_powerset] at hs
-          have sg: s = F.ground.erase v := by
-            simp_all only [hv_equal]
-            --simp_all only [ge_iff_le]
-          have sgs: F.sets s := by
-            subst sg
-            simp_all only [ge_iff_le, Finset.mem_powerset, not_and, and_imp, subset_refl, true_and,
-              and_self, and_true]
-          rw [sg] at sgs
-          rw [hv_equal] at sgs
-          exact ground_minus_v_none sgs
-
-        have disjoint2: ∀ (s:Finset (Fin (n+1))), s ∈ (F.ground.erase v).powerset → ¬ ((F.sets s ∧ v ∉ s) ∧ s = F.ground.erase v) := by
-          intro s _
-          intro h
-          obtain ⟨left, right⟩ := h
-          rw [right] at left
-          let left1 := left.1
-          rw [hv_equal] at left1
-          contradiction
-
-        have sum_lem:  (Finset.filter (fun s => F.sets s ∧ v ∉ s ∨ s = F.ground.erase v) (F.ground.erase v).powerset).sum gg
-        = (Finset.filter (fun s => F.sets s ∧ v ∉ s) (F.ground.erase v).powerset).sum gg +  ( Finset.filter (fun s =>s = F.ground.erase v) (F.ground.erase v).powerset).sum gg:= by
-          exact filter_sum_func (F.ground.erase v).powerset gg lem_prop
-        rw [←hv_equal]
-        rw [sum_lem]
-
-        rw [filter_sum  (λ s => (F.sets s ∧ v ∉ s)) (λ s => s = F.ground.erase v) (F.ground.erase v).powerset disjoint2]
-
-        dsimp [gg]
-        simp_all only [Finset.mem_filter, Finset.mem_powerset, and_self, Finset.mem_erase, ne_eq, not_true_eq_false,
-          false_and, not_false_eq_true, and_true, and_imp, subset_refl, exists_prop, Finset.singleton_subset_iff,
-          Finset.sdiff_subset]
-
-        have sum_part1: ∑ x ∈ Finset.filter (fun s => F.sets s ∧ v ∉ s) (F.ground \ {v}).powerset, x.card = (∑ x ∈ Finset.filter (fun s => F.sets s ∧ v ∉ s) (F.ground \ {v}).powerset,
-          if x = F.ground \ {v} then (F.ground \ {v}).card + 1 else x.card) := by
-        --not F.sets(F.ground \ {v})なので、ifが満たされることはない。
-          apply Finset.sum_congr rfl
-          intro x hx
-          have hx_filtered := Finset.mem_filter.mp hx
-          by_cases hx_eq : x = F.ground \ {v}
-          · case pos =>
-            rw [hx_eq]
-            simp
-            rw [hx_eq] at hx_filtered
-            have x_card: x.card = (F.ground \ {v}).card := by
-              subst hx_eq
-              simp_all only [ge_iff_le, Finset.mem_filter, Finset.mem_powerset, Finset.sdiff_subset, and_self,
-                not_true_eq_false, domain]
-            subst hx_eq
-            simp_all only [ge_iff_le, Finset.mem_filter, Finset.mem_powerset, Finset.sdiff_subset, and_self,
-              not_true_eq_false]
-          · case neg =>
-            --x.card = if x = F.ground \ {v} then (F.ground \ {v}).card + 1 else x.card
-            simp [hx_eq]
-
-        have sum_part2: ∑ x ∈ (Finset.filter (fun s => s = F.ground.erase v) (F.ground.erase v).powerset), x.card = F.ground.card - 1 := by
-          have h_filter : Finset.filter (λ s => s = F.ground.erase v) (F.ground.erase v).powerset = {F.ground.erase v} :=
-            by
-              ext s
-              simp [Finset.mem_powerset, Finset.mem_filter]
-              rw [Finset.subset_iff]
-              intro hh
-              intro x hx
-              rw [Finset.mem_erase]
-              constructor
-              · rw [hh] at hx
-                rw [Finset.mem_erase] at hx
-                exact hx.1
-              · rw [hh] at hx
-                rw [Finset.mem_erase] at hx
-                exact hx.2
-          rw [h_filter]
-          rw [Finset.sum_singleton]
-          exact Finset.card_erase_of_mem v_in_ground
-
-        have sum_part3: ∑ x ∈ (Finset.filter (fun s => s = F.ground) (F.ground.powerset)), x.card = F.ground.card := by
-          have h_filter : Finset.filter (λ s => s = F.ground) (F.ground.powerset) = {F.ground} :=
-            by
-              ext s
-              simp [Finset.mem_powerset, Finset.mem_filter, Finset.subset_iff]
-              intro hh
-              intro x hx
-              rw [hh] at hx
-              exact hx
-          rw [h_filter]
-          rw [Finset.sum_singleton]
-
-        have hcard1: F.ground.card >= 1 := by
-           omega
-
-        have sum_part4: (∑ (x ∈ (Finset.filter (fun s => s = F.ground.erase v) (F.ground.erase v).powerset)),
-            (if x = F.ground.erase v then ((F.ground.erase v).card + 1) else x.card)) = F.ground.card :=
-          by
-            have h_filter4 : Finset.filter (fun s => s = F.ground.erase v) (F.ground.erase v).powerset = {F.ground.erase v} :=
-              by
-                ext s
-                simp [Finset.mem_powerset, Finset.mem_filter, Finset.subset_iff]
-                intro hh
-                intro x hx
-                constructor
-                · rw [hh] at hx
-                  rw [Finset.mem_erase] at hx
-                  exact hx.1
-                · rw [hh] at hx
-                  rw [Finset.mem_erase] at hx
-                  exact hx.2
-
-            rw [h_filter4]
-            rw [Finset.sum_singleton]
-
-            rw [Finset.card_erase_of_mem v_in_ground]
-            rw [if_pos]
-
-            rw [Nat.sub_add_cancel hcard1]
-            rfl
-        rw [hv_equal] at sum_part4
-
-        set termA := ∑ x ∈ Finset.filter (fun s => F.sets s ∧ v ∉ s) (F.ground \ {v}).powerset, x.card
-        set termB := (∑ x ∈ Finset.filter (fun s => s = F.ground \ {v}) (F.ground \ {v}).powerset, x.card)
-        set termC := (∑ x ∈ Finset.filter (fun s => F.sets s ∧ v ∉ s) (F.ground \ {v}).powerset,
-          if x = F.ground \ {v} then (F.ground \ {v}).card + 1 else x.card)
-        set termD :=  ∑ x ∈ Finset.filter (fun s => s = F.ground \ {v}) (F.ground \ {v}).powerset,
-          if x = F.ground \ {v} then (F.ground \ {v}).card + 1 else x.card
-        rw [hv_equal] at sum_part2
-        have eq_lem1:termB = F.ground.card - 1:= by
-          exact sum_part2
-        have eq_lem2: termB + 1 = termD := by
-          rw [eq_lem1]
-          rw [sum_part4]
-          exact Nat.sub_add_cancel hcard1
-        rw [sum_part1]
-        rw [←eq_lem2]
-        rfl
-        --total_eqの証明が終わった。あとは、number_eqとtotal_eqを使って、goalを証明する。
+        exact total_eq_lem n F v v_in_ground ground_minus_v_none ground_ge_two ground_card h_ind
 
       rw [number_eq]
       rw [total_eq]
@@ -827,9 +798,13 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
             --lemma finDropCardEq {n : ℕ} (n_ge_one : n ≥ 1) (v : Fin (n + 1)) (s : Finset (Fin (n+1))) (hvx: v ∉ s)
             exact finDropCardEq n_ge_one v idealDelF.ground v_notin_minor_ground
           rw [eqcard]
-          simp_all only [ge_iff_le, Finset.mem_filter, Finset.mem_powerset, and_self, Finset.mem_erase, ne_eq,
-            not_true_eq_false, false_and, not_false_eq_true, and_true, and_imp, subset_refl, Finset.sdiff_subset,
-            Finset.singleton_subset_iff, exists_prop, add_tsub_cancel_right, idealDelF, domain, i, range, idealDelFn]
+          --simp_all only [ge_iff_le, Finset.mem_filter, Finset.mem_powerset, and_self, Finset.mem_erase, ne_eq,
+          --  not_true_eq_false, false_and, not_false_eq_true, and_true, and_imp, subset_refl, Finset.sdiff_subset,
+          --  Finset.singleton_subset_iff, exists_prop, add_tsub_cancel_right, idealDelF, domain, i, range, idealDelFn]
+          --goal ideaDefF.groud.card = n
+          have eqcard2: idealDelF.ground.card = n := by
+            simp_all only [idealDelF]
+          exact eqcard2
 
         let result := (h_ind.2 idealDelFn) minor_ground_card
 
