@@ -9,12 +9,12 @@ import Ideal.BasicDefinitions
 import Ideal.BasicLemmas
 import Ideal.IdealSum
 import Ideal.IdealNumbers
-import Ideal.IdealSimple
 import Ideal.IdealDegreeOne
 import Ideal.IdealFin
 import LeanCopilot
 
-set_option maxHeartbeats 500000
+set_option maxHeartbeats 500000 --コメントアウトするとsimp_allなどでエラー。原因追及が必要。
+--set_option trace.Meta.Tactic.simp.rewrite true
 
 namespace Ideal
 
@@ -97,6 +97,9 @@ lemma ineq_lem (k : ℕ) :
 
 def P (x:Nat) : Prop := x ≥ 2  ∧ ∀ (F: IdealFamily (Fin x)), F.ground.card = x → normalized_degree_sum F.toSetFamily ≤ 0
 
+
+
+
 theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in_ground : v ∈ F.ground) (singleton_hyperedge_none : ¬ F.sets {v}) (ground_ge_two : F.ground.card ≥ 2) (ground_card: F.ground.card = n + 1) (h_ind: P n): normalized_degree_sum F.toSetFamily ≤ 0 :=
   by
 
@@ -111,8 +114,44 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
       have number := ground_minus_v_ideal_number F v v_in_ground ground_minus_v_none singleton_hyperedge_none
       rw [total, number]
       simp_all only [ge_iff_le, tsub_le_iff_right, zero_add, Nat.cast_add, Nat.cast_one]
-      simp_all
+      simp_all --ないとエラー
 
+      have basic_ineq (n : ℕ) (h : 1 ≤ n) : 2^n ≥ n + 1 :=
+       by
+        induction n with
+        | zero =>
+          -- 基底ケース: n = 0 は不適
+          by_contra _
+          simp_all only [nonpos_iff_eq_zero, one_ne_zero]
+        | succ k ih =>
+          rw [pow_succ 2 k]
+          simp_all only [ge_iff_le, implies_true, le_add_iff_nonneg_left, zero_le]
+          have k_ge_0 : k ≥ 0 := Nat.zero_le k
+
+          by_cases h1: k = 0
+          · -- k = 0 の場合
+            rw [h1]
+            simp only [pow_zero, mul_one]
+            norm_num
+          · -- k ≥ 1 の場合
+            have k_ge_1 : k ≥ 1 := Nat.succ_le_of_lt (Nat.pos_of_ne_zero h1)
+
+            -- 帰納法の仮定を適用
+            have ih_applied := ih k_ge_1
+            apply  ge_iff_le.mp
+
+            calc
+              2 ^ k * 2 = 2 * 2^k := by ring
+              _ ≥ 2 * (k + 1) := mul_le_mul_left' ih_applied 2
+              _ = k + k + 2 := by ring
+              _ ≥ k + 1 + 2 := by
+                apply add_le_add_right
+                simp_all only [imp_self, ge_iff_le, zero_le, add_le_add_iff_left]
+              _ ≥ (k + 1) + 1 := by
+                simp_all only [imp_self, ge_iff_le, zero_le, add_le_add_iff_left, Nat.one_le_ofNat]
+
+
+/-
       have basic_ineq (n : ℕ) (h : 1 ≤ n) : 2^n≥n+1 :=
         by
           induction n with
@@ -152,6 +191,10 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
                 omega
           simp_all only [ge_iff_le, true_implies, le_add_iff_nonneg_left, zero_le, Nat.ofNat_pos, mul_le_mul_left]
           omega
+      -/
+
+
+
 
       --以下はゴールと同じ。帰納法で示す必要あり。nがゼロの時はおかしくなるので一つずらしたほうがいいかも。
       --have inequality_calc (n : ℕ) : (n * 2^(n - 1) + (n + 1)) * 2 ≤ (2^n + 1) * (n + 1) := by
@@ -549,6 +592,8 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
 
         convert sumcard
 
+        clear i hi i_inj i_surj comm sumcard ineq
+        /-
         have lem_eq: (Finset.filter (fun s => (F.sets s ∧ v ∉ s) ∨ s = F.ground.erase v) (F.ground.erase v).powerset).sum Finset.card
          =  (Finset.filter (fun s => F.sets s ∨ s = F.ground.erase v) (F.ground.erase v).powerset).sum Finset.card := by
           apply Finset.sum_congr
@@ -588,6 +633,7 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
           · intro a_1
             intro _
             rfl
+        -/
 
         have lem_prop:∀ (s:Finset (Fin (n+1))), s ∈ (F.ground.erase v).powerset → ¬ ((F.sets s ∧ v ∉ s) ∧ s = F.ground.erase v) := by
           intro s _
@@ -615,11 +661,12 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
           rw [Finset.mem_filter] at hs
           rw [Finset.mem_powerset] at hs
           have sg: s = F.ground.erase v := by
-            simp_all only [ge_iff_le, Finset.mem_erase, ne_eq, not_true_eq_false, and_true]
+            simp_all only [hv_equal]
+            --simp_all only [ge_iff_le]
           have sgs: F.sets s := by
             subst sg
-            simp_all only [ge_iff_le, Finset.mem_powerset, not_and, and_imp, subset_refl, Finset.mem_erase, ne_eq,
-              not_true_eq_false, and_true, not_false_eq_true, true_and, and_self, idealDelF]
+            simp_all only [ge_iff_le, Finset.mem_powerset, not_and, and_imp, subset_refl, true_and,
+              and_self, and_true]
           rw [sg] at sgs
           rw [hv_equal] at sgs
           exact ground_minus_v_none sgs
@@ -672,9 +719,11 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
           have h_filter : Finset.filter (λ s => s = F.ground.erase v) (F.ground.erase v).powerset = {F.ground.erase v} :=
             by
               ext s
-              simp [Finset.mem_powerset, Finset.mem_filter, Finset.subset_iff]
+              simp [Finset.mem_powerset, Finset.mem_filter]
+              rw [Finset.subset_iff]
               intro hh
               intro x hx
+              rw [Finset.mem_erase]
               constructor
               · rw [hh] at hx
                 rw [Finset.mem_erase] at hx
@@ -721,7 +770,6 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
             rw [h_filter4]
             rw [Finset.sum_singleton]
 
-            --rw [if_pos]
             rw [Finset.card_erase_of_mem v_in_ground]
             rw [if_pos]
 

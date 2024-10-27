@@ -8,7 +8,6 @@ import Mathlib.Init.Logic
 import Ideal.BasicDefinitions
 import Ideal.BasicLemmas
 import Ideal.IdealTrace
-import Ideal.IdealSimple
 import LeanCopilot
 
 variable {α : Type} [DecidableEq α] [Fintype α] [Nonempty α]

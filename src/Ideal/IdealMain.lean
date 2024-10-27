@@ -15,7 +15,6 @@ import Ideal.IdealDeletion
 import Ideal.IdealRare
 import Ideal.IdealSum
 import Ideal.IdealNumbers
-import Ideal.IdealSimple
 import Ideal.IdealDegreeOne
 import Ideal.IdealFin
 import Ideal.IdealDegOneMain
