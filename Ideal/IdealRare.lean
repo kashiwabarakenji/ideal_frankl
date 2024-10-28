@@ -7,6 +7,7 @@ import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Tactic
+import Mathlib.Algebra.BigOperators.Group.Finset
 --import Mathlib.Init.Function
 import Init.SimpLemmas
 import Ideal.BasicDefinitions
@@ -641,5 +642,52 @@ theorem ideal_version_of_frankl_conjecture :
       hyperedges_without_v, domain, codomain, f]
     use v
 
+--variable (A B : Type) (C : Finset (A × B))[DecidableEq A][DecidableEq B] [Fintype A] [Fintype B][DecidableEq C]
+--variable (a : A)
+--#check C.filter (fun ab => (ab.1 = a))
+
+theorem card_sum_over_fst_eq_card_sum_over_snd {A B : Type} [DecidableEq A][DecidableEq B][DecidableEq (A × B)][Fintype A] [Fintype B] (C : Finset (A × B))[DecidableEq C] :
+  C.card = Finset.univ.sum (fun a => (C.filter (fun ab => (ab.1 = a))).card) ∧
+  C.card = Finset.univ.sum (fun b => (C.filter (fun ab => ab.snd = b) : Finset (A × B)).card) := by
+     -- 第一の等式: C.card = Σ_{a ∈ A} |C.filter (fun ab => ab.fst = a)|
+  constructor
+  · -- 第一の等式の証明: C.card = Σ_{a ∈ A} |C.filter (fun ab => ab.fst = a)|
+    --#check @Finset.card_eq_sum_card_fiberwise
+    --#check @Finset.card_eq_sum_card_fiberwise A B (fun ab => ab.fst) C
+    --{by
+    --  search_proof
+    --}
+    #check @Finset.card_eq_sum_card_fiberwise
+    apply Finset.card_eq_sum_card_fiberwise (fun ab => ab.fst) C (by
+      intros ab hab
+      exact Finset.mem_univ ab.fst
+    )
+    #check @Finset.card_eq_sum_card_fiberwise (A × B) A (fun ab : A × B => ab.1) C Finset.univ
+    apply Finset.card_eq_sum_card_fiberwise (fun ab => ab.fst) C
+    intros ab hab
+    exact Finset.mem_univ ab.fst
+    apply Finset.card_eq_sum_card_fiberwise (fun ab => ab.fst) C Finset.univ
+    intros ab hab
+    exact Finset.mem_univ ab.fst
+
+  · -- 第二の等式の証明: C.card = Σ_{b ∈ B} |C.filter (fun ab => ab.snd = b)|
+    apply Finset.card_eq_sum_card_fiberwise (fun ab => ab.snd) C
+    intros ab hab
+    exact Finset.mem_univ ab.snd
+
+
+  let h_fst := Finset.card_eq_sum_card_fiberwise (fun ab => ab.fst) C Finset.univ (by
+    intros ab hab
+    exact Finset.mem_univ ab.fst
+  )
+
+  -- 第二の等式: C.card = Σ_{b ∈ B} |C.filter (fun ab => ab.snd = b)|
+  let h_snd := Finset.card_eq_sum_card_fiberwise (fun ab => ab.snd) C Finset.univ (by
+    intros ab hab
+    exact Finset.mem_univ ab.snd
+  )
+
+  -- 論理積を構成
+  exact ⟨h_fst, h_snd⟩
 
 end Ideal
