@@ -73,14 +73,14 @@ lemma sum_nonpos_exists_nonpos {α : Type} [DecidableEq α] (s : Finset α)(none
   exact not_le_of_lt h_pos h
 
 -------
--- FGは台集合。
--- 定義: FG.product filtered_powerset は filtered_powerset のデカルト積
-def FG_product (FG :Finset α) (filtered_powerset : Finset (Finset α))[DecidableEq filtered_powerset] : Finset (α × Finset α) :=
-  FG.product filtered_powerset
+-- FGは台集合。F.groundに相当。
+-- 定義: FG.product hyperedges は hyperedges のデカルト積
+def FG_product (FG :Finset α) (hyperedges : Finset (Finset α))[DecidableEq hyperedges] : Finset (α × Finset α) :=
+  FG.product hyperedges
 
--- 定義: filtered_product は FG.product filtered_powerset の中で p.1 ∈ p.2 を満たすペアの集合
-def filtered_product (FG :Finset α) (filtered_powerset : Finset (Finset α)) [DecidableEq filtered_powerset]: Finset (α × Finset α)   :=
-  (FG_product FG filtered_powerset).filter (λ p => (p.1 ∈ p.2))
+-- 定義: filtered_product は FG.product hyperedges の中で p.1 ∈ p.2 を満たすペアの集合
+def filtered_product (FG :Finset α) (hyperedges : Finset (Finset α)) [DecidableEq hyperedges]: Finset (α × Finset α)   :=
+  (FG_product FG hyperedges).filter (λ p => (p.1 ∈ p.2))
 
 -- 補題: x ⊆ FG であれば, FG.filter (λ a, a ∈ x ) = x  すぐ下で使っている。
 lemma filter_eq_self_of_subset (FG : Finset α) (x : Finset α)
@@ -98,14 +98,13 @@ lemma filter_eq_self_of_subset (FG : Finset α) (x : Finset α)
   exact h_subset ha
   simp_all only
 
--- 主な補題: 任意の x ∈ filtered_powerset に対して、
--- フィルタリング後のカード数は x.card に等しい。最後で使っている。
-lemma filter_card_eq_x_card (FG :Finset α) (filtered_powerset : Finset (Finset α))
-  (x : Finset α) (hx : x ∈ filtered_powerset)(hFG: ∀ s:Finset α, s ∈ filtered_powerset → s ⊆ FG) :
-  ((filtered_product FG filtered_powerset).filter (λ ab => ab.2 = x)).card = x.card :=
+-- 主な補題: 任意の x ∈ hyperedges に対して、フィルタリング後のカード数は x.card に等しい。最後で使っている。
+lemma filter_card_eq_x_card (FG :Finset α) (hyperedges : Finset (Finset α))
+  (x : Finset α) (hx : x ∈ hyperedges)(hFG: ∀ s:Finset α, s ∈ hyperedges → s ⊆ FG) :
+  ((filtered_product FG hyperedges).filter (λ ab => ab.2 = x)).card = x.card :=
   by
     let domain := FG.filter (λ a => a ∈ x )
-    let range := (filtered_product FG filtered_powerset).filter (λ ab => ab.2 = x )
+    let range := (filtered_product FG hyperedges).filter (λ ab => ab.2 = x )
 
     -- 補題の適用: x ⊆ FG
     have h_subset : x ⊆ FG := by
@@ -130,8 +129,8 @@ lemma filter_card_eq_x_card (FG :Finset α) (filtered_powerset : Finset (Finset 
           on_goal 2 => {exact ha
           }
           · simp_all only
-        --#check decarte FG filtered_powerset a x h1 hx
-        exact decarte FG filtered_powerset a x h1 hx
+        --#check decarte FG hyperedges a x h1 hx
+        exact decarte FG hyperedges a x h1 hx
 
     -- 関数 i が単射であることを示す
     have inj : ∀ (a: α) (ha:a ∈ domain) (b: α) (hb: b ∈ domain), ((i a ha) = (i b hb)) → a = b :=
@@ -159,7 +158,7 @@ lemma filter_card_eq_x_card (FG :Finset α) (filtered_powerset : Finset (Finset 
       exists_eq_right, domain, i, range]
 
 
-
+/-
 --これは使ってない。
 lemma card_sum_over_fst_eq_card_sum_over_snd {α β : Type} [DecidableEq α][DecidableEq β] [Fintype α] [Fintype β] (C : Finset (α × β)) :
   C.card = Finset.univ.sum (fun a => (C.filter (fun ab => (ab.1 = a))).card) ∧
@@ -188,6 +187,7 @@ lemma card_sum_over_fst_eq_card_sum_over_snd_set {α: Type}{β:Finset α} [Decid
     apply @Finset.card_eq_sum_card_fiberwise (β × Finset β) (Finset β) _ (fun ab => ab.snd) C Finset.univ
     intros ab _
     exact Finset.mem_univ ab.snd
+-/
 
 --これを使っている。Finset univじゃなくて、これでも動くが、AとBを明示的に引数にしたものをset3として作った。
 lemma card_sum_over_fst_eq_card_sum_over_snd_set2 {α: Type u}[DecidableEq α][Fintype α] (C : Finset (α × (Finset α))) :
@@ -230,25 +230,19 @@ lemma card_sum_over_fst_eq_card_sum_over_snd_set2 {α: Type u}[DecidableEq α][F
       simp_all only [Prod.mk.eta]
     exact (@decarter α x.1 x.2 A B hh).2
     --
--- FG = groundの仮定をなんとかしたい。Finset.univとなっているところを全部、FGに変えることでなんとかしたい。 (fground: FG = Finset.univ) をとった。
-theorem sum_cardinality_eq [Fintype α](FG : Finset α) [DecidableEq FG] (filtered_powerset : Finset (Finset α))(fground: ∀s:Finset α, s ∈ filtered_powerset → s ⊆ FG) :
-  FG.sum (fun x => (FG.powerset.filter (fun s => s ∈ filtered_powerset ∧ x ∈ s)).card) =
-  filtered_powerset.sum (fun s => s.card) := by
-  /-  have hFG: ∀ s:Finset α, s ∈ filtered_powerset → s ⊆ FG := by
-      intros s _
-      subst fground
-      simp_all only [Finset.subset_univ]
-  -/
+theorem sum_cardinality_eq [Fintype α](FG : Finset α) [DecidableEq FG] (hyperedges : Finset (Finset α))(fground: ∀s:Finset α, s ∈ hyperedges → s ⊆ FG) :
+  FG.sum (fun x => (FG.powerset.filter (fun s => s ∈ hyperedges ∧ x ∈ s)).card) =
+  hyperedges.sum (fun s => s.card) := by
 
     let convert_product_to_pair  (fa : Finset α) (fb : Finset (Finset α)) : Finset (α × Finset α) :=
       fa.product fb |>.map (Function.Embedding.refl (α × Finset α))
-    let pairs := (convert_product_to_pair FG filtered_powerset) |>.filter (λ p => (p.1 ∈ p.2 : Prop))
-    have inc: pairs ⊆ (FG.product filtered_powerset) := by
+    let pairs := (convert_product_to_pair FG hyperedges) |>.filter (λ p => (p.1 ∈ p.2 : Prop))
+    have inc: pairs ⊆ (FG.product hyperedges) := by
       simp_all only [Finset.map_refl, Finset.filter_subset, pairs, convert_product_to_pair]
 
     --have h1 := @card_sum_over_fst_eq_card_sum_over_snd_set2 α _ _ pairs
 
-    have h1 := @card_sum_over_fst_eq_card_sum_over_snd_set3 α _ _ FG filtered_powerset pairs inc
+    have h1 := @card_sum_over_fst_eq_card_sum_over_snd_set3 α _ _ FG hyperedges pairs inc
 
     have h2 := h1.1
     rw [h1.2] at h2
@@ -258,26 +252,26 @@ theorem sum_cardinality_eq [Fintype α](FG : Finset α) [DecidableEq FG] (filter
     dsimp [convert_product_to_pair] at h2
     simp at h2
     --h2の右辺と、ゴールの左辺が近い形。ただし、Finset alphaと、FGの差がある。証明が完了している。
-    have equal:  ∑ x ∈ FG, (Finset.filter (fun ab => ab.1 = x) (Finset.filter (fun p => p.1 ∈ p.2) (FG.product filtered_powerset))).card = ∑ x ∈ FG, (Finset.filter (fun s => s ∈ filtered_powerset ∧ x ∈ s) FG.powerset).card := by
+    have equal:  ∑ x ∈ FG, (Finset.filter (fun ab => ab.1 = x) (Finset.filter (fun p => p.1 ∈ p.2) (FG.product hyperedges))).card = ∑ x ∈ FG, (Finset.filter (fun s => s ∈ hyperedges ∧ x ∈ s) FG.powerset).card := by
         apply Finset.sum_congr
         simp_all only [Finset.mem_univ]
-        --goal  ∑ x : α, (Finset.filter (fun ab => ab.1 = x) (Finset.filter (fun p => p.1 ∈ p.2) (FG.product filtered_powerset))).card = ∑ x ∈ FG, (Finset.filter (fun s => s ∈ filtered_powerset ∧ x ∈ s) FG.powerset).card
+        --goal  ∑ x : α, (Finset.filter (fun ab => ab.1 = x) (Finset.filter (fun p => p.1 ∈ p.2) (FG.product hyperedges))).card = ∑ x ∈ FG, (Finset.filter (fun s => s ∈ hyperedges ∧ x ∈ s) FG.powerset).card
         intro x _
 
         --simp_all only [Finset.mem_filter, Finset.mem_product, Finset.mem_univ, and_self, and_true, Finset.mem_powerset, Finset.mem_singleton, Finset.mem_filter]
-        -- x in Finset.univとか、filtered_powerset ⊆ Finset.univは使いそう。
+        -- x in Finset.univとか、hyperedges ⊆ Finset.univは使いそう。
         have equal_card :
-          (Finset.filter (fun ab => ab.1 = x) (Finset.filter (fun p => p.1 ∈ p.2) (FG.product filtered_powerset))).card =
-          (Finset.filter (fun s => s ∈ filtered_powerset ∧ x ∈ s) FG.powerset).card :=
+          (Finset.filter (fun ab => ab.1 = x) (Finset.filter (fun p => p.1 ∈ p.2) (FG.product hyperedges))).card =
+          (Finset.filter (fun s => s ∈ hyperedges ∧ x ∈ s) FG.powerset).card :=
         by
           -- 左辺のフィルタの数を右辺のフィルタの数と一致させるため、card_bij を使って両者の対応を構築します
 
           -- 対応関数を定義します
-          let i := (λ s (_ : s ∈ Finset.filter (fun s => s ∈ filtered_powerset ∧ x ∈ s) FG.powerset) => (x, s))
+          let i := (λ s (_ : s ∈ Finset.filter (fun s => s ∈ hyperedges ∧ x ∈ s) FG.powerset) => (x, s))
 
           -- 関数 `i` が右辺の要素を左辺に写像することを確認します
-          have hi : ∀ (s : Finset α) (hs : s ∈ Finset.filter (fun s => s ∈ filtered_powerset ∧ x ∈ s) FG.powerset),
-            i s hs ∈ Finset.filter (fun ab => ab.1 = x) (Finset.filter (fun p => p.1 ∈ p.2) (FG.product filtered_powerset)) := by
+          have hi : ∀ (s : Finset α) (hs : s ∈ Finset.filter (fun s => s ∈ hyperedges ∧ x ∈ s) FG.powerset),
+            i s hs ∈ Finset.filter (fun ab => ab.1 = x) (Finset.filter (fun p => p.1 ∈ p.2) (FG.product hyperedges)) := by
             intros s hs
             simp only [i, Finset.mem_filter, and_true, eq_self_iff_true, Prod.fst]
             --subst fground
@@ -287,18 +281,18 @@ theorem sum_cardinality_eq [Fintype α](FG : Finset α) [DecidableEq FG] (filter
             simp_all only [Finset.mem_powerset]
             have xinFG: x ∈ FG := by
               simp_all only
-            exact decarte FG filtered_powerset x s xinFG right.1
+            exact decarte FG hyperedges x s xinFG right.1
 
           -- 関数 `i` が単射であることを確認します
-          have i_inj : ∀ (a₁ : Finset α) (ha₁ : a₁ ∈ Finset.filter (fun s => s ∈ filtered_powerset ∧ x ∈ s) FG.powerset)
-            (a₂ : Finset α) (ha₂ : a₂ ∈ Finset.filter (fun s => s ∈ filtered_powerset ∧ x ∈ s) FG.powerset),
+          have i_inj : ∀ (a₁ : Finset α) (ha₁ : a₁ ∈ Finset.filter (fun s => s ∈ hyperedges ∧ x ∈ s) FG.powerset)
+            (a₂ : Finset α) (ha₂ : a₂ ∈ Finset.filter (fun s => s ∈ hyperedges ∧ x ∈ s) FG.powerset),
             i a₁ ha₁ = i a₂ ha₂ → a₁ = a₂ := by
               intros a₁ a₂ ha₁ ha₂ h
               injection h with h1
 
           have i_surj : ∀ (b : α × Finset α)
-            (_ : b ∈ Finset.filter (fun ab => ab.1 = x) (Finset.filter (fun p => p.1 ∈ p.2) (FG.product filtered_powerset))),
-            ∃ a, ∃ (ha : a ∈ Finset.filter (fun s => s ∈ filtered_powerset ∧ x ∈ s) FG.powerset), i a ha = b :=
+            (_ : b ∈ Finset.filter (fun ab => ab.1 = x) (Finset.filter (fun p => p.1 ∈ p.2) (FG.product hyperedges))),
+            ∃ a, ∃ (ha : a ∈ Finset.filter (fun s => s ∈ hyperedges ∧ x ∈ s) FG.powerset), i a ha = b :=
             by
               intro b hb
               --subst fground
@@ -317,80 +311,15 @@ theorem sum_cardinality_eq [Fintype α](FG : Finset α) [DecidableEq FG] (filter
           exact (Finset.card_bij i hi i_inj i_surj).symm
         exact equal_card
 
-    --goal ∑ x ∈ FG, (Finset.filter (fun s => s ∈ filtered_powerset ∧ x ∈ s) FG.powerset).card = ∑ s ∈ filtered_powerset, s.card
+    --goal ∑ x ∈ FG, (Finset.filter (fun s => s ∈ hyperedges ∧ x ∈ s) FG.powerset).card = ∑ s ∈ hyperedges, s.card
     rw [←equal]
     --rw [fground] at h2
     rw [←h2]
-    /-
-    have h_zero : ∀ x : Finset α, x ∈ Finset.univ \ filtered_powerset → (Finset.filter (fun ab => ab.2 = x) (Finset.filter (fun p => p.1 ∈ p.2) (FG.product filtered_powerset))).card = 0 :=
-      by
-        intro x hx
-        rw [Finset.card_eq_zero]
-        by_contra h_contra
-        push_neg at h_contra
-        let tmp_set := (Finset.filter (fun ab => ab.2 = x) (Finset.filter (fun p => p.1 ∈ p.2) (FG.product filtered_powerset)))
-        have h_nonempty:tmp_set.Nonempty := by
-          subst fground
-          simp_all only [Finset.map_refl, Finset.filter_subset, Finset.powerset_univ, and_self, ne_eq, pairs,
-            convert_product_to_pair]
-          rwa [Finset.nonempty_iff_ne_empty]
-        obtain ⟨ab, hab⟩ := h_nonempty
-        have h_snd : ab.2 = x := by
-          subst fground
-          simp_all only [Finset.map_refl, Finset.filter_subset, Finset.powerset_univ, and_self, ne_eq,
-            Finset.mem_filter, pairs, convert_product_to_pair, tmp_set]
-        have hx : x ∈ filtered_powerset := by
-          simp_all only [Finset.map_refl, Finset.filter_subset, Finset.powerset_univ, and_self, ne_eq,
-            Finset.mem_filter, pairs, convert_product_to_pair]
-          simp [tmp_set] at hab
-          obtain ⟨hab_left,_⟩ := hab.1
-          apply Finset.mem_product.mp at hab_left
-          rw [h_snd] at hab_left
-          subst h_snd fground
-          simp_all only [not_true_eq_false]
-        subst h_snd fground
-        simp_all only [not_true_eq_false]
-        simp_all only [Finset.mem_sdiff, Finset.mem_univ, not_true_eq_false, and_false]
-    -/
-
-    --let filtered_powerset_comp := (Finset.univ : Finset (Finset α)) \ filtered_powerset
-    /-
-    have disjoint_lem: Disjoint filtered_powerset filtered_powerset_comp:= by
-      subst fground
-      simp_all only [Finset.map_refl, Finset.filter_subset, Finset.powerset_univ, and_self, Finset.card_eq_zero,
-        pairs, convert_product_to_pair, filtered_powerset_comp]
-      exact disjoint_sdiff_self_right
-
-    have union_lem: (Finset.univ : Finset (Finset α)) = filtered_powerset ∪ filtered_powerset_comp := by
-      subst fground
-      simp_all only [Finset.map_refl, Finset.filter_subset, Finset.powerset_univ, and_self, Finset.card_eq_zero,
-        Finset.union_sdiff_self_eq_union, Finset.right_eq_union, Finset.subset_univ, filtered_powerset_comp, pairs,
-        convert_product_to_pair]
-
-
-    have sum_zero: ∑ x in filtered_powerset_comp, (Finset.filter (fun ab => ab.2 = x) (Finset.filter (fun p => p.1 ∈ p.2) (FG.product filtered_powerset))).card = 0 := by
-      apply Finset.sum_eq_zero
-      dsimp [filtered_powerset_comp]
-      exact h_zero
-
-    have sum_union: ∑ x in (Finset.univ : Finset (Finset α)), (Finset.filter (fun ab => ab.2 = x) (Finset.filter (fun p => p.1 ∈ p.2) (FG.product filtered_powerset))).card
-      = ∑ x in filtered_powerset, (Finset.filter (fun ab => ab.2 = x) (Finset.filter (fun p => p.1 ∈ p.2) (FG.product filtered_powerset))).card
-      + ∑ x in filtered_powerset_comp, (Finset.filter (fun ab => ab.2 = x) (Finset.filter (fun p => p.1 ∈ p.2) (FG.product filtered_powerset))).card:= by
-      rw [←Finset.sum_union disjoint_lem]
-      rw [union_lem]
-
-
-    have equal_lem: ∑ x : Finset α,(Finset.filter (fun ab => ab.2 = x) (Finset.filter (fun p => p.1 ∈ p.2) (FG.product filtered_powerset))).card = ∑ x in filtered_powerset, (Finset.filter (fun ab => ab.2 = x) (Finset.filter (fun p => p.1 ∈ p.2) (FG.product filtered_powerset))).card := by
-      rw [sum_union]
-      rw [sum_zero]
-      simp
-    rw [equal_lem]
-    -/
 
     apply Finset.sum_congr
     exact rfl
     intro x hx
-    exact filter_card_eq_x_card FG filtered_powerset x hx fground
+    exact filter_card_eq_x_card FG hyperedges x hx fground
 
 --Definitionsに移しても良い。
 noncomputable def normalized_degree {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) (x: α): ℤ :=
@@ -406,51 +335,7 @@ theorem double_count {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α
   dsimp [degree]
   simp_all
   symm
-  /-
-  let univ_comp := (Finset.univ : Finset α) \ F.ground
-  have rewrite_lem: ∀ x ∈ univ_comp, (Finset.filter (fun s => F.sets s ∧ x ∈ s) F.ground.powerset).card = 0 := by
-    dsimp [univ_comp]
-    intro a
-    simp_all only [Finset.mem_sdiff, Finset.mem_univ, true_and, Finset.card_eq_zero]
-    intro a_1
-    ext1 a_2
-    simp_all only [Finset.mem_filter, Finset.mem_powerset, Finset.not_mem_empty, iff_false, not_and]
-    intro a_3 a_4
-    apply Aesop.BuiltinRules.not_intro
-    intro a_5
-    apply a_1
-    simp_all only
-    tauto
 
-
-  have disjoint_lem: Disjoint (F.ground) univ_comp := by
-    simp_all only [Finset.mem_sdiff, Finset.mem_univ, true_and, Finset.card_eq_zero]
-    exact (disjoint_sdiff_self_left).symm
-
-  have union_lem: (Finset.univ : Finset α) = F.ground ∪ univ_comp:= by
-    dsimp [univ_comp]
-    simp_all only [Finset.mem_sdiff, Finset.mem_univ, true_and, Finset.card_eq_zero]
-    simp_all only [Finset.union_sdiff_self_eq_union, Finset.right_eq_union, Finset.subset_univ]
-
-  have sum_lem: ∑ x : α, (Finset.filter (fun s => F.sets s ∧ x ∈ s) F.ground.powerset).card
-    = ∑ x in F.ground, (Finset.filter (fun s => F.sets s ∧ x ∈ s) F.ground.powerset).card + ∑ x in univ_comp, (Finset.filter (fun s => F.sets s ∧ x ∈ s) F.ground.powerset).card := by
-    --#check finsum_eq_sum_of_fintype (fun x:α => (Finset.filter (fun s => F.sets s ∧ x ∈ s) F.ground.powerset).card)
-    --#check (finsum_mem_univ (fun x:α => (Finset.filter (fun s => F.sets s ∧ x ∈ s) F.ground.powerset).card))
-    rw [sum_univ]
-    --rw [←(finsum_eq_sum_of_fintype (fun x:α => (Finset.filter (fun s => F.sets s ∧ x ∈ s) F.ground.powerset).card))]
-    nth_rewrite 1 [union_lem]
-    rw [Finset.sum_union disjoint_lem]
-
-  rw [sum_lem]
-
-  have sum_zero: ∑ x in univ_comp, (Finset.filter (fun s => F.sets s ∧ x ∈ s) F.ground.powerset).card = 0 := by
-    apply Finset.sum_eq_zero
-    intro xx hx
-    exact rewrite_lem xx hx
-
-  rw [sum_zero]
-  simp
-  -/
   --やっと余計な部分がとれて純粋な2重カウントの言明になって。
   let Fsets := F.ground.powerset.filter (λ s => F.sets s)
   have ffground: (∀ s ∈ Fsets, s ⊆ F.ground) := by
