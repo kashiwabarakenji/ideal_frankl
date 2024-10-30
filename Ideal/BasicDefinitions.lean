@@ -34,7 +34,7 @@ def total_size_of_hyperedges (F : SetFamily α)  [DecidablePred F.sets] : ℕ :=
 def number_of_hyperedges (F : SetFamily α) [DecidablePred F.sets] : ℕ :=
   ((Finset.powerset F.ground).filter F.sets).card
 
---頂点の次数を計算する関数
+--頂点の次数を計算する関数 これはZにしなくてもよい？
 noncomputable def degree (sf : SetFamily α) (v : α) : ℕ :=
   Finset.card (Finset.filter (λ s => sf.sets s = true ∧ v ∈ s) (sf.ground.powerset))
 

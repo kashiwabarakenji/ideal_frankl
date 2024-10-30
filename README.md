@@ -1,17 +1,17 @@
 # フランクルの予想のLean 4によるアプローチ -- Ideal集合族のケース --
 
 ## 概要
-フランクルの予想は、組合せ論の長年の未解決問題である。有限台集合上の共通部分で閉じた集合族で全体集合と空集合を持つものを考える。このとき、必ずrareな頂点を持つという予想がフランクルの予想である。rareな頂点とは、その頂点を通るhyperedge(集合族の要素)の個数が、hyperedge全体の半分以下となるというものである。この予想は、未だに未解決ではあるが、いくつかの簡単なクラスでは成り立つことが知られている。そのひとつがIdeal集合族と呼ばれるクラスである。Ideal集合族は、空集合と全体集合を持ち、全体集合以外のhyperedgeは、部分集合で閉じているような集合族である。Ideal集合族は、共通部分で閉じている。
+フランクルの予想は、組合せ論の長年の未解決問題である。有限台集合上の共通部分で閉じた集合族で全体集合と空集合を持つものを考える。このような集合族は、必ずrareな頂点を持つという予想がフランクルの予想である。rareな頂点とは、その頂点を通るhyperedge(集合族の要素)の個数が、hyperedge全体の数の半分以下となるというものである。この予想は、未だに未解決ではあるが、いくつかの簡単なクラスでは成り立つことが知られている。そのひとつがIdeal集合族と呼ばれるクラスである。Ideal集合族は、空集合と全体集合を持ち、全体集合以外のhyperedgeは、部分集合で閉じているような集合族である。Ideal集合族は、共通部分で閉じていることが簡単にわかる。
 
-一方、頂点全体の平均的な次数がrare(hyperedgeの大きさの合計が頂点数とhyperedgeの数の積の半分以下である場合)である集合族は、rareな頂点を持つことは簡単にわかる。Ideal集合族が平均的にrare (((hyperedgeの大きさの合計)*2-(台集合の大きさ)*(hyperedge数))が負)であるかどうかは、一見簡単に証明できそうであるが、実際に示しそうとするとそれほど簡単ではない。今回は、この言明を(人力で)証明し、Lean 4でその証明を記述して、正しいことを検証してみた。このGitHUBリポジトリは、そのLean 4による証明を公開したものである。Lean 4は、数学の言明や証明を形式的に記述できて、その数学的な正しさを厳密に保証してくれるシステムである。
+一方、頂点全体の平均的な次数がrare(hyperedgeの大きさの合計が頂点数とhyperedgeの数の積の半分以下である場合)である集合族は、rareな頂点を持つことは簡単にわかる。Ideal集合族が平均的にrare (((hyperedgeの大きさの合計)*2-(台集合の大きさ)*(hyperedge数))が負)であるかどうかは、一見簡単に証明できそうであるが、実際に示しそうとするとそれほど簡単ではない。今回は、この言明を(まず人力で)証明し、Lean 4でその証明を記述して、正しいことを検証してみた。このGitHUBリポジトリは、その言明に対するLean 4による証明を公開したものである。Lean 4は、数学の言明や証明を形式的に記述できて、その数学的な正しさを厳密に保証してくれるシステムである。
 
 ## 証明の作成について
 
-定理の証明がややこしいと言っても、自然言語で他人に説明すると10分ぐらいで証明を説明し終わると思われる。しかし、Lean 4で証明を記述すると、5000行ぐらい必要だった。また、Lean 4の初心者の私には、3ヶ月ぐらいの日数がかかった。Lean 4の証明の作成において、支援ツールとして、ChatGPT PlusとLean CopilotとGitHUB Copilotを利用した。これらは、簡単な自動証明を行なってくれるツールとも言える。たとえば、ChatGPTは、人間が自然言語で与えた証明をLean 4に翻訳したものを提案してくれる。ChatGPTとGitHUBの提案するコードは、Lean 3の文法やMathlib 3の定理を含んだものが多かったので、そのまま、採用とはならず、かなりの程度、修正する必要があった。Lean Copilotは、Leanのバージョンにあった正しいコードを提案してくれるが、複雑な証明はできない。とりあえず、証明が検証を通ることを目指したので、作成した証明は、必ずしも人間がわかりやすいものになっていない部分もある。今後も継続して、リファクタリングを行い、可読性を上げようと思う。
+定理の証明がややこしいと言っても、自然言語で他人に説明すると10分ぐらいで証明を説明し終わると思われる。しかし、Lean 4で証明を記述すると、5000行ぐらい必要だった。また、Lean 4の初心者の私には、3ヶ月ぐらいの日数がかかった。Lean 4の証明の作成において、支援ツールとして、ChatGPT PlusとLean CopilotとGitHUB Copilotを利用した。これらは、簡単な自動証明を行なってくれるツールとも言える。たとえば、ChatGPTは、人間が自然言語で与えた証明をLean 4に翻訳したものを提案してくれる。ChatGPTとGitHUBの提案するコードは、古いバージョンであるLean 3の文法やMathlib 3の定理を含んだものが多かったので、そのまま、採用とはいかず、かなりの程度、人力で修正する必要があった。Lean Copilotは、Leanのバージョンにあった正しいコードを提案してくれるが、複雑な証明はできない。とりあえず、証明が検証を通ることを目指したので、作成した証明は、必ずしも人間がわかりやすいものになっていない部分もある。今後も継続して、コードのリファクタリングを行い、可読性を上げようと思う。
 
 ## 主要な定理と定義について
 
-srcのidealのフォルダに今回の定理のLeanの証明が格納されている。
+リポジトリのidealのフォルダに今回の定理のLeanの証明が格納されている。
 IdealMain.leanの中の最後の
 
 ```
@@ -35,7 +35,7 @@ structure SetFamily (α : Type) [DecidableEq α] [Fintype α] :=
 def is_closed_under_intersection (sf : SetFamily α) : Prop :=
   ∀ (A B : Finset α), sf.sets A → sf.sets B → sf.sets (A ∩ B)
 
--- 頂点がレアであることを定義
+-- 頂点がrareであることを定義
 def is_rare (sf : SetFamily α) (v : α)  [DecidablePred sf.sets]  : Prop :=
   2 * degree sf v ≤ number_of_hyperedges sf
 
@@ -67,7 +67,7 @@ noncomputable def normalized_degree_sum {α : Type} [DecidableEq α] [Fintype α
   let base_set_size := (F.ground.card: ℤ)
   total_size * 2 - num_sets * base_set_size
 
---大きさnで標準化次数和が負かどうか。
+--大きさnで標準化次数和が負かどうかの述語。
 def P (x:Nat) : Prop := x ≥ 2  ∧ ∀ (F: IdealFamily (Fin x)), F.ground.card = x → normalized_degree_sum F.toSetFamily ≤ 0
 ```
 
@@ -75,8 +75,8 @@ def P (x:Nat) : Prop := x ≥ 2  ∧ ∀ (F: IdealFamily (Fin x)), F.ground.card
 
 ideal集合族から1点台集合が小さいideal集合族を作る操作には、deletionとcontractionとtraceの3種類がある。
 
-集合族に対して、頂点vによるcontractionは、vを含むhyperedge Hを動かして、H-vを集めた集合族である。
-{v}がhyperedgeであることに、Ideal集合族のcontractionはまたIdeal集合族になる。
+集合族に対して、頂点vによるcontractionは、vを含むhyperedge Hを動かして、H-vを集めた集合族である。contractionにより、downward-closed性は保存される。
+{v}がhyperedgeであるときに、contractionは空集合を持つので、Ideal集合族のcontractionはまたIdeal集合族になる。
 
 集合族に対して、頂点vによるdeletionは、vを含まないhyperedgeを全て集めてきたものである。
 ただし、deletion後の集合族は、部分集合では閉じているが、全体集合を持つとは限らないので、ground-vがhyperedgeでない場合は、ground-vを追加してあげることで、Ideal集合族になる。
