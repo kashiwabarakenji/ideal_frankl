@@ -19,7 +19,7 @@ import Ideal.IdealDegreeOne
 import Ideal.IdealFin
 import Ideal.IdealDegOneMain
 import LeanCopilot
---set_option maxHeartbeats 1000000
+set_option maxHeartbeats 1000000
 
 namespace Ideal
 
@@ -531,3 +531,42 @@ theorem P_all (x : Nat) (hx : x ≥ 2) : P x := by
         -- x = m + 3 以上の場合
         have m_ge_two : m + 2 ≥ 2 := Nat.le_add_left _ _ -- m + 2 は 2 以上
         exact inductive_step m_ge_two (P_all (m + 2) m_ge_two)
+
+/- 一部未完成
+theorem ideal_implies_average_rare (F : IdealFamily α) : normalized_degree_sum F.toSetFamily <= 0 := by
+  let n := F.ground.card
+  have hn: Fintype.card F.ground = n:= by
+    simp_all only [Fintype.card_coe, n]
+  by_cases h : n ≥ 2
+  case pos =>
+    let pall := P_all n h
+    dsimp [P] at pall
+    --#check F.toSetFamily.toFinFamily
+    have hn2: (toIdealFinFamily F n hn).ground.card = n := by
+      simp_all only [toIdealFinFamily, hn]
+      let equal :=  equal_card_fin_ideal_family F hn
+      #check equal
+      have equal2: Fintype.card { x // x ∈ (toIdealFinFamily F n hn).ground } = (toIdealFinFamily F n hn).ground.card := by
+        congr
+        exact Fintype.card_coe (toIdealFinFamily F n hn).ground
+      simp_all only [n, equal]
+      obtain ⟨left, right⟩ := pall
+      simp_all only [ge_iff_le, n]
+      rfl
+
+    let pa :=  pall.2 (toIdealFinFamily F n hn)
+    have h_eq : normalized_degree_sum (toIdealFinFamily F n hn).toSetFamily = normalized_degree_sum F.toSetFamily := by
+      simp [normalized_degree_sum, toIdealFinFamily, equal_card_fin_ideal_family]
+      sorry
+    rw [←h_eq]
+    exact pa hn2
+
+  case neg =>
+    -- n < 2 の場合は、normalized_degree_sum F.toSetFamily <= 0 が自明
+    simp_all only [normalized_degree_sum]
+    exact Nat.zero_le 0
+  have h := P_all 2 (by decide)
+  exact h F.toIdealFinFamily (by decide)
+-/
+
+end Ideal

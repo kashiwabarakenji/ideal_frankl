@@ -819,4 +819,249 @@ lemma deletion_total: ∀ (n : ℕ) (F : IdealFamily (Fin (n + 1))) (nposi : n �
     have h2 := sum_card_eq_sum_card F nposi v hvf ground_ge_two
     rw [h2]
 
+---------------------------------
+-- SetFamily 構造体の定義に基づいて、SetFamily (Fin n) への変換関数を定義します
+noncomputable def SetFamily.toFinFamily {α : Type} [DecidableEq α] [Fintype α]
+  (sf : SetFamily α) (n : ℕ) (h : Fintype.card sf.ground = n) : SetFamily (Fin n) :=
+  let toFin : sf.ground ≃ Fin n := Fintype.equivFinOfCardEq h
+  let embedding : {x // x ∈ sf.ground} → Fin n := toFin.toFun
+  let groundFin : Finset (Fin n) := (sf.ground.attach).map ⟨toFin, by
+    subst h
+    simp_all only [toFin]
+    exact toFin.injective
+  ⟩
+  {
+    ground := groundFin,
+    sets := λ s => ∃ t : Finset {x // x ∈ sf.ground},
+                  sf.sets (t.image Subtype.val) ∧ s = t.image embedding,
+    inc_ground := by
+      intro s a
+      subst h
+      simp_all only [Equiv.toFun_as_coe, embedding, toFin, groundFin]
+      obtain ⟨w, h⟩ := a
+      obtain ⟨_, right⟩ := h
+      subst right
+      intro x hx
+      simp_all only [Finset.mem_image, Subtype.exists, Finset.mem_map, Finset.mem_attach, Function.Embedding.coeFn_mk,
+        true_and]
+      obtain ⟨w_1, h⟩ := hx
+      obtain ⟨w_2, h⟩ := h
+      obtain ⟨_, right⟩ := h
+      subst right
+      simp_all only [EmbeddingLike.apply_eq_iff_eq, Subtype.mk.injEq, exists_prop, exists_eq_right],
+    nonempty_ground := by
+      cases sf.nonempty_ground
+      rename_i w h_1
+      subst h
+      simp_all only [Finset.map_nonempty, Finset.attach_nonempty_iff, groundFin, toFin]
+      use w
+    fintype_ground := Fintype.ofFinset groundFin (by
+    intro x
+    subst h
+    simp_all only [Finset.mem_map, Function.Embedding.coeFn_mk, Subtype.exists, Finset.map_val, Multiset.mem_map,
+      Finset.mem_val, groundFin, toFin]
+    rfl),
+  }
+
+-- 補助レマ：image と filter を組み合わせたもの
+lemma image_filter_eq {X Y : Type} [DecidableEq Y]
+  (embedding : X → Y)
+  (tB : Finset X) (B : Finset Y)
+  (A : Finset Y)
+  (hBmaps : tB.image embedding = B)
+  (hAsubset : A ⊆ B) :
+  (tB.filter (λ x => embedding x ∈ A)).image embedding = A :=
+  by
+    -- 任意の y ∈ Y に対して、等式を示すために extensionality を使用
+    ext y
+    constructor
+    -- 第一方向: (LHS) y ∈ (tB.filter (λ x, embedding x ∈ A)).image embedding → y ∈ A
+    intro hy
+    rw [Finset.mem_image] at hy
+    obtain ⟨x, hx, hxy⟩ := hy
+    -- x ∈ tB.filter (λ x, embedding x ∈ A) なので、x ∈ tB かつ embedding x ∈ A
+    subst hBmaps hxy
+    simp_all only [Finset.mem_filter]
+    -- 第二方向: y ∈ A → y ∈ (tB.filter (λ x, embedding x ∈ A)).image embedding
+    intro hy
+    -- A ⊆ tB.image embedding なので、y ∈ tB.image embedding
+    have hy_in_B := hAsubset hy
+    subst hBmaps
+    simp_all only [Finset.mem_image, Finset.mem_filter]
+    obtain ⟨w, h⟩ := hy_in_B
+    obtain ⟨left, right⟩ := h
+    subst right
+    exact ⟨w, ⟨left, hy⟩, rfl⟩
+
+lemma attach_lem (ifmG: Finset α) (tB : Finset { x // x ∈ ifmG }):
+   tB = ifmG.attach ↔ Finset.image Subtype.val tB = ifmG := by
+  apply Iff.intro
+  · -- tB = ifmG.attach → Finset.image Subtype.val tB = ifmG
+    intro h
+    rw [h]
+    exact Finset.attach_image_val
+  · -- Finset.image Subtype.val tB = ifmG → tB = ifmG.attach
+    intro h
+
+    have lem0: tB ⊆ ifmG.attach := by
+      intro x _
+      exact Finset.mem_attach _ _
+
+    apply Finset.eq_of_subset_of_card_le lem0
+
+    have lem_leq1: ifmG.attach.card ≤ tB.card := by
+      -- `ifmG.attach.card = ifmG.card` を示す
+      /- have attach_card_eq : ifmG.attach.card = ifmG.card := by
+        simp_all only [Finset.card_attach]
+      -- `tB.card = ifmG.card` を `h` から導く
+      have tB_card_eq : tB.card = ifmG.card := by
+        rw [←Finset.card_image_of_injective tB Subtype.val_injective, h]
+--        simp_all only [Finset.card_attach]
+--        rw [← h]
+      -/
+      have h_card_eq : (Finset.image Subtype.val tB).card = tB.card := Finset.card_image_of_injective tB Subtype.val_injective
+      rw [←h_card_eq]
+      simp_all only [Finset.card_attach, le_refl]
+
+  -- `ifmG.attach.card = tB.card` を導く
+    simp_all only [Finset.card_attach]
+
+-- IdealFamily を Fin n 上に変換する関数
+noncomputable def toIdealFinFamily (ifm : IdealFamily α) (n : ℕ) (h : Fintype.card ifm.ground = n) : IdealFamily (Fin n) :=
+  let sfFin := SetFamily.toFinFamily ifm.toSetFamily n h
+  let embedding := (Fintype.equivFinOfCardEq h).toFun -- embedding from SetFamily.toFinFamily
+  {
+    -- SetFamily のフィールドを継承
+    ground := sfFin.ground,
+    sets := sfFin.sets,
+    inc_ground := sfFin.inc_ground,
+    nonempty_ground := sfFin.nonempty_ground,
+    fintype_ground := sfFin.fintype_ground,
+
+    -- IdealFamily の追加フィールドを定義
+    has_empty := by
+      simp_all only [SetFamily.sets, SetFamily.toFinFamily]
+      exact ⟨∅, ifm.has_empty, by simp⟩,
+
+    has_ground := by
+      simp_all only [SetFamily.sets, SetFamily.toFinFamily]
+      exact ⟨ifm.ground.attach, by simp [ifm.has_ground], by
+        --goal sfFin.ground = Finset.image (Fintype.equivFinOfCardEq h).toFun ifm.ground.attach
+        dsimp [sfFin, SetFamily.toFinFamily]
+        simp_all only [Equiv.toFun_as_coe, Finset.map, Finset.attach, Fintype.equivFinOfCardEq, embedding]
+        subst h
+        simp_all only [Function.Embedding.coeFn_mk]
+        ext1 a
+        simp_all only [Finset.mem_mk, Multiset.mem_map, Multiset.mem_attach, true_and, Subtype.exists,
+          Finset.mem_image]
+      ⟩,
+
+    down_closed := by
+      -- 任意の A, B : Finset (Fin n) に対して、
+      -- sets B, B ≠ groundFin, A ⊆ B なら sets A を示す
+      intros A B hB hBne hAsubset
+      -- hB は ∃ tB : Finset {x // x ∈ ifm.ground}, sets (tB.image Subtype.val) ∧ B = tB.image embedding
+      obtain ⟨tB, hSetsB, hBmaps⟩ := hB
+      -- A ⊆ B = tB.image embedding
+      -- tA を {x // embedding x ∈ A} と定義
+      have inv: B = tB.image embedding := by --hBmapsそのままかも。逆向きにtBをBで表すのは、難しいかも。
+        exact hBmaps
+
+      -- sfFin.ground = ifm.ground これは成り立たない。左はFinset(Fin n)で右はFinset α。
+      have invground: ifm.ground.attach.image embedding = sfFin.ground := by
+        dsimp [sfFin, SetFamily.toFinFamily]
+        simp_all only [Equiv.toFun_as_coe, Finset.map, Finset.attach, Fintype.equivFinOfCardEq, embedding]
+        simp
+        subst h inv
+        simp_all only [ne_eq, sfFin]
+        ext1 a
+        simp_all only [Finset.mem_image, Finset.mem_mk, Multiset.mem_attach, true_and, Subtype.exists,
+          Multiset.mem_map]
+
+      let tA := tB.filter (λ x => embedding x ∈ A)
+      -- tA.image embedding = A を証明
+
+      have tA_image_eq : tA.image embedding = A := by
+        exact image_filter_eq embedding tB B A hBmaps.symm hAsubset
+      -- tA ⊆ tB を証明
+      have tA_subset_tB : tA ⊆ tB := Finset.filter_subset _ _
+      -- tA.image Subtype.val が ifm.sets に属することを証明
+        -- Finset.image_subset_of_subset を用いて tA.image Subtype.val ⊆ tB.image Subtype.val を証明
+        -- tA が集合族に属することを証明
+      --tBがもともとの集合族でsetsに属していることを利用したい。
+      --そもそももともとの集合族でdown_closedが成り立っていることを利用したい。元々の集合族は、ifmである。
+      have A_subset_B' : tA.image Subtype.val ⊆ tB.image Subtype.val := by
+        subst h hBmaps
+        simp_all only [Equiv.toFun_as_coe, Finset.filter_subset, ne_eq, embedding, tA, sfFin]
+        rw [Finset.image_subset_iff]
+        intro x a
+        simp_all only [Finset.mem_filter, Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right,
+          Subtype.coe_eta, Finset.coe_mem, exists_const]
+
+      by_cases h_eq : tB = ifm.ground.attach-- {x // x ∈ ifm.ground}
+      -- ケース1: tB = {x // x ∈ ifm.ground}
+      -- この場合、B = groundFin となる
+      -- しかし、hBne により B ≠ groundFin であるため矛盾が生じる
+      case pos =>
+        exfalso
+        --結論に関係なく、仮定に矛盾がある。使う仮定は、hBneとh_eqのみ。tBが全体集合なので、それに対応するBも全体集合になる。
+        subst hBmaps h h_eq
+        simp_all only [Equiv.toFun_as_coe, Finset.attach_image_val, Finset.filter_subset, ne_eq, not_true_eq_false,
+          embedding, sfFin, tA]
+
+      case neg =>
+        have hBne_correct : Finset.image Subtype.val tB ≠ ifm.ground := by
+        --tBをembeddingしたさきは、全体集合でないということ。h_eqの仮定からこれがいえるはず。ifm groundは、alpha上。
+          by_contra h_contra
+          --invground: ifm.ground.attach.image embedding = sfFin.ground
+          --h_eq ¬tB = ifm.ground.attach
+          let result := (attach_lem ifm.ground tB).mpr h_contra
+          --#check result -- tB = ifm.ground.attach
+          contradiction
+          --lemma attach_lem (ifmG: Finset α) (tB : Finset { x // x ∈ ifmG }):
+          --tB = ifmG.attach ↔ Finset.image Subtype.val tB = ifmG
+
+        have hSetsA_original : ifm.sets (tA.image Subtype.val) := by
+          exact ifm.down_closed (tA.image Subtype.val) (tB.image Subtype.val) hSetsB hBne_correct A_subset_B'
+
+        exact ⟨tA, hSetsA_original, tA_image_eq.symm⟩
+  }
+
+  lemma equal_card_fin_ideal_family {n : ℕ} (ifm : IdealFamily α) (h : Fintype.card ifm.ground = n) :
+     Fintype.card (@toIdealFinFamily α _ _ _ ifm n h).ground = n := by
+       let sfFin := SetFamily.toFinFamily ifm.toSetFamily n h
+       simp only [toIdealFinFamily]
+       let toFin : ifm.ground ≃ Fin n := Fintype.equivFinOfCardEq h
+       let embedding : {x // x ∈ ifm.ground} → Fin n := toFin.toFun
+       have invground: ifm.ground.attach.image embedding = sfFin.ground := by
+         dsimp [sfFin, SetFamily.toFinFamily]
+         simp_all only [Equiv.toFun_as_coe, Finset.map, Finset.attach, Fintype.equivFinOfCardEq, embedding]
+         simp
+         subst h
+         simp_all only [Fintype.card_coe, ge_iff_le, Finset.one_le_card, toFin]
+         ext1 a
+         simp_all only [Finset.mem_image, Finset.mem_mk, Multiset.mem_attach, true_and, Subtype.exists,
+           Multiset.mem_map]
+         rfl
+
+       have lem0: ifm.ground.attach.card = n := by
+         rw [←h]
+         subst h
+         simp_all only [Fintype.card_coe, ge_iff_le, Finset.one_le_card, Equiv.toFun_as_coe, Finset.card_attach,
+           embedding, toFin, sfFin]
+
+       have inj : Function.Injective embedding := by
+           -- `Equiv.injective` を使って単射性を示す
+          exact Equiv.injective (Fintype.equivFinOfCardEq h)
+       have lem1: ifm.ground.attach.card = (ifm.ground.attach.image embedding).card := by
+         exact (Finset.card_image_of_injective ifm.ground.attach inj).symm
+
+       have lem2: ifm.ground.attach.card = sfFin.ground.card := by
+         subst h
+         simp_all only [Fintype.card_coe, ge_iff_le, Finset.one_le_card, Equiv.toFun_as_coe, Finset.card_attach, embedding,
+            toFin, sfFin]
+       subst h
+       simp_all only [Fintype.card_coe, ge_iff_le, Finset.one_le_card, Equiv.toFun_as_coe, Finset.card_attach,
+         embedding, toFin, sfFin]
+
 end Ideal
