@@ -3,7 +3,8 @@
 ## 概要
 フランクルの予想は、組合せ論の長年の未解決問題である。有限台集合上の共通部分で閉じた集合族で全体集合と空集合を持つものを考える。このような集合族は、必ずrareな頂点を持つという予想がフランクルの予想である。rareな頂点とは、その頂点を通るhyperedge(集合族の要素)の個数が、hyperedge全体の数の半分以下となるというものである。この予想は、未だに未解決ではあるが、いくつかの簡単なクラスでは成り立つことが知られている。そのひとつがIdeal集合族と呼ばれるクラスである。Ideal集合族は、空集合と全体集合を持ち、全体集合以外のhyperedgeは、部分集合で閉じているような集合族である。Ideal集合族は、共通部分で閉じていることが簡単にわかる。
 
-一方、頂点全体の平均的な次数がrare(hyperedgeの大きさの合計が頂点数とhyperedgeの数の積の半分以下である場合)である集合族は、rareな頂点を持つことは簡単にわかる。Ideal集合族が平均的にrare (((hyperedgeの大きさの合計)*2-(台集合の大きさ)*(hyperedge数))が負)であるかどうかは、一見簡単に証明できそうであるが、実際に示しそうとするとそれほど簡単ではない。今回は、この言明を(まず人力で)証明し、Lean 4でその証明を記述して、正しいことを検証してみた。このGitHUBリポジトリは、その言明に対するLean 4による証明を公開したものである。Lean 4は、数学の言明や証明を形式的に記述できて、その数学的な正しさを厳密に保証してくれるシステムである。
+一方、頂点全体の平均的な次数がrare(hyperedgeの大きさの合計が頂点数(つまり台集合の大きさ)とhyperedgeの数の積の半分以下である場合)である集合族は、rareな頂点を持つことは簡単にわかる。すべてのhyperedgeに関して大きさを足し合わせると、すべての頂点の次数の和に等しい(2重カウントの原理)ことに注意する。
+Ideal集合族が平均的にrare (((hyperedgeの大きさの合計)*2-(台集合の大きさ)*(hyperedge数))が負)であるかどうかは、一見簡単に証明できそうであるが、実際に示しそうとするとそれほど簡単ではない。今回は、この言明を(まず人力で)証明し、Lean 4でその証明を記述して、正しいことを検証してみた。このGitHUBリポジトリは、その言明に対するLean 4による証明を公開したものである。Lean 4は、数学の言明や証明を形式的に記述できて、その数学的な正しさを厳密に保証してくれるシステムである。
 
 ## 証明の作成について
 
@@ -45,7 +46,7 @@ structure IdealFamily (α : Type) [DecidableEq α] [Fintype α] extends SetFamil
 (has_ground : sets ground)  -- 全体集合が含まれる
 (down_closed : ∀ (A B : Finset α), sets B → B ≠ ground → A ⊆ B → sets A)
 
---hyperedge数の大きさの合計
+--hyperedgeの大きさの合計
 def total_size_of_hyperedges (F : SetFamily α)  [DecidablePred F.sets] : ℕ :=
   let all_sets := (Finset.powerset F.ground).filter F.sets
   all_sets.sum Finset.card
@@ -67,7 +68,7 @@ noncomputable def normalized_degree_sum {α : Type} [DecidableEq α] [Fintype α
   let base_set_size := (F.ground.card: ℤ)
   total_size * 2 - num_sets * base_set_size
 
---大きさnで標準化次数和が負かどうかの述語。
+--大きさnで標準化次数和が非正かどうかの述語。
 def P (x:Nat) : Prop := x ≥ 2  ∧ ∀ (F: IdealFamily (Fin x)), F.ground.card = x → normalized_degree_sum F.toSetFamily ≤ 0
 ```
 
