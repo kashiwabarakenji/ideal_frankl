@@ -522,6 +522,10 @@ theorem ideal_implies_average_rare (F : IdealFamily α) : normalized_degree_sum 
 
       exact Eq.trans hx' hval'.symm
 
+      intro a_1
+      subst a_1
+      simp_all only [ge_iff_le, not_le, le_refl, Fintype.card_coe, Finset.univ_eq_attach, Finset.coe_mem, n]
+
     have all_sets: F.ground.powerset = {{a.val},∅} := by
       simp_all only [Finset.mem_singleton, Fintype.card_ofSubsingleton, Finset.card_singleton, ge_iff_le,
         Nat.not_ofNat_le_one, not_false_eq_true, le_refl, Finset.univ_eq_attach, n]
