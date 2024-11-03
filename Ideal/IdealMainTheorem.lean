@@ -529,6 +529,7 @@ theorem ideal_implies_average_rare (F : IdealFamily α) : normalized_degree_sum 
           Finset.card_singleton, Finset.univ_eq_attach, n]
         obtain ⟨val, property⟩ := a
         simp_all only
+
         --goal S = {val}
         --これは間違いでは。Sは
       · intro h
@@ -566,9 +567,8 @@ theorem ideal_implies_average_rare (F : IdealFamily α) : normalized_degree_sum 
       simp_all only
       simp [← hyperedges_one]
       simp_all only
-      rw [Finset.filter_eq']
-      simp_all only [Finset.mem_powerset, subset_refl, ↓reduceIte, Finset.sum_singleton, Finset.card_singleton]
-
+      simp [Finset.filter_true_of_mem]
+      rfl
     --have h := P_all 2 (by decide)
     --exact h (toIdealFinFamily F 2 (by decide))
 
