@@ -458,6 +458,9 @@ theorem ideal_implies_average_rare (F : IdealFamily α) : normalized_degree_sum 
       simp_all only [embedding]
       exact (Fintype.equivFinOfCardEq hn).injective
     --let embedding2: Finset F.ground → Finset (Fin n) := λ S => S.image (Fintype.equivFinOfCardEq hn).toFun
+    --ここにnumberの読み込み部分を作る。
+    --それからtotalの計算部分を作って、ここから読み込む。
+    --そして、normalized_degree_sumの計算部分を作る。
 
   case neg =>
     -- n < 2 の場合は、normalized_degree_sum F.toSetFamily <= 0 が自明
@@ -519,57 +522,82 @@ theorem ideal_implies_average_rare (F : IdealFamily α) : normalized_degree_sum 
 
       exact Eq.trans hx' hval'.symm
 
-    --下で使っているよう。
-    have hyperedges_one: F.toSetFamily.sets = λ S => S = {a.val} ∨ S = ∅ := by
-      ext S
-      simp_all only [IdealFamily.toSetFamily, ground_one, Finset.mem_singleton, Finset.mem_attach]
+    have all_sets: F.ground.powerset = {{a.val},∅} := by
+      simp_all only [Finset.mem_singleton, Fintype.card_ofSubsingleton, Finset.card_singleton, ge_iff_le,
+        Nat.not_ofNat_le_one, not_false_eq_true, le_refl, Finset.univ_eq_attach, n]
+      obtain ⟨val, property⟩ := a
+      simp_all only
+      ext1 a
+      simp_all only [Finset.mem_powerset, Finset.subset_singleton_iff, Finset.mem_insert, Finset.mem_singleton]
       apply Iff.intro
-      · intro h
-        simp_all only [Fintype.card_ofSubsingleton, ge_iff_le, Nat.not_ofNat_le_one, not_false_eq_true, le_refl,
-          Finset.card_singleton, Finset.univ_eq_attach, n]
-        obtain ⟨val, property⟩ := a
-        simp_all only
+      · intro a_1
+        cases a_1 with
+        | inl h =>
+          subst h
+          simp_all only [or_true]
+        | inr h_1 =>
+          subst h_1
+          simp_all only [Finset.singleton_ne_empty, or_false]
+      · intro a_1
+        cases a_1 with
+        | inl h =>
+          subst h
+          simp_all only [Finset.singleton_ne_empty, or_true]
+        | inr h_1 =>
+          subst h_1
+          simp_all only [true_or]
 
-        --goal S = {val}
-        --これは間違いでは。Sは
-      · intro h
-        --goal F.1.sets S
+    --下で使っているよう。
+    have hyperedges_one: ∀ S:Finset α, F.sets S ↔ S = {a.val} ∨ S = ∅ := by
+      intro S
+      apply Iff.intro
+      intro hS
+      simp_all only [ground_one, Finset.mem_singleton, Finset.mem_attach]
+      --unfold SetFamily.sets at hS --setsの定義の中で展開するときにunfoldを使う。
+      have hG: F.sets F.ground := by
+        exact F.has_ground
+      have inc: S ⊆ F.ground := F.toSetFamily.inc_ground S hS
+      have S_eq: S = {a.val} ∨ S = ∅ := by
+        simp_all only [Finset.mem_singleton, Finset.mem_attach]
+        by_cases h: S = ∅
         subst h
         simp_all only [Fintype.card_ofSubsingleton, ge_iff_le, Nat.not_ofNat_le_one, not_false_eq_true, le_refl,
-          Finset.card_singleton, Finset.univ_eq_attach, n]
-        have ground_has: F.1.sets F.ground := by
-          exact F.has_ground
-        simp_all only
-
+          Finset.card_singleton, Finset.univ_eq_attach, Finset.subset_singleton_iff, true_or, or_true, n]
+        simp_all only [Fintype.card_ofSubsingleton, ge_iff_le, Nat.not_ofNat_le_one, not_false_eq_true, le_refl,
+          Finset.card_singleton, Finset.univ_eq_attach, Finset.subset_singleton_iff, false_or,
+          Finset.singleton_ne_empty, or_false, n]
+      simp_all only [Fintype.card_ofSubsingleton, ge_iff_le, Nat.not_ofNat_le_one, not_false_eq_true, le_refl,
+        Finset.card_singleton, Finset.univ_eq_attach, Finset.subset_singleton_iff, n]
+      ----
+      intro hS
+      cases hS with
+      | inr hs =>
+        rw [hs]
+        exact F.has_empty
+      | inl hs =>
+        rw [hs]
+        rw [←ground_one2]
+        exact F.has_ground
 
     have num: number_of_hyperedges F.toSetFamily = 2 := by
       rw [number_of_hyperedges]
-      simp_all only [n_eq_one2, normalized_degree_sum, n_eq_one, Fintype.card_coe, ge_iff_le, not_le, Finset.one_le_card, n]
-      simp_all only [Nat.one_lt_ofNat, Finset.singleton_nonempty, le_refl, Finset.card_singleton,
-        Finset.univ_eq_attach]
+      simp_all only [Finset.mem_singleton, Fintype.card_ofSubsingleton, Finset.card_singleton, ge_iff_le,
+        Nat.not_ofNat_le_one, not_false_eq_true, le_refl, Finset.univ_eq_attach, n]
       obtain ⟨val, property⟩ := a
       simp_all only
-      simp [Finset.filter_true_of_mem]
+      symm
+      simp [Finset.filter_true_of_mem, hyperedges_one]
 
     have tot: total_size_of_hyperedges F.toSetFamily = 1 := by
       dsimp [Ideal.total_size_of_hyperedges]
-      simp_all only [n_eq_one2, normalized_degree_sum, n_eq_one, Fintype.card_coe, ge_iff_le, not_le, Finset.one_le_card, n]
-      simp_all only [Nat.one_lt_ofNat, Finset.singleton_nonempty, le_refl, Finset.card_singleton,
-        Finset.univ_eq_attach]
+      simp_all only [Finset.mem_singleton, Fintype.card_ofSubsingleton, Finset.card_singleton, ge_iff_le,
+        Nat.not_ofNat_le_one, not_false_eq_true, le_refl, Finset.univ_eq_attach, n]
       obtain ⟨val, property⟩ := a
       simp_all only
-      symm
-      symm
-      symm
-      simp [← hyperedges_one]
-      simp_all only
-      simp [← hyperedges_one]
-      simp_all only
-      simp [← hyperedges_one]
-      simp_all only
-      simp [Finset.filter_true_of_mem]
-      rfl
-    --have h := P_all 2 (by decide)
-    --exact h (toIdealFinFamily F 2 (by decide))
+      simp [Finset.filter_true_of_mem, hyperedges_one]
+
+    simp_all only [Finset.mem_singleton, Fintype.card_ofSubsingleton, Finset.card_singleton, ge_iff_le,
+      Nat.not_ofNat_le_one, not_false_eq_true, le_refl, Finset.univ_eq_attach, Nat.cast_one, one_mul, Nat.cast_ofNat,
+      mul_one, sub_self, n]
 
   end Ideal
