@@ -1064,4 +1064,42 @@ noncomputable def toIdealFinFamily (ifm : IdealFamily α) (n : ℕ) (h : Fintype
        simp_all only [Fintype.card_coe, ge_iff_le, Finset.one_le_card, Equiv.toFun_as_coe, Finset.card_attach,
          embedding, toFin, sfFin]
 
+variable {α β : Type} [Fintype α] [Fintype β]
+variable (FSet : Finset (Finset α)) (GSet : Finset (Finset β))
+variable (f : α → β)
+
+-- f が A から B への全単射であることを仮定
+
+-- 証明: F と G の要素数は等しい
+omit [Fintype α] [Fintype β]
+theorem same_cardinality [DecidableEq α] [DecidableEq β] (hf : Function.Injective f)(hFG : ∀ (T : Finset β), T ∈ GSet ↔ ∃ (S : Finset α),S ∈ FSet ∧ T = S.image f) :
+ FSet.card = GSet.card :=
+by
+  have this_inj: Function.Injective (Finset.image f) := by
+    --#check (@Finset.image_injective α (Finset β) (fun(S:Finset α) => S.image f)) hf
+    exact Finset.image_injective hf
+
+  --have : GSet.card = (Finset.image (λ (S:Finset α) => S.image f) FSet).card := by
+  have : GSet = (Finset.image (Finset.image f) FSet) := by
+    ext y
+    constructor
+    intro hy
+    simp_all only [Finset.mem_image]
+    obtain ⟨w, h⟩ := hy
+    obtain ⟨left, right⟩ := h
+    subst right
+    exact ⟨w, left, rfl⟩
+
+    intro a
+    simp_all only [Finset.mem_image]
+    obtain ⟨w, h⟩ := a
+    obtain ⟨left, right⟩ := h
+    subst right
+    exact ⟨w, left, rfl⟩
+
+  rw [this]
+  subst this
+  simp_all only [Finset.mem_image]
+  rw [Finset.card_image_of_injective _ this_inj]
+
 end Ideal
