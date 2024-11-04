@@ -431,6 +431,10 @@ lemma fin_number_eq (F: IdealFamily α)(h : F.ground.card ≥ 2) (hn: Fintype.ca
     -- card_bij の適用
     exact Finset.card_bij i hi inj suj
 
+lemma fin_total_eq (F: IdealFamily α)(ge_2 : F.ground.card ≥ 2) (hn: Fintype.card F.ground = F.ground.card):
+  total_size_of_hyperedges (toIdealFinFamily F F.ground.card hn).toSetFamily = total_size_of_hyperedges F.toSetFamily := by
+
+
 theorem ideal_implies_average_rare (F : IdealFamily α) : normalized_degree_sum F.toSetFamily <= 0 := by
   set n := F.ground.card with n_def
   have hn: Fintype.card F.ground = n:= by

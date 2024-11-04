@@ -1,8 +1,3 @@
---newideal.leanをrefactoringしたものから台集合を変えたもの。
---全体集合をUを使っていたのをalphaに変えた。これが正しい使い方と思われる。
---このバージョンがIdeal集合族にrare vertexが存在する定理のメインバージョン。
---ideal-rareからさらにBasicDefinitionsを使うようにしたもの。
-
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Fintype.Basic
@@ -641,7 +636,7 @@ theorem ideal_version_of_frankl_conjecture :
     simp_all only [ne_eq, Finset.mem_filter, and_imp, Finset.card_univ, ge_iff_le, hyperedges_with_v,
       hyperedges_without_v, domain, codomain, f]
     use v
-
+/-
 --以下は、AverageRare.leanに移動したので、消して良い。
 ---------------------------------------
 --variable {α β : Type*} [DecidableEq α] [DecidableEq β]
@@ -815,12 +810,6 @@ theorem card_sum_over_fst_eq_card_sum_over_snd_set {α: Type}{β:Finset σ} [Dec
      -- 第一の等式: C.card = Σ_{a ∈ A} |C.filter (fun ab => ab.fst = a)|
   constructor
   · -- 第一の等式の証明: C.card = Σ_{a ∈ A} |C.filter (fun ab => ab.fst = a)|
-    --#check @Finset.card_eq_sum_card_fiberwise
-    --#check @Finset.card_eq_sum_card_fiberwise A B (fun ab => ab.fst) C
-    --{by
-    --  search_proof
-    --}
-    --#check @Finset.card_eq_sum_card_fiberwise
     apply @Finset.card_eq_sum_card_fiberwise (β × Finset β) β _ (fun ab => ab.fst) C Finset.univ
     intro x _
     simp_all only [Finset.mem_univ]
@@ -835,12 +824,6 @@ theorem card_sum_over_fst_eq_card_sum_over_snd_set2 {α: Type u}[DecidableEq α]
      -- 第一の等式: C.card = Σ_{a ∈ A} |C.filter (fun ab => ab.fst = a)|
   constructor
   · -- 第一の等式の証明: C.card = Σ_{a ∈ A} |C.filter (fun ab => ab.fst = a)|
-    --#check @Finset.card_eq_sum_card_fiberwise
-    --#check @Finset.card_eq_sum_card_fiberwise A B (fun ab => ab.fst) C
-    --{by
-    --  search_proof
-    --}
-    --#check @Finset.card_eq_sum_card_fiberwise
     apply @Finset.card_eq_sum_card_fiberwise (α × Finset α) α _ (fun ab => ab.fst) C Finset.univ
     intro x _
     simp_all only [Finset.mem_univ]
@@ -867,16 +850,6 @@ theorem sum_cardinality_eq [Fintype α](FG : Finset α) [DecidableEq FG] (filter
     let pairs := (convert_product_to_pair FG filtered_powerset) |>.filter (λ p => (p.1 ∈ p.2 : Prop))
     have inc: pairs ⊆ (FG.product filtered_powerset) := by
       simp_all only [Finset.map_refl, Finset.filter_subset, pairs, convert_product_to_pair]
-    --let pairs_in_set := { (a, b) | a ∈ FG ∧ b ∈ filtered_powerset ∧ (a, b) ∈ pairs } : Finset (FG × filtered_powerset)
-
-    --#check (FG × filtered_powerset)
-    --#check (FG.product filtered_powerset) : Finset (α × Finset α)
-    --have inc2: pairs ⊆ (FG × filtered_powerset) := by --積には変換されてない。
-    --#check  @card_sum_over_fst_eq_card_sum_over_snd_set α _ _ _ pairs
-    --card_sum_over_fst_eq_card_sum_over_snd_set  pairs : pairs.card = ∑ a : α, (Finset.filter (fun ab => ab.1 = a) pairs).card ∧ pairs.card = ∑ b : Finset α, (Finset.filter (fun ab => ab.2 = b) pairs).card
-    --#check @card_sum_over_fst_eq_card_sum_over_snd  (Finset α) ((Finset (α × Finset α))) _ _ _ _ _ pairs_in_set --エラーになるのは、積とproductの違いか。
-    --#check @card_sum_over_fst_eq_card_sum_over_snd_set2 α _ _ pairs
-    --#check h1
 
     have h1 := @card_sum_over_fst_eq_card_sum_over_snd_set2 α _ _ pairs
     --#check h1
@@ -1017,13 +990,5 @@ theorem sum_cardinality_eq [Fintype α](FG : Finset α) [DecidableEq FG] (filter
     exact rfl
     intro x hx
     exact filter_card_eq_x_card FG filtered_powerset x hx hFG
-
-
-
-
-
-
-
-
-
+    -/
 end Ideal

@@ -893,6 +893,7 @@ lemma image_filter_eq {X Y : Type} [DecidableEq Y]
     subst right
     exact ⟨w, ⟨left, hy⟩, rfl⟩
 
+omit [Fintype α]  in  --omit [Nonempty α]をつけると他のところでエラー。原因追及する必要あり。
 lemma attach_lem (ifmG: Finset α) (tB : Finset { x // x ∈ ifmG }):
    tB = ifmG.attach ↔ Finset.image Subtype.val tB = ifmG := by
   apply Iff.intro
@@ -1064,15 +1065,15 @@ noncomputable def toIdealFinFamily (ifm : IdealFamily α) (n : ℕ) (h : Fintype
        simp_all only [Fintype.card_coe, ge_iff_le, Finset.one_le_card, Equiv.toFun_as_coe, Finset.card_attach,
          embedding, toFin, sfFin]
 
-variable {α β : Type} [Fintype α] [Fintype β]
+variable {β : Type} [DecidableEq β]--[DecidableEq α]の方はいらないみたい。βのDecidableは必要。
 variable (FSet : Finset (Finset α)) (GSet : Finset (Finset β))
 variable (f : α → β)
 
 -- f が A から B への全単射であることを仮定
 
 -- 証明: F と G の要素数は等しい
-omit [Fintype α] [Fintype β]
-theorem same_cardinality [DecidableEq α] [DecidableEq β] (hf : Function.Injective f)(hFG : ∀ (T : Finset β), T ∈ GSet ↔ ∃ (S : Finset α),S ∈ FSet ∧ T = S.image f) :
+omit [Nonempty α][DecidableEq α] [Fintype α] in --omit [Fintype α] [Fintype β]
+theorem same_cardinality (hf : Function.Injective f)(hFG : ∀ (T : Finset β), T ∈ GSet ↔ ∃ (S : Finset α),S ∈ FSet ∧ T = S.image f) :
  FSet.card = GSet.card :=
 by
   have this_inj: Function.Injective (Finset.image f) := by
@@ -1101,5 +1102,40 @@ by
   subst this
   simp_all only [Finset.mem_image]
   rw [Finset.card_image_of_injective _ this_inj]
+
+omit [Nonempty α][DecidableEq α] [Fintype α] in
+theorem same_summation (hf : Function.Injective f)(hFG : GSet = FSet.image (λ S => Finset.image f S)) :
+  FSet.sum Finset.card = GSet.sum Finset.card:=
+by
+  -- `i` を `FSet` の各要素 `S` に対してその `Finset.image f S` を対応させる関数と定義します
+  let i : (S : Finset α) → S ∈ FSet → Finset β := λ S _ => Finset.image f S
+
+  -- `hi` は `i` の出力が常に `GSet` に含まれることを示します
+  have hi : ∀ S (hS : S ∈ FSet), i S hS ∈ GSet := by
+    intros S hS
+    simp_all only [i]
+    subst hFG
+    simp_all only [Finset.mem_image]
+    exact ⟨S, hS, rfl⟩
+
+  -- `i_inj` は、`i` が `hf` の injectivity により一意であることを示します
+  have i_inj : ∀ S₁ (hS₁ : S₁ ∈ FSet) S₂ (hS₂ : S₂ ∈ FSet), i S₁ hS₁ = i S₂ hS₂ → S₁ = S₂ := by
+    intros S₁ _ S₂ _ h_eq
+    apply Finset.image_injective hf
+    exact h_eq
+
+  -- `i_surj` は `i` が `GSet` の任意の要素に対応する `FSet` の元を持つことを示します
+  have i_surj : ∀ T ∈ GSet, ∃ S, ∃ (hS : S ∈ FSet), i S hS = T := by
+    intros T hT
+    subst hFG
+    simp_all only [Finset.mem_image, exists_prop, i]
+
+  -- 各 `S ∈ FSet` に対して `Finset.card S = Finset.card (Finset.image f S)` であることを示します
+  have h : ∀ S (hS : S ∈ FSet), Finset.card S = Finset.card (i S hS) := by
+    intros S hS
+    rw [Finset.card_image_of_injective _ hf]
+
+  -- `Finset.sum_bij` を適用して `FSet` の合計と `GSet` の合計が等しいことを示します
+  exact Finset.sum_bij i hi i_inj i_surj h
 
 end Ideal
