@@ -365,7 +365,7 @@ lemma fin_number_eq (F: IdealFamily α)(h : F.ground.card ≥ 2) (hn: Fintype.ca
       · -- x ∈ a1 と仮定
         intro h_a1
 
-        -- i a1 ha1 に ⟨x, hx⟩ が含まれることを導く
+        -- i a1 ha1 に ⟨x, hx⟩ が含まれることを導く。使ってない。
         have ground_lem:F.ground ∈ Finset.filter F.sets F.ground.powerset := by
           simp_all only [Finset.mem_filter, Finset.mem_powerset]
           constructor
@@ -390,7 +390,7 @@ lemma fin_number_eq (F: IdealFamily α)(h : F.ground.card ≥ 2) (hn: Fintype.ca
           constructor
           simp_all only [Equiv.toFun_as_coe, Finset.mem_filter, Finset.mem_powerset, exists_and_right,
             Finset.univ_eq_attach, Finset.mem_image, exists_exists_and_eq_and, and_imp, subset_refl, true_and,
-            Finset.mem_attach, n, embedding, GSet, FSet2, projectFSetToGround, projectToGround, FSet, i]
+            Finset.mem_attach]
           use x
           use x_in_ground
 
@@ -464,6 +464,255 @@ lemma fin_number_eq (F: IdealFamily α)(h : F.ground.card ≥ 2) (hn: Fintype.ca
     -- card_bij の適用
     exact Finset.card_bij i hi inj suj
 
+open Finset
+
+--variable {α : Type*} (FG : Finset α) (Fsets : Finset α → Prop)
+
+omit [Nonempty α] in
+lemma FG_same_card (FG : Finset α) (Fsets : Finset α → Prop) [DecidablePred Fsets] (a : Finset α) (ha : a ∈ Finset.filter Fsets FG.powerset) (a_in_FG : a ⊆ FG) :
+  FG.sum (fun x => if x ∈ a then 1 else 0) = ∑ a_1 in FG.attach, if ∃ x, (∃ (hx : x ∈ FG), ⟨x, hx⟩ = a_1) ∧ x ∈ a then 1 else 0 :=
+by
+  let f := λ x => if x ∈ a then 1 else 0
+  let g := λ (a_1 : {x // x ∈ FG}) => if ∃ x, (∃ (_ : x ∈ FG), x = a_1) ∧ x ∈ a then 1 else 0
+
+  let i := λ (x : α) (hx: x ∈ FG) => (⟨x, hx⟩ : {x // x ∈ FG})
+  have hi: ∀ (a_1 :α) (hs: a_1 ∈ FG) , i a_1 hs ∈ FG.attach := by
+    intro a_1 hs
+    simp_all only [mem_filter, mem_powerset, true_and, mem_attach, i]
+
+  have inj : ∀ (a_1 : α) (hs1 : a_1 ∈ FG) (a_2 : α)(hs2 : a_2 ∈ FG), i a_1 hs1 = i a_2 hs2 → a_1 = a_2 := by
+    intro a_1 a_2 hs1 hs2 a_3
+    simp_all only [mem_filter, mem_powerset, true_and, mem_attach, implies_true, Subtype.mk.injEq, i]
+
+  have surj : ∀ (b : {x // x ∈ FG}), b ∈ FG.attach → ∃ a, ∃ (ha : a ∈ FG), i a ha = b := by
+    intro b
+    intro _
+    simp_all only [mem_filter, mem_powerset, true_and, mem_attach, implies_true, Subtype.mk.injEq, i]
+    obtain ⟨val, property⟩ := b
+    simp_all only [Subtype.mk.injEq, exists_prop, exists_eq_right]
+
+
+  have h : ∀ (x : α) (hx : x ∈ FG), f x = g ⟨x, hx⟩ := by
+    intro x hx
+    simp only [f, g, i, Subtype.exists, exists_prop, true_and]
+    simp_all only [mem_filter, mem_powerset, true_and, implies_true, exists_prop, exists_eq_right, i]
+    split
+    next h =>
+      split
+      next h_1 => simp_all only
+      next h_1 => simp_all only [not_exists, not_and, not_true_eq_false, imp_false, forall_mem_not_eq']
+    next h =>
+      split
+      next h_1 =>
+        obtain ⟨w, h_1⟩ := h_1
+        obtain ⟨left, right⟩ := h_1
+        obtain ⟨_, right_1⟩ := left
+        subst right_1
+        simp_all only
+      next h_1 => simp_all only [not_exists, not_and, not_false_eq_true, and_imp, implies_true]
+  --#check Finset.sum_bij
+  let result := @Finset.sum_bij _ _ _ _ FG FG.attach f g i hi inj surj h
+  dsimp [f,g,i] at result
+  simp_all
+  --result  (∑ x ∈ FG, if x ∈ a then 1 else 0) = ∑ x ∈ FG.attach, if ∃ x_1, (∃ (_ : x_1 ∈ FG), x_1 = ↑x) ∧ x_1 ∈ a then 1 else 0
+  --goal  FG.sum (if x ∈ a then 1 else 0) = (filter (fun x => ∃ x_1, (∃ (hx : x_1 ∈ FG), ⟨x_1, hx⟩ = x) ∧ x_1 ∈ a) FG.attach).card
+  rw [Finset.card_eq_sum_ones]
+  rw [Finset.sum_const]
+  rw [Finset.sum_ite] at result
+  rw [Finset.sum_const, nsmul_one] at result
+
+  simp_all only [mem_attach, implies_true, Subtype.mk.injEq, true_implies, Subtype.forall, exists_prop, exists_eq_right,
+    Nat.cast_id, sum_const_zero, add_zero, sum_boole, sum_const, smul_eq_mul, mul_one, i, f, g]
+  have sum_card :FG.sum (λ x => if x ∈ a then 1 else 0) = a.card := by
+    have : FG.sum (λ x => if x ∈ a then 1 else 0) = (FG.filter (λ x => x ∈ a)).sum (λ _ => 1) := by
+      rw [←Finset.sum_filter]
+    rw [this]
+    simp_all only [sum_ite_mem, sum_const, smul_eq_mul, mul_one]
+    apply Finset.card_bij
+    on_goal 2 => intro a₁ ha₁ a₂ ha₂ a_1
+    on_goal 2 => ext1
+    on_goal 2 => exact a_1
+    intro a_1 ha_1
+    simp_all only [mem_filter, mem_attach, true_and]
+    obtain ⟨val, property⟩ := a_1
+    obtain ⟨w, h_1⟩ := ha_1
+    obtain ⟨left, right⟩ := h_1
+    obtain ⟨_, right_1⟩ := left
+    subst right_1
+    simp_all only
+    intro b a_1
+    simp_all
+    apply And.intro
+    apply Exists.intro
+    apply And.intro
+    on_goal 2 => exact a_1
+    simp_all only [and_true]
+    exact a_in_FG a_1
+    exact a_in_FG a_1
+  simp_all
+  have rewrite_lem:FG.sum (fun x => if x ∈ a then 1 else 0) = FG.sum (fun x => if x ∈ a then 1 else 0) := by
+    simp
+  have result_lem:(filter (fun x => x ∈ a) FG) = a := by
+    simp_all only [sum_ite_mem, sum_const, smul_eq_mul, mul_one]
+    ext1 a_1
+    simp_all only [mem_filter, and_iff_right_iff_imp]
+    intro a_2
+    exact a_in_FG a_2
+  rw [result_lem] at result
+  simp_all only [sum_ite_mem, sum_const, smul_eq_mul, mul_one]
+  congr
+  ext x : 2
+  obtain ⟨val, property⟩ := x
+  simp_all only [Subtype.mk.injEq, exists_prop]
+
+omit [Nonempty α] in
+theorem card_sum_bijection (FG: Finset α) (Fsets: Finset α → Prop) [DecidablePred Fsets] :
+  (Finset.filter Fsets FG.powerset).sum Finset.card =
+    ∑ x in Finset.image (λ s => Finset.filter (λ y => ∃ x, ∃ (hx : x ∈ FG), ⟨x, hx⟩ = y ∧ x ∈ s) FG.attach)
+    (Finset.filter (λ S => Fsets S) FG.powerset), x.card :=
+by
+  -- `s` と `t` の定義
+  let s := Finset.filter Fsets FG.powerset
+  let t := Finset.image (λ s => Finset.filter (λ y => ∃ x, ∃ (hx : x ∈ FG), ⟨x, hx⟩ = y ∧ x ∈ s) FG.attach)
+            (Finset.filter (λ S => Fsets S) FG.powerset)
+
+  -- 写像 `i` の定義とその性質
+  let i := fun (s : Finset α) (_ : s ∈ Finset.filter Fsets FG.powerset) => Finset.filter (fun y => ∃ x, (∃ (x_1 : x ∈ FG), ⟨x, x_1⟩ = y) ∧ x ∈ s) FG.attach
+  -- `hi` の証明: `i` が `s` の各要素を `t` の要素に対応させることを示す
+  have hi : ∀ (a : Finset α) (ha : a ∈ s), i a ha ∈ t :=
+    by
+      intro a ha
+      simp_all only [exists_and_right, Finset.mem_image, Finset.mem_filter, Finset.mem_powerset, i, t]
+      simp_all only [Finset.mem_filter, Finset.mem_powerset, s]
+      obtain ⟨left, right⟩ := ha
+      use a
+
+
+  -- `i_inj` の証明: 単射性の証明
+  have i_inj : ∀ (a₁: Finset α) (ha₁ : a₁ ∈ s),∀ (a₂ : Finset α) (ha₂ : a₂ ∈ s), i a₁ ha₁ = i a₂ ha₂ → a₁ = a₂ :=
+    by
+      intro a1 ha1 a2 ha2 h_eq
+      dsimp [i] at h_eq
+      ext x
+      apply Iff.intro
+      · intro h
+        have x_in_ground: x ∈ FG := by
+          simp_all only [mem_filter, mem_powerset, exists_and_right, mem_image, and_imp, s, i, t]
+          obtain ⟨left, _⟩ := ha1
+          --obtain ⟨left_1, right_1⟩ := ha2
+          apply left
+          simp_all only
+
+        have y_in_i_a1 : ⟨x, x_in_ground⟩  ∈ i a1 ha1 := by
+          dsimp [i]
+          simp only [Finset.mem_filter]
+          constructor
+          simp_all only [Equiv.toFun_as_coe, Finset.mem_filter, Finset.mem_powerset, exists_and_right,
+            Finset.univ_eq_attach, Finset.mem_image, exists_exists_and_eq_and, and_imp, subset_refl, true_and,
+            Finset.mem_attach]
+          simp_all only [mem_filter, mem_powerset, exists_and_right, mem_image, and_imp, Subtype.mk.injEq,
+            exists_prop, s, i, t]
+          --obtain ⟨left, right⟩ := ha1
+          --obtain ⟨left_1, right_1⟩ := ha2
+          apply Exists.intro
+          · apply And.intro
+            on_goal 2 => {exact h
+            }
+            · simp_all only [and_self]
+
+        simp_all only [mem_filter, mem_powerset, exists_and_right, mem_image, and_imp, mem_attach, Subtype.mk.injEq,
+          exists_prop, true_and, s, i, t]
+        --上のsimp_allでy_in_i_a1が書き換えられている。どのルールで書き換えているのか、調査失敗。
+        simp_all only [mem_filter, mem_powerset, s]
+        --obtain ⟨left, right⟩ := ha1
+        --obtain ⟨left_1, right_1⟩ := ha2
+        obtain ⟨w, h_1⟩ := y_in_i_a1
+        obtain ⟨left_2, right_2⟩ := h_1
+        obtain ⟨_, right_3⟩ := left_2
+        subst right_3
+        exact right_2
+      · intro h
+        have x_in_ground: x ∈ FG := by
+          simp_all only [mem_filter, mem_powerset, exists_and_right, mem_image, and_imp, s, i, t]
+          obtain ⟨left, _⟩ := ha2
+          --obtain ⟨left_1, right_1⟩ := ha1
+          apply left
+          simp_all only
+
+        have y_in_i_a2 : ⟨x, x_in_ground⟩  ∈ i a2 ha2 := by
+          dsimp [i]
+          simp only [Finset.mem_filter]
+          constructor
+          simp_all only [Equiv.toFun_as_coe, Finset.mem_filter, Finset.mem_powerset, exists_and_right,
+            Finset.univ_eq_attach, Finset.mem_image, exists_exists_and_eq_and, and_imp, subset_refl, true_and,
+            Finset.mem_attach]
+          simp_all only [mem_filter, mem_powerset, exists_and_right, mem_image, and_imp, Subtype.mk.injEq,
+            exists_prop, s, i, t]
+          --obtain ⟨left, right⟩ := ha1
+          --obtain ⟨left_1, right_1⟩ := ha2
+          apply Exists.intro
+          · apply And.intro
+            on_goal 2 => {exact h
+            }
+            · simp_all only [and_self]
+
+        have y_in_i_a1 : ⟨x, x_in_ground⟩ ∈ i a1 ha1 := by
+          simp_all only [Equiv.toFun_as_coe, Finset.mem_filter, Finset.mem_powerset, exists_and_right,
+            Finset.univ_eq_attach, Finset.mem_image, exists_exists_and_eq_and, and_imp, Finset.mem_attach,
+            Subtype.mk.injEq, exists_prop, true_and,i]
+
+        dsimp [i] at y_in_i_a1
+        rw [Finset.mem_filter] at y_in_i_a1
+        obtain ⟨w, h_1⟩ := y_in_i_a1
+
+        simp_all only [mem_filter, mem_powerset, exists_and_right, mem_image, and_imp, Subtype.mk.injEq, exists_prop,
+          true_and, mem_attach, s, i, t]
+        simp_all only [mem_filter, mem_powerset, s]
+        --obtain ⟨left, right⟩ := ha2
+        --obtain ⟨left_1, right_1⟩ := ha1
+        obtain ⟨w, h_2⟩ := y_in_i_a2
+        obtain ⟨w_1, h_1⟩ := h_1
+        obtain ⟨left_2, right_2⟩ := h_2
+        obtain ⟨left_3, right_3⟩ := h_1
+        obtain ⟨left_2, right_4⟩ := left_2
+        obtain ⟨_, right_5⟩ := left_3
+        subst right_4 right_5
+        simp_all only
+
+
+  -- `i_surj` の証明: 全射性の証明
+  have i_surj : ∀ b ∈ t, ∃ a, ∃ (ha : a ∈ s), i a ha = b :=
+    by
+      intro b a
+      simp_all only [Finset.mem_filter, Finset.mem_powerset, and_self, exists_and_right, Finset.mem_image, and_imp,
+        subset_refl, exists_prop, s, i, t]
+
+  -- 対応する要素のカード数が一致することの証明
+  have h : ∀ (a : Finset α) (ha : a ∈ s), Finset.card a = Finset.card (i a ha) :=
+    by
+      intro a ha
+      dsimp [i]
+      simp only [Finset.card_filter]
+      dsimp [s] at ha
+      have a_in_FG: a ⊆ FG := by
+        intro x
+        intro hx
+        simp_all only [Finset.mem_filter, Finset.mem_powerset]
+        obtain ⟨left, _⟩ := ha
+        exact left hx
+      rw [←FG_same_card FG Fsets a ha a_in_FG]
+      simp_all
+      simp_all only [mem_filter, mem_powerset, and_self, exists_and_right, mem_image, and_imp, subset_refl,
+        exists_prop, implies_true, s, i, t]
+      congr
+      ext1 a_1
+      simp_all only [subset_refl, mem_inter, iff_and_self]
+      intro a_2
+      exact a_in_FG a_2
+
+  -- すべての仮定が整ったので、`Finset.sum_bij`を適用
+  exact Finset.sum_bij i hi i_inj i_surj h
+
 lemma fin_total_eq (F: IdealFamily α)(ge_2 : F.ground.card ≥ 2) (hn: Fintype.card F.ground = F.ground.card):
   total_size_of_hyperedges (toIdealFinFamily F F.ground.card hn).toSetFamily = total_size_of_hyperedges F.toSetFamily := by
 
@@ -510,7 +759,7 @@ lemma fin_total_eq (F: IdealFamily α)(ge_2 : F.ground.card ≥ 2) (hn: Fintype.
         · intro x hx
           simp_all only [Finset.mem_map, Function.Embedding.coe_subtype, Subtype.exists, exists_and_right,
             exists_eq_right]
-          obtain ⟨w_1, h⟩ := hx
+          obtain ⟨w_1, _⟩ := hx
           simp_all only
         · convert left_1
           ext x a : 2
@@ -524,7 +773,7 @@ lemma fin_total_eq (F: IdealFamily α)(ge_2 : F.ground.card ≥ 2) (hn: Fintype.
         · intro a
           obtain ⟨w_1, h⟩ := a
           obtain ⟨left_2, right⟩ := h
-          obtain ⟨left_2, right_1⟩ := left_2
+          obtain ⟨_, right_1⟩ := left_2
           obtain ⟨w_2, h⟩ := right
           subst right_1
           simp_all only
@@ -545,7 +794,7 @@ lemma fin_total_eq (F: IdealFamily α)(ge_2 : F.ground.card ≥ 2) (hn: Fintype.
       subst h
       constructor
       ·
-        obtain ⟨left_1, right⟩ := w_1
+        --obtain ⟨left_1, right⟩ := w_1
         intro x hx
         simp_all only [Finset.mem_image, Finset.mem_filter, Finset.mem_attach, true_and, Subtype.exists,
           Subtype.mk.injEq, exists_prop, exists_and_left, Finset.mem_map, Function.Embedding.coeFn_mk]
@@ -553,8 +802,8 @@ lemma fin_total_eq (F: IdealFamily α)(ge_2 : F.ground.card ≥ 2) (hn: Fintype.
         obtain ⟨left_2, right_1⟩ := h
         obtain ⟨w_1, h⟩ := left_2
         obtain ⟨w_2, h_1⟩ := right_1
-        obtain ⟨left_2, right_1⟩ := h
-        obtain ⟨left_2, right_2⟩ := left_2
+        obtain ⟨left_2, _⟩ := h
+        obtain ⟨_, right_2⟩ := left_2
         subst h_1 right_2
         simp_all only [EmbeddingLike.apply_eq_iff_eq, Subtype.mk.injEq, exists_prop, exists_eq_right]
       · --goal ∃ t,  F.sets (Finset.image Subtype.val t) ∧ ...
@@ -577,7 +826,7 @@ lemma fin_total_eq (F: IdealFamily α)(ge_2 : F.ground.card ≥ 2) (hn: Fintype.
             obtain ⟨w_1, h⟩ := left_2
             obtain ⟨w_2, h_1⟩ := right_1
             obtain ⟨left_2, right_1⟩ := h
-            obtain ⟨left_2, right_2⟩ := left_2
+            obtain ⟨_, right_2⟩ := left_2
             subst h_1 right_2
             simp_all only [EmbeddingLike.apply_eq_iff_eq, Subtype.mk.injEq, exists_prop, exists_eq_right_right,
               and_self]
@@ -593,6 +842,7 @@ lemma fin_total_eq (F: IdealFamily α)(ge_2 : F.ground.card ≥ 2) (hn: Fintype.
   --#check same_summation FSet2 GSet embedding hf hFG
   have FG_sum_eq: FSet2.sum Finset.card = GSet.sum Finset.card:= by
     apply same_summation FSet2 GSet embedding hf hFG
+  clear hFG
   dsimp [FSet2, GSet] at FG_sum_eq
   dsimp [projectFSetToGround] at FG_sum_eq
   dsimp [projectToGround] at FG_sum_eq
@@ -602,49 +852,13 @@ lemma fin_total_eq (F: IdealFamily α)(ge_2 : F.ground.card ≥ 2) (hn: Fintype.
   rw [←FG_sum_eq]
   dsimp [FSet]
   apply Eq.symm
-  --TODO:以下の部分は独立させる。
-  --goal F.ground.powerset.filter (λ (S : Finset α), F.toSetFamily.sets S).sum Finset.card = F.ground.powerset.filter (λ (S : Finset α), F.toSetFamily.sets S).sum Finset.card
-  --前の時は(Finset.filter F.sets F.ground.powerset).card =  (Finset.image (fun s => Finset.filter (fun y => ∃ x, ∃ (hx : x ∈ F.ground), ⟨x, hx⟩ = y ∧ x ∈ s) F.ground.attach) (Finset.filter (fun S => F.sets S) F.ground.powerset)).card
-  let i := fun (s : Finset α) (_ : s ∈ Finset.filter F.sets F.ground.powerset) => Finset.filter (fun y => ∃ x, (∃ (x_1 : x ∈ F.ground), ⟨x, x_1⟩ = y) ∧ x ∈ s) F.ground.attach
-  --let i := λ (s : Finset α) (_ : s ∈ Finset.filter F.sets F.ground.powerset) =>
-  --      Finset.filter (λ y => ∃ x, ∃ (hx: x ∈ F.ground), ⟨x, hx⟩ = y ∧ x ∈ s) F.ground.attach
+  clear FG_sum_eq hf FSet2 GSet projectFSetToGround projectToGround embedding FSet
 
-  apply Finset.sum_bij i
-
-  -- Proof of `hi`: Show that `i` maps each element in `s` to an element in `t`
-  · intro s hs
-
-    show (Finset.filter (fun y => ∃ x, (∃ (x_1 : x ∈ F.ground), ⟨x, x_1⟩ = y) ∧ x ∈ s) F.ground.attach) ∈
-         Finset.image (fun s => Finset.filter (fun y => ∃ x, (∃ (x_1 : x ∈ F.ground), ⟨x, x_1⟩ = y) ∧ x ∈ s) F.ground.attach)
-         (Finset.filter (fun S => F.sets S) F.ground.powerset)
-    apply Finset.mem_image.mpr
-    use s
-    constructor
-    · exact hs
-    · rfl
-
-  -- Proof of `i_inj`: Show that `i` is injective
-  · intro a₁ ha₁ a₂ ha₂ h_eq
-    apply Finset.ext
-    intro x
-    rw [← Finset.mem_filter]
-    rw [h_eq, Finset.mem_filter]
-
-  -- Proof of `i_surj`: Show that `i` is surjective
-  · intro y hy
-    obtain ⟨s, hs, rfl⟩ := Finset.mem_image.mp hy
-    use s
-    exact hs
-
-  -- Proof of `h`: Show that `f a = g (i a ha)` for each `a ∈ s`
-  · intro s hs
-    show Finset.card s = Finset.card (Finset.filter (fun y => ∃ x, (∃ (x_1 : x ∈ F.ground), ⟨x, x_1⟩ = y) ∧ x ∈ s) F.ground.attach)
-    apply Finset.card_congr
-    intros x hx
-    exact hx
-
-
-
+  let result := (card_sum_bijection F.ground F.toSetFamily.sets).symm
+  rw [←result]
+  clear result
+  congr
+  simp
 
 theorem ideal_implies_average_rare (F : IdealFamily α) : normalized_degree_sum F.toSetFamily <= 0 := by
   set n := F.ground.card with n_def
