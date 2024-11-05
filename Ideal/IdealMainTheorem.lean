@@ -1,8 +1,7 @@
---Ideal集合族が平均abundantにならないことの証明。IdealMainのほうは、各Fin n上のIdeal集合族に対して、平均abundantにならないことを示した。
---ここでは、一般のalpha上のIdeal集合族に対して、平均abundantにならないことを示したい。
+--Ideal集合族が平均abundantにならないことの証明。IdealMain.leanのほうは、各Fin n上のIdeal集合族に対して、平均abundantにならないことを示した。
+--ここでは、一般のalpha上のIdeal集合族に対して、平均abundantにならないことを示した。
 --alpha上のIdeal集合族をFin n上のIdeal集合族に埋め込む関数を定義したが、大きい方から小さい方への埋め込みは、思いのほか大変だった。
---数学的には、hyperedgeの数も、hyperedgeの大きさの和も埋め込みで変化がないことは自明だが、Leanで証明すると大変だった。
-
+--数学的には、hyperedgeの数も、hyperedgeの大きさの和も埋め込みで変化がないことは自明だが、Leanで証明するとかなり大変だった。
 
 import Mathlib.Data.Finset.Basic
 --import Mathlib.Data.Finset.Lattice
@@ -874,18 +873,43 @@ theorem ideal_implies_average_rare (F : IdealFamily α) : normalized_degree_sum 
       let equal :=  equal_card_fin_ideal_family F hn
       --#check equal
       have equal2: Fintype.card { x // x ∈ (toIdealFinFamily F n hn).ground } = (toIdealFinFamily F n hn).ground.card := by
-        congr
         exact Fintype.card_coe (toIdealFinFamily F n hn).ground
       simp_all only [n, equal]
-      obtain ⟨left, right⟩ := pall
+      obtain ⟨_, right⟩ := pall
       simp_all only [ge_iff_le, n]
       rfl
 
-    let pa :=  pall.2 (toIdealFinFamily F n hn)
+    --let pa :=  pall.2 (toIdealFinFamily F n hn)
     let embedding := (Fintype.equivFinOfCardEq hn).toFun
     have hf: Function.Injective embedding := by
       simp_all only [embedding]
       exact (Fintype.equivFinOfCardEq hn).injective
+    rw [normalized_degree_sum]
+    --rw [total_size_of_hyperedges,number_of_hyperedges]
+    simp
+    let num := fin_number_eq F h hn
+    let tot := fin_total_eq F h hn
+
+    rw [←num,←tot]
+
+    have ideal_n: (toIdealFinFamily F F.ground.card hn).ground.card = n:= by
+      simp_all only [Equiv.toFun_as_coe, n, embedding]
+    have normalized_fin: normalized_degree_sum (toIdealFinFamily F F.ground.card hn).toSetFamily ≤ 0 := by
+      dsimp [normalized_degree_sum]
+      simp_all only [Equiv.toFun_as_coe, tsub_le_iff_right, zero_add, n, embedding, tot, num]
+      obtain ⟨_, right⟩ := pall
+
+      let result := right (toIdealFinFamily F F.ground.card hn) ideal_n
+      simp_all only [ge_iff_le]
+      rw [normalized_degree_sum] at result
+      simp at result
+      simp_all only [n, tot, num]
+
+    rw [normalized_degree_sum] at normalized_fin
+    rw [tot,num] at normalized_fin
+    simp_all only [Equiv.toFun_as_coe, tsub_le_iff_right, zero_add, n, embedding, tot, num]
+
+    ---lemma fin_number_eq (F: IdealFamily α)(h : F.ground.card ≥ 2) (hn: Fintype.card F.ground = F.ground.card): number_of_hyperedges (toIdealFinFamily F F.ground.card hn).toSetFamily = number_of_hyperedges F.toSetFamily := by
     --let embedding2: Finset F.ground → Finset (Fin n) := λ S => S.image (Fintype.equivFinOfCardEq hn).toFun
     --ここにnumberの読み込み部分を作る。
     --それからtotalの計算部分を作って、ここから読み込む。
@@ -897,9 +921,9 @@ theorem ideal_implies_average_rare (F : IdealFamily α) : normalized_degree_sum 
     have n_ge_1: n ≥ 1 := by
       rw [n_def]
       by_contra h
-      have h2: n = 0 := by
-        simp_all only [Fintype.card_coe, ge_iff_le, not_le, Finset.one_le_card, Finset.not_nonempty_iff_eq_empty,
-          Finset.card_empty, n]
+      --have h2: n = 0 := by
+      --  simp_all only [Fintype.card_coe, ge_iff_le, not_le, Finset.one_le_card, Finset.not_nonempty_iff_eq_empty,
+      --  Finset.card_empty, n]
       have h3: F.ground.Nonempty := by
         exact F.nonempty_ground
       simp_all only [Fintype.card_coe, ge_iff_le, not_le, Finset.one_le_card, not_true_eq_false, n]
