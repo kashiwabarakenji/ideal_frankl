@@ -2,6 +2,8 @@
 --ここでは、一般のalpha上のIdeal集合族に対して、平均abundantにならないことを示したい。
 --alpha上のIdeal集合族をFin n上のIdeal集合族に埋め込む関数を定義したが、大きい方から小さい方への埋め込みは、思いのほか大変だった。
 --数学的には、hyperedgeの数も、hyperedgeの大きさの和も埋め込みで変化がないことは自明だが、Leanで証明すると大変だった。
+
+
 import Mathlib.Data.Finset.Basic
 --import Mathlib.Data.Finset.Lattice
 import Mathlib.Data.Finset.Card
@@ -23,6 +25,7 @@ import Ideal.IdealFin
 import Ideal.IdealMain
 import Ideal.IdealDegOneMain
 import LeanCopilot
+set_option maxHeartbeats 500000
 
 namespace Ideal
 
@@ -48,7 +51,8 @@ lemma fin_number_eq (F: IdealFamily α)(h : F.ground.card ≥ 2) (hn: Fintype.ca
     let embedding := (Fintype.equivFinOfCardEq hn).toFun
     have hf: Function.Injective embedding := by
       simp_all only [embedding]
-      exact (Fintype.equivFinOfCardEq hn).injective--simp [number_of_hyperedges, toIdealFinFamily, equal_card_fin_ideal_family]
+      exact (Fintype.equivFinOfCardEq hn).injective
+      --simp [number_of_hyperedges, toIdealFinFamily, equal_card_fin_ideal_family]
       --theorem same_cardinality [DecidableEq α] [DecidableEq β] (hf : Function.Injective f)(hFG : ∀ (T : Finset β), T ∈ GSet ↔ ∃ (S : Finset α),S ∈ FSet ∧ T = S.image f) :
       -- FSet.card = GSet.card
       --α = Fin n, β = Finset { x// x ∈ F.ground}, f = embedding, FSet = F.ground.powerset.filter F.toSetFamily.sets, GSet = (toIdealFinFamily F n hn).ground.powerset.filter (toIdealFinFamily F n hn).toSetFamily.sets
@@ -109,30 +113,59 @@ lemma fin_number_eq (F: IdealFamily α)(h : F.ground.card ≥ 2) (hn: Fintype.ca
         simp_all only
         have left_2 := left_2
         simp_all only
+        have left_2 := left_2
+        simp_all only
+        have left_2 := left_2
+        simp_all only
+        convert left_2
+        simp_all only [iff_true]
+        have left_2 := left_2
+        simp_all only
+        have left_2 := left_2
+        simp_all only
+        have left_2 := left_2
+        simp_all only
+        have left_2 := left_2
+        simp_all only
+        have left_2 := left_2
+        simp_all only
+        have left_2 := left_2
+        simp_all only
+        have left_2 := left_2
+        simp_all only
+        have left_2 := left_2
+        simp_all only
+        have left_2 := left_2
+        simp_all only
         use w
         simp_all only [Equiv.toFun_as_coe, and_true]
+        have left_2 := left_2
+        simp_all only
+        simp only [Finset.image]
+        simp only [Multiset.toFinset_map]
+        simp_all only [Finset.val_toFinset]
+        rw [Finset.image]
+        simp only [Multiset.toFinset_map]
+        simp_all only [Finset.val_toFinset]
+        have left_2 := left_2
+        simp_all only
         have left_2 := left_2
         simp_all only
         rw [Finset.image]
         simp only [Multiset.toFinset_map]
         simp_all only [Finset.val_toFinset]
-        rw [Finset.image]
-        simp only [Multiset.toFinset_map]
-        simp_all only [Finset.val_toFinset]
-        convert left
-        simp_all only [ge_iff_le, iff_true, n]
-        simp only [Finset.image]
-        simp_rw [Multiset.toFinset_map]
-        simp_all only [Finset.val_toFinset]
-        rw [Finset.image]
-        rw [Multiset.toFinset_map]
-        simp_all only [Finset.val_toFinset]
+        have left_2 := left_2
+        simp_all only
+        have left_2 := left_2
+        simp_all only
+        have left_2 := left_2
+        simp_all only
         convert left_2
-        funext x
-        ext z
-        simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, Finset.mem_map,
-          Function.Embedding.coe_subtype]
+        ext ⟨x, hx⟩
+        simp_all only [Finset.mem_image, Finset.mem_mk, Subtype.exists, exists_and_right, exists_eq_right,
+          Finset.mem_map, Function.Embedding.coe_subtype]
 
+    --補題として独立させたい。
     have hFG2: ∀ (T : Finset (Fin n)), T ∈ GSet ↔ ∃ S ∈ FSet2, T = Finset.image embedding S:= by
       dsimp [FSet2, projectFSetToGround]
       dsimp[projectToGround]
@@ -433,6 +466,184 @@ lemma fin_number_eq (F: IdealFamily α)(h : F.ground.card ≥ 2) (hn: Fintype.ca
 
 lemma fin_total_eq (F: IdealFamily α)(ge_2 : F.ground.card ≥ 2) (hn: Fintype.card F.ground = F.ground.card):
   total_size_of_hyperedges (toIdealFinFamily F F.ground.card hn).toSetFamily = total_size_of_hyperedges F.toSetFamily := by
+
+  let n := F.ground.card
+  --fin_number_eqでも計算している。
+  let embedding := (Fintype.equivFinOfCardEq hn).toFun
+  --#check embedding { x // x ∈ F.ground } → Fin F.ground.card
+  have hf: Function.Injective embedding := by
+    simp_all only [embedding]
+    exact (Fintype.equivFinOfCardEq hn).injective
+  let GSet := (toIdealFinFamily F n hn).ground.powerset.filter (toIdealFinFamily F n hn).toSetFamily.sets
+  let FSet: Finset (Finset α)  := F.ground.powerset.filter (λ S => F.toSetFamily.sets S)
+  let projectToGround (x: α) (hx: x ∈ F.ground) : { x:α  // x ∈ F.ground } := ⟨x, hx⟩
+  --haveI : DecidablePred (λ x => x ∈ F.ground) := inferInstance
+  let projectFSetToGround (S : Finset (Finset α)) : Finset (Finset { x : α // x ∈ F.ground }) :=
+    S.image (λ s => Finset.filter (λ y => ∃ (x : α) (hx : x ∈ F.ground), projectToGround x hx = y ∧ x ∈ s) (Finset.univ))
+  let FSet2:Finset (Finset { x // x ∈ F.ground }) := projectFSetToGround FSet
+
+  have hFG: GSet = FSet2.image (λ S => Finset.image embedding S) := by
+    simp_all only [ge_iff_le, Equiv.toFun_as_coe]
+    dsimp [FSet2, GSet,embedding]
+    dsimp [projectFSetToGround]
+    dsimp [projectToGround]
+    dsimp [toIdealFinFamily,SetFamily.toFinFamily]
+    simp
+    dsimp [FSet]
+    simp_all only [Equiv.toFun_as_coe, embedding, n]
+    apply Finset.ext
+    intro xx
+    simp_all only [Finset.mem_image, Finset.mem_filter, Finset.mem_powerset, Finset.mem_singleton, Finset.mem_univ, Finset.mem_image, Finset.mem_map]
+    constructor
+    · intro h
+      obtain ⟨left, right⟩ := h
+      obtain ⟨w, h⟩ := right
+      obtain ⟨left_1, right⟩ := h
+      subst right
+      use w --2回useを使う必要あり。
+      simp_all only [and_true]
+      use w.map (Function.Embedding.subtype _)
+      simp_all only [and_true, Finset.mem_map, Function.Embedding.coe_subtype, Subtype.exists, exists_and_right,
+        exists_eq_right]
+      apply And.intro
+      · apply And.intro
+        · intro x hx
+          simp_all only [Finset.mem_map, Function.Embedding.coe_subtype, Subtype.exists, exists_and_right,
+            exists_eq_right]
+          obtain ⟨w_1, h⟩ := hx
+          simp_all only
+        · convert left_1
+          ext x a : 2
+          simp_all only [Finset.mem_map, Function.Embedding.coe_subtype, Subtype.exists, exists_and_right,
+          exists_eq_right, Finset.mem_image]
+      · ext1 a
+        simp_all only [Finset.mem_filter, Finset.mem_attach, true_and]
+        obtain ⟨val, property⟩ := a
+        simp_all only [Subtype.mk.injEq, exists_prop]
+        apply Iff.intro
+        · intro a
+          obtain ⟨w_1, h⟩ := a
+          obtain ⟨left_2, right⟩ := h
+          obtain ⟨left_2, right_1⟩ := left_2
+          obtain ⟨w_2, h⟩ := right
+          subst right_1
+          simp_all only
+        · intro a
+          apply Exists.intro
+          · apply And.intro
+            · apply And.intro
+              on_goal 2 => {rfl
+              }
+              · simp_all only
+            · simp_all only [exists_const]
+    · intro h
+      obtain ⟨w, h⟩ := h
+      obtain ⟨left, right⟩ := h
+      subst right
+      obtain ⟨left, right⟩ := left
+      obtain ⟨w_1, h⟩ := right
+      subst h
+      constructor
+      ·
+        obtain ⟨left_1, right⟩ := w_1
+        intro x hx
+        simp_all only [Finset.mem_image, Finset.mem_filter, Finset.mem_attach, true_and, Subtype.exists,
+          Subtype.mk.injEq, exists_prop, exists_and_left, Finset.mem_map, Function.Embedding.coeFn_mk]
+        obtain ⟨w, h⟩ := hx
+        obtain ⟨left_2, right_1⟩ := h
+        obtain ⟨w_1, h⟩ := left_2
+        obtain ⟨w_2, h_1⟩ := right_1
+        obtain ⟨left_2, right_1⟩ := h
+        obtain ⟨left_2, right_2⟩ := left_2
+        subst h_1 right_2
+        simp_all only [EmbeddingLike.apply_eq_iff_eq, Subtype.mk.injEq, exists_prop, exists_eq_right]
+      · --goal ∃ t,  F.sets (Finset.image Subtype.val t) ∧ ...
+        use F.ground.attach.filter (λ x => x.1 ∈ left)
+        obtain ⟨left_1, right⟩ := w_1
+        apply And.intro
+        · convert right
+          ext1 a
+          simp_all only [Finset.mem_image, Finset.mem_filter, Finset.mem_attach, true_and, Subtype.exists,
+            exists_and_left, exists_prop, exists_eq_right_right, and_iff_left_iff_imp]
+          intro a_1
+          exact left_1 a_1
+        · ext1 a
+          simp_all only [Finset.mem_image, Finset.mem_filter, Finset.mem_attach, true_and, Subtype.exists,
+            Subtype.mk.injEq, exists_prop, exists_and_left]
+          apply Iff.intro
+          · intro a_1
+            obtain ⟨w, h⟩ := a_1
+            obtain ⟨left_2, right_1⟩ := h
+            obtain ⟨w_1, h⟩ := left_2
+            obtain ⟨w_2, h_1⟩ := right_1
+            obtain ⟨left_2, right_1⟩ := h
+            obtain ⟨left_2, right_2⟩ := left_2
+            subst h_1 right_2
+            simp_all only [EmbeddingLike.apply_eq_iff_eq, Subtype.mk.injEq, exists_prop, exists_eq_right_right,
+              and_self]
+          · intro a_1
+            obtain ⟨w, h⟩ := a_1
+            obtain ⟨left_2, right_1⟩ := h
+            obtain ⟨w_1, h⟩ := right_1
+            subst h
+            simp_all only [EmbeddingLike.apply_eq_iff_eq, Subtype.mk.injEq, exists_prop, exists_eq_right_right,
+              and_true]
+            use w
+
+  --#check same_summation FSet2 GSet embedding hf hFG
+  have FG_sum_eq: FSet2.sum Finset.card = GSet.sum Finset.card:= by
+    apply same_summation FSet2 GSet embedding hf hFG
+  dsimp [FSet2, GSet] at FG_sum_eq
+  dsimp [projectFSetToGround] at FG_sum_eq
+  dsimp [projectToGround] at FG_sum_eq
+  dsimp [number_of_hyperedges, total_size_of_hyperedges]
+  simp at FG_sum_eq
+  --simp
+  rw [←FG_sum_eq]
+  dsimp [FSet]
+  apply Eq.symm
+  --TODO:以下の部分は独立させる。
+  --goal F.ground.powerset.filter (λ (S : Finset α), F.toSetFamily.sets S).sum Finset.card = F.ground.powerset.filter (λ (S : Finset α), F.toSetFamily.sets S).sum Finset.card
+  --前の時は(Finset.filter F.sets F.ground.powerset).card =  (Finset.image (fun s => Finset.filter (fun y => ∃ x, ∃ (hx : x ∈ F.ground), ⟨x, hx⟩ = y ∧ x ∈ s) F.ground.attach) (Finset.filter (fun S => F.sets S) F.ground.powerset)).card
+  let i := fun (s : Finset α) (_ : s ∈ Finset.filter F.sets F.ground.powerset) => Finset.filter (fun y => ∃ x, (∃ (x_1 : x ∈ F.ground), ⟨x, x_1⟩ = y) ∧ x ∈ s) F.ground.attach
+  --let i := λ (s : Finset α) (_ : s ∈ Finset.filter F.sets F.ground.powerset) =>
+  --      Finset.filter (λ y => ∃ x, ∃ (hx: x ∈ F.ground), ⟨x, hx⟩ = y ∧ x ∈ s) F.ground.attach
+
+  apply Finset.sum_bij i
+
+  -- Proof of `hi`: Show that `i` maps each element in `s` to an element in `t`
+  · intro s hs
+
+    show (Finset.filter (fun y => ∃ x, (∃ (x_1 : x ∈ F.ground), ⟨x, x_1⟩ = y) ∧ x ∈ s) F.ground.attach) ∈
+         Finset.image (fun s => Finset.filter (fun y => ∃ x, (∃ (x_1 : x ∈ F.ground), ⟨x, x_1⟩ = y) ∧ x ∈ s) F.ground.attach)
+         (Finset.filter (fun S => F.sets S) F.ground.powerset)
+    apply Finset.mem_image.mpr
+    use s
+    constructor
+    · exact hs
+    · rfl
+
+  -- Proof of `i_inj`: Show that `i` is injective
+  · intro a₁ ha₁ a₂ ha₂ h_eq
+    apply Finset.ext
+    intro x
+    rw [← Finset.mem_filter]
+    rw [h_eq, Finset.mem_filter]
+
+  -- Proof of `i_surj`: Show that `i` is surjective
+  · intro y hy
+    obtain ⟨s, hs, rfl⟩ := Finset.mem_image.mp hy
+    use s
+    exact hs
+
+  -- Proof of `h`: Show that `f a = g (i a ha)` for each `a ∈ s`
+  · intro s hs
+    show Finset.card s = Finset.card (Finset.filter (fun y => ∃ x, (∃ (x_1 : x ∈ F.ground), ⟨x, x_1⟩ = y) ∧ x ∈ s) F.ground.attach)
+    apply Finset.card_congr
+    intros x hx
+    exact hx
+
+
 
 
 theorem ideal_implies_average_rare (F : IdealFamily α) : normalized_degree_sum F.toSetFamily <= 0 := by
