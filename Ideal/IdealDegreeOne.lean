@@ -123,11 +123,11 @@ lemma hyperedges_not_through_v {α : Type} [DecidableEq α] [Fintype α]
   rw [deg1 ] at deg2
   contradiction
 
---次数が1である性質でいえること。本来は、次数が1なので、全体集合以外は、traceしてもhyperedgeの数も大きさもかわらないことを証明すればよい。
+--vがシングルトンhyperedgeでない場合。次数が1である性質でいえること。
+--本来は、次数が1なので、全体集合以外は、traceしてもhyperedgeの数も大きさもかわらないことを証明すればよい。
 --IdealTraceに移動してもいいが、deg1の仮定が必要なので、ここに置いておく。補題の名前もdegoneの仮定を反映しても良い。
---lemma degree_one_property {α : Type} [DecidableEq α] [Fintype α]
---  (F : SetFamily α) (x : α) (hx: x ∈ F.ground) (deg1: degree F x = 1) :
---  ∃ s, s ∈ F.sets ∧ x ∈ s ∧ ∀ t ∈ F.sets, x ∈ t → t = s :=
+--メインの証明に使われてないかも。
+
 lemma trace_hyperedge_equiv {α : Type} [DecidableEq α] [Fintype α]
   (F : SetFamily α) (v : α) (hv: v ∈ F.ground) (deg1: degree F v = 1) (hasGround: F.sets F.ground)(ground_ge_two: F.ground.card ≥ 2) :
   {s : Finset α|(IdealTrace.trace F v hv ground_ge_two).sets s} = { s : Finset α|F.sets s ∧ s ≠ F.ground } ∪ { F.ground.erase v } :=

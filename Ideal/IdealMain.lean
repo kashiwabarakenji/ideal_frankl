@@ -1,4 +1,4 @@
---Ideal集合族が平均abundantにならないことの証明。メイン定理。
+--Ideal集合族が平均abundantにならないことの証明。ideal集合族が平均rareであるというメイン定理の型がFin nの場合。
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Finset.Lattice
 import Mathlib.Data.Finset.Card
@@ -32,7 +32,7 @@ theorem basecase : P 2 := by
   simp_all only [le_refl]
   intros F ground_card
   dsimp [normalized_degree_sum]
-  simp_all only [ge_iff_le, tsub_le_iff_right, zero_add]
+  simp_all only [ge_iff_le, zero_add]
   dsimp [total_size_of_hyperedges]
   dsimp [number_of_hyperedges]
   have gr: F.ground = {0, 1} := by
@@ -46,13 +46,11 @@ theorem basecase : P 2 := by
     simp_all only [Fin.isValue]
     intro a
     intro _
-    simp_all only [Fin.isValue, Finset.mem_insert, Finset.mem_singleton]
-    simp_all only [Fin.isValue, Finset.mem_singleton, zero_ne_one, not_false_eq_true, Finset.card_insert_of_not_mem,
-      Finset.card_singleton, Nat.reduceAdd, le_refl]
+    simp_all only [Finset.mem_insert, Finset.mem_singleton]--
+    simp_all only [Finset.mem_singleton, zero_ne_one, not_false_eq_true, Finset.card_insert_of_not_mem, Finset.card_singleton, le_refl]--
   rw [gr]
   simp
-  simp_all only [Fin.isValue, Finset.mem_singleton, zero_ne_one, not_false_eq_true, Finset.card_insert_of_not_mem,
-    Finset.card_singleton, Nat.reduceAdd]
+  simp_all only [Finset.card_insert_of_not_mem, Nat.reduceAdd]
 
   have hasground: F.sets {0, 1}:= by
     rw [←gr]
@@ -81,25 +79,16 @@ theorem basecase : P 2 := by
     decide
 
   have zeroonedisj3: Disjoint (Finset.filter (fun x => F.sets {x}) {0}) (Finset.filter (fun x => F.sets {x}) {1}) := by
-    simp_all only [Fin.isValue]
-    simp_all only [Fin.isValue, Finset.disjoint_iff_inter_eq_empty, zeroone]
-    simp_all only [Fin.isValue, Finset.powerset_univ, Finset.mem_singleton, one_ne_zero, not_false_eq_true,
-      Finset.inter_singleton_of_not_mem]
-    ext1 a
-    simp_all only [Fin.isValue, Finset.mem_inter, Finset.mem_filter, Finset.mem_singleton, Finset.not_mem_empty,
-      iff_false, not_and, zero_ne_one, false_and, not_false_eq_true, and_imp, implies_true]
+    simp_all only [Finset.disjoint_insert_right, Finset.mem_insert, or_false,one_ne_zero]
+    rw [Finset.disjoint_left]
+    intro a a_1
+    simp_all only [Fin.isValue, Finset.mem_filter, Finset.mem_singleton, zero_ne_one, false_and, not_false_eq_true]
 
   have zeroonedisj4: Disjoint ({0, 1}:(Finset (Fin 2))) ∅ := by
-    simp_all only [Fin.isValue, Finset.powerset_univ, Finset.disjoint_insert_right, Finset.mem_insert,
-      Finset.mem_singleton, Finset.singleton_ne_empty, or_false, Finset.disjoint_singleton_right, one_ne_zero,
-      not_false_eq_true, Finset.image_insert, Finset.image_singleton, Finset.image_empty, Finset.disjoint_empty_right,
-      zeroone]
+    simp_all only [Finset.image_insert, Finset.image_singleton, Finset.image_empty, Finset.disjoint_empty_right, zeroone]
 
   have zeroonedisj5: Disjoint ({{0, 1}}:Finset (Finset (Fin 2))) {∅} := by
-    simp_all only [Fin.isValue, Finset.powerset_univ, Finset.disjoint_insert_right, Finset.mem_insert,
-      Finset.mem_singleton, Finset.singleton_ne_empty, or_false, Finset.disjoint_singleton_right, one_ne_zero,
-      not_false_eq_true, Finset.image_insert, Finset.image_singleton, Finset.image_empty, Finset.disjoint_empty_right,
-      zeroone]
+    simp_all only [Finset.disjoint_insert_right,or_false, Finset.disjoint_singleton_right, zeroone]
     obtain ⟨left, right⟩ := zeroonedisj
     apply Aesop.BuiltinRules.not_intro
     intro a
@@ -117,9 +106,7 @@ theorem basecase : P 2 := by
     decide
 
   have zerooneunion3: ({{0, 1}, ∅} : Finset (Finset (Fin 2))) = {{0, 1}} ∪  {∅} := by
-    simp_all only [Fin.isValue, Finset.powerset_univ, Finset.disjoint_insert_right, Finset.mem_insert,
-      Finset.mem_singleton, Finset.singleton_ne_empty, or_false, Finset.disjoint_singleton_right, one_ne_zero,
-      not_false_eq_true, Finset.union_insert, Finset.insert_union, zeroone]
+    simp_all only [Finset.disjoint_singleton_right,  Finset.insert_union, zeroone]
     rfl
 
   have leftside: ∑ x in Finset.filter F.sets (Finset.powerset zeroone), x.card = 2 + (Finset.card (Finset.filter (λ x => F.sets {x}) zeroone)) := by
@@ -128,7 +115,7 @@ theorem basecase : P 2 := by
     simp at dist
 
     let distsum := filter_union_sum F.sets ({{0,1},∅}) ({{0},{1}}) zeroonedisj
-    let filtereq := filter_union_eq F.sets ({{0,1},∅}) ({{0},{1}}) --うまくいってない？{{0, 1}, ∅} ∪ {{0}, {1}}= {{0, 1}, {0}, {1}, ∅} が成り立つはず。
+    let filtereq := filter_union_eq F.sets ({{0,1},∅}) ({{0},{1}})
     simp at filtereq
     rw [zerooneunion] at distsum
     rw [←distsum]
@@ -136,14 +123,10 @@ theorem basecase : P 2 := by
     have goal1:  ∑ x ∈ Finset.filter F.sets {{0, 1}, ∅}, x.card = 2 := by
       simp_all only [Fin.isValue]
       simp_all only [Fin.isValue, Finset.powerset_univ, zeroone, zp]
-      simp_all only [Fin.isValue, Finset.disjoint_insert_right, Finset.mem_insert, Finset.mem_singleton,
-        Finset.singleton_ne_empty, or_false, Finset.disjoint_singleton_right, Finset.union_insert,
-        Finset.insert_union]
+      simp_all only [Finset.disjoint_insert_right, Finset.mem_insert, Finset.mem_singleton,Finset.singleton_ne_empty]
       obtain ⟨left, right⟩ := zeroonedisj
       simp [Finset.filter_true_of_mem, *]
-      simp_all only [Fin.isValue, one_ne_zero, not_false_eq_true, Finset.image_insert, Finset.image_singleton,
-        Finset.image_empty, Finset.disjoint_empty_right, Finset.union_assoc, Finset.mem_union, Finset.mem_singleton,
-        Finset.singleton_ne_empty, or_false]
+      simp_all only [Finset.mem_union, Finset.mem_singleton, or_false]
       rfl
 
     have goal2: ∑ x ∈ Finset.filter F.sets {{0}, {1}}, x.card = (Finset.filter (fun x => F.sets {x}) zeroone).card := by
@@ -152,8 +135,6 @@ theorem basecase : P 2 := by
       dsimp [zeroone]
       simp_all only [Fin.isValue]
       let result0 := filter_union_eq0 (fun x => F.sets {x}) {0} {1}
-      --have eqn1: ({0} : Finset (Fin 2)) ∪ ({1} : Finset (Fin 2)) = {0, 1} := by
-      --  simp_all only [Fin.isValue]
 
       rw [zerooneunion2] at result0
       rw [result0]
@@ -161,42 +142,32 @@ theorem basecase : P 2 := by
         simp
         by_cases h01: F.sets {0}
         · case pos =>
-          simp_all only [Fin.isValue, Finset.powerset_univ, Finset.disjoint_insert_right, Finset.mem_insert,
-            Finset.mem_singleton, Finset.singleton_ne_empty, or_false, Finset.disjoint_singleton_right,
-            Finset.union_insert, Finset.insert_union, ↓reduceIte, zeroone]
-          --obtain ⟨left, right⟩ := zeroonedisj
+          simp_all only [Finset.disjoint_singleton_right,Finset.union_insert, ↓reduceIte, zeroone]
+
           symm
           simp [result0, Finset.filter_singleton]
           simp_all only [Fin.isValue, ↓reduceIte, Finset.card_singleton]
         · case neg =>
-          simp_all only [Fin.isValue, Finset.powerset_univ, Finset.disjoint_insert_right, Finset.mem_insert,
-            Finset.mem_singleton, Finset.singleton_ne_empty, or_false, Finset.disjoint_singleton_right,
-            Finset.union_insert, Finset.insert_union, ↓reduceIte, zeroone]
+          simp_all only [ Finset.mem_insert,↓reduceIte, zeroone]
           symm
-          simp_all only [Fin.isValue, Finset.card_eq_zero]
+          simp_all only [ Finset.card_eq_zero]
           ext1 a
-          simp_all only [Fin.isValue, Finset.mem_filter, Finset.mem_singleton, Finset.not_mem_empty, iff_false,
-            not_and, not_false_eq_true, implies_true]
+          simp_all only [ Finset.mem_filter, Finset.mem_singleton, Finset.not_mem_empty, iff_false,not_and, not_false_eq_true, implies_true]--
 
       have term2: (if F.sets {1} then 1 else 0) = (Finset.filter (fun x => F.sets {x}) {1}).card := by
         simp
         by_cases h10: F.sets {1}
         · case pos =>
-          simp_all only [Fin.isValue, Finset.powerset_univ, Finset.disjoint_insert_right, Finset.mem_insert,
-            Finset.mem_singleton, Finset.singleton_ne_empty, or_false, Finset.disjoint_singleton_right,
-            Finset.union_insert, Finset.insert_union, ↓reduceIte, zeroone]
+          simp_all only [  or_false, Finset.disjoint_singleton_right,↓reduceIte, zeroone]
           symm
           simp [result0, Finset.filter_singleton]
-          simp_all only [Fin.isValue, ↓reduceIte, Finset.card_singleton]
+          simp_all only [↓reduceIte, Finset.card_singleton]
         · case neg =>
-          simp_all only [Fin.isValue, Finset.powerset_univ, Finset.disjoint_insert_right, Finset.mem_insert,
-            Finset.mem_singleton, Finset.singleton_ne_empty, or_false, Finset.disjoint_singleton_right,
-            Finset.union_insert, Finset.insert_union, ↓reduceIte, zeroone]
+          simp_all only [ Finset.mem_insert, Finset.union_insert, Finset.insert_union, ↓reduceIte, zeroone]
           symm
-          simp_all only [Fin.isValue, Finset.card_eq_zero]
+          simp_all only [Finset.card_eq_zero]--
           ext1 a
-          simp_all only [Fin.isValue, Finset.mem_filter, Finset.mem_singleton, Finset.not_mem_empty, iff_false,
-            not_and, not_false_eq_true, implies_true]
+          simp_all only [Finset.mem_filter, Finset.mem_singleton,Finset.not_mem_empty,  iff_false,not_and, not_false_eq_true, implies_true]--
 
       rw [term1, term2]
 
@@ -218,9 +189,7 @@ theorem basecase : P 2 := by
 
       rw [zerooneunion2]
 
-    simp_all only [Fin.isValue, Finset.powerset_univ, Finset.disjoint_insert_right, Finset.mem_insert,
-      Finset.mem_singleton, Finset.singleton_ne_empty, or_false, Finset.disjoint_singleton_right, one_ne_zero,
-      not_false_eq_true, Finset.union_insert, Finset.insert_union, zeroone]
+    simp_all only [Finset.mem_singleton, Finset.singleton_ne_empty, or_false, one_ne_zero, Finset.union_insert, Finset.insert_union]
 
   rw [pow2] at leftside
   --rw [leftside] 表面上一致しているが、一致しない。
@@ -230,41 +199,31 @@ theorem basecase : P 2 := by
       rw [←zerooneunion]
       --lemma filter_union_eq (P : Finset α → Prop) [DecidablePred P] (A B : Finset (Finset α)) : (A ∪ B).filter P = (A.filter P) ∪ (B.filter P)
       rw [filter_union_eq F.sets {{0, 1}, ∅} {{0}, {1}}]
-      simp_all only [Fin.isValue, Finset.powerset_univ, Finset.disjoint_insert_right, Finset.mem_insert,
-        Finset.mem_singleton, Finset.singleton_ne_empty, or_false, Finset.disjoint_singleton_right, one_ne_zero,
-        not_false_eq_true, Finset.union_insert, Finset.insert_union, zeroone]
+      simp_all only [Finset.disjoint_insert_right,Finset.mem_singleton, Finset.singleton_ne_empty,  one_ne_zero, Finset.union_insert, Finset.insert_union, zeroone]
       obtain ⟨left, right⟩ := zeroonedisj
       rw [Finset.card_union_of_disjoint]
       symm
       apply Finset.disjoint_filter_filter
-      simp_all only [Fin.isValue, Finset.union_assoc, Finset.mem_union, Finset.mem_singleton,
-        Finset.singleton_ne_empty, or_false, Finset.disjoint_union_right, Finset.disjoint_singleton_right,
-        Finset.mem_insert, Finset.insert_eq_self, zero_ne_one, not_or]
+      simp_all only [  Finset.mem_singleton, or_false, Finset.disjoint_union_right, Finset.disjoint_singleton_right,Finset.mem_insert, Finset.insert_eq_self, zero_ne_one, not_or]--
       apply And.intro
       · apply Aesop.BuiltinRules.not_intro
         intro a
-        simp_all only [Fin.isValue, Finset.mem_insert, Finset.singleton_inj, zero_ne_one, Finset.mem_singleton,
-          Finset.singleton_ne_empty, or_self, or_false, Finset.insert_eq_of_mem, Finset.mem_union,
-          Finset.union_eq_left, Finset.subset_singleton_iff, one_ne_zero]
+        simp_all only [ Finset.mem_singleton,Finset.singleton_ne_empty, or_false, Finset.mem_union, Finset.subset_singleton_iff, Finset.union_eq_left, one_ne_zero]
       · apply And.intro
         · apply Aesop.BuiltinRules.not_intro
           intro a
-          simp_all only [Fin.isValue, Finset.mem_insert, Finset.singleton_inj, zero_ne_one, Finset.mem_singleton,
-            or_true, Finset.insert_eq_of_mem, Finset.mem_union, or_false]
+          simp_all only [ Finset.singleton_inj, zero_ne_one, Finset.mem_singleton, or_true, Finset.insert_eq_of_mem, Finset.mem_union]
           contradiction
         · apply Aesop.BuiltinRules.not_intro
           intro a
-          simp_all only [Fin.isValue, Finset.mem_singleton, Finset.insert_eq_of_mem, Finset.union_idempotent]
+          simp_all only [Finset.mem_singleton, Finset.insert_eq_of_mem, Finset.union_idempotent]
           contradiction
 
     have rightside_eq2:(Finset.card (Finset.filter (λ s => F.sets s) {zeroone, ∅})) = 2:= by
       dsimp [zeroone]
       rw [zerooneunion3]
       rw [filter_union_eq F.sets {{0, 1}} {∅}]
-      --#check @Finset.disjoint_filter_filter
-      -- Ensure the correct usage of Finset.disjoint_filter_filter
-      --Finset.disjoint_filter_filter zeroonedisj
-      --#check Finset.card_union_of_disjoint (Finset.disjoint_filter_filter zeroonedisj4)
+
       have disjoint_filtered := (@Finset.disjoint_filter_filter _ ({{0, 1}}:Finset (Finset (Fin 2))) {∅} F.sets F.sets) zeroonedisj5
       rw [Finset.card_union_of_disjoint disjoint_filtered]
       simp
@@ -277,7 +236,6 @@ theorem basecase : P 2 := by
           simp_all only [Fin.isValue, Finset.mem_singleton]
         rw [(Finset.filter_eq_self).mpr assum]
         simp_all only [Fin.isValue, Finset.mem_singleton, forall_eq, Finset.card_singleton]
-        --hasground : F.sets {0, 1}
 
       have value0: (Finset.filter F.sets {∅}).card = 1:= by
         --hasempty : F.sets ∅
@@ -288,23 +246,15 @@ theorem basecase : P 2 := by
           intro a
           simp_all only [Fin.isValue, Finset.mem_singleton]
         rw [(Finset.filter_eq_self).mpr assum]
-        simp_all only [Fin.isValue, Finset.mem_singleton, forall_eq, Finset.card_singleton]
+        simp_all only [Finset.mem_singleton, forall_eq, Finset.card_singleton]
 
-      simp_all only [Fin.isValue, Finset.powerset_univ, Finset.disjoint_insert_right, Finset.mem_union,
-        Finset.mem_singleton, Finset.singleton_ne_empty, or_false, Finset.disjoint_singleton_right, one_ne_zero,
-        not_false_eq_true, Finset.image_insert, Finset.image_singleton, Finset.image_empty,
-        Finset.disjoint_empty_right, Finset.union_insert, Finset.union_assoc, Nat.reduceAdd, zeroone]
+      simp_all only [ or_false, one_ne_zero,  Nat.reduceAdd, zeroone]
 
     rw [rightside_lem]
     rw [rightside_eq2]
 
-  simp_all only [Fin.isValue, Finset.powerset_univ, Finset.disjoint_insert_right, Finset.mem_union,
-    Finset.mem_singleton, Finset.singleton_ne_empty, or_false, Finset.disjoint_singleton_right, one_ne_zero,
-    not_false_eq_true, Finset.image_insert, Finset.image_singleton, Finset.image_empty, Finset.disjoint_empty_right,
-    Finset.union_insert, Finset.union_assoc, Nat.cast_add, Nat.cast_ofNat, ge_iff_le, zeroone]
-  --obtain ⟨left, right⟩ := zeroonedisj
+  simp_all only [ Finset.image_insert, Finset.image_singleton, Finset.disjoint_empty_right, zeroone]
   norm_cast
-  --rw [rightside]
   rw [leftside]
   simp
   have new_goal: (Finset.filter (fun x => F.sets {x}) ({0, 1}:Finset (Fin 2))).card = (Finset.filter (fun s => F.sets s) {{0}, {1}}:Finset (Finset (Fin 2))).card:= by
@@ -317,26 +267,22 @@ theorem basecase : P 2 := by
     have hi: ∀ x (h:x ∈ domain), i x h ∈ range := by
       intro x
       intro h
-      simp_all only [Fin.isValue, Finset.mem_filter, Finset.mem_insert, Finset.mem_singleton, Finset.singleton_inj,
-        and_self, and_imp, implies_true, exists_prop, forall_eq_or_imp, exists_eq_right, zero_ne_one, or_false,
-        one_ne_zero, or_true, domain, i, range]
-      simp_all only [Fin.isValue, Finset.mem_filter, Finset.mem_insert, Finset.mem_singleton, and_self, domain]
+      simp_all only [Finset.mem_filter, Finset.mem_insert, Finset.mem_singleton, Finset.singleton_inj, domain, i, range]
+      simp_all only [Finset.mem_insert, Finset.mem_filter,  Finset.mem_singleton, and_self, domain]
     have inj: ∀ (a₁ : Fin 2) (ha₁ : a₁ ∈ domain) (a₂ : Fin 2) (ha₂ : a₂ ∈ domain), i a₁ ha₁ = i a₂ ha₂ → a₁ = a₂ := by
       intro a₁ ha₁ a₂ ha₂ a
-      simp_all only [Fin.isValue, Finset.mem_filter, Finset.mem_insert, Finset.mem_singleton, Finset.singleton_inj,
-        and_self, and_imp, implies_true, domain, i, range]
+      simp_all only [ Finset.singleton_inj,and_self, and_imp, implies_true, domain, i, range]
     have surj: ∀ s ∈ range, ∃ (x : Fin 2), ∃ (h : x ∈ domain), i x h = s := by
       intro s a
-      simp_all only [Fin.isValue, Finset.mem_filter, Finset.mem_insert, Finset.mem_singleton, and_self,
-        Finset.singleton_inj, and_imp, implies_true, exists_prop, domain, i, range]
+      simp_all only [ Finset.mem_filter, Finset.mem_insert, Finset.mem_singleton,exists_prop, domain, i, range]--
       obtain ⟨left_1, right_1⟩ := a
       cases left_1 with
       | inl h =>
         subst h
-        simp_all only [Fin.isValue, Finset.singleton_inj, exists_eq_right, zero_ne_one, or_false, and_self]
+        simp_all only [Finset.singleton_inj, exists_eq_right, zero_ne_one, or_false, and_self]--
       | inr h_1 =>
         subst h_1
-        simp_all only [Fin.isValue, Finset.singleton_inj, exists_eq_right, one_ne_zero, or_true, and_self]
+        simp_all only [Finset.singleton_inj, exists_eq_right, one_ne_zero, or_true, and_self]
 
 
     let cardbij := @Finset.card_bij _ _ domain range i hi inj surj
@@ -354,7 +300,6 @@ theorem inductive_step {n:Nat} (n_ge_two: n >= 2) (h_ind: P n) : P (n+1) := by
   constructor
   simp_all only [ge_iff_le, Nat.reduceLeDiff]
   --obtain ⟨left, right⟩ := h
-  --omega
   intros F ground_card
    -- n ≥ 2 から n + 1 ≥ 3 を導く
   have ground_ge_two: F.ground.card >= 2 := by
@@ -376,7 +321,6 @@ theorem inductive_step {n:Nat} (n_ge_two: n >= 2) (h_ind: P n) : P (n+1) := by
       intro h
       simp_all only [ge_iff_le]
       dsimp [Fdel] at h
-      --simp_all only [Fdel]
       dsimp [idealdeletion] at h
       simp_all only [Finset.mem_erase, ne_eq, not_true_eq_false, and_true]
 
@@ -391,7 +335,6 @@ theorem inductive_step {n:Nat} (n_ge_two: n >= 2) (h_ind: P n) : P (n+1) := by
 
     --#check IdealFamily.deletionToN n_ge_one Fdel v Fvx ground_delF_card_ge_one
     set h_idealdeletion := IdealFamily.deletionToN n_ge_one Fdel v Fvx ground_delF_card_ge_one
-    --IdealFamily (Fin (n + 1))になっているがFin nになってほしい。
 
     have ground_delF_card: h_idealdeletion.ground.card = n := by
       dsimp [h_idealdeletion]
@@ -407,9 +350,7 @@ theorem inductive_step {n:Nat} (n_ge_two: n >= 2) (h_ind: P n) : P (n+1) := by
 
     set Fcont :=  (contraction_ideal_family F v singleton_hyperedge_have ground_ge_two)
     have h_cont: Fcont.ground.card = n := by
-      simp_all only [ge_iff_le]
-      --simp_all only [contraction]
-      simp_all only [ge_iff_le, implies_true, sub_left_inj, add_left_inj, add_right_inj, Fdel, Fcont]
+      simp_all only [ge_iff_le, implies_true, sub_left_inj, add_left_inj, add_right_inj,  Fcont]
       rw [contraction_ideal_family]
       simp_all only [Finset.card_erase_of_mem, add_tsub_cancel_right]
       rw [contraction]
@@ -465,15 +406,9 @@ theorem inductive_step {n:Nat} (n_ge_two: n >= 2) (h_ind: P n) : P (n+1) := by
     dsimp [Fcont] at h_contraction2
     rw [h_del_card] at h_idealdeletion2
 
-    --let total_del := (total_size_of_hyperedges ((@IdealFamily.deletionToN (Fin n) n n_ge_one Fdel v Fvx ground_delF_card_ge_one):IdealFamily (Fin n)).1)
     set total_del := total_size_of_hyperedges (idealdeletion F v v_in_ground ground_ge_two).1
-    --set number_del := (number_of_hyperedges (@IdealFamily.deletionToN (Fin n) n n_ge_one Fdel v Fvx ground_delF_card_ge_one).1) with number_del
     set number_del := (number_of_hyperedges (idealdeletion F v v_in_ground ground_ge_two).1)
-    --let total_cont := (total_size_of_hyperedges (@IdealFamily.deletionToN (Fin n) n n_ge_one Fcont v Fvx2 h_cont2).1)
-    --set total_cont := total_size_of_hyperedges (contraction F.1 v v_in_ground ground_ge_two) with h_total_cont
     set total_cont := total_size_of_hyperedges (contraction_ideal_family F v singleton_hyperedge_have ground_ge_two).toSetFamily
-    --let number_cont := (number_of_hyperedges (@IdealFamily.deletionToN (Fin n) n n_ge_one Fcont v Fvx2 h_cont2).1)
-    --set number_cont := (number_of_hyperedges (contraction F.1 v v_in_ground ground_ge_two)) with h_number_cont
     set number_cont := (number_of_hyperedges (contraction_ideal_family F v singleton_hyperedge_have ground_ge_two).toSetFamily)
     set total := (total_size_of_hyperedges F.toSetFamily)
     set  number := (number_of_hyperedges F.toSetFamily)
@@ -483,8 +418,6 @@ theorem inductive_step {n:Nat} (n_ge_two: n >= 2) (h_ind: P n) : P (n+1) := by
     by_cases hv_hyperedge:(F.sets (F.ground \ {v}))
     ·   case pos =>
         have h_sum_have := (hyperedge_average_have F v v_in_ground ground_ge_two) hv_hyperedge singleton_hyperedge_have
-        --have h_idealdeletion := (idealdeletion F v v_in_ground ground_ge_two)
-        --#check sum_have
         let number_have :=  hyperedge_count_deletion_contraction_have_z F v v_in_ground ground_ge_two hv_hyperedge singleton_hyperedge_have
 
         simp only [ge_iff_le, tsub_le_iff_right, zero_add, Fdel, Fcont] at h_sum_have number_have
@@ -502,7 +435,7 @@ theorem inductive_step {n:Nat} (n_ge_two: n >= 2) (h_ind: P n) : P (n+1) := by
 
         simp only [ge_iff_le, tsub_le_iff_right, zero_add, Fdel, Fcont] at h_sum_none number_none
         simp only [normalized_degree_sum] at h_sum_none number_none
-        simp_all only [ge_iff_le, tsub_le_iff_right, zero_add, Nat.cast_add, Nat.cast_one, degreev, number, h_idealdeletion,
+        simp_all only [tsub_le_iff_right, zero_add, Nat.cast_add,  degreev, number, h_idealdeletion,
         Fdel, Fcont, h_contraction, total_del, number_del, total_cont, number_cont, total]
         linarith
 

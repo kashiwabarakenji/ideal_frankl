@@ -1,4 +1,5 @@
---このファイルでは、vを通るhyperedgeの数の計算を行う。vがsingleton hyperedgeを持つ場合を扱う。ground-vを持つ場合と持たない場合に分けて計算する。
+--このファイルでは、vを通るhyperedgeの数の計算を行う。元々の集合族のhyperedgeの数と、vをdeletionやcontractionして得られたマイナーの集合族のhyperedge数との関係
+--vがsingleton hyperedgeを持つ場合を扱う。ground-vを持つ場合と持たない場合に分けて計算する。
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Fintype.Basic

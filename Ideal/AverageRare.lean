@@ -1,4 +1,5 @@
---平均rareであれば、rareな頂点が存在することに関する定理。
+--平均rareであれば、rareな頂点が存在することに関する定理。メインの「ideal集合族は平均abundantにならない」定理の証明とは関係ない。
+--Ideal集合族でなく、一般の集合族に関する定理。
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Fintype.Basic
@@ -73,7 +74,7 @@ lemma sum_nonpos_exists_nonpos {α : Type} [DecidableEq α] (s : Finset α)(none
   exact not_le_of_lt h_pos h
 
 -------
--- FGは台集合。F.groundに相当。
+-- FGは台集合。F.groundに相当。ちょっと一般化して証明した補題。
 -- 定義: FG.product hyperedges は hyperedges のデカルト積
 def FG_product (FG :Finset α) (hyperedges : Finset (Finset α))[DecidableEq hyperedges] : Finset (α × Finset α) :=
   FG.product hyperedges
@@ -157,39 +158,7 @@ lemma filter_card_eq_x_card (FG :Finset α) (hyperedges : Finset (Finset α))
     simp_all only [Finset.mem_filter, and_true, Prod.mk.injEq, implies_true, exists_prop, and_imp, Prod.forall,
       exists_eq_right, domain, i, range]
 
-
-/-
---これは使ってない。
-lemma card_sum_over_fst_eq_card_sum_over_snd {α β : Type} [DecidableEq α][DecidableEq β] [Fintype α] [Fintype β] (C : Finset (α × β)) :
-  C.card = Finset.univ.sum (fun a => (C.filter (fun ab => (ab.1 = a))).card) ∧
-  C.card = Finset.univ.sum (fun b => (C.filter (fun ab => ab.snd = b) : Finset (α × β)).card) := by
-     -- 第一の等式: C.card = Σ_{a ∈ A} |C.filter (fun ab => ab.fst = a)|
-  constructor
-  · -- 第一の等式の証明: C.card = Σ_{a ∈ A} |C.filter (fun ab => ab.fst = a)|
-    apply @Finset.card_eq_sum_card_fiberwise (α × β) α _ (fun ab => ab.fst) C Finset.univ
-    intro x _
-    simp_all only [Finset.mem_univ]
-  · -- 第二の等式の証明: C.card = Σ_{b ∈ B} |C.filter (fun ab => ab.snd = b)|
-    apply @Finset.card_eq_sum_card_fiberwise  (α × β) β _ (fun ab => ab.snd) C Finset.univ
-    intros ab _
-    exact Finset.mem_univ ab.snd
-
---これは使ってない。
-lemma card_sum_over_fst_eq_card_sum_over_snd_set {α: Type}{β:Finset α} [DecidableEq β][Fintype β] (C : Finset (β × (Finset β))) :
-  C.card = Finset.univ.sum (fun a => (C.filter (fun ab => (ab.1 = a))).card) ∧
-  C.card = Finset.univ.sum (fun b => (C.filter (fun ab => ab.snd = b)).card) := by
-  constructor
-  · -- 第一の等式の証明: C.card = Σ_{a ∈ A} |C.filter (fun ab => ab.fst = a)|
-    apply @Finset.card_eq_sum_card_fiberwise (β × Finset β) β _ (fun ab => ab.fst) C Finset.univ
-    intro x _
-    simp_all only [Finset.mem_univ]
-  · -- 第二の等式の証明: C.card = Σ_{b ∈ B} |C.filter (fun ab => ab.snd = b)|
-    apply @Finset.card_eq_sum_card_fiberwise (β × Finset β) (Finset β) _ (fun ab => ab.snd) C Finset.univ
-    intros ab _
-    exact Finset.mem_univ ab.snd
--/
-
---これを使っている。Finset univじゃなくて、これでも動くが、AとBを明示的に引数にしたものをset3として作った。
+--これも動くが、AとBを明示的に引数にしたものをset3として作った。今は使ってない。
 lemma card_sum_over_fst_eq_card_sum_over_snd_set2 {α: Type u}[DecidableEq α][Fintype α] (C : Finset (α × (Finset α))) :
   C.card = Finset.univ.sum (fun a => (C.filter (fun ab => (ab.1 = a))).card) ∧
   C.card = Finset.univ.sum (fun b => (C.filter (fun ab => ab.snd = b)).card) := by
@@ -204,7 +173,7 @@ lemma card_sum_over_fst_eq_card_sum_over_snd_set2 {α: Type u}[DecidableEq α][F
     intros ab _
     exact Finset.mem_univ ab.snd
 
-  --univを使わない改良版。こちらを使いたい。
+  --univを使わない改良版。下で使っている。
   lemma card_sum_over_fst_eq_card_sum_over_snd_set3 {α: Type}[DecidableEq α][Fintype α] (A: Finset α)(B:Finset (Finset α))(C : Finset (α × (Finset α))):
   C ⊆ (A.product B) →
   C.card = A.sum (fun a => (C.filter (fun ab => (ab.1 = a))).card) ∧
@@ -240,8 +209,6 @@ theorem sum_cardinality_eq [Fintype α](FG : Finset α) [DecidableEq FG] (hypere
     have inc: pairs ⊆ (FG.product hyperedges) := by
       simp_all only [Finset.map_refl, Finset.filter_subset, pairs, convert_product_to_pair]
 
-    --have h1 := @card_sum_over_fst_eq_card_sum_over_snd_set2 α _ _ pairs
-
     have h1 := @card_sum_over_fst_eq_card_sum_over_snd_set3 α _ _ FG hyperedges pairs inc
 
     have h2 := h1.1
@@ -251,22 +218,19 @@ theorem sum_cardinality_eq [Fintype α](FG : Finset α) [DecidableEq FG] (hypere
     simp at h2
     dsimp [convert_product_to_pair] at h2
     simp at h2
-    --h2の右辺と、ゴールの左辺が近い形。ただし、Finset alphaと、FGの差がある。証明が完了している。
+    --h2の右辺と、ゴールの左辺が近い形。ただし、Finset alphaと、FGの差がある。
     have equal:  ∑ x ∈ FG, (Finset.filter (fun ab => ab.1 = x) (Finset.filter (fun p => p.1 ∈ p.2) (FG.product hyperedges))).card = ∑ x ∈ FG, (Finset.filter (fun s => s ∈ hyperedges ∧ x ∈ s) FG.powerset).card := by
         apply Finset.sum_congr
         simp_all only [Finset.mem_univ]
         --goal  ∑ x : α, (Finset.filter (fun ab => ab.1 = x) (Finset.filter (fun p => p.1 ∈ p.2) (FG.product hyperedges))).card = ∑ x ∈ FG, (Finset.filter (fun s => s ∈ hyperedges ∧ x ∈ s) FG.powerset).card
         intro x _
 
-        --simp_all only [Finset.mem_filter, Finset.mem_product, Finset.mem_univ, and_self, and_true, Finset.mem_powerset, Finset.mem_singleton, Finset.mem_filter]
         -- x in Finset.univとか、hyperedges ⊆ Finset.univは使いそう。
         have equal_card :
           (Finset.filter (fun ab => ab.1 = x) (Finset.filter (fun p => p.1 ∈ p.2) (FG.product hyperedges))).card =
           (Finset.filter (fun s => s ∈ hyperedges ∧ x ∈ s) FG.powerset).card :=
         by
-          -- 左辺のフィルタの数を右辺のフィルタの数と一致させるため、card_bij を使って両者の対応を構築します
-
-          -- 対応関数を定義します
+          -- 対応関数の定義
           let i := (λ s (_ : s ∈ Finset.filter (fun s => s ∈ hyperedges ∧ x ∈ s) FG.powerset) => (x, s))
 
           -- 関数 `i` が右辺の要素を左辺に写像することを確認します
@@ -313,7 +277,6 @@ theorem sum_cardinality_eq [Fintype α](FG : Finset α) [DecidableEq FG] (hypere
 
     --goal ∑ x ∈ FG, (Finset.filter (fun s => s ∈ hyperedges ∧ x ∈ s) FG.powerset).card = ∑ s ∈ hyperedges, s.card
     rw [←equal]
-    --rw [fground] at h2
     rw [←h2]
 
     apply Finset.sum_congr
@@ -329,6 +292,7 @@ noncomputable def normalized_degree {α : Type} [DecidableEq α] [Fintype α] (F
 lemma sum_univ {α : Type} [DecidableEq α] [Fintype α] (f : α → ℕ) : ∑ x : α, f x = ∑ x in Finset.univ, f x := by
   simp_all only
 
+--頂点ごとに足すか、hyperedgeの大きさを足すかで等しい。
 theorem double_count {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α):
   total_size_of_hyperedges F = ∑ x in F.ground, degree F x := by
   rw [total_size_of_hyperedges]
@@ -336,11 +300,9 @@ theorem double_count {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α
   simp_all
   symm
 
-  --やっと余計な部分がとれて純粋な2重カウントの言明になって。
   let Fsets := F.ground.powerset.filter (λ s => F.sets s)
   have ffground: (∀ s ∈ Fsets, s ⊆ F.ground) := by
     intros s hs
-    --simp_all only
     dsimp [Fsets] at hs
     rw [Finset.mem_filter] at hs
     exact F.inc_ground s hs.2
@@ -419,14 +381,10 @@ theorem double_count {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α
 
   exact tmp
 
---平均rareであれば、少なくとも一つの頂点がrareである。
+--平均rareであれば、少なくとも一つの頂点がrareである。このファイルのメイン定理。
 theorem average_rare_vertex  [Nonempty α][Fintype α](F:SetFamily α) :
   normalized_degree_sum F <= 0 → ∃ x ∈ F.ground, normalized_degree F x <= 0 := by
 
-  --dsimp [normalized_degree_sum]
-  --have h2 := double_count F
-  --intro h
-  --rw [h2] at h
   have ndegrees: normalized_degree_sum F = ∑ x in F.ground, (normalized_degree F x) := by
     calc
       normalized_degree_sum F
@@ -442,7 +400,6 @@ theorem average_rare_vertex  [Nonempty α][Fintype α](F:SetFamily α) :
         ring_nf
         simp_all only [add_right_inj]
         rw [Finset.sum_mul]
-      --simp_all only [Nat.cast_sum, tsub_le_iff_right, zero_add]
     _ = (∑ x in F.ground, (2*(degree F x)):Int) - (∑ x in F.ground,1)*((number_of_hyperedges F):Int):= by
         simp_all only [Finset.sum_const, nsmul_eq_mul, mul_one]
     _ = (∑ x in F.ground, (2*(degree F x)):Int) - (∑ x in F.ground,(number_of_hyperedges F):Int):= by

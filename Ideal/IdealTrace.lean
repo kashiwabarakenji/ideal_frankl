@@ -1,10 +1,14 @@
--- vをtraceするオペレーション。IdealDegreeOneで使われている。
+-- vをtraceするオペレーション。traceの操作はIdealDegreeOneで使われている。
+--ただ、唯一使われているtrace_hyperedge_equivがメインの照明で使われてないので、結果的にメインの証明に使われてない。
+--一般のtraceに対して、numberやtotalを計算するのは、難しい。vの次数が1の場合に限って証明では使われている。
+--本当は、{v}がhyperedgeでないケースはもっとtraceを前面に出して議論しても良かった。
+--今はdeletion+全体集合という感じで、deletionを利用して計算している。
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Data.Finset.Powerset
-import Mathlib.Init.Data.Nat.Lemmas
-import Mathlib.Data.Bool.Basic
+--import Mathlib.Init.Data.Nat.Lemmas
+--import Mathlib.Data.Bool.Basic
 import Mathlib.Tactic
 import Ideal.BasicDefinitions
 import Ideal.BasicLemmas
