@@ -44,40 +44,6 @@ def trace {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) (x : α) 
           intro y hy
           exact hhh (mem_union_left _ hy)
   }
-/-
---omit [Fintype α] [Nonempty α] in
-lemma union_erase_singleton2 (d : Finset α) (v : α) (dd:v ∉ d): (d ∪ {v}).erase v = d :=
-by
-  ext x
-  simp only [Finset.mem_erase, Finset.mem_union, Finset.mem_singleton, Finset.mem_insert]
-  constructor
-  -- まず、(x ∈ d ∪ {v}) ∧ (x ≠ v) ならば x ∈ d です
-  · intro h
-    obtain ⟨hx, hne⟩ := h
-    by_cases h' : x = v
-    -- x = v の場合
-    · contradiction
-    -- x ≠ v の場合
-    · apply Or.elim hne
-      -- x ∈ d の場合
-      · intro hdx
-        exact hdx
-      -- x ∈ {v} の場合
-      · intro hvs
-        rw [hvs] at hne
-        contradiction
-  -- 次に、x ∈ d ならば x ∈ (d ∪ {v}).erase v です
-  · intro h
-    -- x ≠ v ∧ (x ∈ d ∨ x = v)
-    constructor
-    -- x ≠ v
-    contrapose! h
-    rw [h]
-    exact dd
-    -- x ∈ d ∨ x = v
-    left
-    exact h
--/
 
 --idealという性質が、traceの演算で閉じていることの証明？
 instance trace_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x} ) (ground_ge_two: F.ground.card ≥ 2): IdealFamily α :=

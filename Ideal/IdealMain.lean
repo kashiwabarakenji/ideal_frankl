@@ -23,7 +23,7 @@ set_option maxHeartbeats 1000000
 
 namespace Ideal
 
-variable {α : Type} [DecidableEq α] [Fintype α] [Nonempty α]
+variable {α : Type} [DecidableEq α] [Fintype α]
 
 --メイン定理の帰納法のベースケース。大きさ2の場合の証明。
 theorem basecase : P 2 := by

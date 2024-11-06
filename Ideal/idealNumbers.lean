@@ -3,18 +3,19 @@ import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Data.Finset.Powerset
+import Mathlib.Data.Multiset.Basic
 import Mathlib.Tactic
 --import Mathlib.Init.Function
 import Mathlib.Init.Logic
 import Ideal.BasicDefinitions
 import Ideal.BasicLemmas
 import Ideal.IdealDeletion
-import Mathlib.Data.Multiset.Basic
+
 import LeanCopilot
 --set_option maxHeartbeats 500000 -- Increase the heartbeat limit
 
 namespace Ideal
-variable {α : Type} [DecidableEq α] [Fintype α] [Nonempty α]
+variable {α : Type} [DecidableEq α] [Fintype α]
 
 -- 言明：頂点 v を含む hyperedge 数と、v で contraction して得られた集合族の hyperedge 数が等しいことを示す
 -- hyperedge_count_deletion_contraction_haveなどで使われている。

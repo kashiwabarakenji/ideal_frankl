@@ -15,11 +15,11 @@ import LeanCopilot
 
 namespace Ideal
 
-variable {α : Type} [DecidableEq α] [Fintype α] [Nonempty α]
+variable {α : Type} [DecidableEq α] [Fintype α]
 
 def ff (s: Finset α): ℕ := Finset.card s - 1
 
-omit [Nonempty α] in
+--omit [Nonempty α] in
 lemma contraction_family_size (F : SetFamily α) [DecidablePred F.sets] (x : α)
   (hx : x ∈ F.ground) (ground_ge_two: F.ground.card ≥ 2) : total_size_of_hyperedges (contraction F x hx ground_ge_two) = (Finset.filter (fun s ↦ ∃ H, F.sets H ∧ x ∈ H ∧ s = H.erase x) (F.ground.erase x).powerset).sum Finset.card :=
   by
@@ -27,7 +27,7 @@ lemma contraction_family_size (F : SetFamily α) [DecidablePred F.sets] (x : α)
     dsimp [contraction]
     rw [Finset.filter_congr_decidable]
 
-omit [Nonempty α] in
+--omit [Nonempty α] in
 lemma contraction_total_size (F : SetFamily α) [DecidablePred F.sets] (x : α)
   (hx : x ∈ F.ground) (ground_ge_two: F.ground.card ≥ 2) :
   total_size_of_hyperedges (contraction F x hx ground_ge_two) =
@@ -145,7 +145,7 @@ lemma contraction_total_size (F : SetFamily α) [DecidablePred F.sets] (x : α)
 
 
 
-omit [Nonempty α] in
+--omit [Nonempty α] in
 lemma filter_sum_eq (F : SetFamily α) (x : α) (hx : x ∈ F.ground) [DecidablePred F.sets] :
   (Finset.filter (λ s => F.sets s ∧ x ∉ s) F.ground.powerset).sum Finset.card =
   (Finset.filter (λ s => F.sets s ∧ x ∉ s) (F.ground.erase x).powerset).sum Finset.card :=
@@ -317,8 +317,8 @@ theorem hyperedge_totalsize_deletion_contraction_have_z {α : Type} [DecidableEq
     rw [hyperedge_totalsize_deletion_contraction_have F x hx ground_ge_two hx_hyperedge]
     congr
 
---どこからも使われてなさそう。
-omit [Fintype α] [Nonempty α] in
+/-どこからも使われてなさそう。
+omit [Fintype α]  in
 theorem filter_powerset_sum {A : Finset α} (h : x ∈ A):
   (A.powerset.filter (fun s => s = A.erase x)).sum Finset.card = A.card - 1 :=
   by
@@ -333,6 +333,7 @@ theorem filter_powerset_sum {A : Finset α} (h : x ∈ A):
     rw [h₁, Finset.sum_singleton]
 
     exact Finset.card_erase_of_mem h
+-/
 
 --後ろで使われている。
 lemma disjoint_sum_card_eq {α : Type*} [DecidableEq α] {A B : Finset (Finset α)} (h : A ∩ B = ∅) :
@@ -617,7 +618,7 @@ theorem hyperedge_totalsize_deletion_contraction_none {α : Type} [DecidableEq �
             (total_size_of_hyperedges (contraction_ideal_family F x singleton_have ground_ge_two).toSetFamily:ℤ) + ((degree F.toSetFamily x):ℤ) := by
               simp_all only [ideal_and_deletion_z F x hx ground_ge_two ground_v_none]
 
-omit [Nonempty α] in
+--omit [Nonempty α] in
 lemma conv_deletion (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (ground_ge_two: F.ground.card ≥ 2) :
    normalized_degree_sum (idealdeletion F x hx ground_ge_two).toSetFamily =2*total_size_of_hyperedges (idealdeletion F x hx ground_ge_two).toSetFamily  - (idealdeletion F x hx ground_ge_two).toSetFamily.ground.card*number_of_hyperedges (idealdeletion F x hx ground_ge_two).toSetFamily :=
   by
@@ -625,7 +626,7 @@ lemma conv_deletion (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (ground_
     simp_all
     ring_nf
 
-omit [Nonempty α] in
+--omit [Nonempty α] in
 lemma conv_contraction (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (ground_ge_two: F.ground.card ≥ 2) :
    normalized_degree_sum (contraction F.toSetFamily x hx ground_ge_two) =2*total_size_of_hyperedges (contraction F.toSetFamily x hx ground_ge_two)  - (contraction F.toSetFamily x hx ground_ge_two).ground.card*number_of_hyperedges (contraction F.toSetFamily x hx ground_ge_two) :=
   by
@@ -633,7 +634,7 @@ lemma conv_contraction (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (grou
     simp_all
     ring_nf
 
-omit [Nonempty α] in
+--omit [Nonempty α] in
 lemma conv_contraction_family (F : IdealFamily α) (x : α) (ground_ge_two: F.ground.card ≥ 2)(singleton_have: F.sets {x}) :
    normalized_degree_sum (contraction_ideal_family F x singleton_have ground_ge_two).toSetFamily =2*total_size_of_hyperedges (contraction_ideal_family F x singleton_have ground_ge_two).toSetFamily  - (contraction_ideal_family F x singleton_have ground_ge_two).ground.card*number_of_hyperedges (contraction_ideal_family F x singleton_have ground_ge_two).toSetFamily :=
   by

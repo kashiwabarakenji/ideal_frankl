@@ -9,15 +9,15 @@ import Mathlib.Tactic
 import Ideal.BasicDefinitions
 import Ideal.BasicLemmas
 import Ideal.IdealDeletion
-import Ideal.IdealRare
-import Ideal.IdealSum
-import Ideal.IdealNumbers
-import Ideal.IdealDegreeOne
+--import Ideal.IdealRare
+--import Ideal.IdealSum
+--import Ideal.IdealNumbers
+--import Ideal.IdealDegreeOne
 import LeanCopilot
 
 namespace Ideal
 
-variable {α : Type} [DecidableEq α] [Fintype α] [Nonempty α]
+variable {α : Type} [DecidableEq α] [Fintype α]
 
 def finDrop {n : ℕ} (nposi: n ≥ 1) (v : Fin (n + 1)) (x : Fin (n + 1)) : Fin n :=
   if h : x.val < v.val then
@@ -1029,7 +1029,7 @@ noncomputable def toIdealFinFamily (ifm : IdealFamily α) (n : ℕ) (h : Fintype
   }
 
   lemma equal_card_fin_ideal_family {n : ℕ} (ifm : IdealFamily α) (h : Fintype.card ifm.ground = n) :
-     Fintype.card (@toIdealFinFamily α _ _ _ ifm n h).ground = n := by
+     Fintype.card (@toIdealFinFamily α _ _ ifm n h).ground = n := by
        let sfFin := SetFamily.toFinFamily ifm.toSetFamily n h
        simp only [toIdealFinFamily]
        let toFin : ifm.ground ≃ Fin n := Fintype.equivFinOfCardEq h
@@ -1072,7 +1072,7 @@ variable (f : α → β)
 -- f が A から B への全単射であることを仮定
 
 -- 証明: F と G の要素数は等しい
-omit [Nonempty α][DecidableEq α] [Fintype α] in --omit [Fintype α] [Fintype β]
+omit [DecidableEq α] [Fintype α] in --omit [Fintype α] [Fintype β]
 theorem same_cardinality (hf : Function.Injective f)(hFG : ∀ (T : Finset β), T ∈ GSet ↔ ∃ (S : Finset α),S ∈ FSet ∧ T = S.image f) :
  FSet.card = GSet.card :=
 by
@@ -1103,7 +1103,7 @@ by
   simp_all only [Finset.mem_image]
   rw [Finset.card_image_of_injective _ this_inj]
 
-omit [Nonempty α][DecidableEq α] [Fintype α] in
+omit [DecidableEq α] [Fintype α] in
 theorem same_summation (hf : Function.Injective f)(hFG : GSet = FSet.image (λ S => Finset.image f S)) :
   FSet.sum Finset.card = GSet.sum Finset.card:=
 by

@@ -28,7 +28,7 @@ set_option maxHeartbeats 500000
 
 namespace Ideal
 
-variable {α : Type} [DecidableEq α] [Fintype α] [Nonempty α]
+variable {α : Type} [DecidableEq α] [Fintype α]
 
 --Finに埋め込んでもhyperedgeの数が変わらないことの証明。数学的には自明だが、leanで証明すると大変だった。fin_total_eqとして、和が変わらないことも示す必要あり。
 lemma fin_number_eq (F: IdealFamily α)(h : F.ground.card ≥ 2) (hn: Fintype.card F.ground = F.ground.card): number_of_hyperedges (toIdealFinFamily F F.ground.card hn).toSetFamily = number_of_hyperedges F.toSetFamily := by
@@ -467,7 +467,7 @@ open Finset
 
 --variable {α : Type*} (FG : Finset α) (Fsets : Finset α → Prop)
 
-omit [Nonempty α] in
+--omit [Nonempty α] in
 lemma FG_same_card (FG : Finset α) (Fsets : Finset α → Prop) [DecidablePred Fsets] (a : Finset α) (ha : a ∈ Finset.filter Fsets FG.powerset) (a_in_FG : a ⊆ FG) :
   FG.sum (fun x => if x ∈ a then 1 else 0) = ∑ a_1 in FG.attach, if ∃ x, (∃ (hx : x ∈ FG), ⟨x, hx⟩ = a_1) ∧ x ∈ a then 1 else 0 :=
 by
@@ -564,7 +564,7 @@ by
   obtain ⟨val, property⟩ := x
   simp_all only [Subtype.mk.injEq, exists_prop]
 
-omit [Nonempty α] in
+--omit [Nonempty α] in
 theorem card_sum_bijection (FG: Finset α) (Fsets: Finset α → Prop) [DecidablePred Fsets] :
   (Finset.filter Fsets FG.powerset).sum Finset.card =
     ∑ x in Finset.image (λ s => Finset.filter (λ y => ∃ x, ∃ (hx : x ∈ FG), ⟨x, hx⟩ = y ∧ x ∈ s) FG.attach)

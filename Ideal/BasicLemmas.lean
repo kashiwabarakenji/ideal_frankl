@@ -11,9 +11,10 @@ open Finset
 
 namespace Ideal
 
-variable {α : Type} [DecidableEq α] [Fintype α] [Nonempty α]
+variable {α : Type} [DecidableEq α] [Fintype α] --[Nonempty α]
 
--- 空集合と全体集合が異なることの証明
+/-
+-- 空集合と全体集合が異なることの証明 [Nonempty α]の仮定が必要だが使ってない。
 omit [DecidableEq α] in
 theorem empty_ne_univ : (∅ : Finset α) ≠ Finset.univ :=
   by
@@ -23,9 +24,10 @@ theorem empty_ne_univ : (∅ : Finset α) ≠ Finset.univ :=
     apply Aesop.BuiltinRules.not_intro
     intro a
     simp [Finset.eq_univ_iff_forall] at a
+-/
 
 --下と同じ定理。こちらを使う。
-omit [Fintype α] [Nonempty α] in
+omit [Fintype α] in
 theorem erase_union_singleton (H : Finset α) (h1 : d = H.erase v) (h2 : v ∈ H) : H = d ∪ {v} :=
 by
   -- 仮定 h1 を使って hd3 を書き換える
@@ -42,7 +44,7 @@ by
       -- x ≠ v の場合
   · simp [h]
 
-omit [Fintype α] [Nonempty α]
+omit [Fintype α]
 lemma erase_insert_eq (H G : Finset α) (x : α) : x ∈ H → Finset.erase H x = G → H = G ∪ {x} :=
   by
     intro a a_1
@@ -148,54 +150,6 @@ by
   -- 次に、s = t から Finset.erase s x = Finset.erase t x を導きます。
   · intro h
     rw [h]
-
--- フィンセットの消去が等しいことから元のセットが等しいことを証明する補助定理。上のerase_inj_of_memと同じ。
---これの包含関係版も作りたい。
-/-
-lemma set_eq_of_erase_eq {A : Finset α} {B : Finset α} {x : α} (hxA : x ∈ A) (hxB : x ∈ B) (h : Finset.erase A x = Finset.erase B x) : A = B :=
-  by
-    apply Finset.ext
-    intro y
-    constructor
-    · intro hy
-      by_cases hxy : y = x
-      · rw [hxy]
-        exact hxB
-      · have h1 : y ∈ Finset.erase A x := Finset.mem_erase_of_ne_of_mem hxy hy
-        rw [h] at h1
-        exact Finset.mem_of_mem_erase h1
-    · intro hy
-      by_cases hxy : y = x
-      · rw [hxy]
-        exact hxA
-      · have h1 : y ∈ Finset.erase B x := Finset.mem_erase_of_ne_of_mem hxy hy
-        rw [←h] at h1
-        exact Finset.mem_of_mem_erase h1
--/
-/-
---上と同じ補題。使ってないので消して良い。
-lemma erase_eq_iff_of_mem {s₁:Finset α}{s₂:Finset α}(hx1: x ∈ s₁)(hx2: x ∈ s₂): s₁.erase x = s₂.erase x → s₁ = s₂:= by
-  intro h
-  apply Finset.ext
-  intro y
-  by_cases hy : y = x
-  · rw [hy]
-    exact ⟨λ _ => hx2, λ _ => hx1⟩
-  · have h1 : y ∈ s₁ ↔ y ∈ s₁.erase x := by
-      constructor
-      · intro hy1
-        exact Finset.mem_erase.mpr ⟨hy, hy1⟩
-      · intro hy1
-        exact Finset.mem_of_mem_erase hy1
-    have h2 : y ∈ s₂ ↔ y ∈ s₂.erase x := by
-      constructor
-      · intro hy2
-        exact Finset.mem_erase.mpr ⟨hy, hy2⟩
-      · intro hy2
-        exact Finset.mem_of_mem_erase hy2
-    --h1 : y ∈ s₁ ↔ y ∈ s₁.erase x
-    rw [h1, h2, h]
-    -/
 
 lemma subset_of_erase_subset {A B : Finset α}  {x : α} (hxA : x ∈ A) (hxB : x ∈ B) (h : A.erase x ⊆ B.erase x) : A ⊆ B :=
 by
@@ -453,44 +407,6 @@ lemma ground_nonempty_after_minor {α : Type} [DecidableEq α] (ground : Finset 
     rw [Finset.card_singleton] at ground_ge_two
     contradiction
 
-/-
--- IntersectionClosedにあった補題
---BasicLemmasに似たようなものがある。使っているが、置き換えれば消せる。
-lemma h_erase {G : Finset α} {x : α} :x ∉ G → (G ∪ {x}).erase x = G :=
-  by
-    intro h -- x ∉ G
-    ext y
-    simp only [Finset.mem_erase, Finset.mem_union, Finset.mem_singleton]
-    constructor -- 左辺から右辺と右辺から左辺にわける。y ∈ G ∨ y = xからy ∈ G をしめす。
-    ·intro h' -- 左辺から右辺。
-     have x_ne_y : x ≠ y := by
-       intro hH
-       rw [hH] at h
-       have hl :=h'.left.symm
-       contradiction --ここまででx neq yが証明できた。
-     cases h'.right with
-     |inl yG =>
-      exact yG  -- ここにも到達してなさそう。
-     |inr xy =>
-      rw [xy] at x_ne_y --ここに到達してなさそう。
-      contradiction --ここまででcasesの両側が証明できた?constructionの左辺から右辺も。goalが残っている。
-
-    --右辺から左辺 ゴールは、y ∈ G → y ≠ x ∧ (y ∈ G ∨ y = x)
-    intro h' --y ∈ G ゴールは、 y ≠ x ∧ (y ∈ G ∨ y = x)
-    constructor
-    -- サブゴールは、x neq y
-    have x_ne_y2 : x ≠ y := by
-      intro hH --x=y
-      rw [←hH] at h'  -- x in Gに書き換え。
-      contradiction
-    exact x_ne_y2.symm
-    -- 右側 ゴールは、(y ∈ G ∨ y = x)
-    exact Or.inl h'
-    --これで、lemmaの証明が完了した。
--/
-
-
-
 theorem hyperedges_card_ge_two {α : Type} [DecidableEq α] [Fintype α]
   (F : IdealFamily α) (hground : 1 ≤ F.ground.card) : 2 ≤ number_of_hyperedges F.toSetFamily :=
 by
@@ -542,7 +458,13 @@ by
   rw [←h2]
   exact Finset.card_le_card h3
 
--- 定理のステートメント
+-- Mathlibにも似たような定理Finset.image_injectiveがある。使っているところも、それで置き換えて、この関数を消すと良い。
+theorem injective_image_injective {α β : Type} [DecidableEq α] [DecidableEq β]
+  (f : α → β) (hf : Function.Injective f) :
+  Function.Injective (λ (s : Finset α) => Finset.image f s) :=
+Finset.image_injective hf
+
+/-
 theorem injective_image_injective {α β : Type} [DecidableEq α] [DecidableEq β]
   (f : α → β) (hf : Function.Injective f) :
   Function.Injective (λ (s : Finset α)=> Finset.image f s) :=
@@ -596,7 +518,9 @@ theorem injective_image_injective {α β : Type} [DecidableEq α] [DecidableEq �
       rw [←hs] at fxt
       contradiction
 
---全単射があるとき、集合の要素数が等しいことを示す。
+-/
+
+--全単射があるとき、集合の要素数が等しいことを示す。Mathlibの定理で簡単に証明できるかもとちょっとやってみたが難しかった。
 theorem finset_card_eq_card_of_bijective {α β : Type} [DecidableEq α] [Fintype α][DecidableEq β]{s : Finset α}[DecidableEq {x // x ∈ s}] {t : Finset β}
   (f : s → t) (hf : Function.Bijective f)  : s.card = t.card := by
   --have h_inj : Function.Injective f := hf.1

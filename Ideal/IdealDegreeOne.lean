@@ -10,7 +10,7 @@ import Ideal.BasicLemmas
 import Ideal.IdealTrace
 import LeanCopilot
 
-variable {α : Type} [DecidableEq α] [Fintype α] [Nonempty α]
+variable {α : Type} [DecidableEq α] [Fintype α]
 
 namespace Ideal
 

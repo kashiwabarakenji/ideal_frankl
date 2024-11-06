@@ -9,7 +9,7 @@ import LeanCopilot
 
 namespace Ideal
 
-variable {α : Type} [DecidableEq α] [Fintype α] [Nonempty α]
+variable {α : Type} [DecidableEq α] [Fintype α]-- [Nonempty α] コメントアウトしてみた。
 
 --集合族の定義
 structure SetFamily (α : Type) [DecidableEq α] [Fintype α] :=
@@ -86,30 +86,5 @@ noncomputable def ideal_degree (sf : IdealFamily α) (x : α) : ℕ :=
 structure IntersectionClosedFamily (α : Type) [DecidableEq α] [Fintype α] extends SetFamily α :=
   (has_ground : sets ground)  -- 全体集合が含まれる
   (intersection_closed : ∀ {s t : Finset α}, sets s→ sets t → sets (s ∩ t) ) -- 条件2: 共通部分で閉じている
-
--- to_SetFamily関数の定義
---def to_SetFamily {α : Type*} (sf : SetFamily α) : SetFamily α :=
---sf
--- Ideal Family のサイズを計算する関数
---def ideal_family_size (sf : IdealFamily α)[DecidablePred (to_SetFamily sf).sets] : ℕ :=
---   number_of_hyperedges (to_SetFamily sf)
-
--- SetFamily 構造体の定義 Boolバージョン
---structure SetFamily (α : Type) :=
---  (ground : Finset α) -- 全体集合
---  (sets : (Finset α) → Bool)  -- 集合族を定義する関数
---  (inc_ground: sets s → s ⊆ ground) -- 全体集合が含まれる
---  (nonempty_ground : ground.Nonempty)
---使ってない。trueの要素を数える関数
-
---以下はいらないかも。
---oncomputable def ideal_normalized_degree_sum {α : Type} [DecidableEq α] [Fintype α] (F : IdealFamily α) : ℕ :=
---  let total_size := total_size_of_hyperedges F.toSetFamily
---  let num_sets := number_of_hyperedges F.toSetFamily
---  let base_set_size := Fintype.card F.ground
---  total_size * 2 - num_sets * base_set_size
-
---def count_true_sets  (G : Finset α) (sets : Finset α → Prop) [∀ s, Decidable (sets s)] : Nat :=
---  G.powerset.filter sets |>.card
 
 end Ideal
