@@ -14,10 +14,12 @@ variable {α : Type} [DecidableEq α] [Fintype α]
 
 namespace Ideal
 
+/- --使ってない。
 def hasDegreeOneSetFamily (F : SetFamily α) : Prop :=
   ∃ (v : α), degree F v = 1
+-/
 
--- {x} が hyperedge でないときに x の次数が 1 であることの証明
+-- {x} が hyperedge でないときに x の次数が 1 であることの証明。下で使っている。
 lemma degree_one_if_not_hyperedge {α : Type} {x :α} [DecidableEq α] [Fintype α]
   (F : IdealFamily α) (hx: x ∈ F.ground) (h_not_hyperedge : ¬ F.sets {x}) :
   degree F.toSetFamily x = 1 :=
@@ -123,130 +125,7 @@ lemma hyperedges_not_through_v {α : Type} [DecidableEq α] [Fintype α]
   rw [deg1 ] at deg2
   contradiction
 
---vがシングルトンhyperedgeでない場合。次数が1である性質でいえること。
---本来は、次数が1なので、全体集合以外は、traceしてもhyperedgeの数も大きさもかわらないことを証明すればよい。
---IdealTraceに移動してもいいが、deg1の仮定が必要なので、ここに置いておく。補題の名前もdegoneの仮定を反映しても良い。
---メインの証明に使われてないかも。
 
-lemma trace_hyperedge_equiv {α : Type} [DecidableEq α] [Fintype α]
-  (F : SetFamily α) (v : α) (hv: v ∈ F.ground) (deg1: degree F v = 1) (hasGround: F.sets F.ground)(ground_ge_two: F.ground.card ≥ 2) :
-  {s : Finset α|(IdealTrace.trace F v hv ground_ge_two).sets s} = { s : Finset α|F.sets s ∧ s ≠ F.ground } ∪ { F.ground.erase v } :=
-by
-  ext s
-  simp only [IdealTrace.trace, Set.mem_setOf_eq, Set.mem_union]
-  constructor
-  · intro h --v ∉ s ∧ (F.sets s ∨ F.sets (s ∪ {v}))
-    --have hcopy: (IdealTrace.trace F v hv ground_ge_two).sets s := h
-    have h2 := h.2
-    have h1 := h.1
-    show (F.sets s ∧ s ≠ F.ground) ∨ (s = F.ground.erase v)
-    cases h2 with
-    | inl hs =>
-      --goal F.sets s ∧ s ≠ F.ground
-      --hs: F.sets s
-      --h.1: v ∉ s
-      --hv: v ∈ F.ground
-      have snfg: s ≠ F.ground := by
-        intro hfg
-        rw [hfg] at hs -- hs F.sets: F.ground なので、矛盾
-        rw [hfg] at h1 -- h1: v ∉ F.ground なので、矛盾
-        contradiction
-      left
-      exact ⟨hs, snfg⟩
-    | inr hs => --F.sets (s ∪ {v})の場合、でもFの集合でvを含むものは全体集合のみなので、s = F.ground.erase v になる。
-      --simp_all only [ge_iff_le, Set.mem_singleton_iff]
-      --goal s = F.ground.erase v
-      right
-      ext x
-      simp only [Finset.mem_erase, Finset.mem_singleton]
-      --goal x ∈ s ↔ ¬x = v ∧ x ∈ F.ground
-      constructor
-      · intro hh -- x ∈ s
-          -- goal ¬x = v ∧ x ∈ F.ground
-          -- v ∉  s かつ x ∈ s なので、x = v でない。
-        have sg: s ∪ {v} ⊆ F.ground := by
-            exact F.inc_ground (s ∪ {v}) hs
-        constructor
-        · intro hnot
-          rw [hnot] at hh
-          contradiction
-        · --show (F.sets s ∧ s ≠ F.ground) ∨ s = F.ground.erase v
-            --goal x ¥in F.ground
-            -- hh: x ∈ s
-            -- sg: s ∪ {v} ⊆ F.ground
-            have sg2: s ⊆ F.ground := by
-              --rename_i α_1 _ _ _ inst_3 inst_4
-              simp_all only [not_false_eq_true, or_true, and_self]
-              intro y hy
-              exact sg (s.subset_union_left hy)
-
-            have hxFg: x ∈ F.ground := by
-              exact sg2 hh
-            exact hxFg
-      · --#check (s ∪ {v})
-        intro hh --  ¬x = v ∧ x ∈ F.ground
-          --s = F.ground.erase v を示すhaveのなか。
-          -- goal x ∈ sがこのintro部分の目標。
-          --hyperedges_not_through_vを使って証明する。
-        by_cases sfground: (s ∪ {v}) = F.ground
-        case pos =>
-            -- sfground : s ∪ {v} = F.ground
-            -- hh: ¬x = v ∧ x ∈ F.ground
-            --からいえる。
-          cases hh with
-          |intro hne hFground =>
-          have xsv:x ∈ s ∪ {v} := sfground.symm ▸ hFground
-          rw [Finset.mem_union] at xsv
-          cases xsv with
-          | inl hxs => exact hxs
-          | inr hxv =>
-            rw [Finset.mem_singleton] at hxv
-            contradiction
-
-        case neg =>
-          let result := hyperedges_not_through_v F v hv deg1 hasGround (s ∪ {v}) hs sfground
-          have vdv: v ∈ s ∪ {v} := by
-            simp
-          contradiction
-        -- ここまでで全体の補題の片方行が終わった。
-  · intro h
-    --h : ({s | F.sets s ∧ s ≠ F.ground} ∪ {F.ground.erase v}) s
-    -- hを (F.sets s ∧ s ≠ F.ground) ∨ (s = F.ground.erase v)
-    --goal  v ∉ s ∧ (F.sets s ∨ F.sets (s ∪ {v}))
-    constructor
-    --goal v ∉ s
-    cases h with
-    | inl hset =>
-      have hneq := hset.2
-      let result := hyperedges_not_through_v F v hv deg1 hasGround s hset.1 hneq
-      exact result
-    | inr hset =>
-      have hset2 : s = F.ground.erase v  := hset
-      rw [hset2]
-      simp
-
-    --goal F.sets s ∨ F.sets (s ∪ {v})
-    -- h: (F.sets s ∧ s ≠ F.ground) ∨ s ∈ {F.ground.erase v}
-    cases h with
-    | inl h1 => left;exact h1.1
-    | inr h2 => --s ∈ {F.ground.erase v}
-      right
-      -- h2: s = F.ground.erase v
-      --hasGround : F.sets F.ground でこれを変換したものが
-      -- hnot: ¬ F.sets (F.ground.erase v)と矛盾
-      let fgsv := F.ground.erase v
-      have fgsv2: fgsv = F.ground.erase v := by rfl
-      rw [←fgsv2] at h2
-      have ss: s = fgsv := by
-        exact h2
-      dsimp [fgsv] at ss
-      --s = F.ground.erase v
-      have ground2: s ∪ {v} = F.ground := by
-        rw [ss]
-        --F.ground.erase v ∪ {v} = F.ground
-        exact erase_insert F.ground v hv
-      rw [ground2]
-      exact hasGround
 
 
 
@@ -729,14 +608,13 @@ theorem powerset_sum_card_eq_card_mul_pow {α : Type} [DecidableEq α][Fintype �
   -- 補題2と補題1の結果を組み合わせる
   rw [sum_eq_sum, sum_contrib]
 
+--合計サイズに関する重要な補題。{v}がシングルトンhyperedgeでなく、ground-vがhyperedgeの場合。
 lemma ground_minus_v_ideal_total {α : Type} [DecidableEq α] [Fintype α] (F : IdealFamily α) (v : α) (hv: v ∈ F.ground)  (hv_hyperedge:F.sets (F.ground \ {v}))(hv_singleton:  ¬F.sets {v})(hcard0: F.ground.card >= 2):
   total_size_of_hyperedges F.toSetFamily = (F.ground.card - 1)*2^(F.ground.card - 2) + F.ground.card := by
         have degree_one: degree F.toSetFamily v = 1 := by
             exact degree_one_if_not_hyperedge F hv hv_singleton
         rw [Ideal.total_degone_card F.toSetFamily v hv degree_one F.has_ground hcard0]
-        simp_all only [ge_iff_le, Nat.reduceLeDiff, Finset.mem_powerset, Finset.singleton_subset_iff, Finset.mem_singleton,
-         not_true_eq_false, false_or, Finset.sdiff_subset, Finset.mem_sdiff, and_false, not_false_eq_true, sdiff_eq_left,
-         Finset.disjoint_singleton_right, or_false, add_tsub_cancel_right, Nat.reduceSubDiff, add_left_inj]
+        simp_all only [Finset.disjoint_singleton_right, add_tsub_cancel_right, add_left_inj]
         --goal (Finset.filter (fun s => F.sets s ∧ v ∉ s) F.ground.powerset).sum Finset.card = n * 2 ^ (n - 1)
         let A := Finset.filter (λ s=> v ∉ s) F.ground.powerset
         -- `s = F.ground` を満たす唯一の部分集合を取り出す
@@ -747,10 +625,7 @@ lemma ground_minus_v_ideal_total {α : Type} [DecidableEq α] [Fintype α] (F : 
           constructor
           { -- (→) s ∈ Finset.filter (s ⊆ FG.erase v) FG.powerset ならば s ∈ (FG.erase v).powerset
             intro hs
-            simp_all only [ge_iff_le, Nat.reduceLeDiff, Finset.mem_powerset, Finset.singleton_subset_iff,
-              Finset.mem_singleton, not_true_eq_false, false_or, Finset.sdiff_subset, Finset.mem_sdiff,
-              and_false, not_false_eq_true, sdiff_eq_left, Finset.disjoint_singleton_right, or_false,
-              Finset.mem_filter, A, B]
+            simp_all only [ Finset.mem_powerset, Finset.mem_filter, A, B]
             obtain ⟨left, right⟩ := hs
             obtain ⟨_, right⟩ := right
             --simp_all only [not_false_eq_true, true_or]
@@ -801,7 +676,7 @@ lemma ground_minus_v_ideal_total {α : Type} [DecidableEq α] [Fintype α] (F : 
         apply Or.inl
         rfl
 
---下で利用
+--下で利用 vのdegreeが1であれば、{v}がhyperedge シングルトンではない。
 lemma degree_one_singleton {α : Type} [DecidableEq α] [Fintype α] (F: IdealFamily α) (v : α) (hv: v ∈ F.ground)(hcard0: F.ground.card >= 2):
   degree F.toSetFamily v = 1 ↔ ¬F.sets {v} := by
     apply Iff.intro
@@ -837,8 +712,7 @@ lemma degree_one_singleton {α : Type} [DecidableEq α] [Fintype α] (F: IdealFa
         constructor
         · intro x1
           intro a_1
-          simp_all only [ge_iff_le, eq_iff_iff, iff_true, Finset.card_singleton, ne_eq, implies_true, and_self, and_true,
-            true_and, Finset.mem_insert, Finset.mem_singleton]
+          simp_all only [ Finset.card_singleton,Finset.mem_insert, Finset.mem_singleton]
           cases hs
           case inl h_1 =>
             subst h_1
@@ -846,8 +720,7 @@ lemma degree_one_singleton {α : Type} [DecidableEq α] [Fintype α] (F: IdealFa
           case inr h_2 =>
             subst h_2
             simp_all only
-        · simp_all only [ge_iff_le, eq_iff_iff, iff_true, Finset.card_singleton, ne_eq, implies_true, and_self, and_true,
-            true_and, Finset.mem_insert,Finset.mem_singleton]
+        · simp_all only [Finset.card_singleton, Finset.mem_insert,Finset.mem_singleton]
           cases hs with
           | inl h_1 =>
             subst h_1
@@ -883,6 +756,7 @@ lemma degree_one_singleton {α : Type} [DecidableEq α] [Fintype α] (F: IdealFa
       -- hの仮定より全体集合以外にもvを含むhyperedgeがある。down_closedを使って、F.sets {v}が得られる。
       exact degree_one_if_not_hyperedge F hv fs
 
+--degOneMain.leanで使われている。vのdegreeが1だと含むhhyperedgeは全体集合のみ
 lemma degree_one_ground {α : Type} [DecidableEq α] [Fintype α] (F: IdealFamily α) (v : α) (hv: v ∈ F.ground)(hcard0: F.ground.card >= 2):
   degree F.toSetFamily v = 1 → ∀ (s:Finset α), F.sets s → v ∈ s → s = F.ground := by
     intro h
@@ -899,6 +773,7 @@ lemma degree_one_ground {α : Type} [DecidableEq α] [Fintype α] (F: IdealFamil
     exact h2 h4
 
 --(v : α) (hv: v ∈ F.ground) (deg1: degree F v = 1) (hasGround: F.sets F.ground)(ground_ge_two: F.ground.card ≥ 2)
+--使ってない補題で使われているだけなので、実質使われてない。内容自体は有用かも。
 lemma filter_sum {α : Type} [DecidableEq α] [Fintype α] (P Q : Finset α → Prop) [DecidablePred P] [DecidablePred Q] (S : Finset (Finset α))  :
   (∀ (s:Finset α), s ∈ S → ¬(P s ∧ Q s)) →
     (Finset.filter (λ (s : Finset α) => P s ∨ Q s) S).sum Finset.card
@@ -941,8 +816,6 @@ lemma filter_sum {α : Type} [DecidableEq α] [Fintype α] (P Q : Finset α → 
     convert (@Finset.sum_disjUnion _ _  rangeP rangeQ (λ s => s.card) _ disjoint0)
     simp
     rw [d_union]
-
-
 
 ----使ってない補題等
 --結果的にtotal degree cardと同じことを示している。使ってない。
@@ -1082,5 +955,130 @@ lemma erase_ground_card {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily
 --lemma card_eq_sum_ones {α : Type} [DecidableEq α][Fintype α]  (s : Finset α) :
 --  Finset.card s = s.sum (λ a => 1) := by
 --  simp_all only [Finset.sum_const, smul_eq_mul, mul_one]
+
+--vがシングルトンhyperedgeでない場合。次数が1である性質でいえること。
+--本来は、次数が1なので、全体集合以外は、traceしてもhyperedgeの数も大きさもかわらないことを証明すればよい。
+--IdealTraceに移動してもいいが、deg1の仮定が必要なので、ここに置いておく。補題の名前もdegoneの仮定を反映しても良い。
+--メインの証明に使われてないかも。
+
+lemma trace_hyperedge_equiv {α : Type} [DecidableEq α] [Fintype α]
+  (F : SetFamily α) (v : α) (hv: v ∈ F.ground) (deg1: degree F v = 1) (hasGround: F.sets F.ground)(ground_ge_two: F.ground.card ≥ 2) :
+  {s : Finset α|(IdealTrace.trace F v hv ground_ge_two).sets s} = { s : Finset α|F.sets s ∧ s ≠ F.ground } ∪ { F.ground.erase v } :=
+by
+  ext s
+  simp only [IdealTrace.trace, Set.mem_setOf_eq, Set.mem_union]
+  constructor
+  · intro h --v ∉ s ∧ (F.sets s ∨ F.sets (s ∪ {v}))
+    --have hcopy: (IdealTrace.trace F v hv ground_ge_two).sets s := h
+    have h2 := h.2
+    have h1 := h.1
+    show (F.sets s ∧ s ≠ F.ground) ∨ (s = F.ground.erase v)
+    cases h2 with
+    | inl hs =>
+      --goal F.sets s ∧ s ≠ F.ground
+      --hs: F.sets s
+      --h.1: v ∉ s
+      --hv: v ∈ F.ground
+      have snfg: s ≠ F.ground := by
+        intro hfg
+        rw [hfg] at hs -- hs F.sets: F.ground なので、矛盾
+        rw [hfg] at h1 -- h1: v ∉ F.ground なので、矛盾
+        contradiction
+      left
+      exact ⟨hs, snfg⟩
+    | inr hs => --F.sets (s ∪ {v})の場合、でもFの集合でvを含むものは全体集合のみなので、s = F.ground.erase v になる。
+      --simp_all only [ge_iff_le, Set.mem_singleton_iff]
+      --goal s = F.ground.erase v
+      right
+      ext x
+      simp only [Finset.mem_erase, Finset.mem_singleton]
+      --goal x ∈ s ↔ ¬x = v ∧ x ∈ F.ground
+      constructor
+      · intro hh -- x ∈ s
+          -- goal ¬x = v ∧ x ∈ F.ground
+          -- v ∉  s かつ x ∈ s なので、x = v でない。
+        have sg: s ∪ {v} ⊆ F.ground := by
+            exact F.inc_ground (s ∪ {v}) hs
+        constructor
+        · intro hnot
+          rw [hnot] at hh
+          contradiction
+        · --show (F.sets s ∧ s ≠ F.ground) ∨ s = F.ground.erase v
+            --goal x ¥in F.ground
+            -- hh: x ∈ s
+            -- sg: s ∪ {v} ⊆ F.ground
+            have sg2: s ⊆ F.ground := by
+              --rename_i α_1 _ _ _ inst_3 inst_4
+              simp_all only [not_false_eq_true, or_true, and_self]
+              intro y hy
+              exact sg (s.subset_union_left hy)
+
+            have hxFg: x ∈ F.ground := by
+              exact sg2 hh
+            exact hxFg
+      · --#check (s ∪ {v})
+        intro hh --  ¬x = v ∧ x ∈ F.ground
+          --s = F.ground.erase v を示すhaveのなか。
+          -- goal x ∈ sがこのintro部分の目標。
+          --hyperedges_not_through_vを使って証明する。
+        by_cases sfground: (s ∪ {v}) = F.ground
+        case pos =>
+            -- sfground : s ∪ {v} = F.ground
+            -- hh: ¬x = v ∧ x ∈ F.ground
+            --からいえる。
+          cases hh with
+          |intro hne hFground =>
+          have xsv:x ∈ s ∪ {v} := sfground.symm ▸ hFground
+          rw [Finset.mem_union] at xsv
+          cases xsv with
+          | inl hxs => exact hxs
+          | inr hxv =>
+            rw [Finset.mem_singleton] at hxv
+            contradiction
+
+        case neg =>
+          let result := hyperedges_not_through_v F v hv deg1 hasGround (s ∪ {v}) hs sfground
+          have vdv: v ∈ s ∪ {v} := by
+            simp
+          contradiction
+        -- ここまでで全体の補題の片方行が終わった。
+  · intro h
+    --h : ({s | F.sets s ∧ s ≠ F.ground} ∪ {F.ground.erase v}) s
+    -- hを (F.sets s ∧ s ≠ F.ground) ∨ (s = F.ground.erase v)
+    --goal  v ∉ s ∧ (F.sets s ∨ F.sets (s ∪ {v}))
+    constructor
+    --goal v ∉ s
+    cases h with
+    | inl hset =>
+      have hneq := hset.2
+      let result := hyperedges_not_through_v F v hv deg1 hasGround s hset.1 hneq
+      exact result
+    | inr hset =>
+      have hset2 : s = F.ground.erase v  := hset
+      rw [hset2]
+      simp
+
+    --goal F.sets s ∨ F.sets (s ∪ {v})
+    -- h: (F.sets s ∧ s ≠ F.ground) ∨ s ∈ {F.ground.erase v}
+    cases h with
+    | inl h1 => left;exact h1.1
+    | inr h2 => --s ∈ {F.ground.erase v}
+      right
+      -- h2: s = F.ground.erase v
+      --hasGround : F.sets F.ground でこれを変換したものが
+      -- hnot: ¬ F.sets (F.ground.erase v)と矛盾
+      let fgsv := F.ground.erase v
+      have fgsv2: fgsv = F.ground.erase v := by rfl
+      rw [←fgsv2] at h2
+      have ss: s = fgsv := by
+        exact h2
+      dsimp [fgsv] at ss
+      --s = F.ground.erase v
+      have ground2: s ∪ {v} = F.ground := by
+        rw [ss]
+        --F.ground.erase v ∪ {v} = F.ground
+        exact erase_insert F.ground v hv
+      rw [ground2]
+      exact hasGround
 
 end Ideal
