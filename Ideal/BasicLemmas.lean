@@ -30,12 +30,11 @@ theorem empty_ne_univ : (∅ : Finset α) ≠ Finset.univ :=
 omit [Fintype α] in
 theorem erase_union_singleton (H : Finset α) (h1 : d = H.erase v) (h2 : v ∈ H) : H = d ∪ {v} :=
 by
-  -- 仮定 h1 を使って hd3 を書き換える
   rw [h1]
   -- 証明するべきは (hd3.erase v) ∪ {v} = hd3 であること
   apply Finset.ext
   intro x
-  simp only [Finset.mem_union, Finset.mem_singleton, Finset.mem_erase]
+  simp only [Finset.mem_union]
   -- x が v であるかどうかで場合分けする
   by_cases h : x = v
   -- x = v の場合
@@ -50,25 +49,6 @@ lemma erase_insert_eq (H G : Finset α) (x : α) : x ∈ H → Finset.erase H x 
     intro a a_1
     exact erase_union_singleton H a_1.symm a
 
---上と同じ定理。非推奨。上と同じなので消して良い。
-/-lemma erase_insert_eq' (H G : Finset α) (x : α) : x ∈ H → Finset.erase H x = G → H = G ∪ {x} :=
-  by
-    --rename_i inst inst_1 inst_2
-    intro a a_1
-    subst a_1
-    ext1 a_1
-    simp_all only [Finset.mem_union, Finset.mem_erase, ne_eq, Finset.mem_singleton]
-    apply Iff.intro
-    · intro a_2
-      simp_all only [and_true]
-      tauto
-    · intro a_2
-      cases a_2 with
-      | inl h => simp_all only
-      | inr h_1 =>
-        subst h_1
-        simp_all only
--/
 
 lemma erase_insert (H : Finset α) (x : α) : x ∈ H → (H.erase x) ∪ {x} = H :=
   by
@@ -77,24 +57,6 @@ lemma erase_insert (H : Finset α) (x : α) : x ∈ H → (H.erase x) ∪ {x} = 
     have h1 : d = H.erase x := rfl
     rw [←h1]
     exact (erase_union_singleton H h1 a).symm
-
---シングルトンを消してから足すと元の集合に戻る。非推奨。上と同じなので消して良い。
-/- lemma erase_insert': ∀ (s : Finset α) (x : α), x ∈ s → (s.erase x) ∪ {x} = s := by
-  intro s x hx
-  ext y
-  constructor
-  intro hy
-  simp_all only [mem_union, mem_erase, mem_singleton]
-  by_cases h: y = x
-  on_goal 1 => simp [*]
-  tauto
-  simp only [mem_erase, mem_union]
-  contrapose!
-  --rename_i inst _ _
-  intro a
-  simp_all only [ne_eq, mem_singleton, not_false_eq_true]
--/
-
 
 
 --シングルトンを足してから消すと元の集合に戻る。
@@ -165,7 +127,7 @@ by
 --足したものにさらに足してもかわらない.
 lemma insert_union_eq (G : Finset α) (x : α) : insert x (G ∪ {x}) = G ∪ {x} :=
   by
-    simp_all only [Finset.mem_union, Finset.mem_singleton, or_true, Finset.insert_eq_of_mem]
+    simp_all only [Finset.mem_union, Finset.mem_singleton, or_true, Finset.insert_eq_of_mem]--
 
 -- 属さない要素を足したら、真に大きくなる。
 lemma ssubset_insert (G : Finset α) (x : α) : x ∉ G → G ⊂ G ∪ {x} :=
@@ -175,7 +137,8 @@ lemma ssubset_insert (G : Finset α) (x : α) : x ∉ G → G ⊂ G ∪ {x} :=
     -- 部分集合であることを示す
     have subset : G ⊆ G ∪ {x} := by
       intro y hy
-      simp_all only [Finset.mem_union, Finset.mem_singleton, true_or]
+      rw [Finset.mem_union]
+      exact Or.inl hy
     -- 真部分集合であることを示す
     have neq : G ≠ G ∪ {x} :=
       by
@@ -314,20 +277,20 @@ lemma filter_sum_func {α : Type} [DecidableEq α] [Fintype α] {P Q : Finset α
       apply Finset.ext
       intro x
       constructor
-      intro a
-      simp_all only [not_and, Finset.mem_filter, Finset.mem_union, true_and, domain, rangeP, rangeQ]
-      intro a
-      simp_all only [not_and, Finset.mem_union, Finset.mem_filter, rangeP, rangeQ, domain]
-      cases a with
-      | inl h => simp_all only [or_false, and_self]
-      | inr h_1 => simp_all only [or_true, and_self]
+      · intro a
+        simp_all only [Finset.mem_filter, Finset.mem_union, true_and, domain, rangeP, rangeQ]
+      · intro a
+        simp_all only [not_and, Finset.mem_union, Finset.mem_filter, rangeP, rangeQ, domain]
+        cases a with
+        | inl h => simp_all only [or_false, and_self]
+        | inr h_1 => simp_all only [or_true, and_self]
     have disjoint: rangeP ∩ rangeQ = ∅ := by
       apply Finset.eq_empty_of_forall_not_mem
       intro x
       simp_all only [Finset.mem_inter, Finset.mem_filter]
       intro h
       obtain ⟨hP, hQ⟩ := h
-      simp_all only [not_and, Finset.mem_filter, and_false, rangeP, rangeQ]
+      simp_all only [not_and, Finset.mem_filter, rangeP, rangeQ]
     have disjoint0: Disjoint rangeP rangeQ := by
       dsimp [Disjoint]
       intro x
@@ -366,12 +329,7 @@ lemma filter_union_sum (P : Finset α → Prop) [DecidablePred P] (A B : Finset 
 
    -- A と B が互いに素であることから、フィルタ後の A.filter P と B.filter P も互いに素
    have filter_disj : Disjoint (A.filter P) (B.filter P) := by
-      --rw [Finset.disjoint_iff_inter_eq_empty]
-      --have disjAB : Disjoint A B := by
-      --  rw [Finset.disjoint_iff_inter_eq_empty]
-      --  exact disj
       exact Finset.disjoint_filter_filter disj
-   --have sum_disjoint := Finset.sum (A.filter P ∪ B.filter P) (λ x => x.card)
    have sum_disjoint := (@Finset.sum_union _ _ (A.filter P) (B.filter P)  (λ x => x.card)) filter_disj
    rw [←sum_disjoint]
    rw [←filter_union_eq]
@@ -389,11 +347,10 @@ lemma ground_nonempty_after_minor {α : Type} [DecidableEq α] (ground : Finset 
     have g_eq_x: ground = {x} := by
       ext y
       constructor
-      intro hy
+      intro _
       have hy' : y ∈ ground \ {x} := by
           rw [h_empty]
-          simp_all only [ge_iff_le, sdiff_eq_empty_iff_subset, subset_singleton_iff, false_or, singleton_ne_empty,
-            not_false_eq_true, mem_singleton, not_mem_empty, card_singleton, Nat.not_ofNat_le_one]
+          simp_all only [sdiff_eq_empty_iff_subset, subset_singleton_iff, false_or,card_singleton, Nat.not_ofNat_le_one]--
       rw [h_empty] at hy'
       contradiction
       -- y ∈ {x}のときに、groundに属することを示す
@@ -438,7 +395,7 @@ by
   have h2: (({∅} : Finset (Finset α)) ∪ {F.ground}).card = 2 := by
     simp_all only [card_powerset, ge_iff_le]
     rw [card_union_of_disjoint]
-    · simp_all only [card_singleton, Nat.reduceAdd, le_refl]
+    · simp_all only [card_singleton]
     · simp_all only [disjoint_singleton_right, mem_singleton]
       apply Aesop.BuiltinRules.not_intro
       intro a
@@ -446,7 +403,7 @@ by
   have h3: (({∅} : Finset (Finset α)) ∪ {F.ground}) ⊆ F.ground.powerset.filter F.sets := by
     simp_all only [card_powerset, ge_iff_le]
     intro x hx
-    simp_all only [mem_union, mem_singleton, mem_filter, mem_powerset]
+    simp_all only [mem_union, mem_singleton, mem_filter, mem_powerset]--
     cases hx with
     | inl h =>
       subst h
@@ -557,8 +514,7 @@ theorem finset_card_eq_card_of_bijective {α β : Type} [DecidableEq α] [Fintyp
       --a ∈ t
       rw [←hb2]
       subst hb2
-      simp_all only [Multiset.bijective_iff_map_univ_eq_univ, Finset.univ_eq_attach, Finset.attach_val,
-        Finset.mem_attach, Finset.coe_mem]
+      simp_all only [Finset.mem_attach, Finset.coe_mem]
     )
 
   calc

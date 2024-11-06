@@ -23,14 +23,10 @@ def deletion {α : Type} [DecidableEq α] [Fintype α](F : SetFamily α) (x : α
     inc_ground :=
 
       λ s hs => by
-        --rename_i inst
-        simp_all only [Bool.decide_and, Bool.decide_eq_true, decide_not, Bool.and_eq_true, Bool.not_eq_true',
-          decide_eq_false_iff_not]
+        simp_all only [decide_eq_false_iff_not]
         obtain ⟨left, right⟩ := hs
         have hs' : s ⊆ F.ground := F.inc_ground s left
         exact subset_erase.2 ⟨hs', right⟩
-        --theorem Finset.subset_erase {α : Type u_1}  [DecidableEq α]  {a : α}  {s : Finset α}  {t : Finset α} :
-        --s ⊆ Finset.erase t a ↔ s ⊆ t ∧ a ∉ s
         }
 
 infixl:65 " ∖ " => deletion
@@ -48,13 +44,9 @@ def idealdeletion {α : Type} [DecidableEq α] [Fintype α] (F : IdealFamily α)
 
       have hBor: (F.sets B ∧ ¬ x ∈ B) ∨ B = F.ground.erase x := by
         simpa using hB
-      simp_all only [Bool.decide_and, Bool.decide_eq_true, decide_not, Bool.and_eq_true, Bool.not_eq_true',
-        decide_eq_false_iff_not, Bool.or_eq_true]
-      --rw [decide_eq_true_eq] setsの値がtrueかfalseであるのをPropに変換する
+      simp only [decide_eq_false_iff_not]
       match hBor with
       | Or.inl ⟨hB_set, hB_not_in_x⟩ => -- (F.sets s ∧ ¬ x ∈ s)
-          --hB_set : F.sets B = true
-          -- hB_not_in_x : x ∉ B
           left
           --goal F.sets A = true ∧ x ∉ A
           have B_neq_ground: B ≠ F.ground := by
@@ -72,20 +64,12 @@ def idealdeletion {α : Type} [DecidableEq α] [Fintype α] (F : IdealFamily α)
           contradiction
 
     inc_ground :=  λ s hs => by
-        simp_all only [Bool.decide_and, Bool.decide_eq_true, decide_not, Bool.and_eq_true, Bool.not_eq_true',
-          decide_eq_false_iff_not, Bool.or_eq_true]
-        --rw [decide_eq_true_eq] at hs setsの値がtrueかfalseであるのをPropに変換する
-        --#check hs -- F.sets s = true ∧ x ∉ s ∨ s = F.ground.erase x
+        simp_all only [decide_eq_false_iff_not]
         cases hs with
         | inl hl =>
-          --#check hl --F.sets s = true ∧ x ∉ s
-
-          --#check hl.1
-          --#check hl.2
           have hs'' : s ⊆ F.ground := F.inc_ground s hl.1
           exact subset_erase.2 ⟨hs'', hl.2⟩
         | inr hr => --全体集合のケース s = F.ground.erase x
-          --#check hr -- hr : s = F.ground.erase x
           rw [hr],
 
     has_empty :=
@@ -93,10 +77,8 @@ def idealdeletion {α : Type} [DecidableEq α] [Fintype α] (F : IdealFamily α)
         --deletionしても空集合は残る。
         have emp: F.sets ∅ := F.has_empty
         unfold SetFamily.sets at emp
-        simp_all only [Bool.decide_eq_true, decide_not, Bool.not_eq_true', decide_eq_false_iff_not]
-        --#check emp --emp : F.toSetFamily.2 ∅ = true
+        simp_all only [decide_eq_false_iff_not]
         rw [IdealFamily.toSetFamily] at emp
-        --#check emp -- emp : F.1.2 ∅ = true
         simp,
 
     has_ground := -- univ = F.ground.erase x
@@ -106,7 +88,7 @@ def idealdeletion {α : Type} [DecidableEq α] [Fintype α] (F : IdealFamily α)
           right
           rfl
         unfold SetFamily.sets at ss
-        simp_all only [Bool.decide_eq_true, decide_not, Bool.not_eq_true', decide_eq_false_iff_not]
+        simp_all only [decide_eq_false_iff_not]
         rw [IdealFamily.toSetFamily]
         simp,
 
@@ -123,8 +105,6 @@ def contraction (F : SetFamily α) (x : α) (hx : x ∈ F.ground) (ground_ge_two
         intros s hs
         rcases hs with ⟨H, hH_sets, _, hs_eq⟩
         rw [hs_eq]
-        --#check hH_sets -- F.sets H
-        --#check hs_eq --s = H.erase x
         --goal H.erase x ⊆ F.ground.erase x
         intro y hy -- hy: y ∈ H.erase x
         rw [mem_erase] at hy
@@ -132,22 +112,19 @@ def contraction (F : SetFamily α) (x : α) (hx : x ∈ F.ground) (ground_ge_two
         -- goal y ≠ x ∧ y ∈ F.ground
         constructor
         exact hy.1 -- x ¥neq y
-        apply F.inc_ground H -- H ⊆ F.ground
-        exact hH_sets -- F.sets H
+        apply F.inc_ground H hH_sets-- H ⊆ F.ground
         exact hy.2 --y ∈ H
-        --なぜexactが3つもあるのか。
+
 
     nonempty_ground := ground_nonempty_after_minor F.ground x hx ground_ge_two
   }
-
-
 
 -- IdealFamilyに対するcontraction操作がIdealFamilyになることの証明
 instance contraction_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x} ) (ground_ge_two: F.ground.card ≥ 2): IdealFamily α :=
 {
   contraction (F.toSetFamily) x (by { exact F.inc_ground {x} hx (by simp) }) ground_ge_two with
   has_empty := by
-    use {x} -- emptyを使うべきではなく、これが正解っぽい。
+    use {x}
     constructor
     exact hx -- goal F.sets {x}
     constructor
@@ -167,7 +144,6 @@ instance contraction_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x}
   --Fのdown_closedを使って、contractionのdown_closedを証明する。
   down_closed := by
     let thisF := contraction (F.toSetFamily) x (by { exact F.inc_ground {x} hx (by simp) }) ground_ge_two
-    --あとで使うかも。
     have thisg : thisF.ground = F.ground.erase x := by
         rfl
     have thisinc: thisF.ground ⊆ F.ground := by
@@ -190,7 +166,6 @@ instance contraction_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x}
       rw [thisg]
       rw [Finset.mem_erase]
       simp
-      -- ¬y = x ∧ y ∈ F.ground
       constructor
       tauto
       exact hy
@@ -205,7 +180,6 @@ instance contraction_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x}
 
       case neg =>  --x neq yの場合
         --goal y ∈ F.ground
-        --
         have hinThis: y ∈ thisF.ground := by
           tauto
         --  y ∈ thisF.groundと、thisF.ground ⊆ F.groundから、y ∈ F.ground
@@ -214,19 +188,13 @@ instance contraction_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x}
         exact y_in_F_ground
 
     intros A B hB hB_ne_ground hAB
-    --have thisF_setsB: thisF.sets B := hB
     have thisF_sets: thisF.sets B := hB
     obtain ⟨H, _, _, hB_eq⟩ := hB
-      --have ninB: x ∉ B := by simp [hB_sets.2.2]
 
     have nxB: x ∉ B := by --この理由はgroundでなくて、sets Bの定理より。
       rw [hB_eq]
       exact Finset.not_mem_erase x H
 
-      --simp [thisF_setsB.2] --sets Bの定義を参照することでエラーであれば深刻かも。
-
-      --simp [hB.2.2] --これでも同じ。
-      --hB_eq : B = H.erase x から、x ∉ Bをいうのが良さそう。obtainをhaveの外に出すと良い。
     have nxA: x ∉ A := by
       by_contra h
       have hxB: x ∈ B := by
@@ -237,9 +205,7 @@ instance contraction_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x}
     have sets_imp: thisF.sets B → F.sets (B ∪ {x}) := by
       intro hB_sets --introをhaveの外に出す。TODO
       obtain ⟨H, hH_sets, hxH, hB_eq⟩ := hB_sets --TODO obtainをhaveの外に出すと良い。
-      --hB_sets : F.sets H
-      --hxB : x ∈ H
-      --hB_eq : B = H.erase x
+
       have h_union : H = (B ∪ {x}) := by
         rw [hB_eq]
         rw [union_comm]
@@ -251,11 +217,6 @@ instance contraction_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x}
     have Fsets: F.sets (B ∪ {x}) := by
       apply sets_imp
       exact thisF_sets
-
-    --F.sets (A cup {x})がF.setsのdown_closedからいえる。
-    --するとcontractionの定義から、contraction後のsets Aがいえる。
-    --hB_ne_ground : B ≠ thisF.ground
-    --groundx : F.ground = thisF.ground ∪ {x}
 
     have Fsets_down: F.sets (A ∪ {x}) := by
       apply F.down_closed (A ∪ {x}) (B ∪ {x})
@@ -279,13 +240,9 @@ instance contraction_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x}
         have xneqy: x ≠ y := by
           intro hxy
           rw [←hxy] at hy
-          -- x ∈ B
-          -- nxB: x ∉ B
           contradiction
         -- h: B ∪ {x} = thisF.ground ∪ {x}
         have hyy: y ∈ thisF.ground ∪ {x}:= by
-          -- hy : y ∈ B
-          -- h: B ∪ {x} = thisF.ground ∪ {x}
           rw [←h]
           apply Finset.mem_union_left
           exact hy
@@ -318,16 +275,12 @@ instance contraction_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x}
 
       rw [hB_eq]
       exact Finset.union_subset_union hAB (by simp)
-    --最後の部分が残っている。
-    --Fsets_down: F.sets (A ∪ {x})まで証明した。
-    --最後は、thisF.sets Aを証明する。
-    --thisF.sets Aは、contractionの定義から、F.sets Aがいえる。
-    --def contraction (F : SetFamily α) (x : α) (hx : x ∈ F.ground) (ground_ge_two: F.ground.card ≥ 2)
+
     have thisF_setsA: thisF.sets A := by
       dsimp [thisF]
       unfold contraction
       unfold SetFamily.sets
-      --exact contraction (F.toSetFamily) x (by { exact F.inc_ground {x} hx (by simp) }) ground_ge_two
+
       have thisFset: (s : Finset α) → thisF.sets s ↔ ∃ H, F.sets H ∧ x ∈ H ∧ s = H.erase x:= by
         unfold SetFamily.sets
         dsimp [thisF]
@@ -346,7 +299,6 @@ instance contraction_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x}
     exact thisF_setsA
 }
 
---omit [Nonempty α] in
 lemma ground_deletion  (F : IdealFamily α) (x : α) (hx: x ∈ F.ground) (ground_ge_two: F.ground.card ≥ 2):
   (idealdeletion F x hx ground_ge_two).ground.card = F.ground.card - 1 :=
 
@@ -354,20 +306,16 @@ lemma ground_deletion  (F : IdealFamily α) (x : α) (hx: x ∈ F.ground) (groun
     rw [idealdeletion]
     rw [Finset.card_erase_of_mem hx]
 
---omit [Nonempty α] in
 lemma ground_contraction  (F : IdealFamily α) (x : α) (hx: x ∈ F.ground) (ground_ge_two: F.ground.card ≥ 2):
   (contraction F.toSetFamily x hx ground_ge_two).ground.card = F.ground.card - 1 :=
   by
     rw [contraction]
     rw [Finset.card_erase_of_mem hx]
 
---omit [Nonempty α] in
 lemma ground_contraction_family  (F : IdealFamily α) (x : α) (ground_ge_two: F.ground.card ≥ 2)(singleton_have: F.sets {x}):
   (contraction_ideal_family F x singleton_have ground_ge_two).ground.card = F.ground.card - 1 :=
   by
     rw [contraction_ideal_family]
     rw [ground_contraction]
-
-
 
 end Ideal

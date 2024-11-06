@@ -13,7 +13,6 @@ namespace Ideal
 
 variable {α : Type} [DecidableEq α]
 --fintype α は必要なところにつける。
---variable {α : Type*} [DecidableEq α][Fintype α]
 
 --このページで使う補題等。BasicLemmasに移動しても良い。
 omit [DecidableEq α] in
@@ -146,8 +145,7 @@ lemma filter_card_eq_x_card (FG :Finset α) (hyperedges : Finset (Finset α))
          dsimp [FG_product]
          dsimp [domain]
          intro p a
-         simp_all only [Finset.mem_filter, and_true, Prod.mk.injEq, implies_true, exists_prop, and_self_left, domain,
-           i, range]
+         simp_all only [Finset.mem_filter, exists_prop, domain, i]--
          obtain ⟨fst, snd⟩ := p
          obtain ⟨left, right⟩ := a
          obtain ⟨_, right_1⟩ := left
@@ -155,8 +153,10 @@ lemma filter_card_eq_x_card (FG :Finset α) (hyperedges : Finset (Finset α))
          simp_all only [Prod.mk.injEq, and_true, exists_eq_right]
 
     have bij := Finset.card_bij i hi inj surj
-    simp_all only [Finset.mem_filter, and_true, Prod.mk.injEq, implies_true, exists_prop, and_imp, Prod.forall,
-      exists_eq_right, domain, i, range]
+    rw [Finset.card_filter]
+    simp [range]
+    rw [← bij]
+    rw [h_domain_eq]
 
 --これも動くが、AとBを明示的に引数にしたものをset3として作った。今は使ってない。
 lemma card_sum_over_fst_eq_card_sum_over_snd_set2 {α: Type u}[DecidableEq α][Fintype α] (C : Finset (α × (Finset α))) :
@@ -239,8 +239,7 @@ theorem sum_cardinality_eq [Fintype α](FG : Finset α) [DecidableEq FG] (hypere
             intros s hs
             simp only [i, Finset.mem_filter, and_true, eq_self_iff_true, Prod.fst]
             --subst fground
-            simp_all only [Finset.powerset_univ, Finset.mem_filter, Finset.mem_univ, true_and, Finset.map_refl,
-              Finset.filter_subset, and_self, and_true, pairs, convert_product_to_pair]
+            simp_all only [Finset.mem_filter,  and_true, pairs, convert_product_to_pair]
             obtain ⟨_, right⟩ := hs
             simp_all only [Finset.mem_powerset]
             have xinFG: x ∈ FG := by
@@ -259,16 +258,13 @@ theorem sum_cardinality_eq [Fintype α](FG : Finset α) [DecidableEq FG] (hypere
             ∃ a, ∃ (ha : a ∈ Finset.filter (fun s => s ∈ hyperedges ∧ x ∈ s) FG.powerset), i a ha = b :=
             by
               intro b hb
-              --subst fground
-              simp_all only [Finset.powerset_univ, Finset.mem_filter, Finset.mem_univ, true_and, and_self, and_true,
-                and_imp, Prod.mk.injEq, implies_true, Finset.map_refl, Finset.filter_subset, exists_prop, i, pairs,
-                convert_product_to_pair]
+              simp_all only [ Finset.mem_filter, exists_prop, i, pairs,convert_product_to_pair]
               obtain ⟨fst, snd⟩ := b
               obtain ⟨left, right⟩ := hb
               obtain ⟨left_1, right_1⟩ := left
               apply Finset.mem_product.mp at left_1
               subst right
-              simp_all only [Prod.mk.injEq, true_and, exists_eq_right, and_true]
+              simp_all only [Prod.mk.injEq, true_and, exists_eq_right, and_true]--
               simp_all only [Finset.mem_powerset]
 
           -- card_bij を適用して左辺と右辺のカードの数が一致することを示します

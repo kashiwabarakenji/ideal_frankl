@@ -26,8 +26,7 @@ def trace {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) (x : α) 
     nonempty_ground := ground_nonempty_after_minor F.ground x hx ground_ge_two,
     inc_ground := λ s hs =>
       by
-        simp_all only [Bool.decide_and, Bool.decide_eq_true, decide_not, Bool.and_eq_true, Bool.not_eq_true',
-          decide_eq_false_iff_not]
+        simp_all only [decide_eq_false_iff_not]
         obtain ⟨left, right⟩ := hs
         rw [Finset.subset_erase]
         constructor
@@ -49,13 +48,13 @@ def trace {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) (x : α) 
           exact hhh (mem_union_left _ hy)
   }
 
---idealという性質が、traceの演算で閉じていることの証明？
+--idealという性質が、traceの演算で閉じていることの証明
 instance trace_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x} ) (ground_ge_two: F.ground.card ≥ 2): IdealFamily α :=
 {
   trace (F.toSetFamily) x (by { exact F.inc_ground {x} hx (by simp) }) ground_ge_two with
 
   has_empty := by
-    simp_all only [Bool.decide_eq_false, not_false_eq_true, decide_eq_false_iff_not]
+    simp only [decide_eq_false_iff_not]
     constructor
     intro h
     simp at h
@@ -64,7 +63,7 @@ instance trace_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x} ) (gr
 
   has_ground := by
     let thisF := trace (F.toSetFamily) x (by { exact F.inc_ground {x} hx (by simp) }) ground_ge_two
-    simp_all only [Bool.decide_eq_false, not_false_eq_true, decide_eq_false_iff_not]
+    simp only [ decide_eq_false_iff_not]
     unfold IdealFamily.toSetFamily
     unfold trace
     unfold SetFamily.sets
@@ -86,7 +85,7 @@ instance trace_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x} ) (gr
     have hxG: x ∈ F.ground := by
       exact F.inc_ground {x} hx (by simp)
     intro A B hB hB_neq hAB
-    simp_all only [Bool.decide_eq_false, not_false_eq_true, decide_eq_false_iff_not]
+    simp only [ decide_eq_false_iff_not]
     obtain ⟨hB_not_x, hB_sets⟩ := hB
     have nxB :x ∉ B := by
        intro h
@@ -109,7 +108,6 @@ instance trace_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x} ) (gr
 
 
     match hB_sets with
-    -- F.sets B
     -- BがF.setsであり、かつxを含まない場合
     |Or.inl hB_sets =>
 
@@ -131,10 +129,6 @@ instance trace_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x} ) (gr
      exact thisFsets
     --(down_closed : ∀ (A B : Finset α), sets B → B ≠ ground → A ⊆ B → sets A)
 
-    -- 仮定：F.sets (B ∪ {x})の場合
-    -- goal : thisF.sets A　　ただし、x ∉ A
-    -- F.sets A ∪ {x} が成り立つことを示す。
-    -- よって、thisF.sets A となる。
     |Or.inr hB_sets =>
      --have hBx := F.inc_ground (B ∪ {x}) hB_sets
      --B ∪ {x} = F.groundのIdealFamilyは、冪集合になるので、場合分けした方がいいかも。
@@ -149,10 +143,8 @@ instance trace_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x} ) (gr
           constructor
           simp_all
           exact Or.inr Fsets
-        simp_all only [ne_eq, not_false_eq_true, or_true, thisF]
-        --goal x ∈ F.ground ここにもゴールが残っている?
-        --exact thisFsets
-     --(B ∪ {x}) = F.groundF.sets (A ∪ {x})が成り立たつばあい hに入っている。
+        exact thisFsets
+
      case neg =>
         --goal (trace F.toSetFamily x ⋯ ground_ge_two).sets A
         simp at h --h : B ∪ {x} = F.ground

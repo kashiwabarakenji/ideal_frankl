@@ -30,7 +30,6 @@ by
   let left_side := Finset.filter (fun (s :Finset α) ↦ F.sets s ∧ v ∈ s) F.ground.powerset
   let right_side := Finset.filter (fun (s :Finset α) ↦ ∃ (H:Finset α), F.sets H ∧ v ∈ H ∧ s = H.erase v) (F.ground.erase v).powerset
   have right_side_def: right_side = Finset.filter (fun (s :Finset α) ↦ ∃ (H :Finset α), F.sets H ∧ v ∈ H ∧ s = H.erase v) (F.ground.erase v).powerset := rfl
-  --have left_side_def: left_side = Finset.filter (fun (s :Finset α) ↦ F.sets s ∧ v ∈ s) F.ground.powerset := rfl
 
   -- 左側から右側への全単射を構成
   have h_bijective : Finset.card right_side = Finset.card left_side :=
@@ -265,6 +264,7 @@ by
     apply congr_arg
     apply Multiset.filter_congr
     tauto
+
   have term3: (Finset.filter (λ (s : Finset α)=> F.sets s = true ∧ v ∉ s) (Finset.powerset F.ground)).card = sets_without_v.card :=
     by
       simp [sets_without_v]
@@ -288,7 +288,6 @@ by
       exact F.inc_ground s hs.2.1
       exacts [hs.2.1, hs.2.2]
     · intro h -- a.mp.right goal: s ⊆ F.ground.erase v ∧ F.sets s ∧ v ∉ s
-      --unfold sets_without_v at h
       rw [sets_without_v_def] at h
       dsimp [all_sets2] at h
       rw [Finset.mem_filter] at h
@@ -313,14 +312,12 @@ by
   rw [term_eq]
   simp
   rw [term2]
-  --rw [add_comm sets_with_v.card sets_without_v.card]
-  rw [←term2]--add_commとの順番で適用できなくなる。
+  rw [←term2]--add_commとの順番で適用できなくなる。繰り返しで無駄に見えるが、とるとエラーになる。
   rw [←term3]
   rw [add_comm]
 
   have disj: Disjoint (Finset.filter (fun s ↦ v ∈ s) (Finset.filter F.sets F.ground.powerset)) (Finset.filter (fun s ↦ v ∉ s) (Finset.filter F.sets F.ground.powerset)) :=
     by
-      -- sets_with_v と sets_without_v の交わりが空集合であることを示す必要があります。
       apply Finset.disjoint_filter.2
       simp
 
@@ -346,7 +343,7 @@ theorem hyperedge_count_deletion_contraction_have {α : Type} [DecidableEq α] [
     congr
     --rename_i α_1 inst inst_1 inst_2 inst_3 inst_4 inst_5
     ext x_1 : 2
-    simp_all only [or_iff_left_iff_imp, Finset.mem_erase, ne_eq, not_true_eq_false, and_true, not_false_eq_true]
+    simp_all only [or_iff_left_iff_imp, Finset.mem_erase, ne_eq, not_true_eq_false, and_true, not_false_eq_true]--
     intro a
     subst a
     convert hx_hyperedge
@@ -396,10 +393,10 @@ theorem hyperedge_count_deletion_contraction_none {α : Type} [DecidableEq α] [
       apply Iff.intro
       · intro a
         cases a with
-        | inl h => simp_all only [not_false_eq_true, and_self, true_or]
+        | inl h => simp_all only [not_false_eq_true, and_self, true_or]--
         | inr h_1 =>
           subst h_1
-          simp_all only [Finset.mem_erase, ne_eq, not_true_eq_false, and_true, not_false_eq_true]
+          simp_all only [Finset.mem_erase, not_false_eq_true]
           apply Or.inr
           ext1 a
           simp_all only [Finset.mem_erase, ne_eq, Finset.mem_sdiff, Finset.mem_singleton]
@@ -413,8 +410,7 @@ theorem hyperedge_count_deletion_contraction_none {α : Type} [DecidableEq α] [
         | inl h => simp_all only [not_false_eq_true, and_self, true_or]
         | inr h_1 =>
           subst h_1
-          simp_all only [Finset.mem_sdiff, Finset.mem_singleton, not_true_eq_false, and_false, not_false_eq_true,
-            and_true, false_or]
+          simp_all only [Finset.mem_sdiff, Finset.mem_singleton, not_true_eq_false, and_false, not_false_eq_true, and_true, false_or]--
           ext1 a
           simp_all only [Finset.mem_sdiff, Finset.mem_singleton, Finset.mem_erase, ne_eq]
           apply Iff.intro
@@ -436,22 +432,20 @@ theorem hyperedge_count_deletion_contraction_none {α : Type} [DecidableEq α] [
     have hx_not: (F.ground \ {x}) ∉ Finset.filter (fun s ↦ F.sets s ∧ x ∉ s) (F.ground.erase x).powerset:=
       by
         rw [←Finset.sdiff_singleton_eq_erase]
-        simp_all only [not_false_eq_true, Finset.card_insert_of_not_mem, implies_true, Finset.mem_filter,
-          Finset.mem_powerset, Finset.mem_sdiff, Finset.mem_singleton, not_true_eq_false, and_false, and_true]
+        simp_all only [not_false_eq_true,  Finset.mem_filter,Finset.mem_sdiff, Finset.mem_singleton, not_true_eq_false, and_false, and_true]--
 
     let sub3 := card_insert_of_not_mem_set (Finset.filter (fun (s:Finset α) ↦ F.sets s ∧ x ∉ s) (F.ground.erase x).powerset)  (F.ground \ {x}) hx_not
 
     have sub5:  (insert (F.ground \ {x}) (Finset.filter (fun s ↦ F.sets s ∧ x ∉ s) (F.ground.erase x).powerset)) = (Finset.filter (fun (s:Finset α) ↦ F.sets s ∧ x ∉ s ∨ s = F.ground.erase x) (F.ground.erase x).powerset) := by
       ext1 a
-      simp_all only [Finset.mem_insert, Finset.mem_filter, Finset.mem_powerset, Finset.mem_sdiff, Finset.mem_singleton]
+      simp_all only [Finset.mem_insert, Finset.mem_filter, Finset.mem_powerset, Finset.mem_sdiff]
       apply Iff.intro
       intro a_1
-      simp_all only [not_false_eq_true, Finset.card_insert_of_not_mem, implies_true]
+      simp_all only [not_false_eq_true, Finset.card_insert_of_not_mem]
       cases a_1 with
       | inl h =>
         subst h
-        simp_all only [Finset.mem_sdiff, Finset.mem_singleton, not_true_eq_false, and_false, not_false_eq_true,
-          and_true, false_or]
+        simp_all only [Finset.mem_sdiff, Finset.mem_singleton, not_true_eq_false, and_false, not_false_eq_true,and_true, false_or]--
         apply And.intro
         · rw [Finset.sdiff_singleton_eq_erase]
         · rw [Finset.sdiff_singleton_eq_erase]
@@ -463,7 +457,7 @@ theorem hyperedge_count_deletion_contraction_none {α : Type} [DecidableEq α] [
       | inl h => simp_all only [not_false_eq_true, and_self, or_true]
       | inr h_1 =>
         subst h_1
-        simp_all only [Finset.Subset.refl, Finset.mem_erase, ne_eq, not_true_eq_false, and_true, not_false_eq_true]
+        simp_all only [ Finset.mem_erase,  and_true, not_false_eq_true]
         apply Or.inl
         ext1 a
         simp_all only [Finset.mem_erase, ne_eq, Finset.mem_sdiff, Finset.mem_singleton]

@@ -36,7 +36,7 @@ def isIdealFamily (α : Type) [DecidableEq α ] [Fintype α ] (family : SetFamil
 def isIntersectionClosedFamily {α: Type} [DecidableEq α] [Fintype α] (family : IdealFamily α) : Prop :=
     --family.sets  Finset (Finset U),-- Finset.univ ∈ sets ∧
     (∀ {s t : Finset α}, family.sets s→ family.sets t→  family.sets (s ∩ t))
-
+/-
 --#check @Finset.univ
 --この関数は使っていない。
 lemma inter_univ_subset_right {α : Type} [DecidableEq α] [Fintype α] (t : Finset α) :
@@ -44,6 +44,7 @@ lemma inter_univ_subset_right {α : Type} [DecidableEq α] [Fintype α] (t : Fin
     intros x hx
     obtain ⟨_, hx_t⟩ := Finset.mem_inter.1 hx
     exact hx_t
+-/
 
 --#check @isIntersectionClosedFamily
 -- IdealFamilyがIntersectionClosedFamilyであることの定理
@@ -53,7 +54,6 @@ theorem idealFamily_is_intersectionClosed {α : Type} [DecidableEq α] [Fintype 
   --sets := family.sets,
   --has_univ := family.has_univ,
   --intersection_closed := by
-    --intros s t hs ht
     unfold isIntersectionClosedFamily
     intros s t hs ht
     match Decidable.em (s = family.ground) with
@@ -78,14 +78,10 @@ theorem idealFamily_is_intersectionClosed {α : Type} [DecidableEq α] [Fintype 
         have h_inter_subset_s : s ∩ t ⊆ s := @Finset.inter_subset_left _ _ s t
         have h_downward_closed := family.down_closed (s ∩ t) s hs hsu h_inter_subset_s
         --(down_closed : ∀ (A B : Finset α), sets B → B ≠ ground → A ⊆ B → sets A)
-        exact h_downward_closed
-        --goal ⊢ family.sets (s ∩ t)
-
-
+        exact h_downward_closed --goal ⊢ family.sets (s ∩ t)
 
 -- 具体的な有限台集合を定義
 def example_U : Finset ℕ := List.toFinset [0, 1, 2]
---def example_U : Finset ℕ := Finset.toList [0, 1, 2]
 
 -- ℕの部分集合のFintypeインスタンス
 instance : Fintype {x // x ∈ example_U} :=
@@ -127,11 +123,6 @@ def isAbundant {α : Type} [DecidableEq α] [Fintype α] (family : SetFamily α)
 def isRare {α : Type} [DecidableEq α] [Fintype α] (family : SetFamily α) (x : α) : Prop :=
   ¬ isAbundant family x
 
-/-集合から関数にした変更を反映してないからか
-def existsRareVertex {α : Type} [DecidableEq α] [Fintype α] (family : IdealFamily α) : Prop :=
-  ∃ x : α, isRare α { sets := family.sets } x
--/
-
 -- {x, y}を含む集合族の要素の数が、{x, y}とdisjointな集合族の要素の数よりも真に大きいことを定義
 def pair_superior {α : Type} [DecidableEq α] [Fintype α]
   (F : SetFamily α) (x y : α) : Prop :=
@@ -150,7 +141,7 @@ def pair_superior {α : Type} [DecidableEq α] [Fintype α]
 -- 集合族の中で最も大きい要素の大きさを返す関数
 def max_card {α : Type} [DecidableEq α] [Fintype α] (S : Finset (Finset α)) : ℕ :=
   S.sup (λ s => s.card)
-
+/-
 -- 集合族から最大の要素だけを集める関数 使ってないかも。
 def largest_elements {α : Type} [DecidableEq α] [Fintype α] (S : Finset (Finset α)) : Finset (Finset α) :=
   let max_card_val := max_card S
@@ -162,7 +153,8 @@ lemma sup_image_eq_sup {α : Type} [DecidableEq α] [Fintype α] (S : Finset α)
   by
     rw [Finset.sup_image]
     congr
-
+-/
+/-
 --対偶を示している。
 omit [DecidableEq α] [Fintype α] in
 lemma Finset.card_ne_zero_iff_nonempty (s : Finset α) : s.card ≠ 0 ↔ s ≠ ∅ :=
@@ -174,10 +166,9 @@ lemma Finset.card_ne_zero_iff_nonempty (s : Finset α) : s.card ≠ 0 ↔ s ≠ 
     · intro h
       contrapose! h
       exact Finset.card_eq_zero.mp h
+-/
 
---variable {α : Type} [DecidableEq α] [Fintype α]
-
---exists_mem_of_subset_ne_oldの改良版。
+--exists_mem_of_subset_ne_oldの改良版。下で使っている。
 --でも、大きい方の集合が全体集合の場合しか使えないので、さらに改良する必要があるかも。
 omit [DecidableEq α] in
 theorem exists_mem_of_subset_ne (H : Finset α) (h_ne : H ≠ Finset.univ) : ∃ x ∈ Finset.univ, x ∉ H :=
@@ -191,7 +182,7 @@ theorem exists_mem_of_subset_ne (H : Finset α) (h_ne : H ≠ Finset.univ) : ∃
     · intro hxU -- x in Uは仮定
       exact h_ne x hxU
 
--- 大きい方が全体集合でなくても使える形にした。これを使いたい。
+-- 大きい方が全体集合でなくても使える形にした。これも使っている。BasicLemmaに移動してもよい。
 omit [Fintype α] in
 lemma exists_mem_of_card_gt (G G' : Finset α) (h : G.card > G'.card) : ∃ x ∈ G, x ∉ G' :=
   by
@@ -210,11 +201,7 @@ lemma exists_mem_of_card_gt (G G' : Finset α) (h : G.card > G'.card) : ∃ x �
     have card_le : G.card ≤ G'.card := card_le_card subset_eq
     exact not_le_of_gt h card_le --Nat.not_le_of_gt {n : Nat}  {m : Nat}  (h : n > m) :¬n ≤ m
 
-open Finset
-
 --{hH : H = Finset.univ \ G}
---UとFinset.univが等しいのかも。
---Gの引数はimplicitからexplicitにした。
 --choose_two_pointsのなかで使っているが、使わないようにもできそう。
 lemma H_neq_U (G: Finset α) (h : 0 < (Finset.univ \ G).card) : Finset.univ ≠ G :=
   by
@@ -228,22 +215,16 @@ lemma H_neq_U (G: Finset α) (h : 0 < (Finset.univ \ G).card) : Finset.univ ≠ 
         rw [h_eq] at hH
         rw [h_eq]
         exact hH
-    -- Equality of cardinalities
     have card_univ : (Finset.univ : Finset α).card = Fintype.card α := Finset.card_univ
     have card_G : G.card = Fintype.card α := by rw [←h_eq, card_univ]
-    -- Simplify H.card using H = Finset.univ \ G
     have card_sdiff : (Finset.univ \ G).card = Fintype.card α - G.card := Finset.card_sdiff (Finset.subset_univ G)
     rw [←card_univ, card_G] at card_sdiff
-    -- Thus, H.card = Finset.univ.card - G.card
-    --rw [hH'] at h
-    -- Contradiction: 0 < H.card and H.card = 0 implies 0 < 0
     rw [Finset.sdiff_self] at hH'
     rw [←hH] at h
     rw [hH'] at h
-    --rw [Finset.card_empty] at h
     exact Nat.not_lt_zero 0 h
 
-  -- 最終的には使わないかも。
+  -- 使ってない。
   omit [Fintype α] in
   lemma G_neq_G' (G G': Finset α)(h : 0 < (G' \ G).card) : G ≠ G' :=
   by
@@ -256,11 +237,7 @@ lemma H_neq_U (G: Finset α) (h : 0 < (Finset.univ \ G).card) : Finset.univ ≠ 
       by
         rw [h_eq] at hH
         exact hH
-    -- Equality of cardinalities
-    --have card_G : G.card = G'.card := by rw [←h_eq]
-    --have card_sdiff : (Finset.univ \ G).card = Fintype.card U - G.card := Finset.card_sdiff (Finset.subset_univ G)
-    --rw [←card_univ, card_G] at card_sdiff
-    -- Contradiction: 0 < H.card and H.card = 0 implies 0 < 0
+
     rw [Finset.sdiff_self] at hH'
     rw [←hH] at h
     rw [hH'] at h
@@ -270,8 +247,6 @@ lemma H_neq_U (G: Finset α) (h : 0 < (Finset.univ \ G).card) : Finset.univ ≠ 
 omit [Fintype α] in
 lemma card_sdiff_singleton_ge_one (A : Finset α) (hA : 2 ≤ A.card) (x : α) (hx : x ∈ A) : 1 ≤ (A \ {x}).card :=
   by
-    -- We start with the assumption that `A` has at least 2 elements
-    --have hA_pos : 0 < A.card := Nat.lt_of_lt_of_le zero_lt_two hA
     have h_card : (A.erase x).card = A.card - 1 :=
       by
         rw [Finset.card_erase_of_mem hx]
@@ -283,26 +258,20 @@ lemma card_sdiff_singleton_ge_one (A : Finset α) (hA : 2 ≤ A.card) (x : α) (
     -- Since `A.card ≥ 2`, `A.card - 1` is at least 1
     exact Nat.sub_le_sub_right hA 1
 
-
-
-
+--Gが全体集合より2点小さければ、Gに属さない2点を選べる
 lemma choose_two_points {α : Type} [DecidableEq α] [Fintype α]
   (u2 : 2 ≤ Fintype.card α)(G : Finset α) (hG : G.card ≤ Fintype.card α- 2) :
   ∃ (x y :α), x ∈ Finset.univ \ G ∧ y ∈ Finset.univ \ G ∧ x ≠ y :=
   by
     let H := Finset.univ \ G
     have rH : H = Finset.univ \ G := rfl
-    --have cc: Fintype.card U = (Finset.univ : Finset U).card:= by
-    --  rw [Finset.card_univ]
-    --have H_card: H.card = Fintype.card U - G.card := by
-    --  rw [← Finset.card_univ]
-    --  rw [Finset.card_sdiff (Finset.subset_univ G)]
+
     have gu : G.card ≤ Fintype.card α :=
     by
         apply Finset.card_le_univ
     have eq: G.card ≤ Fintype.card α - 2 ↔ 2 ≤ Fintype.card α - G.card :=
         by
-          constructor -- 片方ずつ証明する必要あり？
+          constructor
 
           intro h
           rw [Nat.le_sub_iff_add_le']
@@ -331,14 +300,7 @@ lemma choose_two_points {α : Type} [DecidableEq α] [Fintype α]
     have mem_of_subset_neq := exists_mem_of_subset_ne G H_nonempty.symm --(ne_of_gt hH)
     obtain ⟨x, hxU, hxG⟩ := mem_of_subset_neq
     --hxU : x ∈ univ,  hxH : x ∉ G
-    --ここまででxを取った。ここまではうまくいっているのではないか。
-    --このあとにyをFinset.univ - G -xから取れることを示す。
-    --それには、非空であることを示す。
-    --(Finset.univ - G).card が2以上なのだから、(Finset.univ - G -x) > 1なのは明らかだが、示す。
-    --lemma card_sdiff_singleton_ge_one (A : Finset U) (hA : 2 ≤ A.card) (x : U) (hx : x ∈ A) : 1 ≤ (A \ {x}).card
-    --lemma card_union_singleton_sub_one {G : Finset U} {x : U} : x ∉ G → x ∈ G ∪ {x} → G.card = (G ∪ {x}).card - 1
-    --rw [univ_sub_G_card]
-    --を利用する。
+
     have u_minus_g:x ∈ Finset.univ \ G :=
       by
         rw [Finset.mem_sdiff]
@@ -352,8 +314,6 @@ lemma choose_two_points {α : Type} [DecidableEq α] [Fintype α]
         apply card_sdiff_singleton_ge_one (Finset.univ \ G) hH
         exact u_minus_g
         --ここでのゴールは、1 ≤ ((univ \ G) \ {x}).card
-        --証明に(hG : G.card ≤ Fintype.card U- 2)を使う必要があるはず。
-        --have G_sub_x:(G' \ {x}).card < G'.card := Finset.card_erase_of_mem hx
 
     have gxx: x ∈ G ∪ {x} := by exact Finset.mem_union_right G (Finset.mem_singleton_self x)
     have ggg: G.card = (G ∪ {x}).card - 1 := by exact card_union_singleton_sub_one hxG gxx
@@ -364,7 +324,7 @@ lemma choose_two_points {α : Type} [DecidableEq α] [Fintype α]
     have ugeex (G : Finset α) (x : α): (univ \ G).erase x = (univ \ G) \ {x}:=
       by
         ext y
-        simp only [mem_erase, mem_univ, true_and, mem_singleton, mem_compl]
+        simp only [mem_erase, mem_univ, true_and, mem_singleton]
         constructor -- (univ \ G).erase xの要素であれば、(univ \ G) \ {x}の要素であることを示す。
         · intro h
           --#check h -- h : y ≠ x ∧ y ∈ univ \ G
@@ -417,19 +377,7 @@ lemma choose_two_points {α : Type} [DecidableEq α] [Fintype α]
                 exact hxG hyG
             exact ne_implies_not_mem_singleton x y y_ne_x ---u_minus_g : x ∈ univ \ G
         ----ここまででg_subset_uxの証明が終わった。
-        --まだ、udxc_m_gcの証明は終わっていない。
 
-        --示したいこと。(univ \ {x}).card > G.card 等号がないことに注意。
-        --Nat.sub_lt_right_of_lt_addを使って(univ \ {x}).card > G.cardを(univ \ {x}).card - G.card >0にする必要があるかも。
-        --ここがうまくいっていない。ゴールと仮定を改めて整理する。
-        --ゴール (univ \ {x}).card > G.card
-        --仮定 u_minus_g : x ∈ univ \ G
-        --hH_pos' : 0 < ((Finset.univ \ G) \ {x}).card これを使う必要があるかも。
-        --というかこれを適切に移項できれば、証明が終わる。
-
-        --以下の条件では等号までしか示せない。仮定 g_subset_ux : G ⊆ univ \ {x}
-        -- Finset.card_le_card はs ⊆ t → s.card ≤ t.card
-        --exact my_card_le_of_subset g_subset_ux
         rw [diff_diff_eq_diff_diff (Finset.univ) G {x}] at hH_pos'
         --#check hH_pos' --hH_pos' : 0 < ((univ \ {x}) \ G).card
         have hh: ((univ \ {x}) \ G).card = (univ \ {x}).card - G.card := Finset.card_sdiff  g_subset_ux
@@ -437,8 +385,6 @@ lemma choose_two_points {α : Type} [DecidableEq α] [Fintype α]
         exact Nat.lt_of_sub_pos hH_pos'
         ---udxc_m_gcの証明までうまくいったかも。
 
-    --obtain ⟨x, hxU, hxG⟩ := mem_of_subset_neq
-    ---(Finset.univ \ {x}).card > G.cardがわかったので、exists_mem_of_card_gtを使ってyを取る。
     obtain ⟨y, hyU, hyG⟩ := exists_mem_of_card_gt (Finset.univ \ {x}) G udxc_m_gc
 
     have ugyy: y ∈ Finset.univ \ G :=
@@ -462,10 +408,7 @@ lemma choose_two_points {α : Type} [DecidableEq α] [Fintype α]
         --#check hyU2 -- ¬x = y
         exact hyU2 hH
     exact ⟨x, y, u_minus_g, ugyy, x_ne_y⟩
-
-
-
-
+/-
 --使ってない。
 theorem Finset.univ_sdiff_univ : Finset.univ \ Finset.univ = (∅ : Finset α) :=
   Finset.sdiff_self Finset.univ
@@ -497,6 +440,7 @@ lemma card_le_of_sub (G : Finset α) (u2 : 2 ≤ Fintype.card α) : (2 ≤ Finty
         apply Finset.card_le_univ
     exact gu
 
+
 omit [Fintype α] in
 theorem exists_mem_of_subset_ne_old {U H : Finset α} (h_subset : H ⊆ U) (h_ne : H ≠ U) : ∃ x ∈ U, x ∉ H :=
   by
@@ -511,5 +455,7 @@ theorem exists_mem_of_subset_ne_old {U H : Finset α} (h_subset : H ⊆ U) (h_ne
       ---∀ x ∈ U, x ∈ Hを示す。ゴールは、x in H。h_neそのもの？
     · intro hxU -- x in Uは仮定
       exact h_ne x hxU
+
+-/
 
 end Ideal
