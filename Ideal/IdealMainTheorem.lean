@@ -42,8 +42,8 @@ lemma fin_number_eq (F: IdealFamily α)(h : F.ground.card ≥ 2) (hn: Fintype.ca
       have equal2: Fintype.card { x // x ∈ (toIdealFinFamily F n hn).ground } = (toIdealFinFamily F n hn).ground.card := by
         exact Fintype.card_coe (toIdealFinFamily F n hn).ground
       simp_all only [n, equal]
-      obtain ⟨_, right⟩ := pall
-      simp_all only [ge_iff_le, n]
+      --obtain ⟨_, right⟩ := pall
+      --simp_all only [ge_iff_le]
       rfl
 
     --let pa :=  pall.2 (toIdealFinFamily F n hn)
@@ -71,24 +71,23 @@ lemma fin_number_eq (F: IdealFamily α)(h : F.ground.card ≥ 2) (hn: Fintype.ca
     have hFG : ∀ (T : Finset (Fin n)), (toIdealFinFamily F n hn).sets T ↔ ∃ (S : Finset { x // x ∈ F.ground }), F.toSetFamily.sets (S.map (Function.Embedding.subtype _)) ∧ T = S.image embedding := by
 
       intro T
-      simp_all only [toIdealFinFamily, Finset.mem_powerset, Finset.mem_singleton, Finset.mem_image, Finset.mem_map, Finset.mem_univ, Finset.mem_singleton, Finset.mem_powerset, Finset.mem_singleton, Finset.mem_image, Finset.mem_map, Finset.mem_univ, Finset.mem_singleton, Finset.mem_powerset, Finset.mem_singleton, Finset.mem_image, Finset.mem_map, Finset.mem_univ, Finset.mem_singleton, Finset.mem_powerset, Finset.mem_singleton, Finset.mem_image, Finset.mem_map, Finset.mem_univ, Finset.mem_singleton]
-      simp_all only [Equiv.toFun_as_coe, n, embedding]
-      obtain ⟨left, right⟩ := pall
-      simp_all only [ge_iff_le, n]
+      simp only [toIdealFinFamily]
+      simp only [embedding]
+      --obtain ⟨left, right⟩ := pall
+      simp only [ge_iff_le, n]
       apply Iff.intro
       · intro a
         let ⟨S, hS⟩ := a
         obtain ⟨h1, h2⟩ := hS
         cases h2
-        simp_all only [Equiv.toFun_as_coe]
+        --simp only [Equiv.toFun_as_coe]
         --goal ∃ S_1,  F.sets (Finset.map (Function.Embedding.subtype fun x => x ∈ F.ground) S_1) ∧ Finset.image (⇑(Fintype.equivFinOfCardEq hn)) S = Finset.image (⇑(Fintype.equivFinOfCardEq hn)) S_1
         use S
-        simp_all only [Equiv.toFun_as_coe]
+        --simp_all only [Equiv.toFun_as_coe]
         simp_all only [and_true]
         convert h1
         ext x a : 2
-        simp_all only [Finset.mem_map, Function.Embedding.coe_subtype, Subtype.exists, exists_and_right,
-          exists_eq_right, Finset.mem_image]
+        simp_all only [Finset.mem_map, Function.Embedding.coe_subtype, Finset.mem_image]--
 
       · intro a
         obtain ⟨w, h⟩ := a
@@ -96,44 +95,24 @@ lemma fin_number_eq (F: IdealFamily α)(h : F.ground.card ≥ 2) (hn: Fintype.ca
         subst right_1
         have left_2 := left_1
         simp_all only
-        have left_2 := left_2
-        simp_all only
-        have left_2 := left_2
-        simp_all only
-        have left_2 := left_2
-        simp_all only
+        --have left_2 := left_2
+        --simp_all only
+        --have left_2 := left_2
+        --simp_all only
         convert left_2
         simp_all only [iff_true]
         have left_2 := left_2
         simp_all only
-        have left_2 := left_2
-        simp_all only
-        have left_2 := left_2
-        simp_all only
-        have left_2 := left_2
-        simp_all only
-        have left_2 := left_2
-        simp_all only
-        have left_2 := left_2
-        simp_all only
+        --have left_2 := left_2
+        --simp_all only
+        --have left_2 := left_2
+        --simp_all only
         convert left_2
         simp_all only [iff_true]
-        have left_2 := left_2
-        simp_all only
-        have left_2 := left_2
-        simp_all only
-        have left_2 := left_2
-        simp_all only
-        have left_2 := left_2
-        simp_all only
-        have left_2 := left_2
-        simp_all only
-        have left_2 := left_2
-        simp_all only
-        have left_2 := left_2
-        simp_all only
-        have left_2 := left_2
-        simp_all only
+        --have left_2 := left_2
+        --simp_all only
+        --have left_2 := left_2
+        --simp_all only
         have left_2 := left_2
         simp_all only
         use w
@@ -153,16 +132,16 @@ lemma fin_number_eq (F: IdealFamily α)(h : F.ground.card ≥ 2) (hn: Fintype.ca
         rw [Finset.image]
         simp only [Multiset.toFinset_map]
         simp_all only [Finset.val_toFinset]
-        have left_2 := left_2
-        simp_all only
-        have left_2 := left_2
-        simp_all only
+        --have left_2 := left_2
+        --simp_all only
+        --have left_2 := left_2
+        --simp_all only
         have left_2 := left_2
         simp_all only
         convert left_2
         ext ⟨x, hx⟩
-        simp_all only [Finset.mem_image, Finset.mem_mk, Subtype.exists, exists_and_right, exists_eq_right,
-          Finset.mem_map, Function.Embedding.coe_subtype]
+        simp_all only [Finset.mem_image,
+Finset.mem_map, Function.Embedding.coe_subtype]
 
     --補題として独立させたい。
     have hFG2: ∀ (T : Finset (Fin n)), T ∈ GSet ↔ ∃ S ∈ FSet2, T = Finset.image embedding S:= by
@@ -191,25 +170,21 @@ lemma fin_number_eq (F: IdealFamily α)(h : F.ground.card ≥ 2) (hn: Fintype.ca
         simp_all only
         -- goal ∃ a,  (a ⊆ F.ground ∧ F.sets a) ∧Finset.image (⇑(Fintype.equivFinOfCardEq hn)) w =Finset.image (⇑(Fintype.equivFinOfCardEq hn)) (Finset.filter (fun y => ∃ x, (∃ (x_1 : x ∈ F.ground), ⟨x, x_1⟩ = y) ∧ x ∈ a) F.ground.attach)
         use w.map (Function.Embedding.subtype _)
-        simp_all only [and_true, Finset.mem_map, Function.Embedding.coe_subtype, Subtype.exists, exists_and_right,
-          exists_eq_right]
+        simp_all only [and_true, Finset.mem_map, Function.Embedding.coe_subtype, Subtype.exists, exists_and_right, exists_eq_right]--
         apply And.intro
         · intro x hx
-          simp_all only [Finset.mem_map, Function.Embedding.coe_subtype, Subtype.exists, exists_and_right,
-            exists_eq_right]
+          simp_all only [Finset.mem_map, Function.Embedding.coe_subtype, Subtype.exists, exists_and_right, exists_eq_right]--
           obtain ⟨w_1, _⟩ := hx
           simp_all only
         · ext1 a
-          simp_all only [Finset.mem_image, Subtype.exists, Finset.mem_filter, Finset.mem_attach, true_and,
-            Subtype.mk.injEq, exists_prop, exists_and_left]
+          simp_all only [Finset.mem_image, Subtype.exists, Finset.mem_filter, Finset.mem_attach, true_and,Subtype.mk.injEq,exists_and_left]--
           apply Iff.intro
           · intro a_1
             obtain ⟨w_1, h⟩ := a_1
             obtain ⟨w_2, h⟩ := h
             obtain ⟨left_4, right_2⟩ := h
             subst right_2
-            simp_all only [EmbeddingLike.apply_eq_iff_eq, Subtype.mk.injEq, exists_prop, exists_eq_right_right,
-              and_true]
+            simp_all only [EmbeddingLike.apply_eq_iff_eq, Subtype.mk.injEq, exists_prop, exists_eq_right_right, and_true]--
             apply Exists.intro
             · apply And.intro
               · apply And.intro
@@ -226,8 +201,7 @@ lemma fin_number_eq (F: IdealFamily α)(h : F.ground.card ≥ 2) (hn: Fintype.ca
             obtain ⟨_, right_3⟩ := left_4
             obtain ⟨w_4, h⟩ := right_2
             subst right_3 h_1
-            simp_all only [EmbeddingLike.apply_eq_iff_eq, Subtype.mk.injEq, exists_and_right, exists_eq_right,
-              exists_const]
+            simp_all only [EmbeddingLike.apply_eq_iff_eq, Subtype.mk.injEq, exists_and_right, exists_eq_right, exists_const]
       · --(∃ a,    (a ⊆ F.ground ∧ F.sets a) ∧ T =Finset.image (⇑(Fintype.equivFinOfCardEq hn))(Finset.filter (fun y => ∃ x, (∃ (x_1 : x ∈ F.ground), ⟨x, x_1⟩ = y) ∧ x ∈ a) F.ground.attach)) → T ⊆ (F.toFinFamily F.ground.card hn).ground ∧ ∃ S, F.sets (Finset.map (Function.Embedding.subtype fun x => x ∈ F.ground) S) ∧ T = Finset.image (⇑(Fintype.equivFinOfCardEq hn)) S
         --simp_all
         intro a
@@ -273,9 +247,7 @@ lemma fin_number_eq (F: IdealFamily α)(h : F.ground.card ≥ 2) (hn: Fintype.ca
             -- `S` は `w` の部分集合として表されることを確認する
             have hS : S ⊆ w := by
               intro x hx
-              simp_all only [Finset.mem_map, Finset.mem_filter, Finset.mem_attach, true_and,
-                Function.Embedding.coe_subtype, Subtype.exists, exists_and_left, exists_prop, exists_eq_right_right,
-                S]
+              simp_all only [Finset.mem_map, Finset.mem_filter, Finset.mem_attach,Function.Embedding.coe_subtype, Subtype.exists,  exists_prop, exists_eq_right_right, S]--
             by_cases hc : S = F.ground
             case pos =>
               -- `S = F.ground` の場合
@@ -288,14 +260,14 @@ lemma fin_number_eq (F: IdealFamily α)(h : F.ground.card ≥ 2) (hn: Fintype.ca
                 intro x hx
                 simp_all only [Finset.mem_map, Finset.mem_filter, Finset.mem_attach, true_and,
                   Function.Embedding.coe_subtype, Subtype.exists, exists_and_left, exists_prop,
-                  exists_eq_right_right, S]
+                  exists_eq_right_right, S]--
               -- down_closed の性質を適用
               simp_all only [S]
               convert left_1
               ext1 a
               simp_all only [Finset.mem_map, Finset.mem_filter, Finset.mem_attach, true_and,
                 Function.Embedding.coe_subtype, Subtype.exists, exists_and_left, exists_prop, exists_eq_right_right,
-                and_iff_left_iff_imp]
+                and_iff_left_iff_imp]--
               intro a_1
               exact ha a_1
 
@@ -656,9 +628,7 @@ by
             · simp_all only [and_self]
 
         have y_in_i_a1 : ⟨x, x_in_ground⟩ ∈ i a1 ha1 := by
-          simp_all only [Equiv.toFun_as_coe, Finset.mem_filter, Finset.mem_powerset, exists_and_right,
-            Finset.univ_eq_attach, Finset.mem_image, exists_exists_and_eq_and, and_imp, Finset.mem_attach,
-            Subtype.mk.injEq, exists_prop, true_and,i]
+          simp_all only [i]
 
         dsimp [i] at y_in_i_a1
         rw [Finset.mem_filter] at y_in_i_a1
@@ -741,7 +711,7 @@ lemma fin_total_eq (F: IdealFamily α)(ge_2 : F.ground.card ≥ 2) (hn: Fintype.
     simp_all only [Equiv.toFun_as_coe, embedding, n]
     apply Finset.ext
     intro xx
-    simp_all only [Finset.mem_image, Finset.mem_filter, Finset.mem_powerset, Finset.mem_singleton, Finset.mem_univ, Finset.mem_image, Finset.mem_map]
+    simp_all only [Finset.mem_filter, Finset.mem_powerset, Finset.mem_image] --
     constructor
     · intro h
       obtain ⟨left, right⟩ := h
@@ -796,7 +766,7 @@ lemma fin_total_eq (F: IdealFamily α)(ge_2 : F.ground.card ≥ 2) (hn: Fintype.
         --obtain ⟨left_1, right⟩ := w_1
         intro x hx
         simp_all only [Finset.mem_image, Finset.mem_filter, Finset.mem_attach, true_and, Subtype.exists,
-          Subtype.mk.injEq, exists_prop, exists_and_left, Finset.mem_map, Function.Embedding.coeFn_mk]
+          Subtype.mk.injEq,  exists_and_left, Finset.mem_map, Function.Embedding.coeFn_mk]--
         obtain ⟨w, h⟩ := hx
         obtain ⟨left_2, right_1⟩ := h
         obtain ⟨w_1, h⟩ := left_2
@@ -812,7 +782,7 @@ lemma fin_total_eq (F: IdealFamily α)(ge_2 : F.ground.card ≥ 2) (hn: Fintype.
         · convert right
           ext1 a
           simp_all only [Finset.mem_image, Finset.mem_filter, Finset.mem_attach, true_and, Subtype.exists,
-            exists_and_left, exists_prop, exists_eq_right_right, and_iff_left_iff_imp]
+            exists_and_left, exists_prop, exists_eq_right_right, and_iff_left_iff_imp]--
           intro a_1
           exact left_1 a_1
         · ext1 a
@@ -885,7 +855,6 @@ theorem ideal_implies_average_rare (F : IdealFamily α) : normalized_degree_sum 
       simp_all only [embedding]
       exact (Fintype.equivFinOfCardEq hn).injective
     rw [normalized_degree_sum]
-    --rw [total_size_of_hyperedges,number_of_hyperedges]
     simp
     let num := fin_number_eq F h hn
     let tot := fin_total_eq F h hn
@@ -926,24 +895,27 @@ theorem ideal_implies_average_rare (F : IdealFamily α) : normalized_degree_sum 
       --  Finset.card_empty, n]
       have h3: F.ground.Nonempty := by
         exact F.nonempty_ground
-      simp_all only [Fintype.card_coe, ge_iff_le, not_le, Finset.one_le_card, not_true_eq_false, n]
+      rw [←Finset.one_le_card] at h3
+      linarith
 
-    simp_all only [normalized_degree_sum]
+    rw [normalized_degree_sum]
       --F.groundがnonemptyなので、nは1以上。
 
     have n4: n <= 1 := by
-      simp_all only [Fintype.card_coe, ge_iff_le, not_le, Finset.one_le_card, n]
+      simp_all only [ge_iff_le]
       linarith
 
     have n_eq_one: n = 1:= by
-      simp_all only [Fintype.card_coe, ge_iff_le, not_le, Finset.one_le_card, n]
       symm
       rw [le_antisymm_iff]
-      simp_all only [Finset.one_le_card, and_self]
+      constructor
+      exact n_ge_1
+      exact n4
 
     --台集合の大きさが１のときは集合族が決定するので、normalized_degree_sumは0
     have n_eq_one2: Fintype.card F.ground = 1 := by
-      simp_all only [Fintype.card_coe, ge_iff_le, not_le, Finset.one_le_card, n]
+      rw [hn]
+      exact n_eq_one
 
     obtain ⟨a, ha⟩ := Finset.card_eq_one.mp n_eq_one2
 
@@ -957,19 +929,18 @@ theorem ideal_implies_average_rare (F : IdealFamily α) : normalized_degree_sum 
       constructor
     -- `x ∈ F.ground` の場合に `x = a.val` を示す
       intro hx
-      simp_all only [ge_iff_le, not_le, le_refl, Fintype.card_coe, Finset.univ_eq_attach, n]
+      simp_all only [n]
       obtain ⟨val, property⟩ := a
-      simp_all only
+      --simp_all only
       --goal x = val
       --have val_in_ground: val ∈ F.ground := by
-      --  simp_all only
       -- propertyで、x in F.groundが示されている。a in F.ground
       -- hx: x in F.ground  property: val ∈ F.ground F.ground.card = 1より、val = x
       obtain ⟨y, hy⟩ := Finset.card_eq_one.mp hn.symm
-      have hx' : x = y := by simp_all only [Finset.card_singleton, Nat.one_lt_ofNat, Finset.mem_singleton]
+      have hx' : x = y := by simp_all only [Finset.card_singleton, Finset.mem_singleton]
       have hval' : val = y := by
         subst hx'
-        simp_all only [Finset.card_singleton, Nat.one_lt_ofNat, Finset.mem_singleton]
+        simp_all only [Finset.mem_singleton]
         rw [hy] at property
         simp_all only [Finset.mem_singleton]
 
@@ -977,15 +948,14 @@ theorem ideal_implies_average_rare (F : IdealFamily α) : normalized_degree_sum 
 
       intro a_1
       subst a_1
-      simp_all only [ge_iff_le, not_le, le_refl, Fintype.card_coe, Finset.univ_eq_attach, Finset.coe_mem, n]
+      simp only [Finset.univ_eq_attach, Finset.coe_mem]
 
     have all_sets: F.ground.powerset = {{a.val},∅} := by
-      simp_all only [Finset.mem_singleton, Fintype.card_ofSubsingleton, Finset.card_singleton, ge_iff_le,
-        Nat.not_ofNat_le_one, not_false_eq_true, le_refl, Finset.univ_eq_attach, n]
+      simp_all only [Finset.mem_singleton]
       obtain ⟨val, property⟩ := a
       simp_all only
       ext1 a
-      simp_all only [Finset.mem_powerset, Finset.subset_singleton_iff, Finset.mem_insert, Finset.mem_singleton]
+      simp only [Finset.mem_powerset, Finset.subset_singleton_iff, Finset.mem_insert, Finset.mem_singleton] --
       apply Iff.intro
       · intro a_1
         cases a_1 with
@@ -994,15 +964,15 @@ theorem ideal_implies_average_rare (F : IdealFamily α) : normalized_degree_sum 
           simp_all only [or_true]
         | inr h_1 =>
           subst h_1
-          simp_all only [Finset.singleton_ne_empty, or_false]
+          simp only [Finset.singleton_ne_empty, or_false]--
       · intro a_1
         cases a_1 with
         | inl h =>
           subst h
-          simp_all only [Finset.singleton_ne_empty, or_true]
+          simp only [Finset.singleton_ne_empty, or_true]
         | inr h_1 =>
           subst h_1
-          simp_all only [true_or]
+          simp only [true_or]
 
     --下で使っているよう。
     have hyperedges_one: ∀ S:Finset α, F.sets S ↔ S = {a.val} ∨ S = ∅ := by
@@ -1018,13 +988,9 @@ theorem ideal_implies_average_rare (F : IdealFamily α) : normalized_degree_sum 
         simp_all only [Finset.mem_singleton, Finset.mem_attach]
         by_cases h: S = ∅
         subst h
-        simp_all only [Fintype.card_ofSubsingleton, ge_iff_le, Nat.not_ofNat_le_one, not_false_eq_true, le_refl,
-          Finset.card_singleton, Finset.univ_eq_attach, Finset.subset_singleton_iff, true_or, or_true, n]
-        simp_all only [Fintype.card_ofSubsingleton, ge_iff_le, Nat.not_ofNat_le_one, not_false_eq_true, le_refl,
-          Finset.card_singleton, Finset.univ_eq_attach, Finset.subset_singleton_iff, false_or,
-          Finset.singleton_ne_empty, or_false, n]
-      simp_all only [Fintype.card_ofSubsingleton, ge_iff_le, Nat.not_ofNat_le_one, not_false_eq_true, le_refl,
-        Finset.card_singleton, Finset.univ_eq_attach, Finset.subset_singleton_iff, n]
+        simp_all only [Finset.univ_eq_attach, Finset.subset_singleton_iff, true_or, or_true]
+        simp_all only [ Finset.univ_eq_attach, Finset.subset_singleton_iff, false_or,or_false]
+      simp_all only [Finset.univ_eq_attach, Finset.subset_singleton_iff]
       ----
       intro hS
       cases hS with
@@ -1038,8 +1004,7 @@ theorem ideal_implies_average_rare (F : IdealFamily α) : normalized_degree_sum 
 
     have num: number_of_hyperedges F.toSetFamily = 2 := by
       rw [number_of_hyperedges]
-      simp_all only [Finset.mem_singleton, Fintype.card_ofSubsingleton, Finset.card_singleton, ge_iff_le,
-        Nat.not_ofNat_le_one, not_false_eq_true, le_refl, Finset.univ_eq_attach, n]
+      simp_all only [Finset.univ_eq_attach]
       obtain ⟨val, property⟩ := a
       simp_all only
       symm
@@ -1047,14 +1012,11 @@ theorem ideal_implies_average_rare (F : IdealFamily α) : normalized_degree_sum 
 
     have tot: total_size_of_hyperedges F.toSetFamily = 1 := by
       dsimp [Ideal.total_size_of_hyperedges]
-      simp_all only [Finset.mem_singleton, Fintype.card_ofSubsingleton, Finset.card_singleton, ge_iff_le,
-        Nat.not_ofNat_le_one, not_false_eq_true, le_refl, Finset.univ_eq_attach, n]
+      simp_all only [ Finset.univ_eq_attach]
       obtain ⟨val, property⟩ := a
       simp_all only
       simp [Finset.filter_true_of_mem, hyperedges_one]
 
-    simp_all only [Finset.mem_singleton, Fintype.card_ofSubsingleton, Finset.card_singleton, ge_iff_le,
-      Nat.not_ofNat_le_one, not_false_eq_true, le_refl, Finset.univ_eq_attach, Nat.cast_one, one_mul, Nat.cast_ofNat,
-      mul_one, sub_self, n]
+    simp_all only [le_refl, Nat.cast_one, one_mul, Nat.cast_ofNat,mul_one, sub_self, n] --
 
   end Ideal
