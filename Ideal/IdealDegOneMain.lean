@@ -57,13 +57,12 @@ lemma ineq_lem (k : ℕ) :
            calc
              2 * (k + 1) = k + 1 + k + 1 := by ring
              _ = (k + k) + (1 + 1) := by
-               simp_all only [ge_iff_le, true_implies, le_add_iff_nonneg_left, zero_le, Nat.ofNat_pos, mul_le_mul_left,
-               Nat.reduceAdd, add_left_inj]
+               simp_all only [le_add_iff_nonneg_left, Nat.ofNat_pos, Nat.reduceAdd]
                omega
              _ ≥ k + 2  := by
-                simp_all only [ge_iff_le, le_add_iff_nonneg_left, zero_le]
+                simp_all only [le_add_iff_nonneg_left, zero_le]
                 omega
-          simp_all only [ge_iff_le, true_implies, le_add_iff_nonneg_left, zero_le, Nat.ofNat_pos, mul_le_mul_left]
+          simp_all only [ true_implies, Nat.ofNat_pos]
           omega
     have hh1: k + 1 ≥ 1 := by
       simp_all only [ge_iff_le]
@@ -72,7 +71,7 @@ lemma ineq_lem (k : ℕ) :
     have add_sub_assoc (nn mm kk : ℕ) (h : mm ≥ kk) : nn + (mm - kk) = (nn + mm) - kk :=
       by
         rw [←Nat.add_sub_cancel' h]
-        simp_all only [ge_iff_le, add_tsub_cancel_of_le]
+        simp_all only [add_tsub_cancel_of_le]
         omega
 
     calc
@@ -141,8 +140,7 @@ lemma total_eq_lem (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
         --simp_all only [ge_iff_le]
       have sgs: F.sets s := by
         subst sg
-        simp_all only [ge_iff_le, Finset.mem_powerset, not_and, and_imp, subset_refl, true_and,
-          and_self, and_true]
+        simp_all only [Finset.mem_powerset]
       rw [sg] at sgs
       rw [hv_equal] at sgs
       exact ground_minus_v_none sgs
@@ -165,9 +163,7 @@ lemma total_eq_lem (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
     rw [filter_sum  (λ s => (F.sets s ∧ v ∉ s)) (λ s => s = F.ground.erase v) (F.ground.erase v).powerset disjoint2]
 
     dsimp [gg]
-    simp_all only [Finset.mem_filter, Finset.mem_powerset, and_self, Finset.mem_erase, ne_eq, not_true_eq_false,
-      false_and, not_false_eq_true, and_true, and_imp, subset_refl, exists_prop, Finset.singleton_subset_iff,
-      Finset.sdiff_subset]
+    simp_all only [Finset.mem_filter, Finset.mem_powerset]
 
     have sum_part1: ∑ x ∈ Finset.filter (fun s => F.sets s ∧ v ∉ s) (F.ground \ {v}).powerset, x.card = (∑ x ∈ Finset.filter (fun s => F.sets s ∧ v ∉ s) (F.ground \ {v}).powerset,
       if x = F.ground \ {v} then (F.ground \ {v}).card + 1 else x.card) := by
@@ -315,7 +311,7 @@ lemma induction_assum_lem (n : Nat) (F: IdealFamily (Fin (n+1))) (idealDelF : Id
     have eqcard_number: number_of_hyperedges idealDelF.toSetFamily = number_of_hyperedges idealDelFn.toSetFamily := by
       have minor_ground_card_ge1: idealDelF.ground.card ≥ 1 := by
         subst h
-        simp_all only [add_tsub_cancel_right, tsub_le_iff_right, zero_add, ge_iff_le, idealDelFn]
+        simp_all only [add_tsub_cancel_right]
       exact Eq.symm (IdealFamily.deletionToN_number n_ge_one idealDelF v v_notin_minor_ground minor_ground_card_ge1)
     have eqcard_total: total_size_of_hyperedges idealDelF.toSetFamily = total_size_of_hyperedges idealDelFn.toSetFamily := by
       exact Eq.symm (deletion_total n idealDelF n_ge_one v v_notin_minor_ground h_assum_card1)
@@ -355,7 +351,7 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
       have total := ground_minus_v_ideal_total F v v_in_ground ground_minus_v_none singleton_hyperedge_none ground_ge_two
       have number := ground_minus_v_ideal_number F v v_in_ground ground_minus_v_none singleton_hyperedge_none
       rw [total, number]
-      simp_all only [ge_iff_le, tsub_le_iff_right, zero_add, Nat.cast_add, Nat.cast_one]
+      --simp_all only [ Nat.cast_add, Nat.cast_one]
       simp_all --ないとエラー
 
       have basic_ineq (n : ℕ) (h : 1 ≤ n) : 2^n ≥ n + 1 :=
@@ -367,7 +363,7 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
           simp_all only [nonpos_iff_eq_zero, one_ne_zero]
         | succ k ih =>
           rw [pow_succ 2 k]
-          simp_all only [ge_iff_le, implies_true, le_add_iff_nonneg_left, zero_le]
+          simp_all only [le_add_iff_nonneg_left, zero_le]
           --have _ : k ≥ 0 := Nat.zero_le k
 
           by_cases h1: k = 0
@@ -397,7 +393,7 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
       have inequality_calc (n : ℕ) : ((n+1) * (2^n) + (n + 2))* 2 ≤ (2^(n+1) + 1) * (n + 2) := by
         induction n with
         | zero =>
-          simp_all only [ge_iff_le, zero_add, pow_zero, mul_one, Nat.reduceAdd, Nat.reduceMul, pow_one, le_refl]
+          simp_all only [ zero_add, pow_zero, Nat.reduceAdd, Nat.reduceMul, pow_one, le_refl]
 
         | succ k ih =>
         -- 帰納段階: n = k + 1 を証明
@@ -408,8 +404,7 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
             rw [h1]
             simp_all only [Nat.one_pow, Nat.one_add]
             subst h1
-            simp_all only [nonpos_iff_eq_zero, one_ne_zero, zero_le, tsub_eq_zero_of_le, pow_zero, mul_one, zero_add,
-              one_mul, Nat.reduceAdd, le_refl, false_implies, Nat.reduceMul, pow_one]
+            simp_all only [nonpos_iff_eq_zero,  one_mul, Nat.reduceAdd, Nat.reduceMul]
             simp_all only [Nat.reducePow, Nat.reduceAdd, Nat.reduceMul, Nat.reduceLeDiff]
           case neg =>
           --以下はコメントアウトするとエラー
@@ -521,7 +516,7 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
               dsimp [i,range]
               rename_i h
               subst h
-              simp_all only [ge_iff_le, subset_refl, true_and, Finset.mem_erase, ne_eq, not_true_eq_false, and_true,
+              simp_all only [ Finset.mem_erase, ne_eq, not_true_eq_false, and_true,
                 not_false_eq_true, idealDelF, domain, i]
               simp_all only [or_true]
 
@@ -536,7 +531,7 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
                   exact F.down_closed {v} s hs'.2 h_neg v_subset_s
                 contradiction
               simp_all only [ge_iff_le, Finset.mem_erase, ne_eq, not_false_eq_true, true_and]
-              simp_all only [not_false_eq_true, Finset.erase_eq_of_not_mem, not_true_eq_false, and_self, idealDelF]
+              simp_all only [not_false_eq_true, Finset.erase_eq_of_not_mem, not_true_eq_false, and_self]--
               simp_all only [true_or]
 
       have i_inj   (s : Finset (Fin (n+1))) (hs : s ∈ domain) (t : Finset (Fin (n+1))) (ht : t ∈ domain) : s.erase v = t.erase v → s = t:= by
