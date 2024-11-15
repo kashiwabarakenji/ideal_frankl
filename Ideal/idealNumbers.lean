@@ -144,9 +144,13 @@ by
               obtain ⟨val, property⟩ := ss
               simp_all only
               intro x hx
-              simp_all only [Finset.mem_erase,  ne_eq,not_false_eq_true, true_and]--
-              obtain ⟨_, right⟩ := hx
-              exact sss_subset right
+              simp only [Finset.mem_erase,  ne_eq,not_false_eq_true, true_and] at hx
+              obtain ⟨left, right⟩ := hx
+              rw [Finset.mem_erase]
+              constructor
+              · rw [←ne_eq] at left
+                exact left
+              · exact sss_subset right
             · -- right goal: ssev ⊆ F.ground.erase v
               simp_all only [  ssev]
               obtain ⟨val, property⟩ := ss
@@ -170,9 +174,9 @@ by
           have rw_rule := Ideal.erase_insert ss.val v ss_erase
           constructor
           -- goal: F.sets ssev ∪ {v}
-          simp [rw_rule]
+          ·simp [rw_rule]
           -- goal: ssev ∪ {v} = ss.val
-          simpa [rw_rule] -- simpもsimpaも両方とも必要みたい。
+          ·simpa [rw_rule] -- simpもsimpaも両方とも必要みたい。
 
           -- 単射性と全射性から全単射性を得る。fが全単射という言明をまず証明する
       have h_bijection : Function.Bijective f :=
@@ -293,15 +297,15 @@ by
       rw [Finset.mem_filter] at h
       simp [Finset.filter] at h
       constructor
-      apply Finset.subset_erase.mpr
-      constructor
-      exact h.1.1
-      exact h.2
+      · apply Finset.subset_erase.mpr
+        constructor
+        · exact h.1.1
+        · exact h.2
 
       --goal F.sets s ∧ v ∉ s
-      constructor
-      exact h.1.2
-      exact h.2
+      · constructor
+        exact h.1.2
+        exact h.2
 
   rw [term1]
   rw [partition_card]
@@ -396,7 +400,7 @@ theorem hyperedge_count_deletion_contraction_none {α : Type} [DecidableEq α] [
         | inl h => simp_all only [not_false_eq_true, and_self, true_or]--
         | inr h_1 =>
           subst h_1
-          simp_all only [Finset.mem_erase, not_false_eq_true]
+          --simp_all only [Finset.mem_erase]
           apply Or.inr
           ext1 a
           simp_all only [Finset.mem_erase, ne_eq, Finset.mem_sdiff, Finset.mem_singleton]
@@ -438,10 +442,10 @@ theorem hyperedge_count_deletion_contraction_none {α : Type} [DecidableEq α] [
 
     have sub5:  (insert (F.ground \ {x}) (Finset.filter (fun s ↦ F.sets s ∧ x ∉ s) (F.ground.erase x).powerset)) = (Finset.filter (fun (s:Finset α) ↦ F.sets s ∧ x ∉ s ∨ s = F.ground.erase x) (F.ground.erase x).powerset) := by
       ext1 a
-      simp_all only [Finset.mem_insert, Finset.mem_filter, Finset.mem_powerset, Finset.mem_sdiff]
+      simp_all only [Finset.mem_insert, Finset.mem_filter, Finset.mem_powerset]--
       apply Iff.intro
       intro a_1
-      simp_all only [not_false_eq_true, Finset.card_insert_of_not_mem]
+      --simp_all only [not_false_eq_true, Finset.card_insert_of_not_mem]
       cases a_1 with
       | inl h =>
         subst h
@@ -457,7 +461,7 @@ theorem hyperedge_count_deletion_contraction_none {α : Type} [DecidableEq α] [
       | inl h => simp_all only [not_false_eq_true, and_self, or_true]
       | inr h_1 =>
         subst h_1
-        simp_all only [ Finset.mem_erase,  and_true, not_false_eq_true]
+        --simp_all only [ Finset.mem_erase,  and_true, not_false_eq_true]
         apply Or.inl
         ext1 a
         simp_all only [Finset.mem_erase, ne_eq, Finset.mem_sdiff, Finset.mem_singleton]--

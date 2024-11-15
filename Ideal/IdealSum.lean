@@ -36,7 +36,7 @@ lemma contraction_total_size (F : SetFamily α) [DecidablePred F.sets] (x : α)
     rw [total_size_of_hyperedges]
     let largeset:= Finset.filter (fun s ↦ F.sets s ∧ x ∈ s) F.ground.powerset
     let smallset:= Finset.filter (fun s ↦ ∃ H, F.sets H ∧ x ∈ H ∧ s = H.erase x) (F.ground.erase x).powerset
-    have sum_eq0 := sum_of_size_eq_degree_plus_contraction_sum F x ground_ge_two
+    have sum_eq0 := sum_of_size_eq_degree_plus_contraction_sum F x
     have sum_eq2 := sumbij F x hx
     simp_all
 
@@ -54,7 +54,7 @@ lemma contraction_total_size (F : SetFamily α) [DecidablePred F.sets] (x : α)
     have sum_eq5: largeset.sum (minusone_card) + largeset.card = largeset.sum (λ s => minusone_card s + 1) := by
       rw [Finset.sum_add_distrib]
       rw [Finset.sum_const]
-      simp_all only [and_imp, smul_eq_mul, mul_one]
+      simp_all only [ smul_eq_mul, mul_one]--
 
     let contset := (Finset.filter (contraction F x hx ground_ge_two).sets (contraction F x hx ground_ge_two).ground.powerset)
     have contsethave: contset = (Finset.filter (contraction F x hx ground_ge_two).sets (contraction F x hx ground_ge_two).ground.powerset) := by rfl
@@ -101,7 +101,7 @@ lemma contraction_total_size (F : SetFamily α) [DecidablePred F.sets] (x : α)
         largeset.sum Finset.card = largeset.sum (λ s=> s.card) := by simp
         _ >= largeset.sum (λ s => 1) := Finset.sum_le_sum largesum_ge_1
         _ = largeset.card * 1 := by
-          simp_all only [Finset.sum_const, smul_eq_mul]
+          simp_all only [Finset.sum_const, smul_eq_mul]--
         _ = largeset.card := by simp
 
     have largecard_eq_smallcard: largeset.card = smallset.card := by
@@ -154,11 +154,11 @@ by
       intro y
       intro hy
       by_cases h1: y = x
-      rw [h1] at hy
-      subst h1
-      contradiction
-      simp_all only [Finset.mem_erase, ne_eq, not_false_eq_true, true_and]--
-      exact a hy
+      · rw [h1] at hy
+        subst h1
+        contradiction
+      · simp_all only [Finset.mem_erase, ne_eq, not_false_eq_true, true_and]--
+        exact a hy
     · intro h2
       exact h2.trans (Finset.erase_subset _ _)
 
@@ -214,7 +214,7 @@ by
               rw [sub2]
        _  = degree F.toSetFamily x + (Finset.filter (λ s => ∃ H, F.sets H ∧ x ∈ H ∧ s = H.erase x) (Finset.powerset (F.ground.erase x))).sum Finset.card +
             (Finset.filter (λ s => F.sets s ∧ x ∉ s) (Finset.powerset F.ground)).sum Finset.card := by
-              rw [sum_of_size_eq_degree_plus_contraction_sum F.toSetFamily x ground_ge_two]
+              rw [sum_of_size_eq_degree_plus_contraction_sum F.toSetFamily x]
               simp_all only [Nat.cast_add, Nat.cast_sum]
        _  = degree F.toSetFamily x + total_size_of_hyperedges  (contraction F.toSetFamily x hx ground_ge_two)
                + (Finset.filter (λ s => F.sets s ∧ x ∉ s) (Finset.powerset F.ground)).sum Finset.card := by
@@ -285,7 +285,7 @@ theorem hyperedge_totalsize_deletion_contraction_have {α : Type} [DecidableEq �
               rw [sub2]
        _  = degree F.toSetFamily x + (Finset.filter (λ s => ∃ H, F.sets H ∧ x ∈ H ∧ s = H.erase x) (Finset.powerset (F.ground.erase x))).sum Finset.card +
             (Finset.filter (λ s => F.sets s ∧ x ∉ s) (Finset.powerset F.ground)).sum Finset.card := by
-              rw [sum_of_size_eq_degree_plus_contraction_sum F.toSetFamily x ground_ge_two]
+              rw [sum_of_size_eq_degree_plus_contraction_sum F.toSetFamily x]
        _  = degree F.toSetFamily x + total_size_of_hyperedges  (contraction F.toSetFamily x hx ground_ge_two)
                + (Finset.filter (λ s => F.sets s ∧ x ∉ s) (Finset.powerset F.ground)).sum Finset.card := by
               rw [sub3]
@@ -361,7 +361,7 @@ lemma ideal_and_deletion {α : Type} [DecidableEq α] [Fintype α] (F : IdealFam
         Finset.filter (fun s ↦ s = F.ground.erase x) F.ground.powerset).card =
     (Finset.filter (fun s ↦ F.sets s ∧ x ∉ s) F.ground.powerset).card +
       (Finset.filter (fun s ↦ s = F.ground.erase x) F.ground.powerset).card := by
-        apply (Finset.card_union_of_disjoint disj) --効果なし？
+        apply (Finset.card_union_of_disjoint disj)
 
     have sub7: (Finset.filter (fun s ↦ F.sets s ∧ x ∉ s) F.ground.powerset ∪
         Finset.filter (fun s ↦ s = F.ground.erase x) F.ground.powerset) =  (Finset.filter (fun s ↦ F.sets s ∧ x ∉ s ∨ s = F.ground.erase x) F.ground.powerset) := by
@@ -370,7 +370,7 @@ lemma ideal_and_deletion {α : Type} [DecidableEq α] [Fintype α] (F : IdealFam
         simp_all only [Finset.mem_union, Finset.mem_filter]
         apply Iff.intro
         intro h
-        simp_all only [Finset.card_union_of_disjoint]
+        --simp_all only [Finset.card_union_of_disjoint]
         cases h with
         | inl h_1 => simp_all only [not_false_eq_true, and_self, true_or]--
         |
@@ -391,58 +391,58 @@ lemma ideal_and_deletion {α : Type} [DecidableEq α] [Fintype α] (F : IdealFam
         apply Finset.ext
         intro ss
         simp only [Finset.mem_filter, Finset.mem_powerset]--
-        apply Iff.intro
-        intro a
-        obtain ⟨left, right⟩ := a
-        constructor
-        cases right with
-        | inl h =>
-          --left : ss ⊆ F.groundとright : x ∉ ssから、ss ⊆ F.ground.erase xを示す。
-          intro y
-          intro hy
-          rw [Finset.erase_eq]
-          rw [Finset.mem_sdiff]
+        apply Iff.intro --ゴールが2つに分かれる。
+        · intro a
+          obtain ⟨left, right⟩ := a
+          constructor --ゴールが2つにわかれる。
+          · cases right with
+            | inl h =>
+              --left : ss ⊆ F.groundとright : x ∉ ssから、ss ⊆ F.ground.erase xを示す。
+              intro y
+              intro hy
+              rw [Finset.erase_eq]
+              rw [Finset.mem_sdiff]
+              constructor
+              --goal y ∈ F.ground
+              exact left hy
+              --goal y ≠ x
+              intro hh
+              have xy: x = y := by
+                rw [Finset.mem_singleton] at hh
+                exact hh.symm
+              rw [xy]  at h
+              let hright:= h.2
+              contradiction
+            | inr h =>
+              subst h
+              rfl
+              --goal F.sets ss ∧ x ∉ ss ∨ ss = F.ground.erase x
+          ·  cases right with
+            | inl h =>
+              exact Or.inl h
+            | inr h =>
+              exact Or.inr h
+        --逆方向
+        · intro aa
+          obtain ⟨left0, right0⟩ := aa
           constructor
-          --goal y ∈ F.ground
-          exact left hy
-          --goal y ≠ x
-          intro hh
-          have xy: x = y := by
-            rw [Finset.mem_singleton] at hh
-            exact hh.symm
-          rw [xy]  at h
-          let hright:= h.2
-          contradiction
-        | inr h =>
-          subst h
-          rfl
-        --goal F.sets ss ∧ x ∉ ss ∨ ss = F.ground.erase x
-        cases right with
-        | inl h =>
-          exact Or.inl h
-        | inr h =>
-          exact Or.inr h
-        --多分逆方向
-        intro aa
-        obtain ⟨left0, right0⟩ := aa
-        constructor
-        cases right0 with
-        | inl h =>
-          --left0 : ss ⊆ F.ground.erase xとright0 : x ∉ ssから、ss ⊆ F.groundを示す。
-          intro y
-          intro hy
-          --y ∈ F.ground
-          let hy1 := left0 hy
-          rw [Finset.erase_eq] at hy1
-          rw [Finset.mem_sdiff] at hy1
-          exact hy1.1
-        | inr h =>
-          subst h
-          intro y hy
-          rw [Finset.mem_erase] at hy
-          exact hy.2
-        --goal F.sets ss ∧ x ∉ ss ∨ ss = F.ground.erase x
-        exact right0
+          cases right0 with
+          | inl h =>
+            --left0 : ss ⊆ F.ground.erase xとright0 : x ∉ ssから、ss ⊆ F.groundを示す。
+            intro y
+            intro hy
+            --y ∈ F.ground
+            let hy1 := left0 hy
+            rw [Finset.erase_eq] at hy1
+            rw [Finset.mem_sdiff] at hy1
+            exact hy1.1
+          | inr h =>
+            subst h
+            intro y hy
+            rw [Finset.mem_erase] at hy
+            exact hy.2
+          --goal F.sets ss ∧ x ∉ ss ∨ ss = F.ground.erase x
+          exact right0
 
     have sub11: (Finset.filter (fun s => s = F.ground.erase x) F.ground.powerset) = {F.ground.erase x} := by
       apply Finset.ext
@@ -464,7 +464,7 @@ lemma ideal_and_deletion {α : Type} [DecidableEq α] [Fintype α] (F : IdealFam
 
     have sub10: (Finset.filter (fun s => s = F.ground.erase x) F.ground.powerset).sum Finset.card = (F.ground.card - 1) := by
       rw [sub11]
-      simp_all only [ Finset.sum_singleton, Finset.card_erase_of_mem]
+      simp_all only [ Finset.sum_singleton, Finset.card_erase_of_mem]--
 
     set h_lhs := (Finset.filter (λ s=> F.sets s ∧ x ∉ s ∨ s = F.ground.erase x) F.ground.powerset).sum Finset.card with h_lhs_def
     set h_rhs := (Finset.filter (λ s=> F.sets s ∧ x ∉ s) F.ground.powerset).sum Finset.card + (F.ground.card - 1) with h_rhs_def
@@ -484,6 +484,7 @@ lemma ideal_and_deletion {α : Type} [DecidableEq α] [Fintype α] (F : IdealFam
 
       rw [Finset.disjoint_iff_inter_eq_empty] at disj
       rw [←(disjoint_sum_card_eq disj)]
+    clear sub6 sub7 sub8 sub10 --sub4を入れると、unsolved goalが出る。
 
     simp only [h_lhs_def, h_rhs_def] at goal1
     simp only [h_lhs1_def, h_rhs1_def,h_rhs0] at goal1
@@ -509,45 +510,45 @@ lemma ideal_and_deletion {α : Type} [DecidableEq α] [Fintype α] (F : IdealFam
         by
           apply Finset.ext
           intro s
-          simp only [Finset.mem_filter, Finset.mem_powerset]
+          simp only [Finset.mem_filter, Finset.mem_powerset]--
           apply Iff.intro
-          intro a
-          obtain ⟨left, right⟩ := a
-          constructor
-          intro y
-          intro hy
-          simp_all only [Finset.mem_filter, Finset.mem_erase]
-          obtain ⟨_, right⟩ := right
-          apply And.intro
-          · apply Aesop.BuiltinRules.not_intro
-            intro a
-            subst a
-            simp_all only
-          · exact left hy
-          simp_all only [and_true,not_false_eq_true]
-          --goal s ⊆ F.ground.erase x ∧ F.sets s ∧ x ∉ s → s ⊆ F.ground ∧ F.sets s ∧ x ∉ s
+          · intro a
+            obtain ⟨left, right⟩ := a
+            constructor
+            · intro y
+              intro hy
+              simp only [Finset.mem_erase]--
+              obtain ⟨_, right⟩ := right
+              apply And.intro
+              · apply Aesop.BuiltinRules.not_intro
+                intro a
+                subst a
+                simp_all only
+              · exact left hy
+            · simp_all only [and_true,not_false_eq_true]
 
-          intro a
-          obtain ⟨left_1, right⟩ := a
-          constructor
-          · intro y
-            intro hy
-            simp_all only [Finset.mem_erase, Finset.mem_sdiff]
-            have lem: F.ground.erase x ⊆ F.ground := by
-              simp_all only [Finset.sum_singleton, Finset.card_erase_of_mem]
-              --obtain ⟨left, right⟩ := right
-              intro z hz
-              simp_all only [Finset.mem_erase, ne_eq]
-            have lem2: s  ⊆ F.ground := by
-              exact subset_trans left_1 lem
-            exact lem2 hy
-          · exact right
+              --goal s ⊆ F.ground.erase x ∧ F.sets s ∧ x ∉ s → s ⊆ F.ground ∧ F.sets s ∧ x ∉ s
+
+          · intro a
+            obtain ⟨left_1, right⟩ := a
+            constructor
+            · intro y
+              intro hy
+              simp_all only [Finset.mem_erase]--
+              have lem: F.ground.erase x ⊆ F.ground := by
+                intro z hz
+                rw [Finset.mem_erase] at hz
+                exact hz.2
+              have lem2: s  ⊆ F.ground := by
+                exact subset_trans left_1 lem
+              exact lem2 hy
+            · exact right
 
       have goal_e0: h_rhs0 = h_rhs0_e := by
         dsimp [h_rhs0, h_rhs0_e]
         rw [←goale1]
       rw [←goal_e0]
-    simp_all only [Finset.sum_singleton, Finset.card_erase_of_mem]
+    --simp only [Finset.card_erase_of_mem]
     convert goal_e --exact goal_eではうまくいかない。
 
 --整数版。後ろで使われている。
@@ -631,21 +632,19 @@ theorem hyperedge_average_none {α : Type} [DecidableEq α] [Fintype α]
   _ = 2*(((total_size_of_hyperedges (idealdeletion F x hx ground_ge_two).toSetFamily):ℤ)  +
             (total_size_of_hyperedges (contraction_ideal_family F x singleton_have ground_ge_two).toSetFamily:ℤ) + ((degree F.toSetFamily x):ℤ)) - (F.ground.card:ℤ)*((number_of_hyperedges F.toSetFamily):ℤ)  - (F.ground.card:ℤ) + 2:= by
       rw [hyperedge_totalsize_deletion_contraction_none F x hx ground_ge_two ground_v_none singleton_have]
-      simp_all only [add_left_inj, sub_left_inj, mul_eq_mul_left_iff, add_right_inj, Nat.cast_inj,
-        OfNat.ofNat_ne_zero, or_false]
+      --simp_all only [add_left_inj, OfNat.ofNat_ne_zero]
       rfl
 
   _ = 2*((total_size_of_hyperedges (idealdeletion F x hx ground_ge_two).toSetFamily):ℤ) +
             2*((total_size_of_hyperedges (contraction_ideal_family F x singleton_have ground_ge_two).toSetFamily):ℤ) + 2*((degree F.toSetFamily x):ℤ) - ((F.ground.card):ℤ)*((((number_of_hyperedges F.toSetFamily):ℤ)+1)-1) - (F.ground.card:ℤ) + 2 := by
-            simp_all only [add_sub_cancel_right, add_left_inj, sub_left_inj]
+            --simp_all only [add_sub_cancel_right]
             ring
 
   _ =  2*((total_size_of_hyperedges (idealdeletion F x hx ground_ge_two).toSetFamily):ℤ)  +
             2*((total_size_of_hyperedges (contraction_ideal_family F x singleton_have ground_ge_two).toSetFamily):ℤ) + 2*((degree F.toSetFamily x):ℤ)
              - ((F.ground.card):ℤ)*((number_of_hyperedges (idealdeletion F x hx ground_ge_two).toSetFamily:ℤ)  +  (((number_of_hyperedges (contraction_ideal_family F x singleton_have ground_ge_two).toSetFamily):ℤ)-1)) - (F.ground.card:ℤ) + 2:= by
             rw [hyperedge_count_deletion_contraction_none_z F x hx ground_ge_two ground_v_none singleton_have]
-            simp_all only [add_left_inj, sub_left_inj, sub_right_inj, mul_eq_mul_left_iff, Nat.cast_eq_zero,
-              Finset.card_eq_zero]
+            simp_all only [add_left_inj, sub_left_inj, sub_right_inj, mul_eq_mul_left_iff ]--
             apply Or.inl
             ring
   _ = (2*((total_size_of_hyperedges (idealdeletion F x hx ground_ge_two).toSetFamily):ℤ)  - ((F.ground.card:ℤ) - 1)*((number_of_hyperedges (idealdeletion F x hx ground_ge_two).toSetFamily):ℤ))
@@ -663,9 +662,9 @@ theorem hyperedge_average_none {α : Type} [DecidableEq α] [Fintype α]
 
          rw [ground_contraction_family]
          congr
-         simp_all only [ge_iff_le]
+         --simp_all only [ge_iff_le]
          omega
-         simp_all only [ge_iff_le]
+         --simp_all only [ge_iff_le]
          omega
   _ = normalized_degree_sum ((idealdeletion F x hx ground_ge_two).toSetFamily)  +
           normalized_degree_sum (contraction_ideal_family F x singleton_have ground_ge_two).toSetFamily  +2*((degree F.toSetFamily x):ℤ)
@@ -723,8 +722,7 @@ theorem hyperedge_average_none {α : Type} [DecidableEq α] [Fintype α]
       - ((F.ground.card):ℤ)*(((number_of_hyperedges (idealdeletion F x hx ground_ge_two).toSetFamily):ℤ)  +  ((number_of_hyperedges (contraction F.toSetFamily x hx ground_ge_two)):ℤ)) :=
              by
                rw [hyperedge_count_deletion_contraction_have_z F x hx ground_ge_two hx_hyperedge singleton_have]
-               simp_all only [sub_right_inj, mul_eq_mul_left_iff, add_right_inj, Nat.cast_inj, Nat.cast_eq_zero,
-                 Finset.card_eq_zero]
+               simp only [sub_right_inj, mul_eq_mul_left_iff]--
                apply Or.inl
                rfl
   _ = 2*((total_size_of_hyperedges (idealdeletion F x hx ground_ge_two).toSetFamily):ℤ) -  (((F.ground.card):ℤ) - 1)*((number_of_hyperedges (idealdeletion F x hx ground_ge_two).toSetFamily):ℤ)

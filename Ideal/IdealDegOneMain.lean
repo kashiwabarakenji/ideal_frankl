@@ -3,7 +3,7 @@ import Mathlib.Data.Finset.Card
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Data.Fin.Basic
 import Mathlib.Data.Finset.Powerset
-import Mathlib.Init.Data.Nat.Lemmas
+--import Mathlib.Init.Data.Nat.Lemmas
 import Mathlib.Tactic
 import Ideal.BasicDefinitions
 import Ideal.BasicLemmas
@@ -35,14 +35,14 @@ lemma ineq_lem (k : ℕ) :
           -- 目標: 2^(k + 1) ≥ k + 2
           -- 2^(k + 1) = 2 * 2^k ≥ 2 * (k + 1) = k + 2
           have k_geq_0 : k ≥ 0 := by
-              simp_all only [ge_iff_le, le_add_iff_nonneg_left, zero_le]
+              simp_all only [ le_add_iff_nonneg_left]
 
           rw [pow_succ 2 k]
 
           by_cases h1: k = 0
           case pos =>
             rw [h1]
-            simp_all only [Nat.one_pow, Nat.one_add]
+            simp_all only [Nat.one_pow]
             omega
           case neg =>
           have hh1: k ≥ 1 := by
@@ -57,12 +57,12 @@ lemma ineq_lem (k : ℕ) :
            calc
              2 * (k + 1) = k + 1 + k + 1 := by ring
              _ = (k + k) + (1 + 1) := by
-               simp_all only [le_add_iff_nonneg_left, Nat.ofNat_pos, Nat.reduceAdd]
+               simp_all only [le_add_iff_nonneg_left]
                omega
              _ ≥ k + 2  := by
-                simp_all only [le_add_iff_nonneg_left, zero_le]
+                simp_all only [le_add_iff_nonneg_left]
                 omega
-          simp_all only [ true_implies, Nat.ofNat_pos]
+          simp_all only [ true_implies]
           omega
     have hh1: k + 1 ≥ 1 := by
       simp_all only [ge_iff_le]
@@ -209,7 +209,7 @@ lemma total_eq_lem (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
       have h_filter : Finset.filter (λ s => s = F.ground) (F.ground.powerset) = {F.ground} :=
         by
           ext s
-          simp [Finset.mem_powerset, Finset.mem_filter, Finset.subset_iff]
+          simp -- [ Finset.subset_iff]
           intro hh
           intro x hx
           rw [hh] at hx
@@ -226,7 +226,7 @@ lemma total_eq_lem (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
         have h_filter4 : Finset.filter (fun s => s = F.ground.erase v) (F.ground.erase v).powerset = {F.ground.erase v} :=
           by
             ext s
-            simp [Finset.mem_powerset, Finset.mem_filter, Finset.subset_iff]
+            simp  [ Finset.subset_iff] --
             intro hh
             intro x hx
             constructor
@@ -361,7 +361,7 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
           simp_all only [nonpos_iff_eq_zero]
         | succ k ih =>
           rw [pow_succ 2 k]
-          simp_all only [le_add_iff_nonneg_left]
+          simp_all --only [le_add_iff_nonneg_left]
           --have _ : k ≥ 0 := Nat.zero_le k
 
           by_cases h1: k = 0
@@ -384,7 +384,7 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
                 apply add_le_add_right
                 simp_all only [add_le_add_iff_left]
               _ ≥ (k + 1) + 1 := by
-                simp only [add_le_add_iff_left, Nat.one_le_ofNat]--
+                simp --only [add_le_add_iff_left, Nat.one_le_ofNat]--
 
       --以下はゴールと同じ。帰納法で示す必要あり。nがゼロの時はおかしくなるので一つずらしたほうがいいかも。
       --have inequality_calc (n : ℕ) : (n * 2^(n - 1) + (n + 1)) * 2 ≤ (2^n + 1) * (n + 1) := by
@@ -419,7 +419,7 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
                simp_all only [ ge_iff_le,  zero_le]
                rfl
          _  ≤ (2^(k + 2) + 1) * (k + 3) := by
-                simp_all only [true_implies, ge_iff_le, le_add_iff_nonneg_left, zero_le]
+                simp_all only [ ge_iff_le]
                 omega
       --goal (↑(F.ground.card - 1) * 2 ^ (F.ground.card - 2) + ↑F.ground.card) * 2 ≤ (2 ^ (F.ground.card - 1) + 1) * ↑F.ground.card
 
@@ -500,7 +500,7 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
         --goal s.erase v ⊆ F.ground.erase v ∧ (F.sets (s.erase v) ∧ v ∉ s.erase v ∨ s.erase v = F.ground.erase v)
         constructor
         · --goal s.erase v ⊆ F.ground.erase v  .. この分解はおかしくないか？orが消えている。
-          simp_all only [ge_iff_le, Finset.mem_filter, Finset.mem_powerset, idealDelF, domain, i]
+          simp only [Finset.mem_filter, Finset.mem_powerset, domain] at hs'
           obtain ⟨left, _⟩ := hs'
           intro x hx
           simp only [Finset.mem_erase,ne_eq, not_false_eq_true, true_and] at hx
@@ -536,8 +536,10 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
                   exact F.down_closed {v} s hs'.2 h_neg v_subset_s
                 contradiction
               simp only [Finset.mem_erase, ne_eq]
-              simp_all only [not_false_eq_true, Finset.erase_eq_of_not_mem, not_true_eq_false, and_self]--
-              simp only [true_or]
+              left
+              constructor
+              · simp_all only [not_false_eq_true, Finset.erase_eq_of_not_mem]
+              · simp_all only [ not_true_eq_false, and_self, not_false_eq_true]
 
       have i_inj   (s : Finset (Fin (n+1))) (hs : s ∈ domain) (t : Finset (Fin (n+1))) (ht : t ∈ domain) : s.erase v = t.erase v → s = t:= by
         intro h_inj
@@ -549,8 +551,6 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
             ext a
             apply Iff.intro
             · intro h
-              simp_all only [ge_iff_le, Finset.mem_filter, Finset.mem_powerset, idealDelF, domain, i, hi]
-              --obtain ⟨left, right⟩ := hs
               by_cases hav: a = v
               case pos =>
                 rw [hav]
@@ -564,7 +564,7 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
                 have atr: a ∈ t.erase v := by
                   rw [←h_inj]
                   exact asr
-                simp_all only [Finset.mem_erase]
+                simp_all-- only [Finset.mem_erase]
             · intro h
               --obtain ⟨left, right⟩ := hs
               by_cases hav: a = v
@@ -582,7 +582,7 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
                   exact atr
                   --have hsv: a ∈ s := by
                 rw [Finset.mem_erase] at asr
-                simp_all only [and_self]
+                simp_all-- only [and_self]
 
           · case neg =>
             --v in sということはsは全体集合であり、ground - vはground_minus_v_none : ¬F.sets (F.ground \ {v})の仮定よりhyperedgeではない。よって、h_inkに矛盾。
@@ -602,7 +602,7 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
             --s.erase v = t.erase vより、tは、groundかground-vである。
             have t_lem: t = F.ground ∨ t = F.ground.erase v := by
               subst neg_lem
-              simp_all only [not_false_eq_true, Finset.erase_eq_of_not_mem, or_true]
+              simp_all only [not_false_eq_true, Finset.erase_eq_of_not_mem, or_true]--
 
             cases t_lem with
             | inl h1 =>
@@ -673,11 +673,11 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
           have s_eq: ss = F.ground := by
             simp_all only [not_true_eq_false]
           subst s_eq
-          simp_all only [Finset.mem_filter, Finset.mem_powerset, not_false_eq_true, and_true, not_true_eq_false]
+          simp_all --only [ not_true_eq_false]
         · case neg =>
           rw [Finset.mem_filter] at hss
           rw [Finset.mem_powerset] at hss
-          simp_all only [ and_true, Finset.erase_eq_of_not_mem, i]
+          simp_all only [i]
           --have hsscopy := ss ∈ domain
           obtain ⟨left, right⟩ := hss
           cases right with
@@ -747,8 +747,6 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
 
             --#check hyperedges_not_through_v F.toSetFamily v v_in_ground degree_one F.has_ground s right hはv notin s
             --goal s.card = if s.erase v = F.ground.erase v then (s.erase v).card + 1 else (s.erase v).card
-            --s.erase v = F.ground.erase vを満たさないことを示したい。
-            --使う仮定。degree v = 1。
             have tmp_lem: s.erase v = s:= by
                exact Finset.erase_eq_of_not_mem vns
 
