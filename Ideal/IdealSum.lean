@@ -81,7 +81,7 @@ lemma contraction_total_size (F : SetFamily α) [DecidablePred F.sets] (x : α)
     --goal  smallset.sum Finset.card = largeset.sum ff
     --sumbijhave: largeset.sum Finset.card = smallset.sum Finset.card + smallset.card
     --goalは、sumbijhaveを移項したもの。よって、あとは、largeset.sum Finset.card 　>=  smallset.cardがわかればよい。
-    clear substitute1 substitute2 substitute3 substitute4 sum_eq0 sum_eq2 sum_eq3 sum_eq4 contsizelocal contset contsethave 
+    clear substitute1 substitute2 substitute3 substitute4 sum_eq0 sum_eq2 sum_eq3 sum_eq4 contsizelocal contset contsethave
     -- sum_eq5 sumbijihaveは使用中
 
     have positive: ∀ s ∈ largeset, s.card ≥ 1 := by
@@ -145,28 +145,28 @@ by
   apply Finset.sum_congr
   apply Finset.ext
   intro s
-  simp only [Finset.mem_filter, Finset.mem_powerset, Finset.mem_erase]
+  simp only [Finset.mem_filter, Finset.mem_powerset]
   -- 明示的には以下の補題は使ってないが、裏で役に立っている。
   have lem: x ∉ s → ( s ⊆ F.ground ↔ s ⊆ F.ground.erase x) := by
     intro h
     constructor
-    intro a
-    intro y
-    intro hy
-    by_cases h1: y = x
-    rw [h1] at hy
-    subst h1
-    contradiction
-    simp_all only [Finset.mem_erase, ne_eq, not_false_eq_true, true_and]
-    exact a hy
-    intro h2
-    exact h2.trans (Finset.erase_subset _ _)
+    · intro a
+      intro y
+      intro hy
+      by_cases h1: y = x
+      rw [h1] at hy
+      subst h1
+      contradiction
+      simp_all only [Finset.mem_erase, ne_eq, not_false_eq_true, true_and]--
+      exact a hy
+    · intro h2
+      exact h2.trans (Finset.erase_subset _ _)
 
-  simp_all only [and_congr_left_iff, not_false_eq_true, and_imp, implies_true]
+  simp_all only [and_congr_left_iff, not_false_eq_true,implies_true]--
 
   intro x_1 _
 
-  simp_all only [Finset.mem_filter, Finset.mem_powerset]
+  simp only [Finset.mem_filter, Finset.mem_powerset]
 
 --idealdeletionでなくdeletionなので、まだ、ground-vで場合分けされてない。
 ----idealdeletionじゃなくて、deletionで等式を証明して、そこから(hx_hyperedge : F.sets (F.ground \ {x}))かどうかで分岐している。
@@ -268,10 +268,10 @@ theorem hyperedge_totalsize_deletion_contraction_have {α : Type} [DecidableEq �
       subst a
       convert hx_hyperedge
       ext1 a
-      simp_all only [Finset.mem_erase, ne_eq, Finset.mem_sdiff, Finset.mem_singleton]
+      simp only [Finset.mem_erase, ne_eq, Finset.mem_sdiff, Finset.mem_singleton]--
       apply Iff.intro
       · intro a_1
-        simp_all only [not_false_eq_true, and_self]
+        simp_all only [not_false_eq_true, and_self]--
       · intro a_1
         simp_all only [not_false_eq_true, and_self]
     calc
@@ -310,23 +310,7 @@ theorem hyperedge_totalsize_deletion_contraction_have_z {α : Type} [DecidableEq
     rw [hyperedge_totalsize_deletion_contraction_have F x hx ground_ge_two hx_hyperedge]
     congr
 
-/-どこからも使われてなさそう。
-omit [Fintype α]  in
-theorem filter_powerset_sum {A : Finset α} (h : x ∈ A):
-  (A.powerset.filter (fun s => s = A.erase x)).sum Finset.card = A.card - 1 :=
-  by
-    -- フィルタされた部分集合は A.erase x のみを含む
-    have h₁ : (A.powerset.filter (fun s => s = A.erase x)) = {A.erase x} := by
-      ext s
-      simp [Finset.mem_filter, Finset.mem_powerset, Finset.mem_singleton]
-      intro a
-      subst a
-      intro y hy
-      simp_all only [Finset.mem_erase, ne_eq]
-    rw [h₁, Finset.sum_singleton]
 
-    exact Finset.card_erase_of_mem h
--/
 
 --後ろで使われている。basiclemmaかidealsumbasicに移しても良い。
 lemma disjoint_sum_card_eq {α : Type*} [DecidableEq α] {A B : Finset (Finset α)} (h : A ∩ B = ∅) :
@@ -363,7 +347,7 @@ lemma ideal_and_deletion {α : Type} [DecidableEq α] [Fintype α] (F : IdealFam
     have disj: Finset.filter (fun s ↦ F.sets s ∧ x ∉ s) F.ground.powerset ∩ Finset.filter (fun s ↦ s = F.ground.erase x) F.ground.powerset = ∅ := by
       apply Finset.eq_empty_of_forall_not_mem
       intro a
-      simp_all only [Finset.mem_inter, Finset.mem_filter, Finset.mem_powerset]
+      simp_all only [Finset.mem_inter, Finset.mem_filter]--
       intro h
       obtain ⟨h1, h2⟩ := h
       simp_all only [not_false_eq_true, not_true_eq_false]
@@ -383,20 +367,20 @@ lemma ideal_and_deletion {α : Type} [DecidableEq α] [Fintype α] (F : IdealFam
         Finset.filter (fun s ↦ s = F.ground.erase x) F.ground.powerset) =  (Finset.filter (fun s ↦ F.sets s ∧ x ∉ s ∨ s = F.ground.erase x) F.ground.powerset) := by
         apply Finset.ext
         intro a
-        simp_all only [Finset.mem_union, Finset.mem_filter, Finset.mem_powerset]
+        simp_all only [Finset.mem_union, Finset.mem_filter]
         apply Iff.intro
         intro h
         simp_all only [Finset.card_union_of_disjoint]
         cases h with
-        | inl h_1 => simp_all only [not_false_eq_true, and_self, true_or]
+        | inl h_1 => simp_all only [not_false_eq_true, and_self, true_or]--
         |
           inr h_2 =>
-          simp_all only [and_true, or_true]
+          simp_all only [and_true, or_true]--
           obtain ⟨left, right⟩ := h_2
           subst right
           simp_all only
         intro a_1
-        simp_all only [Finset.card_union_of_disjoint, true_and]
+        simp_all only [true_and]
 
     have sub8: ((Finset.filter (fun s ↦ F.sets s ∧ x ∉ s) F.ground.powerset ∪ Finset.filter (fun s ↦ s = F.ground.erase x) F.ground.powerset)).sum Finset.card =
      (Finset.filter (fun s ↦ F.sets s ∧ x ∉ s ∨ s = F.ground.erase x) F.ground.powerset).sum Finset.card := by
@@ -406,7 +390,7 @@ lemma ideal_and_deletion {α : Type} [DecidableEq α] [Fintype α] (F : IdealFam
       := by
         apply Finset.ext
         intro ss
-        simp only [Finset.mem_filter, Finset.mem_powerset, Finset.mem_erase]
+        simp only [Finset.mem_filter, Finset.mem_powerset]--
         apply Iff.intro
         intro a
         obtain ⟨left, right⟩ := a
@@ -463,7 +447,7 @@ lemma ideal_and_deletion {α : Type} [DecidableEq α] [Fintype α] (F : IdealFam
     have sub11: (Finset.filter (fun s => s = F.ground.erase x) F.ground.powerset) = {F.ground.erase x} := by
       apply Finset.ext
       intro s
-      simp only [Finset.mem_filter, Finset.mem_powerset, Finset.mem_singleton]
+      simp only [Finset.mem_filter, Finset.mem_powerset, Finset.mem_singleton]--
       apply Iff.intro
       intro a
 
@@ -525,7 +509,7 @@ lemma ideal_and_deletion {α : Type} [DecidableEq α] [Fintype α] (F : IdealFam
         by
           apply Finset.ext
           intro s
-          simp only [Finset.mem_filter, Finset.mem_powerset, Finset.mem_erase]
+          simp only [Finset.mem_filter, Finset.mem_powerset]
           apply Iff.intro
           intro a
           obtain ⟨left, right⟩ := a
@@ -716,7 +700,7 @@ theorem hyperedge_average_none {α : Type} [DecidableEq α] [Fintype α]
     = 2*((total_size_of_hyperedges F.toSetFamily):ℤ) - (F.ground.card:ℤ)*((number_of_hyperedges F.toSetFamily):ℤ) :=
       by
         dsimp [normalized_degree_sum]
-        simp_all
+        --simp_all
         ring_nf
         have comm0: (F.ground.card:ℤ)*(number_of_hyperedges F.toSetFamily:ℤ) = (number_of_hyperedges F.toSetFamily:ℤ)*(F.ground.card:ℤ) := by
          ring_nf
@@ -777,5 +761,23 @@ theorem hyperedge_average_none {α : Type} [DecidableEq α] [Fintype α]
        +2*((degree F.toSetFamily x):ℤ) - ((number_of_hyperedges F.toSetFamily):ℤ) :=
         by
           ring_nf
+
+/-どこからも使われてなさそう。
+omit [Fintype α]  in
+theorem filter_powerset_sum {A : Finset α} (h : x ∈ A):
+  (A.powerset.filter (fun s => s = A.erase x)).sum Finset.card = A.card - 1 :=
+  by
+    -- フィルタされた部分集合は A.erase x のみを含む
+    have h₁ : (A.powerset.filter (fun s => s = A.erase x)) = {A.erase x} := by
+      ext s
+      simp [Finset.mem_filter, Finset.mem_powerset, Finset.mem_singleton]
+      intro a
+      subst a
+      intro y hy
+      simp_all only [Finset.mem_erase, ne_eq]
+    rw [h₁, Finset.sum_singleton]
+
+    exact Finset.card_erase_of_mem h
+-/
 
 end Ideal

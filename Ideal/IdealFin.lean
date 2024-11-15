@@ -67,13 +67,13 @@ lemma finExpand_drop_inverse {n : ℕ} (nposi : n ≥ 1) (v : Fin (n + 1)) (y : 
       simp_all only
       omega
 
-lemma finExpand_not_in {n : ℕ} (nposi : n ≥ 1) (v : Fin (n + 1)) (s : Finset (Fin n)) :
+lemma finExpand_not_in {n : ℕ}(v : Fin (n + 1)) (s : Finset (Fin n)) :
   v ∉ s.image (finExpand  v) := by
   intro h
   simp at h
-  obtain ⟨x, hx, h_eq⟩ := h
+  obtain ⟨x, _, h_eq⟩ := h
   rw [finExpand, ← h_eq] at h_eq
-  simp_all only [ge_iff_le, dite_eq_ite]
+  --simp_all only [ dite_eq_ite]
   split at h_eq
   next h =>
     split at h_eq
@@ -208,7 +208,6 @@ lemma imageEq {n : ℕ} {s : Finset (Fin n)} (nposi : n ≥ 1)
       exact F.inc_ground t h
     have ht_sets : F.sets t := h  -- t が F.sets に属している
     -- s = t.image (finDrop nposi v) を示す
-    --simp_all only [Finset.mem_filter, Finset.mem_powerset]
     have ht_eq : s = t.image (finDrop nposi v) := by
       rw [Finset.image_image]
       ext x
@@ -246,7 +245,7 @@ lemma imageEq {n : ℕ} {s : Finset (Fin n)} (nposi : n ≥ 1)
       exact t_ground
       constructor
       -- v ∉ t であることを示す
-      have hv_not_in_t : v ∉ t := finExpand_not_in nposi v s
+      have hv_not_in_t : v ∉ t := finExpand_not_in v s
       exact hv_not_in_t
       exact ht_sets
     }
@@ -288,7 +287,7 @@ lemma imageEq {n : ℕ} {s : Finset (Fin n)} (nposi : n ≥ 1)
       constructor
       intro hx
       subst ht_image
-      simp only [ Finset.mem_image, exists_exists_and_eq_and]
+      simp only [ Finset.mem_image, exists_exists_and_eq_and]--
 
       use x
       constructor
@@ -323,7 +322,7 @@ lemma imageEq {n : ℕ} {s : Finset (Fin n)} (nposi : n ≥ 1)
       intro a --mark 0
       rw [←ht_image] at a
 
-      simp_all only [ Finset.mem_image]
+      simp_all only [ Finset.mem_image]--
       obtain ⟨w, hh⟩ := a
       obtain ⟨left_1, _⟩ := right2
       obtain ⟨left_2, right_1⟩ := hh
@@ -359,7 +358,7 @@ lemma imageEq {n : ℕ} {s : Finset (Fin n)} (nposi : n ≥ 1)
           rename_i h
           simp_all only [not_lt]--
           rw [← right_1] at h
-          simp_all only [add_le_iff_nonpos_right, nonpos_iff_eq_zero, one_ne_zero]
+          simp_all only [add_le_iff_nonpos_right, nonpos_iff_eq_zero]--
 
     rw [←ht_image_finExpand]
     exact right2.2
@@ -377,7 +376,6 @@ lemma imageEq_card {n : ℕ} (nposi : n ≥ 1)
 
   -- バイジェクションを定義する
   let to_fun := λ s : Finset (Fin n) => s.image (finExpand v)
-  --let inv_fun := λ s : Finset (Fin (n + 1)) => s.image (finDrop nposi v)
 
   --have bij1 : ∀ (s : Finset (Fin n)) (hs : s ∈ left_set), Finset (Fin (n + 1)) := λ s hs => to_fun s
 
@@ -397,7 +395,7 @@ lemma imageEq_card {n : ℕ} (nposi : n ≥ 1)
     · constructor
       dsimp [to_fun]
       rw [Finset.mem_filter] at hs
-      exact finExpand_not_in nposi v s
+      exact finExpand_not_in v s
       simp_all only [Finset.mem_filter, left_set]--
 
 
@@ -464,7 +462,7 @@ def deletionToN {n : ℕ} (nposi : n ≥ 1) (F : SetFamily (Fin (n + 1))) (v : F
 
     exact goal,
   nonempty_ground := by
-    simp_all only [ge_iff_le, Finset.one_le_card, Finset.image_nonempty, new_ground]
+    simp_all only [ Finset.one_le_card, Finset.image_nonempty, new_ground]--
  }
 
 
@@ -755,7 +753,7 @@ noncomputable def SetFamily.toFinFamily {α : Type} [DecidableEq α] [Fintype α
       cases sf.nonempty_ground
       rename_i w h_1
       subst h
-      simp_all only [Finset.map_nonempty, Finset.attach_nonempty_iff, groundFin, toFin]
+      simp_all only [Finset.map_nonempty, Finset.attach_nonempty_iff, groundFin]--
       use w
     fintype_ground := Fintype.ofFinset groundFin (by
     intro x
@@ -864,13 +862,12 @@ noncomputable def toIdealFinFamily (ifm : IdealFamily α) (n : ℕ) (h : Fintype
       -- sfFin.ground = ifm.ground これは成り立たない。左はFinset(Fin n)で右はFinset α。
       have invground: ifm.ground.attach.image embedding = sfFin.ground := by
         dsimp [sfFin, SetFamily.toFinFamily]
-        simp_all only [Equiv.toFun_as_coe, Finset.map, Finset.attach, Fintype.equivFinOfCardEq, embedding]
+        simp_all only [ Finset.map, Finset.attach, Fintype.equivFinOfCardEq, embedding]
         simp
         subst h inv
-        simp_all only [ne_eq, sfFin]
+        --simp_all only [ sfFin]
         ext1 a
-        simp_all only [Finset.mem_image, Finset.mem_mk, Multiset.mem_attach, true_and, Subtype.exists,
-          Multiset.mem_map]
+        simp only [Finset.mem_image, Finset.mem_mk,  Multiset.mem_map]--
 
       let tA := tB.filter (λ x => embedding x ∈ A)
       -- tA.image embedding = A を証明

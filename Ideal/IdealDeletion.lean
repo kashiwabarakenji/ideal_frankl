@@ -227,7 +227,6 @@ instance contraction_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x}
       apply hB_ne_ground
       -- goal B = thisF.ground
       have nthisF: x ∉ thisF.ground := by
-        --dsimp [contraction]
         dsimp [thisF]
         dsimp [contraction]
         rw [Finset.erase_eq]

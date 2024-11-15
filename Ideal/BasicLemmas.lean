@@ -278,7 +278,7 @@ lemma filter_sum_func {α : Type} [DecidableEq α] [Fintype α] {P Q : Finset α
       intro x
       constructor
       · intro a
-        simp_all only [Finset.mem_filter, Finset.mem_union, true_and, domain, rangeP, rangeQ]
+        simp_all only [Finset.mem_filter, Finset.mem_union, true_and, domain, rangeP, rangeQ]--
       · intro a
         simp_all only [not_and, Finset.mem_union, Finset.mem_filter, rangeP, rangeQ, domain]
         cases a with
@@ -287,7 +287,7 @@ lemma filter_sum_func {α : Type} [DecidableEq α] [Fintype α] {P Q : Finset α
     have disjoint: rangeP ∩ rangeQ = ∅ := by
       apply Finset.eq_empty_of_forall_not_mem
       intro x
-      simp_all only [Finset.mem_inter, Finset.mem_filter]
+      simp only [Finset.mem_inter, Finset.mem_filter]
       intro h
       obtain ⟨hP, hQ⟩ := h
       simp_all only [not_and, Finset.mem_filter, rangeP, rangeQ]
@@ -407,7 +407,7 @@ by
     cases hx with
     | inl h =>
       subst h
-      simp_all only [empty_subset, and_self]
+      simp_all only [empty_subset, and_self]--
     | inr h_1 =>
       subst h_1
       simp_all only [subset_refl, and_self]

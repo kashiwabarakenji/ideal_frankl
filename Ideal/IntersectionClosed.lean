@@ -36,15 +36,7 @@ def isIdealFamily (α : Type) [DecidableEq α ] [Fintype α ] (family : SetFamil
 def isIntersectionClosedFamily {α: Type} [DecidableEq α] [Fintype α] (family : IdealFamily α) : Prop :=
     --family.sets  Finset (Finset U),-- Finset.univ ∈ sets ∧
     (∀ {s t : Finset α}, family.sets s→ family.sets t→  family.sets (s ∩ t))
-/-
---#check @Finset.univ
---この関数は使っていない。
-lemma inter_univ_subset_right {α : Type} [DecidableEq α] [Fintype α] (t : Finset α) :
-  Finset.univ ∩ t ⊆ t := by
-    intros x hx
-    obtain ⟨_, hx_t⟩ := Finset.mem_inter.1 hx
-    exact hx_t
--/
+
 
 --#check @isIntersectionClosedFamily
 -- IdealFamilyがIntersectionClosedFamilyであることの定理
@@ -276,7 +268,6 @@ lemma choose_two_points {α : Type} [DecidableEq α] [Fintype α]
           intro h
           rw [Nat.le_sub_iff_add_le']
           rw [Nat.le_sub_iff_add_le] at h
-          --rw [add_comm 2 (G.card)]
           apply h
           apply u2 --この条件が難しかった。
           exact gu --この条件が難しかった。
@@ -284,7 +275,6 @@ lemma choose_two_points {α : Type} [DecidableEq α] [Fintype α]
           intro hxA
           rw [Nat.le_sub_iff_add_le]
           rw [Nat.le_sub_iff_add_le'] at hxA
-          --rw [add_comm 2 (G.card)]
           apply hxA
           apply gu
           exact u2
@@ -299,7 +289,6 @@ lemma choose_two_points {α : Type} [DecidableEq α] [Fintype α]
     have H_nonempty := H_neq_U G hH_pos
     have mem_of_subset_neq := exists_mem_of_subset_ne G H_nonempty.symm --(ne_of_gt hH)
     obtain ⟨x, hxU, hxG⟩ := mem_of_subset_neq
-    --hxU : x ∈ univ,  hxH : x ∉ G
 
     have u_minus_g:x ∈ Finset.univ \ G :=
       by
@@ -317,8 +306,6 @@ lemma choose_two_points {α : Type} [DecidableEq α] [Fintype α]
 
     have gxx: x ∈ G ∪ {x} := by exact Finset.mem_union_right G (Finset.mem_singleton_self x)
     have ggg: G.card = (G ∪ {x}).card - 1 := by exact card_union_singleton_sub_one hxG gxx
-        --a ∈ s \ t ↔ a ∈ s ∧ a ∉ t
-        --rw [Finset.mem_sdiff]
 
     --Finset.sdiff_singleton_eq_eraseで実現できた可能性あり。
     have ugeex (G : Finset α) (x : α): (univ \ G).erase x = (univ \ G) \ {x}:=
@@ -330,8 +317,6 @@ lemma choose_two_points {α : Type} [DecidableEq α] [Fintype α]
           --#check h -- h : y ≠ x ∧ y ∈ univ \ G
           cases h with
           | intro h1 h2 =>
-            --#check h1 --h1 : y ≠ x
-            --#check h2 --h2: y ∈ univ \ G
             apply Finset.mem_sdiff.mpr
             exact ⟨h2, ne_implies_not_mem_singleton x y h1⟩ --ここまでうまくいったっぽい。
         · intro h' -- goal y ≠ x ∧ y ∈ univ \ G

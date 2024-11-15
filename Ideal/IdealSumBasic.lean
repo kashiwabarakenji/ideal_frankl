@@ -31,8 +31,9 @@ by
 
   have disjoint_v : Fsets = Fv ∪ Fnv :=
     by
-     ext; simp [Finset.mem_union, Finset.mem_filter];
-     simp_all only [Finset.mem_filter, Finset.mem_powerset, Fsets, Fv, Fnv]
+     ext
+     simp [Finset.mem_union, Finset.mem_filter]
+     simp only [Finset.mem_filter, Fsets, Fv, Fnv]--
      apply Iff.intro
      · intro a_1
        simp_all only [true_and]
@@ -134,8 +135,7 @@ theorem bf_bijective (F : SetFamily α) (v : α) [DecidablePred F.sets](hxG: v �
       have bpro: original ∈ domain00 F v:= by
         simp_all only [domain00]
         --rename_i inst inst_1 _ inst_3
-        simp_all only [Finset.mem_powerset, Finset.mem_filter, Finset.mem_union,
-          and_true, Finset.mem_singleton, or_true, original]--
+        simp_all only [Finset.mem_powerset, Finset.mem_filter, Finset.mem_union,and_true, Finset.mem_singleton, or_true, original]--
         obtain ⟨val, property⟩ := b
         obtain ⟨b_left, right⟩ := b_v
         obtain ⟨right_1, right_2⟩ := right
@@ -162,12 +162,20 @@ theorem bf_bijective (F : SetFamily α) (v : α) [DecidablePred F.sets](hxG: v �
       obtain ⟨left, right⟩ := b_v
       obtain ⟨left_1, right⟩ := right
       simp_all only [Subtype.mk.injEq]
-      simp_all only [Finset.mem_filter, Finset.mem_powerset, Finset.mem_union, original, domain00]
+      simp_all only [Finset.mem_filter, domain00]--
       subst right
       obtain ⟨_, _⟩ := bpro
       ext1 a
-      simp_all only [Finset.mem_erase, ne_eq, Finset.mem_union, Finset.mem_singleton, and_congr_right_iff,
-          not_false_eq_true, true_and, or_false, implies_true]--
+      constructor
+      · intro h
+        simp_all only [Finset.mem_erase, Finset.mem_union, Finset.mem_singleton]--
+        simp_all only [ne_eq]
+        obtain ⟨left_3, right_1⟩ := h
+        simp_all only [not_false_eq_true, true_and, or_false]--
+      · intro h
+        simp_all only [Finset.mem_erase, Finset.mem_union, Finset.mem_singleton]
+        simp_all only [ne_eq, not_false_eq_true, true_and]
+        simp only [or_false]
 
 
 --omit [Nonempty α] in
@@ -501,7 +509,7 @@ lemma sumbij (F : SetFamily α) [DecidablePred F.sets] (x : α) (hx : x ∈ F.gr
         constructor
 
         have s2: s ∪ {x} ⊆ (F.ground.erase x)∪{x} := by
-          simp_all only [true_and]
+          --simp_all only [true_and]
           subst hH3
           -- x ∈ w ∧ s = w.erase x
           gcongr

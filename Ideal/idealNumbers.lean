@@ -140,15 +140,15 @@ by
             simp
             constructor
             · -- left goal: F.sets ssev
-              simp_all only [ge_iff_le, Finset.mem_val, Finset.mem_powerset, right_side, left_side, f, ssev]
+              simp_all only [ Finset.mem_powerset, ssev]
               obtain ⟨val, property⟩ := ss
               simp_all only
               intro x hx
-              simp_all only [Finset.mem_erase, ne_eq, not_false_eq_true, true_and]
+              simp_all only [Finset.mem_erase,  ne_eq,not_false_eq_true, true_and]--
               obtain ⟨_, right⟩ := hx
               exact sss_subset right
             · -- right goal: ssev ⊆ F.ground.erase v
-              simp_all only [ge_iff_le, Finset.mem_val, Finset.mem_powerset, right_side, left_side, f, ssev]
+              simp_all only [  ssev]
               obtain ⟨val, property⟩ := ss
               simp_all only
               apply Exists.intro
@@ -224,7 +224,7 @@ by
   -- この分割が正確であることを確認します。
   have partition : all_sets2 = sets_with_v ∪ sets_without_v := by
     ext s
-    simp only [Finset.mem_filter, Finset.mem_union, Finset.mem_powerset, Finset.mem_erase, and_iff_right_iff_imp, or_iff_not_imp_left]
+    simp only [Finset.mem_union,  or_iff_not_imp_left]
     constructor
     -- s ∈ all_sets の場合を考える
     intro hs
@@ -276,7 +276,7 @@ by
 
   have term_eq: Finset.filter ((F ∖ v) hv ground_ge_two).sets ((F ∖ v) hv ground_ge_two).ground.powerset = sets_without_v := by
     ext s
-    simp only [Finset.mem_filter, Finset.mem_powerset, deletion, and_iff_right_iff_imp]
+    simp only [Finset.mem_filter, Finset.mem_powerset]
     constructor
     · intro hs --a.mp.left
       dsimp [sets_without_v]
@@ -348,10 +348,10 @@ theorem hyperedge_count_deletion_contraction_have {α : Type} [DecidableEq α] [
     subst a
     convert hx_hyperedge
     ext1 a
-    simp_all only [Finset.mem_erase, ne_eq, Finset.mem_sdiff, Finset.mem_singleton]
+    simp_all only [Finset.mem_erase, ne_eq, Finset.mem_sdiff, Finset.mem_singleton]--
     apply Iff.intro
     · intro a_1
-      simp_all only [not_false_eq_true, and_self]
+      simp_all only [not_false_eq_true, and_self]--
     · intro a_1
       simp_all only [not_false_eq_true, and_self]
 
@@ -412,7 +412,7 @@ theorem hyperedge_count_deletion_contraction_none {α : Type} [DecidableEq α] [
           subst h_1
           simp_all only [Finset.mem_sdiff, Finset.mem_singleton, not_true_eq_false, and_false, not_false_eq_true, and_true, false_or]--
           ext1 a
-          simp_all only [Finset.mem_sdiff, Finset.mem_singleton, Finset.mem_erase, ne_eq]
+          simp_all only [Finset.mem_sdiff, Finset.mem_singleton, Finset.mem_erase, ne_eq]--
           apply Iff.intro
           · intro a_1
             simp_all only [not_false_eq_true, and_self]
@@ -451,7 +451,7 @@ theorem hyperedge_count_deletion_contraction_none {α : Type} [DecidableEq α] [
         · rw [Finset.sdiff_singleton_eq_erase]
       | inr h_1 => simp_all only [not_false_eq_true, and_self, true_or]
       intro a_1
-      simp_all only [not_false_eq_true, Finset.card_insert_of_not_mem, implies_true, true_and]
+      --simp_all only [ implies_true, true_and]
       obtain ⟨left, right⟩ := a_1
       cases right with
       | inl h => simp_all only [not_false_eq_true, and_self, or_true]
@@ -460,7 +460,7 @@ theorem hyperedge_count_deletion_contraction_none {α : Type} [DecidableEq α] [
         simp_all only [ Finset.mem_erase,  and_true, not_false_eq_true]
         apply Or.inl
         ext1 a
-        simp_all only [Finset.mem_erase, ne_eq, Finset.mem_sdiff, Finset.mem_singleton]
+        simp_all only [Finset.mem_erase, ne_eq, Finset.mem_sdiff, Finset.mem_singleton]--
         apply Iff.intro
         · intro a_1
           simp_all only [not_false_eq_true, and_self]

@@ -42,7 +42,6 @@ lemma sum_posi_of_posi {α : Type} [DecidableEq α] (s : Finset α) (f : α → 
   -- sの非空性からa ∈ s を取得
   have h_pos : 0 < f a := h a ha
   rw [Finset.sum_eq_add_sum_diff_singleton ha]
-  --simp_all only [ne_eq, singleton_subset_iff, sum_sdiff_eq_sub, sum_singleton, add_sub_cancel, gt_iff_lt]
   apply add_pos_of_pos_of_nonneg
   · exact h_pos
   · apply sum_nonneg_of_nonneg
@@ -119,8 +118,8 @@ lemma filter_card_eq_x_card (FG :Finset α) (hyperedges : Finset (Finset α))
     have hi: ∀ (a: α) (ha:a ∈ domain), i a ha ∈ range :=
       by
         intros a ha
-        simp_all only [Finset.mem_filter, and_true, i, domain, range]
-        simp_all only [Finset.mem_filter, domain]
+        simp only [Finset.mem_filter, and_true, i, domain, range]
+        simp_all only [Finset.mem_filter]
         dsimp [filtered_product]
         dsimp [FG_product]
         simp_all only [Finset.mem_filter, and_true]
@@ -150,7 +149,7 @@ lemma filter_card_eq_x_card (FG :Finset α) (hyperedges : Finset (Finset α))
          obtain ⟨left, right⟩ := a
          obtain ⟨_, right_1⟩ := left
          subst right
-         simp_all only [Prod.mk.injEq, and_true, exists_eq_right]
+         simp_all only [Prod.mk.injEq, and_true, exists_eq_right]--
 
     have bij := Finset.card_bij i hi inj surj
     rw [Finset.card_filter]
@@ -225,7 +224,6 @@ theorem sum_cardinality_eq [Fintype α](FG : Finset α) [DecidableEq FG] (hypere
         --goal  ∑ x : α, (Finset.filter (fun ab => ab.1 = x) (Finset.filter (fun p => p.1 ∈ p.2) (FG.product hyperedges))).card = ∑ x ∈ FG, (Finset.filter (fun s => s ∈ hyperedges ∧ x ∈ s) FG.powerset).card
         intro x _
 
-        -- x in Finset.univとか、hyperedges ⊆ Finset.univは使いそう。
         have equal_card :
           (Finset.filter (fun ab => ab.1 = x) (Finset.filter (fun p => p.1 ∈ p.2) (FG.product hyperedges))).card =
           (Finset.filter (fun s => s ∈ hyperedges ∧ x ∈ s) FG.powerset).card :=
@@ -233,7 +231,6 @@ theorem sum_cardinality_eq [Fintype α](FG : Finset α) [DecidableEq FG] (hypere
           -- 対応関数の定義
           let i := (λ s (_ : s ∈ Finset.filter (fun s => s ∈ hyperedges ∧ x ∈ s) FG.powerset) => (x, s))
 
-          -- 関数 `i` が右辺の要素を左辺に写像することを確認します
           have hi : ∀ (s : Finset α) (hs : s ∈ Finset.filter (fun s => s ∈ hyperedges ∧ x ∈ s) FG.powerset),
             i s hs ∈ Finset.filter (fun ab => ab.1 = x) (Finset.filter (fun p => p.1 ∈ p.2) (FG.product hyperedges)) := by
             intros s hs
@@ -288,7 +285,7 @@ noncomputable def normalized_degree {α : Type} [DecidableEq α] [Fintype α] (F
 lemma sum_univ {α : Type} [DecidableEq α] [Fintype α] (f : α → ℕ) : ∑ x : α, f x = ∑ x in Finset.univ, f x := by
   simp_all only
 
---頂点ごとに足すか、hyperedgeの大きさを足すかで等しい。
+--頂点ごとに足すか、hyperedgeの大きさを足すかで等しい。どこかのファイルに移動しても良い。
 theorem double_count {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α):
   total_size_of_hyperedges F = ∑ x in F.ground, degree F x := by
   rw [total_size_of_hyperedges]

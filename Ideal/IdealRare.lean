@@ -32,7 +32,6 @@ lemma max_card_eq_sup  (elements : Finset (Finset α)) (H : Finset α) (H_mem : 
     · simp_all only [Finset.sup_le_iff, implies_true]
 
 -- Ideal集合族に対する極大ハイパーエッジの存在定理
---omit [Nonempty α] in
 theorem exists_maximal_hyperedge (sf : IdealFamily α) :
   ∃ H : Finset α, H ≠ sf.ground ∧ sf.sets H ∧ ∀ ⦃A : Finset α⦄, sf.sets A → H ⊆ A → (A = H ∨ A = sf.ground) :=
 by
@@ -59,60 +58,58 @@ by
   have H_mem_filter : sf.sets H ∧ H ≠ sf.ground :=
     by simp [Finset.mem_filter] at H_mem_def; exact H_mem_def
   constructor
-  exact H_mem_filter.2  -- H ≠ Finset.univを示している。
+  · exact H_mem_filter.2  -- H ≠ Finset.univを示している。
   constructor
-  exact H_mem_filter.1
+  · exact H_mem_filter.1
   -- 極大性を証明
-  intros A hA hHA
-  by_cases hAeq : A = sf.ground
-  simp [hAeq]
-  have hAne : A ≠ sf.ground :=
-  by
-    intro h_contra
-    rw [h_contra] at hAeq
-    contradiction
-  have A_mem_elements : A ∈ elements :=
-  by
-    rw [Finset.mem_filter]
-    constructor
-    case left => simp
-    simp [hA, hAne]
-
-  by_cases hAeqH : A = H
-  exact Or.inl hAeqH
-  have hH_ssubset_A : H ⊂ A :=
+  · intros A hA hHA
+    by_cases hAeq : A = sf.ground
+    simp [hAeq]
+    have hAne : A ≠ sf.ground :=
     by
-      rw [Finset.ssubset_iff_subset_ne]
+      intro h_contra
+      rw [h_contra] at hAeq
+      contradiction
+    have A_mem_elements : A ∈ elements :=
+    by
+      rw [Finset.mem_filter]
       constructor
-      exact hHA
-      simp [hAeqH, hAne]
-      contrapose! hAeqH
-      exact hAeqH.symm
+      case left => simp
+      simp [hA, hAne]
 
-  have h_card_lt : Finset.card H < Finset.card A :=
+    by_cases hAeqH : A = H
+    exact Or.inl hAeqH
+    have hH_ssubset_A : H ⊂ A :=
+      by
+        rw [Finset.ssubset_iff_subset_ne]
+        constructor
+        exact hHA
+        simp [hAeqH, hAne]
+        contrapose! hAeqH
+        exact hAeqH.symm
+
+    have h_card_lt : Finset.card H < Finset.card A :=
+      by
+        exact Finset.card_lt_card hH_ssubset_A
+
+    have H_max2 :(H_max : H.card = elements.sup (λ s => s.card)) → ∀ s ∈ elements, s.card ≤ H.card :=
     by
-      exact Finset.card_lt_card hH_ssubset_A
+      intro hmax
+      intro s a
+      simp_all only [Finset.mem_filter,elements]--
+      obtain ⟨left_1, right_1⟩ := a
+      apply Finset.le_sup
+      simp_all only [Finset.mem_filter, Finset.mem_univ, and_self]--
 
-  have H_max2 :(H_max : H.card = elements.sup (λ s => s.card)) → ∀ s ∈ elements, s.card ≤ H.card :=
-  by
-    intro hmax
-    --rename_i inst inst_1 _
-    intro s a
-    simp_all only [ne_eq, decide_not, Bool.and_eq_true, Bool.not_eq_true', decide_eq_false_iff_not,
-      Finset.powerset_univ, Finset.mem_filter, Finset.mem_univ, not_false_eq_true, and_self, true_and, elements]
-    obtain ⟨left_1, right_1⟩ := a
-    apply Finset.le_sup
-    simp_all only [Finset.mem_filter, Finset.mem_univ, not_false_eq_true, and_self]
-
-  have h_contra : H.card < H.card :=
-    by
-      rw [max_card_eq_sup elements H H_mem (H_max2 H_max)] at h_card_lt
-      have h_le_sup : A.card ≤ elements.sup (λ s => s.card) := Finset.le_sup A_mem_elements
-      rw [max_card_eq_sup]
-      linarith
-      omega
-      linarith
-  omega
+    have h_contra : H.card < H.card :=
+      by
+        rw [max_card_eq_sup elements H H_mem (H_max2 H_max)] at h_card_lt
+        have h_le_sup : A.card ≤ elements.sup (λ s => s.card) := Finset.le_sup A_mem_elements
+        rw [max_card_eq_sup]
+        linarith
+        omega
+        linarith
+    omega
 
 -- Hからxを除いたハイパーエッジを生成する関数
 def map_hyperedge (sf : IdealFamily α) (x : α) (G: Finset α)(H : Finset α) : Finset α :=
@@ -121,7 +118,6 @@ def map_hyperedge (sf : IdealFamily α) (x : α) (G: Finset α)(H : Finset α) :
 
 -- x notin Gのときにmap_hyperedgeで移った先がhyperedgeであることの定理
 -- Gが極大である条件の代わりに、少し弱いGがhyperedgeである条件を引数にした。
---omit [Nonempty α] in
 theorem map_hyperedge_is_hyperedge (sf : IdealFamily α) (x : α) (G : Finset α) (gsets : sf.sets G) (H : Finset α) :
   (sf.sets H) → x ∉ G → (sf.sets (map_hyperedge sf x G H)) :=
 by
@@ -135,7 +131,6 @@ by
   case pos =>
     -- 全体集合に対する処理
     rw [h_univ]
-    --simp [hH]
     -- 極大ハイパーエッジの性質を利用
     simp
     exact gsets
@@ -231,7 +226,6 @@ x ∈ H1→ x ∈ H2 → x ∉ G → H1 ≠ sf.ground → H2 ≠ sf.ground → m
     exact h_map
 
 -- サブタイプの等式を証明する補助定理
---omit [Nonempty α] in
 theorem subtype_eq_of_val_eq (sf : IdealFamily α) (x : α) (H1 H2 : { H // sf.sets H ∧ x ∈ H }) :
   H1.1 = H2.1 → H1 = H2 :=
   by
@@ -246,7 +240,6 @@ theorem subtype_eq_of_val_eq (sf : IdealFamily α) (x : α) (H1 H2 : { H // sf.s
 
 -- map_hyperedge の単射性を証明する補題
 --map_hyperedge_univ_eqを呼ぶ時にimhを本質的に利用している。
---omit [Nonempty α] in
 lemma map_hyperedge_injective (sf : IdealFamily α) (x : α) (G: Finset α) (imh : is_maximal_hyperedge sf G)  :
   x ∉ G → Function.Injective (λ H : {H // sf.sets H  ∧ x ∈ H} => map_hyperedge sf x G H.1):=
   by
@@ -277,11 +270,10 @@ lemma map_hyperedge_injective (sf : IdealFamily α) (x : α) (G: Finset α) (imh
           obtain ⟨left_1, right_1⟩ := property_1
           simp_all only [Subtype.mk.injEq, not_false_eq_true]
           subst h_univ1
-          --simp_all only [Finset.mem_univ]
           apply Aesop.BuiltinRules.not_intro
           intro a
           subst a
-          simp_all only [Finset.mem_univ, not_true_eq_false]
+          contradiction
 
     have value1:map_hyperedge sf x G H1.1 = G := by
       simp [map_hyperedge, h_univ1]
@@ -321,33 +313,30 @@ lemma card_filter_add_card_filter_compl (sf : IdealFamily α) (v : α) [Decidabl
         simp_all only [with_v, without_v, all]
         rw [Finset.disjoint_left]
         intro a a_1
-        simp_all only [Finset.mem_filter, Finset.mem_univ, true_and, not_true_eq_false, and_false, not_false_eq_true]
+        simp_all only [Finset.mem_filter, not_true_eq_false, and_false, not_false_eq_true]--
 
     -- `with_v ∪ without_v = all`
     have h_union : with_v ∪ without_v = all :=
       by
         ext H
-        simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_union]
+        simp only [Finset.mem_union]
         constructor
         · intro h --with_v ∪ without_v = allの左から右
           cases h with
           |inl hl =>
            --obtain ⟨h_sets, h_v⟩ := h --with_vのほう。
            rw [wv] at hl
-           simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_union] at hl
+           simp only [Finset.mem_filter] at hl
            exact Finset.mem_filter.mpr ⟨hl.1, hl.2.1⟩
           |inr hr =>
            simp [all, Finset.mem_filter.mp hr]
-           -- goal H ∈ with_v ∨ H ∈ without_v
-        --- --with_v ∪ without_v = allの右から左
+
         · rw [w]
           intro h
           rw [wv,wov]
           by_cases hh: v ∈ H
-          · simp_all only [Finset.mem_filter, Finset.mem_univ, true_and, and_self, not_true_eq_false, and_false,
-            or_false, with_v, without_v, all]
-          · simp_all only [Finset.mem_filter, Finset.mem_univ, true_and, and_self, not_true_eq_false, and_false,
-            or_false, with_v, without_v, all]
+          · simp_all only [Finset.mem_filter,  and_self, not_true_eq_false, and_false,or_false]
+          · simp_all only [Finset.mem_filter]
             tauto
 
     -- `with_v` と `without_v` のカードの合計が `all` のカードに等しいことを証明
@@ -357,7 +346,6 @@ lemma card_filter_add_card_filter_compl (sf : IdealFamily α) (v : α) [Decidabl
     rw [Finset.card_union_of_disjoint h_disjoint]
 
 -- hyperedges_without_v の位数は family_size_sf - degree_v であることを示す補題
---omit [Nonempty α] in
 lemma card_hyperedges_without_v (sf : IdealFamily α) (v : α) [DecidablePred sf.sets]:
   Finset.card ((sf.ground.powerset).filter (λ H => sf.sets H ∧ v ∉ H)) =
   ideal_family_size sf - ideal_degree sf v :=
@@ -375,8 +363,6 @@ lemma card_hyperedges_without_v (sf : IdealFamily α) (v : α) [DecidablePred sf
       rw [ideal_degree]
       rw [wv]
       rw [degree]
-      simp_all only [Finset.powerset_univ, with_v, without_v, all]
-      --rw [Finset.filter_congr_decidable]
       simp [decide_eq_true_eq]
 
     have h_card_all : all.card = ideal_family_size sf :=
@@ -385,9 +371,9 @@ lemma card_hyperedges_without_v (sf : IdealFamily α) (v : α) [DecidablePred sf
       simp [all]
       congr
     rw [h_card_with, h_card_all] at h_card_add
-    simp_all only [with_v, without_v, all]
-    simp_all only [ideal_family_size,ideal_degree]
-    simp_all only [number_of_hyperedges,degree]
+    simp only [without_v] at h_card_add
+    simp only [ideal_degree]
+    simp only [number_of_hyperedges,degree]
     simp [h_card_with, h_card_all]
     omega
 
@@ -398,10 +384,7 @@ lemma card_hyperedges_with_v (sf : IdealFamily α) (v : α) :
   by
     rw [ideal_degree]
     rw [degree]
-    --rw [Finset.powerset_univ]
-    --rw [all_subsets]
     rw [Finset.filter_congr_decidable]
-    --dsimp [hyperedges_with_v]
     simp [decide_eq_true_eq]
 
 
@@ -413,7 +396,6 @@ lemma exists_element_not_in_univ (H : Finset α)(U: Finset α):(H ⊆ U) → (H 
     intro h hne
 
     -- 真部分集合の定義から、H ⊆ U かつ H ≠ U を得る
-    --obtain ⟨_, hneq⟩ := Finset.ssubset_iff_subset_ne.mp h
     -- 対偶法を使用して証明する
     by_contra h'
     -- h' を反転させる
@@ -535,6 +517,7 @@ theorem ideal_version_of_frankl_conjecture :
     have map_injective : Function.Injective (λ H : {H // sf.sets H ∧ v ∈ H}=> map_hyperedge sf v G H.1) :=
       map_hyperedge_injective sf v G G_maximal v_not_in_G
 
+    /- 使われてない。
     -- 写真の値域が sf.sets に含まれることを示す
     have map_is_hyperedge : ∀ H, H ∈ hyperedges_with_v → (map_hyperedge sf v G H) ∈ hyperedges_without_v :=
       by
@@ -547,12 +530,11 @@ theorem ideal_version_of_frankl_conjecture :
           map_hyperedge_is_hyperedge sf v G G_in_sf H hH.2.1 v_not_in_G
         have h2 : v ∉ (map_hyperedge sf v G  H) :=
           map_hyperedge_excludes_x sf v G  H hH.2.1 v_not_in_G hH.2.2
-        --        rw [Finset.mem_powerset]
         constructor
         --have h1' : sf.sets (map_hyperedge sf v G H) := by
-        --  rw [h1]
         exact sf.inc_ground (map_hyperedge sf v G H) h1
         exact ⟨h1, h2⟩
+    -/
 
     -- 写像の定義域と終域を設定する
     let domain := { H : Finset α // sf.sets H ∧ v ∈ H }
@@ -579,10 +561,6 @@ theorem ideal_version_of_frankl_conjecture :
     have h_inj_card :  (Finset.univ : Finset domain).card ≤ (Finset.univ : Finset codomain).card :=
       Fintype.card_le_of_injective f f_injective
 
-    -- hyperedges_without_v の位数は family_size_sf - degree_v であることを使う
-    have h_size_without_v : hyperedges_without_v.card = ideal_family_size sf - ideal_degree sf v :=
-      card_hyperedges_without_v sf v
-
     -- hyperedges_with_v の位数は degree_v であることを使う
     have h_size_with_v : hyperedges_with_v.card = ideal_degree sf v :=
       card_hyperedges_with_v sf v
@@ -591,41 +569,38 @@ theorem ideal_version_of_frankl_conjecture :
     have h_family_size : hyperedges_with_v.card + hyperedges_without_v.card = ideal_family_size sf :=
       by
         rw [card_filter_add_card_filter_compl sf v]
-        simp_all only [ne_eq, Finset.mem_univ, Finset.mem_filter, true_and, and_imp, Finset.card_univ,
-          hyperedges_with_v, hyperedges_without_v, domain, codomain, f]
+        --simp_all only [  domain, codomain, f]
         rw [ideal_family_size]
         congr
 
     -- (Finset.univ : Finset domain).card が hyperedges_with_v.card に等しいことを示す
     have h_domain_card : (Finset.univ : Finset domain).card = hyperedges_with_v.card :=
     by
-      simp only [domain, ideal_degree, Finset.univ, Finset.filter]
+      simp only [domain ]
       apply Fintype.card_of_subtype
       intro x -- xはdomainの要素という条件は？
       simp [hyperedges_with_v]
       intro sfx _
-      --rw [all_subsets]
-      --rw [Finset.mem_powerset]
       exact sf.inc_ground x sfx
 
     -- (Finset.univ : Finset codomain).card が hyperedges_without_v.card に等しいことを示す
     have h_codomain_card : (Finset.univ : Finset codomain).card = hyperedges_without_v.card :=
     by
-      simp only [codomain, ideal_degree, Finset.univ, Finset.filter]
+      simp only [codomain]
       apply Fintype.card_of_subtype
       intro x
       simp [hyperedges_without_v]
       intro sfx _
-      --rw [all_subsets]
-      --rw [Finset.mem_powerset]
       exact sf.inc_ground x sfx
 
+
+    /- 使われてない。
     -- hyperedges_without_v.card ≥ hyperedges_with_v.card を示す
     have _ : hyperedges_without_v.card ≥ hyperedges_with_v.card :=
       by
         rw [←h_domain_card, ←h_codomain_card]
         assumption
-
+    -/
     -- 2 * ideal_degree sf v ≤ ideal_family_size sf を示す
     have h_degree_le_size : 2 * ideal_degree sf v ≤ ideal_family_size sf :=
       by
@@ -634,8 +609,6 @@ theorem ideal_version_of_frankl_conjecture :
         linarith
 
     -- 結論を得る
-    simp_all only [ne_eq, Finset.mem_filter, and_imp, Finset.card_univ, ge_iff_le, hyperedges_with_v,
-      hyperedges_without_v, domain, codomain, f]
     use v
 
 end Ideal

@@ -28,22 +28,17 @@ variable {α : Type} [DecidableEq α] [Fintype α]
 --メイン定理の帰納法のベースケース。大きさ2の場合の証明。
 theorem basecase : P 2 := by
   constructor
-  simp_all only [ge_iff_le]
-  simp_all only [le_refl]
+  simp only [le_refl]
   intros F ground_card
   dsimp [normalized_degree_sum]
-  simp_all only [ge_iff_le, zero_add]
   dsimp [total_size_of_hyperedges]
   dsimp [number_of_hyperedges]
   have gr: F.ground = {0, 1} := by
-    simp_all only [Fin.isValue]
     have or2: ∀ (a:Fin 2), a = 0 ∨ a = 1 := by
       intro a
       cases a
-      --simp_all only [Fin.isValue]
       omega
     apply Finset.eq_of_subset_of_card_le
-    --simp_all only [Fin.isValue]
     intro a
     intro _
     simp_all only [Finset.mem_insert, Finset.mem_singleton]--
@@ -62,7 +57,7 @@ theorem basecase : P 2 := by
   let zeroone : Finset (Fin 2) := {0, 1}
   have pow2: zeroone.powerset = {{0,1}, {0}, {1}, ∅} := by
     exact pow
-  let zp :=  zeroone.powerset
+  --let zp :=  zeroone.powerset
   rw [pow2]
 
   have zeroonedisj: Disjoint ({zeroone, ∅} : Finset (Finset (Fin 2))) ({{0}, {1}} : Finset (Finset (Fin 2))) := by
@@ -86,11 +81,11 @@ theorem basecase : P 2 := by
     simp_all only [Finset.disjoint_empty_right, zeroone]--
 
   have zeroonedisj5: Disjoint ({{0, 1}}:Finset (Finset (Fin 2))) {∅} := by
-    simp_all only [Finset.disjoint_insert_right,or_false, Finset.disjoint_singleton_right, zeroone]
-    obtain ⟨left, right⟩ := zeroonedisj
+    simp_all only [Finset.disjoint_insert_right,or_false, Finset.disjoint_singleton_right]--
+    --obtain ⟨left, right⟩ := zeroonedisj
     apply Aesop.BuiltinRules.not_intro
     intro a
-    simp_all only [Finset.mem_singleton]
+    simp only [Finset.mem_singleton] at a
     contradiction
 
   have zerooneunion: ({{0, 1}, ∅} : Finset (Finset (Fin 2))) ∪ ({{0}, {1}} : Finset (Finset (Fin 2))) = {{0, 1}, {0}, {1}, ∅} := by
@@ -114,7 +109,7 @@ theorem basecase : P 2 := by
     rw [←distsum]
 
     have goal1:  ∑ x ∈ Finset.filter F.sets {{0, 1}, ∅}, x.card = 2 := by
-      simp_all only [  zeroone, zp]
+      --simp_all only [zp]
       simp_all only [Finset.disjoint_insert_right]
       simp [Finset.filter_true_of_mem, *]
       rfl
@@ -123,19 +118,18 @@ theorem basecase : P 2 := by
       rw [Finset.sum_filter, Finset.card_filter]
       simp
       dsimp [zeroone]
-      --simp_all only [Fin.isValue]
       let result0 := filter_union_eq0 (fun x => F.sets {x}) {0} {1}
 
       rw [zerooneunion2] at result0
       rw [result0]
+      clear result0
       have term1: (if F.sets {0} then 1 else 0) = (Finset.filter (fun x => F.sets {x}) {0}).card := by
         simp
         by_cases h01: F.sets {0}
         · case pos =>
-          simp_all only [↓reduceIte, zeroone]
 
           symm
-          simp [result0, Finset.filter_singleton]
+          simp [ Finset.filter_singleton]
           simp_all only [↓reduceIte, Finset.card_singleton]
         · case neg =>
           simp_all only [ ↓reduceIte, zeroone]
@@ -152,7 +146,7 @@ theorem basecase : P 2 := by
         · case pos =>
           simp_all only [ ↓reduceIte, zeroone]
           symm
-          simp [result0, Finset.filter_singleton]
+          simp [Finset.filter_singleton]
           simp_all only [↓reduceIte, Finset.card_singleton]
         · case neg =>
           simp_all only [ ↓reduceIte]--
@@ -228,7 +222,7 @@ theorem basecase : P 2 := by
           intro a
           simp_all only [Finset.mem_singleton]
         rw [(Finset.filter_eq_self).mpr assum]
-        simp_all only [ Finset.mem_singleton, forall_eq, Finset.card_singleton]
+        simp_all only [ Finset.mem_singleton, Finset.card_singleton]
 
       have value0: (Finset.filter F.sets {∅}).card = 1:= by
         --hasempty : F.sets ∅
@@ -260,7 +254,7 @@ theorem basecase : P 2 := by
     have hi: ∀ x (h:x ∈ domain), i x h ∈ range := by
       intro x
       intro h
-      simp_all only [Finset.mem_filter, Finset.mem_insert, Finset.mem_singleton, Finset.singleton_inj,  i, range]--
+      simp only [Finset.mem_filter, Finset.mem_insert, Finset.mem_singleton, Finset.singleton_inj,  i, range]
       simp_all only [Finset.mem_insert, Finset.mem_filter,  Finset.mem_singleton, and_self, domain]--
     have inj: ∀ (a₁ : Fin 2) (ha₁ : a₁ ∈ domain) (a₂ : Fin 2) (ha₂ : a₂ ∈ domain), i a₁ ha₁ = i a₂ ha₂ → a₁ = a₂ := by
       intro a₁ ha₁ a₂ ha₂ a
@@ -334,8 +328,7 @@ theorem inductive_step {n:Nat} (n_ge_two: n >= 2) (h_ind: P n) : P (n+1) := by
 
     have h_del_card: (@IdealFamily.deletionToN (Fin n) n n_ge_one (idealdeletion F v v_in_ground ground_ge_two) v Fvx
                 ground_delF_card_ge_one).ground.card = n := by
-      simp_all only [ge_iff_le]
-      simp_all only [ge_iff_le, implies_true, imp_self, forall_true_left, Fdel, h_idealdeletion]
+      simp_all only [implies_true, h_idealdeletion]
       exact ground_delF_card
 
     set Fcont :=  (contraction_ideal_family F v singleton_hyperedge_have ground_ge_two)
@@ -410,12 +403,11 @@ theorem inductive_step {n:Nat} (n_ge_two: n >= 2) (h_ind: P n) : P (n+1) := by
         have h_sum_have := (hyperedge_average_have F v v_in_ground ground_ge_two) hv_hyperedge singleton_hyperedge_have
         let number_have :=  hyperedge_count_deletion_contraction_have_z F v v_in_ground ground_ge_two hv_hyperedge singleton_hyperedge_have
 
-        simp only [ge_iff_le, tsub_le_iff_right, zero_add, Fdel, Fcont] at h_sum_have number_have
+        --simp at h_sum_have number_have
         simp only [normalized_degree_sum] at h_sum_have number_have
 
         --今になって考えてみれば、Fin nを使わずにground setの大きさで議論する方法の方が良かった。
-        simp_all only [ge_iff_le, tsub_le_iff_right, zero_add, Nat.cast_add, Nat.cast_one, degreev, number,
-          h_idealdeletion, Fdel, Fcont, h_contraction, total_del, number_del, total_cont, number_cont, total, number_have]
+        simp_all --only [  number_have]
         linarith
 
     ·   case neg =>
@@ -423,10 +415,9 @@ theorem inductive_step {n:Nat} (n_ge_two: n >= 2) (h_ind: P n) : P (n+1) := by
         have h_sum_none := hyperedge_average_none F v v_in_ground ground_ge_two hv_hyperedge singleton_hyperedge_have
         have number_none := hyperedge_count_deletion_contraction_none F v v_in_ground ground_ge_two hv_hyperedge singleton_hyperedge_have
 
-        simp only [ge_iff_le, tsub_le_iff_right, zero_add, Fdel, Fcont] at h_sum_none number_none
+        --simp only [ zero_add, Fdel, Fcont] at h_sum_none number_none
         simp only [normalized_degree_sum] at h_sum_none number_none
-        simp_all only [tsub_le_iff_right, zero_add, Nat.cast_add,  degreev, number, h_idealdeletion,
-        Fdel, Fcont, h_contraction, total_del, number_del, total_cont, number_cont, total]
+        simp_all only [Nat.cast_add]
         linarith
 
   --case negがもう一つある。singleton_hyperedge_have:(F.sets {v})が成り立たないケース。
