@@ -114,9 +114,7 @@ lemma total_eq_lem (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
       let left1 := left.1
 
       rw [hv_equal] at left1
-      -- exact ground_minus_v_none left1
-      -- Define or import the missing lemma or function here
-      -- For now, we will assume it is a lemma that states ¬F.sets (F.ground \ {v})
+
       subst right
       simp_all only [not_true_eq_false]
 
@@ -137,7 +135,6 @@ lemma total_eq_lem (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
       rw [Finset.mem_powerset] at hs
       have sg: s = F.ground.erase v := by
         simp_all only [hv_equal]
-        --simp_all only [ge_iff_le]
       have sgs: F.sets s := by
         subst sg
         simp_all only [Finset.mem_powerset]
@@ -209,7 +206,7 @@ lemma total_eq_lem (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
       have h_filter : Finset.filter (λ s => s = F.ground) (F.ground.powerset) = {F.ground} :=
         by
           ext s
-          simp -- [ Finset.subset_iff]
+          simp
           intro hh
           intro x hx
           rw [hh] at hx
@@ -384,7 +381,7 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
                 apply add_le_add_right
                 simp_all only [add_le_add_iff_left]
               _ ≥ (k + 1) + 1 := by
-                simp --only [add_le_add_iff_left, Nat.one_le_ofNat]--
+                simp only [add_le_add_iff_left, Nat.one_le_ofNat]--
 
       --以下はゴールと同じ。帰納法で示す必要あり。nがゼロの時はおかしくなるので一つずらしたほうがいいかも。
       --have inequality_calc (n : ℕ) : (n * 2^(n - 1) + (n + 1)) * 2 ≤ (2^n + 1) * (n + 1) := by
@@ -437,7 +434,6 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
       --idealDelFとFでnumber_of_hyperedgesが同じになることを示す。
       --idealDelFとFでtotal_size_of_hyperedgesが1つちがいになることを示す。
       --idealDefFのnormalized_degree_sumが非負のとき、Fも非負であることを示す。
-      --simp only [ Nat.cast_one] at singleton_hyperedge_none degree_one ⊢
 
       let idealDelF := idealdeletion F v v_in_ground ground_ge_two
 
@@ -566,7 +562,6 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
                   exact asr
                 simp_all-- only [Finset.mem_erase]
             · intro h
-              --obtain ⟨left, right⟩ := hs
               by_cases hav: a = v
               case pos =>
                 rw [hav]
@@ -580,9 +575,8 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
                 have asr: a ∈ s.erase v := by
                   rw [h_inj]
                   exact atr
-                  --have hsv: a ∈ s := by
                 rw [Finset.mem_erase] at asr
-                simp_all-- only [and_self]
+                simp_all only [and_self]
 
           · case neg =>
             --v in sということはsは全体集合であり、ground - vはground_minus_v_none : ¬F.sets (F.ground \ {v})の仮定よりhyperedgeではない。よって、h_inkに矛盾。
@@ -590,7 +584,6 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
               --singleton_hyperedge_none : ¬F.sets {v}から言える。
               by_contra h_contra
               have v_subset_s: {v} ⊆ s := by
-                --simp_all only [ge_iff_le]
                 rw [Finset.singleton_subset_iff]
                 exact hv_in_s
               have v_hyperedge: F.sets {v} := by
@@ -658,9 +651,6 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
       have i_surj : ∀ (ss:Finset (Fin (n+1))), ss ∈ range → ∃ (s:Finset (Fin (n+1))), ∃ (hs : s ∈ domain), i s hs = ss := by
         intro ss hss
         have hv_notin_is: v ∉ ss:= by
-          --simp_all only [ge_iff_le]
-          --dsimp [i]
-          --simp_all only [i]
           simp only [Finset.mem_filter, range] at hss
           obtain ⟨_, right⟩ := hss
           apply Aesop.BuiltinRules.not_intro
@@ -673,12 +663,11 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
           have s_eq: ss = F.ground := by
             simp_all only [not_true_eq_false]
           subst s_eq
-          simp_all --only [ not_true_eq_false]
+          simp_all only [ not_true_eq_false]
         · case neg =>
           rw [Finset.mem_filter] at hss
           rw [Finset.mem_powerset] at hss
           simp_all only [i]
-          --have hsscopy := ss ∈ domain
           obtain ⟨left, right⟩ := hss
           cases right with
           | inl h =>
@@ -708,7 +697,6 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
         --(Finset.filter (fun s => F.sets s ∧ v ∉ s ∨ s = F.ground.erase v) (F.ground.erase v).powerset).card
 
         have bij := Finset.card_bij i hi i_inj i_surj  --idealSumを参考にするとdomainとrangeを設定したほうがいい。その間のbijectionを証明。
-        --dsimp [domain, range] at bij
         simp_all only [range]
         congr
 
@@ -719,7 +707,7 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
         --rw [Ideal.total_degone_card F.toSetFamily v v_in_ground degree_one F.has_ground ground_ge_two]
         dsimp [total_size_of_hyperedges]
         dsimp [idealDelF]
-        dsimp [idealdeletion] --分解されすぎるかも。
+        dsimp [idealdeletion]
         simp_all only [Finset.card_erase_of_mem, add_tsub_cancel_right]
 
         let ff := λ (s:Finset (Fin (n+1))) => s.card
@@ -781,11 +769,7 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
       rw [ground_card] at induction_assum ⊢
       ring_nf
       ring_nf at induction_assum
-      --induction_assum : 2 + total_size_of_hyperedges idealDelF.toSetFamily * 2 ≤
-      --number_of_hyperedges idealDelF.toSetFamily + number_of_hyperedges idealDelF.toSetFamily * n
       simp at induction_assum
-      --induction_assum: 2 + total_size_of_hyperedges idealDelF.toSetFamily * 2 ≤ number_of_hyperedges idealDelF.toSetFamily + number_of_hyperedges idealDelF.toSetFamily * n
-      --goal ↑(1 + total_size_of_hyperedges idealDelF.toSetFamily) * 2 ≤ ↑(number_of_hyperedges idealDelF.toSetFamily) * ↑(1 + n)
       simp
       linarith
 
