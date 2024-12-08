@@ -59,16 +59,13 @@ def is_ideal (sf : SetFamily α) : Prop :=
   has_empty sf ∧ has_univ sf ∧
   (∀ (A B : Finset α), sf.sets B → A ⊆ B → sf.sets A)
 
--- DecidablePredインスタンスの提供 なくすとnormalized_degree_sumでエラーが出る。
+-- DecidablePredインスタンスの提供 なくすとnormalized_degree_sumでエラーが出る。SetFamilyに対して、定義しなくて良いのか？
 noncomputable instance [DecidableEq α] (sf : IdealFamily α) : DecidablePred sf.sets :=
-λ s => Classical.propDecidable (sf.sets s)
-
-noncomputable instance [DecidableEq α] (sf : SetFamily α) : DecidablePred sf.sets :=
 λ s => Classical.propDecidable (sf.sets s)
 
 -- 標準化次数和を計算する関数を定義 上のinstanceの定義のあとにする必要あり。
 -- IdealFamilyでない場合に定義する。
-noncomputable def normalized_degree_sum {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) : ℤ :=
+noncomputable def normalized_degree_sum {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) [DecidablePred F.sets] : ℤ :=
   let total_size := (total_size_of_hyperedges F: ℤ)
   let num_sets := (number_of_hyperedges F: ℤ)
   let base_set_size := (F.ground.card: ℤ)
