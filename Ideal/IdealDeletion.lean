@@ -10,10 +10,7 @@ import Ideal.BasicLemmas
 import LeanCopilot
 
 namespace Ideal
--- 型変数と必要な型クラスの宣言 この宣言は必要。もともとUだったのをαに変えた。
 variable {α : Type} [DecidableEq α] [Fintype α]
-
-open Finset
 
 def deletion {α : Type} [DecidableEq α] [Fintype α](F : SetFamily α) (x : α) (hx: x ∈ F.ground) (ground_ge_two: F.ground.card ≥ 2): SetFamily α :=
   { ground := F.ground.erase x,
@@ -26,7 +23,7 @@ def deletion {α : Type} [DecidableEq α] [Fintype α](F : SetFamily α) (x : α
         simp_all only [decide_eq_false_iff_not]
         obtain ⟨left, right⟩ := hs
         have hs' : s ⊆ F.ground := F.inc_ground s left
-        exact subset_erase.2 ⟨hs', right⟩
+        exact Finset.subset_erase.2 ⟨hs', right⟩
         }
 
 infixl:65 " ∖ " => deletion
@@ -56,7 +53,7 @@ def idealdeletion {α : Type} [DecidableEq α] [Fintype α] (F : IdealFamily α)
             contradiction
           have FsetsA: F.sets A := by
             exact F.down_closed A B hB_set B_neq_ground hAB
-          have hA_not_in_x: ¬ x ∈ A := λ hA_mem_x => hB_not_in_x (mem_of_subset hAB hA_mem_x)
+          have hA_not_in_x: ¬ x ∈ A := λ hA_mem_x => hB_not_in_x (Finset.mem_of_subset hAB hA_mem_x)
           exact ⟨FsetsA, hA_not_in_x⟩
 
         | Or.inr hB_eq => -- B = F.ground.erase x
@@ -68,7 +65,7 @@ def idealdeletion {α : Type} [DecidableEq α] [Fintype α] (F : IdealFamily α)
         cases hs with
         | inl hl =>
           have hs'' : s ⊆ F.ground := F.inc_ground s hl.1
-          exact subset_erase.2 ⟨hs'', hl.2⟩
+          exact Finset.subset_erase.2 ⟨hs'', hl.2⟩
         | inr hr => --全体集合のケース s = F.ground.erase x
           rw [hr],
 
@@ -107,8 +104,8 @@ def contraction (F : SetFamily α) (x : α) (hx : x ∈ F.ground) (ground_ge_two
         rw [hs_eq]
         --goal H.erase x ⊆ F.ground.erase x
         intro y hy -- hy: y ∈ H.erase x
-        rw [mem_erase] at hy
-        rw [mem_erase]
+        rw [Finset.mem_erase] at hy
+        rw [Finset.mem_erase]
         -- goal y ≠ x ∧ y ∈ F.ground
         constructor
         exact hy.1 -- x ¥neq y
@@ -148,7 +145,7 @@ instance contraction_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x}
         rfl
     have thisinc: thisF.ground ⊆ F.ground := by
       rw [thisg]
-      apply erase_subset
+      apply Finset.erase_subset
 
     have groundx: F.ground = thisF.ground ∪ {x} := by
       ext y
@@ -208,7 +205,7 @@ instance contraction_ideal_family (F : IdealFamily α) (x : α) (hx : F.sets {x}
 
       have h_union : H = (B ∪ {x}) := by
         rw [hB_eq]
-        rw [union_comm]
+        rw [Finset.union_comm]
         rw [←Finset.insert_eq]
         rw [Finset.insert_erase]
         exact hxH
