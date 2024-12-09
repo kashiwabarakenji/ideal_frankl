@@ -27,15 +27,14 @@ noncomputable def isPowerSet {α : Type} [DecidableEq α] [Fintype α] (family :
    (Finset.powerset family.ground).toSet ⊆ {H : Finset α | family.toSetFamily.sets H}
 
 -- IdealFamilyかどうかをチェックする関数
-def isIdealFamily (α : Type) [DecidableEq α ] [Fintype α ] (family : SetFamily α ) : Prop :=
-  let sets := family.sets
-  let has_univ := sets family.ground
-  let downward_closed := ∀ (s : Finset α), sets s → s ≠ family.ground → ∀ (t : Finset α), t ⊆ s → sets t
-  has_univ ∧ downward_closed
+def isIdealFamily (α : Type) [DecidableEq α ] [Fintype α ] (F: SetFamily α ) : Prop :=
+  (F.sets ∅) ∧              -- Empty set is included
+  (F.sets F.ground) ∧       -- Ground set is included
+  (∀ A B : Finset α, F.sets B → B ≠ F.ground → A ⊆ B → F.sets A)  -- Downward closure condition
 
-def isIntersectionClosedFamily {α: Type} [DecidableEq α] [Fintype α] (family : IdealFamily α) : Prop :=
+def isIntersectionClosedFamily {α: Type} [DecidableEq α] [Fintype α] (F : IdealFamily α) : Prop :=
     --family.sets  Finset (Finset U),-- Finset.univ ∈ sets ∧
-    (∀ {s t : Finset α}, family.sets s→ family.sets t→  family.sets (s ∩ t))
+    (∀ {s t : Finset α}, F.sets s→ F.sets t→  F.sets (s ∩ t))
 
 
 --#check @isIntersectionClosedFamily
@@ -69,7 +68,6 @@ theorem idealFamily_is_intersectionClosed {α : Type} [DecidableEq α] [Fintype 
       | Or.inr _ =>
         have h_inter_subset_s : s ∩ t ⊆ s := @Finset.inter_subset_left _ _ s t
         have h_downward_closed := family.down_closed (s ∩ t) s hs hsu h_inter_subset_s
-        --(down_closed : ∀ (A B : Finset α), sets B → B ≠ ground → A ⊆ B → sets A)
         exact h_downward_closed --goal ⊢ family.sets (s ∩ t)
 
 -- 具体的な有限台集合を定義

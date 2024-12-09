@@ -9,6 +9,8 @@ import Ideal.BasicDefinitions
 import Ideal.BasicLemmas
 import LeanCopilot
 
+--set_option maxHeartbeats 500000 in
+
 namespace Ideal
 
 variable {α : Type} [DecidableEq α]
@@ -24,7 +26,7 @@ lemma decarte (A : Finset α) (B : Finset (Finset α)) (a : α) (b : Finset α)
 omit [DecidableEq α] in
 lemma decarter {α:Type}{a:α}{b:Finset α} (A : Finset α) (B : Finset (Finset α)) (h:(a, b) ∈ A.product B)
   : a ∈ A ∧ b ∈ B := by
-  -- `Finset.product` の定義に基づき、`(a, b)` は `A.product B` に属する
+  -- `Finset.product` の定義に基づき、`A.product B` は  `(a, b)`に属する
   exact Finset.mem_product.1 h
 
 lemma sum_nonneg_of_nonneg {α : Type} [DecidableEq α] (s : Finset α) (f : α → ℤ) (h : ∀ x ∈ s, 0 ≤ f x) :
@@ -278,7 +280,7 @@ theorem sum_cardinality_eq [Fintype α](FG : Finset α) [DecidableEq FG] (hypere
     exact filter_card_eq_x_card FG hyperedges x hx fground
 
 --Definitionsに移しても良い。
-noncomputable def normalized_degree {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) (x: α): ℤ :=
+noncomputable def normalized_degree {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) [DecidablePred F.sets] (x: α): ℤ :=
   2 * (degree F x:Int) - (number_of_hyperedges F:Int)
 
 -- 型全体に対する合計
@@ -286,7 +288,7 @@ lemma sum_univ {α : Type} [DecidableEq α] [Fintype α] (f : α → ℕ) : ∑ 
   simp_all only
 
 --頂点ごとに足すか、hyperedgeの大きさを足すかで等しい。どこかのファイルに移動しても良い。
-theorem double_count {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α):
+theorem double_count {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) [DecidablePred F.sets]:
   total_size_of_hyperedges F = ∑ x in F.ground, degree F x := by
   rw [total_size_of_hyperedges]
   dsimp [degree]
@@ -374,8 +376,12 @@ theorem double_count {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α
 
   exact tmp
 
+-- 定義: normalized_degree_sum は全頂点の normalized_degree の合計
+--noncomputable def normalized_degree_sum {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) : ℤ :=
+--  ∑ x in F.ground, normalized_degree F x
+
 --平均rareであれば、少なくとも一つの頂点がrareである。このファイルのメイン定理。
-theorem average_rare_vertex  [Nonempty α][Fintype α](F:SetFamily α) :
+theorem average_rare_vertex  [Nonempty α][Fintype α](F:SetFamily α) [DecidablePred F.sets] :
   normalized_degree_sum F <= 0 → ∃ x ∈ F.ground, normalized_degree F x <= 0 := by
 
   have ndegrees: normalized_degree_sum F = ∑ x in F.ground, (normalized_degree F x) := by
