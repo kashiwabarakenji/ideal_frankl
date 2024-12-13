@@ -621,12 +621,12 @@ theorem hyperedge_average_none {α : Type} [DecidableEq α] [Fintype α]
         dsimp [normalized_degree_sum]
         simp_all
         ring_nf
-        have comm0: (F.ground.card:ℤ)*(number_of_hyperedges F.toSetFamily:ℤ) = (number_of_hyperedges F.toSetFamily:ℤ)*(F.ground.card:ℤ) := by
-         ring_nf
-        rw [comm0]
-        rw [sub_eq_add_neg]
-        rw [add_comm]
-        congr
+        --have comm0: (F.ground.card:ℤ)*(number_of_hyperedges F.toSetFamily:ℤ) = (number_of_hyperedges F.toSetFamily:ℤ)*(F.ground.card:ℤ) := by
+        -- ring_nf
+        --rw [comm0]
+        --rw [sub_eq_add_neg]
+        --rw [add_comm]
+        --congr
   _ = 2*((total_size_of_hyperedges F.toSetFamily:ℤ) + ((F.ground.card:ℤ) - 1)) - (F.ground.card:ℤ)*(number_of_hyperedges F.toSetFamily:ℤ) - (F.ground.card:ℤ) + 2:= by
     ring_nf
   _ = 2*(((total_size_of_hyperedges (idealdeletion F x hx ground_ge_two).toSetFamily):ℤ)  +
@@ -701,12 +701,12 @@ theorem hyperedge_average_none {α : Type} [DecidableEq α] [Fintype α]
         dsimp [normalized_degree_sum]
         --simp_all
         ring_nf
-        have comm0: (F.ground.card:ℤ)*(number_of_hyperedges F.toSetFamily:ℤ) = (number_of_hyperedges F.toSetFamily:ℤ)*(F.ground.card:ℤ) := by
-         ring_nf
-        rw [comm0]
-        rw [sub_eq_add_neg]
-        rw [add_comm]
-        congr
+        --have comm0: (F.ground.card:ℤ)*(number_of_hyperedges F.toSetFamily:ℤ) = (number_of_hyperedges F.toSetFamily:ℤ)*(F.ground.card:ℤ) := by
+        -- ring_nf
+        --rw [comm0]
+        --rw [sub_eq_add_neg]
+        --rw [add_comm]
+        --congr
   _ = 2*((total_size_of_hyperedges F.toSetFamily:ℤ) + ((F.ground.card:ℤ) - 1)) - (F.ground.card:ℤ)*((number_of_hyperedges F.toSetFamily):ℤ) - 2*(F.ground.card:ℤ) + 2:= by
     ring_nf
   _ = 2*(((total_size_of_hyperedges (idealdeletion F x hx ground_ge_two).toSetFamily):ℤ)  +

@@ -63,6 +63,9 @@ def is_ideal (sf : SetFamily α) : Prop :=
 noncomputable instance [DecidableEq α] (sf : IdealFamily α) : DecidablePred sf.sets :=
 λ s => Classical.propDecidable (sf.sets s)
 
+noncomputable instance [DecidableEq α] (sf : SetFamily α) : DecidablePred sf.sets :=
+λ s => Classical.propDecidable (sf.sets s)
+
 -- 標準化次数和を計算する関数を定義 上のinstanceの定義のあとにする必要あり。
 -- IdealFamilyでない場合に定義する。
 noncomputable def normalized_degree_sum {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) [DecidablePred F.sets] : ℤ :=

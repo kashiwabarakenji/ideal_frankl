@@ -278,7 +278,7 @@ by
       apply Multiset.filter_congr
       tauto
 
-  have term_eq: Finset.filter ((F ∖ v) hv ground_ge_two).sets ((F ∖ v) hv ground_ge_two).ground.powerset = sets_without_v := by
+  have term_eq: Finset.filter ((deletion F v) hv ground_ge_two).sets ((deletion F v) hv ground_ge_two).ground.powerset = sets_without_v := by
     ext s
     simp only [Finset.mem_filter, Finset.mem_powerset]
     constructor
@@ -337,7 +337,7 @@ theorem hyperedge_count_deletion_contraction_have {α : Type} [DecidableEq α] [
   --number_of_hyperedges (contraction F.toSetFamily x hx ground_ge_two) :=
   number_of_hyperedges (contraction_ideal_family F x singleton_have ground_ge_two).toSetFamily := by
 
-  have sub1: number_of_hyperedges F.toSetFamily = number_of_hyperedges ((F.toSetFamily ∖ x) hx ground_ge_two) + degree F.toSetFamily x := by
+  have sub1: number_of_hyperedges F.toSetFamily = number_of_hyperedges ((deletion F.toSetFamily  x) hx ground_ge_two) + degree F.toSetFamily x := by
     rw [←hyperedge_count_split F.toSetFamily x hx ground_ge_two]
     congr
 
@@ -385,7 +385,7 @@ theorem hyperedge_count_deletion_contraction_none {α : Type} [DecidableEq α] [
   number_of_hyperedges (idealdeletion F x hx ground_ge_two).toSetFamily  +
   number_of_hyperedges (contraction_ideal_family F x singleton_have ground_ge_two).toSetFamily :=
   by
-    have sub1: number_of_hyperedges F.toSetFamily = number_of_hyperedges ((F.toSetFamily ∖ x) hx ground_ge_two) + degree F.toSetFamily x := by
+    have sub1: number_of_hyperedges F.toSetFamily = number_of_hyperedges ((deletion F.toSetFamily x) hx ground_ge_two) + degree F.toSetFamily x := by
       rw [←hyperedge_count_split F.toSetFamily x hx ground_ge_two]
       congr
 
