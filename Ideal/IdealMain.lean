@@ -1,14 +1,14 @@
 --Ideal集合族が平均abundantにならないことの証明。ideal集合族が平均rareであるというメイン定理の型がFin nの場合。
 import Mathlib.Data.Finset.Basic
-import Mathlib.Data.Finset.Lattice
+--import Mathlib.Data.Finset.Lattice
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Data.Fin.Basic
 import Mathlib.Data.Finset.Powerset
 import Mathlib.Data.Finset.Union
-import Mathlib.Init.Data.Nat.Lemmas
+--import Mathlib.Init.Data.Nat.Lemmas
 import Mathlib.Algebra.BigOperators.Group.Finset
-import Mathlib.Tactic
+--import Mathlib.Tactic
 import Ideal.BasicDefinitions
 import Ideal.BasicLemmas
 import Ideal.IdealDeletion
@@ -125,7 +125,7 @@ theorem basecase : P 2 := by
       rw [result0]
       clear result0
       have term1: (if F.sets {0} then 1 else 0) = (Finset.filter (fun x => F.sets {x}) {0}).card := by
-        simp
+        --simp
         by_cases h01: F.sets {0}
         · case pos =>
 
@@ -142,7 +142,7 @@ theorem basecase : P 2 := by
           simp_all only [Finset.not_mem_empty, iff_false,not_and, not_false_eq_true, implies_true]--
 
       have term2: (if F.sets {1} then 1 else 0) = (Finset.filter (fun x => F.sets {x}) {1}).card := by
-        simp
+        --simp
         by_cases h10: F.sets {1}
         · case pos =>
           simp_all only [ ↓reduceIte, zeroone]
@@ -215,7 +215,7 @@ theorem basecase : P 2 := by
 
       have disjoint_filtered := (@Finset.disjoint_filter_filter _ ({{0, 1}}:Finset (Finset (Fin 2))) {∅} F.sets F.sets) zeroonedisj5
       rw [Finset.card_union_of_disjoint disjoint_filtered]
-      simp
+      --simp
       have value2: (Finset.filter F.sets {{0, 1}}).card = 1 := by
         have assum: ∀ x∈ ({{0,1}}:Finset (Finset (Fin 2))), F.sets x := by
           intro x
@@ -247,7 +247,7 @@ theorem basecase : P 2 := by
   rw [leftside]
   simp
   have new_goal: (Finset.filter (fun x => F.sets {x}) ({0, 1}:Finset (Fin 2))).card = (Finset.filter (fun s => F.sets s) {{0}, {1}}:Finset (Finset (Fin 2))).card:= by
-    simp
+    --simp
     let domain := Finset.filter (fun x => F.sets {x}) ({0, 1}:Finset (Fin 2))
     let range := Finset.filter (fun s => F.sets s) {{0}, {1}}
     --let i: (x :Fin 2) → x ∈ ({0, 1}: Finset (Fin 2)) → Finset (Fin 2) := λ x _ => {x}

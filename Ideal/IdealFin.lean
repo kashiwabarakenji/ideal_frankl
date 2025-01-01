@@ -4,7 +4,7 @@ import Mathlib.Data.Finset.Card
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Data.Fin.Basic
 import Mathlib.Data.Finset.Powerset
-import Mathlib.Init.Data.Nat.Lemmas
+--import Mathlib.Init.Data.Nat.Lemmas
 import Mathlib.Tactic
 import Ideal.BasicDefinitions
 import Ideal.BasicLemmas
@@ -78,11 +78,12 @@ lemma finExpand_not_in {n : ℕ}(v : Fin (n + 1)) (s : Finset (Fin n)) :
   next h =>
     split at h_eq
     next h_1 => simp_all only [lt_self_iff_false]
-    next h_1 => simp_all only [ Fin.mk.injEq, add_right_eq_self]--
+    next h_1 => simp_all only [not_false_eq_true, Fin.mk.injEq, add_right_eq_self, one_ne_zero]
   next h =>
     split at h_eq
     next h_1 =>
-      simp_all only [ Fin.mk.injEq, self_eq_add_right]--
+      simp_all only [ Fin.mk.injEq, self_eq_add_right]
+      simp_all only [not_lt, add_zero, lt_self_iff_false]
     next h_1 => simp_all only [lt_add_iff_pos_right, zero_lt_one]--
 
 lemma finDrop_expand_inverse_set {n : ℕ} (nposi : n ≥ 1) (v : Fin (n + 1)) (s : Finset (Fin n)) :
@@ -345,6 +346,7 @@ lemma imageEq {n : ℕ} {s : Finset (Fin n)} (nposi : n ≥ 1)
           simp_all only [not_lt]
           rw [← right_1] at h
           simp_all only [add_le_iff_nonpos_right, nonpos_iff_eq_zero]--
+          simp_all only [  one_ne_zero]--
       case neg =>
           subst x_neq_v ht_image
           simp only [Finset.mem_image] at left_2
@@ -359,6 +361,7 @@ lemma imageEq {n : ℕ} {s : Finset (Fin n)} (nposi : n ≥ 1)
           simp_all only [not_lt]--
           rw [← right_1] at h
           simp_all only [add_le_iff_nonpos_right, nonpos_iff_eq_zero]--
+          simp_all only [ one_ne_zero]
 
     rw [←ht_image_finExpand]
     exact right2.2
@@ -758,7 +761,7 @@ noncomputable def SetFamily.toFinFamily {α : Type} [DecidableEq α] [Fintype α
     fintype_ground := Fintype.ofFinset groundFin (by
     intro x
     subst h
-    simp only [Finset.mem_map,  Finset.mem_val]--
+    --simp only [Finset.mem_map,  Finset.mem_val]--
     rfl),
   }
 

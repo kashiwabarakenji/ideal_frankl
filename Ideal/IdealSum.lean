@@ -3,7 +3,7 @@ import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Data.Finset.Powerset
-import Mathlib.Init.Data.Nat.Lemmas
+--import Mathlib.Init.Data.Nat.Lemmas
 import Mathlib.Tactic
 import Ideal.BasicDefinitions
 import Ideal.BasicLemmas
@@ -136,6 +136,7 @@ lemma contraction_total_size (F : SetFamily α) [DecidablePred F.sets] (x : α)
     --goal largeset.sum ff + largeset.card - largeset.card = largeset.sum ff
     rw [Nat.add_sub_cancel]
 
+omit [Fintype α] in
 lemma filter_sum_eq (F : SetFamily α) (x : α) (hx : x ∈ F.ground) [DecidablePred F.sets] :
   (Finset.filter (λ s => F.sets s ∧ x ∉ s) F.ground.powerset).sum Finset.card =
   (Finset.filter (λ s => F.sets s ∧ x ∉ s) (F.ground.erase x).powerset).sum Finset.card :=
@@ -587,21 +588,21 @@ lemma conv_deletion (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (ground_
    normalized_degree_sum (idealdeletion F x hx ground_ge_two).toSetFamily =2*total_size_of_hyperedges (idealdeletion F x hx ground_ge_two).toSetFamily  - (idealdeletion F x hx ground_ge_two).toSetFamily.ground.card*number_of_hyperedges (idealdeletion F x hx ground_ge_two).toSetFamily :=
   by
     rw [normalized_degree_sum]
-    simp_all
+    --simp_all
     ring_nf
 
 lemma conv_contraction (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (ground_ge_two: F.ground.card ≥ 2) :
    normalized_degree_sum (contraction F.toSetFamily x hx ground_ge_two) =2*total_size_of_hyperedges (contraction F.toSetFamily x hx ground_ge_two)  - (contraction F.toSetFamily x hx ground_ge_two).ground.card*number_of_hyperedges (contraction F.toSetFamily x hx ground_ge_two) :=
   by
     rw [normalized_degree_sum]
-    simp_all
+    --simp_all
     ring_nf
 
 lemma conv_contraction_family (F : IdealFamily α) (x : α) (ground_ge_two: F.ground.card ≥ 2)(singleton_have: F.sets {x}) :
    normalized_degree_sum (contraction_ideal_family F x singleton_have ground_ge_two).toSetFamily =2*total_size_of_hyperedges (contraction_ideal_family F x singleton_have ground_ge_two).toSetFamily  - (contraction_ideal_family F x singleton_have ground_ge_two).ground.card*number_of_hyperedges (contraction_ideal_family F x singleton_have ground_ge_two).toSetFamily :=
   by
     rw [normalized_degree_sum]
-    simp_all
+    --simp_all
     ring_nf
 
 --IdealMain.leanで使われている。

@@ -7,7 +7,7 @@ import Mathlib.Data.Finset.Powerset
 import Mathlib.Data.Multiset.Basic
 import Mathlib.Tactic
 --import Mathlib.Init.Function
-import Mathlib.Init.Logic
+--import Mathlib.Init.Logic
 import Ideal.BasicDefinitions
 import Ideal.BasicLemmas
 import Ideal.IdealDeletion

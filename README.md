@@ -201,7 +201,7 @@ Idealフォルダにleanファイルがある。
 
 ## leanの環境
 
-使用したleanのバージョンは、leanprover/lean4:v4.11.0 である。
+使用したleanのバージョンは、leanprover/lean4:v4.14.0 である。
 これは、証明作成時点で、Lean Copilotが利用できるバージョンを使用した。
 lakefile.leanもLean Copilotがダウンロードされるように設定されている。
 importでもLean Copilotを読み込んでいる。Lean Copilotに対応してない環境で取り込む際には注意が必要。
@@ -211,7 +211,7 @@ git clone https://github.com/kashiwabarakenji/ideal_frankl.git
 でローカルなマシンに取り込むことができる。すでにelan等でleanがインストールされている環境であれば、
 ```
 cd ideal_frankl
-elan override set leanprover/lean4:v4.11.0
+elan override set leanprover/lean4:v4.14.0
 lake update
 lake build
 ```

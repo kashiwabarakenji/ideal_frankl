@@ -1,9 +1,10 @@
-import Mathlib.Data.Finset.Basic
-import Mathlib.Data.Finset.Card
+--import Mathlib.Data.Finset.Basic
+--import Mathlib.Data.Finset.Card
 import Mathlib.Data.Fintype.Basic
-import Mathlib.Data.Finset.Powerset
-import Mathlib.Init.Data.Nat.Lemmas
-import Mathlib.Tactic
+import Mathlib.Data.Nat.Cast.Order.Basic
+--import Mathlib.Data.Finset.Powerset
+--import Mathlib.Init.Data.Nat.Lemmas
+--import Mathlib.Tactic
 import Ideal.BasicDefinitions
 import LeanCopilot
 
@@ -351,6 +352,8 @@ lemma ground_nonempty_after_minor {α : Type} [DecidableEq α] (ground : Finset 
       have hy' : y ∈ ground \ {x} := by
           rw [h_empty]
           simp_all only [sdiff_eq_empty_iff_subset, subset_singleton_iff, false_or,card_singleton, Nat.not_ofNat_le_one]--
+          subst h_empty
+          simp_all only [mem_singleton, ge_iff_le, Nat.reduceLeDiff]
       rw [h_empty] at hy'
       contradiction
       -- y ∈ {x}のときに、groundに属することを示す
@@ -376,7 +379,8 @@ by
     by
       intro h_eq
       have : F.ground.card = 0 := by rw [←h_eq, Finset.card_empty]
-      linarith [hground]  -- 矛盾を示す
+      simp_all only [Nat.le_zero_eq, one_ne_zero]
+      --linarith [hground]  -- 矛盾を示す
 
   -- 空集合と全体集合の 2 つの要素が含まれているため、number_of_hyperedges は 2 以上
   simp_all only [one_le_card, ne_eq, ge_iff_le]

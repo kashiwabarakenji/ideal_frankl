@@ -97,7 +97,8 @@ lemma ineq_lem (k : ℕ) :
 def P (x:Nat) : Prop := x ≥ 2  ∧ ∀ (F: IdealFamily (Fin x)), F.ground.card = x → normalized_degree_sum F.toSetFamily ≤ 0
 
 -- heartbeas問題に対応するために、証明を分離した。この部分は解決したが、他の部分でエラーになっている。
-lemma total_eq_lem (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in_ground : v ∈ F.ground)(ground_minus_v_none : ¬F.sets (F.ground \ {v})) (ground_ge_two : F.ground.card ≥ 2) (ground_card: F.ground.card = n + 1) (h_ind: P n): ∑ x ∈ Finset.filter (fun s => F.sets s ∧ v ∉ s ∨ s = F.ground \ {v}) (F.ground \ {v}).powerset, x.card + 1 =
+lemma total_eq_lem (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in_ground : v ∈ F.ground)(ground_minus_v_none : ¬F.sets (F.ground \ {v})) (ground_ge_two : F.ground.card ≥ 2) (ground_card: F.ground.card = n + 1) (_: P n):
+ ∑ x ∈ Finset.filter (fun s => F.sets s ∧ v ∉ s ∨ s = F.ground \ {v}) (F.ground \ {v}).powerset, x.card + 1 =
   ∑ x ∈ Finset.filter (fun s => F.sets s ∧ v ∉ s ∨ s = F.ground.erase v) (F.ground.erase v).powerset,
     if x = F.ground.erase v then x.card + 1 else x.card :=
   by
@@ -356,6 +357,7 @@ theorem degonemain (n : Nat) (F : IdealFamily (Fin (n+1))) (v : Fin (n+1)) (v_in
           -- 基底ケース: n = 0 は不適
           by_contra _
           simp_all only [nonpos_iff_eq_zero]
+          simp_all only [zero_le, add_zero]
         | succ k ih =>
           rw [pow_succ 2 k]
           simp_all --only [le_add_iff_nonneg_left]

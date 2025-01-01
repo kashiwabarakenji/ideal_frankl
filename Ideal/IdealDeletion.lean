@@ -4,7 +4,7 @@ import Mathlib.Data.Fintype.Basic
 import Mathlib.Data.Finset.Powerset
 import Mathlib.Tactic
 --import Mathlib.Init.Function
-import Mathlib.Init.Logic
+--import Mathlib.Init.Logic
 import Ideal.BasicDefinitions
 import Ideal.BasicLemmas
 import LeanCopilot

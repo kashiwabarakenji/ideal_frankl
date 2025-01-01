@@ -3,15 +3,15 @@
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Data.Finset.Powerset
-import Mathlib.Tactic
-import Mathlib.Order.Basic
-import Mathlib.Order.CompleteLattice
-import Mathlib.Data.Finset.Lattice
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Finset.Sups
-import Mathlib.Init.Data.Nat.Lemmas
-import Init.Data.Int.Lemmas
-import Init.Data.Nat.Lemmas
+--import Mathlib.Tactic
+--import Mathlib.Order.Basic
+--import Mathlib.Order.CompleteLattice
+--import Mathlib.Data.Finset.Lattice
+--import Mathlib.Data.Finset.Card
+--import Mathlib.Data.Finset.Sups
+--import Mathlib.Init.Data.Nat.Lemmas
+--import Init.Data.Int.Lemmas
+--import Init.Data.Nat.Lemmas
 import Ideal.BasicDefinitions
 import Ideal.BasicLemmas
 import LeanCopilot
@@ -282,7 +282,7 @@ lemma choose_two_points {α : Type} [DecidableEq α] [Fintype α]
       apply eq.mp
       exact hG
 
-    have hH_pos : 0 < (Finset.univ \ G).card := Nat.lt_of_lt_of_le zero_lt_two hH
+    have hH_pos : 0 < (Finset.univ \ G).card := Nat.lt_of_lt_of_le Nat.zero_lt_two hH
     --A subseteq Gのときに、card(A) <= card(G)
     have H_nonempty := H_neq_U G hH_pos
     have mem_of_subset_neq := exists_mem_of_subset_ne G H_nonempty.symm --(ne_of_gt hH)
@@ -297,7 +297,7 @@ lemma choose_two_points {α : Type} [DecidableEq α] [Fintype α]
 
     have hH_pos' : 0 < ((Finset.univ \ G) \ {x}).card :=
       by
-        apply Nat.lt_of_lt_of_le zero_lt_one
+        apply Nat.lt_of_lt_of_le Nat.zero_lt_one
         apply card_sdiff_singleton_ge_one (Finset.univ \ G) hH
         exact u_minus_g
         --ここでのゴールは、1 ≤ ((univ \ G) \ {x}).card

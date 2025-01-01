@@ -2,17 +2,19 @@ import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Data.Finset.Powerset
-import Mathlib.Init.Data.Nat.Lemmas
-import Mathlib.Data.Bool.Basic
-import Mathlib.Tactic
-import LeanCopilot
+--import Mathlib.Algebra.BigOperators.Basic
+import Mathlib.Algebra.BigOperators.Group.Finset
+--import Mathlib.Init.Data.Nat.Lemmas
+--import Mathlib.Data.Bool.Basic
+--import Mathlib.Tactic
+--import LeanCopilot
 
 namespace Ideal
 
 variable {α : Type} [DecidableEq α] [Fintype α]-- [Nonempty α] コメントアウトしてみた。
 
 --集合族の定義
-structure SetFamily (α : Type) [DecidableEq α] [Fintype α] :=
+structure SetFamily (α : Type) [DecidableEq α]  where
   (ground : Finset α)
   (sets : Finset α → Prop)
   (inc_ground : ∀ s, sets s → s ⊆ ground)
@@ -20,15 +22,14 @@ structure SetFamily (α : Type) [DecidableEq α] [Fintype α] :=
   [fintype_ground : Fintype ground]
 
 --Ideal集合族の定義
-structure IdealFamily (α : Type) [DecidableEq α] [Fintype α] extends SetFamily α :=
+structure IdealFamily (α : Type) [DecidableEq α] [Fintype α] extends SetFamily α where
 (has_empty : sets ∅)  -- 空集合が含まれる
 (has_ground : sets ground)  -- 全体集合が含まれる
 (down_closed : ∀ (A B : Finset α), sets B → B ≠ ground → A ⊆ B → sets A)
 
 --この関数のために、setsの値をBoolからPropに変換する。
 def total_size_of_hyperedges (F : SetFamily α)  [DecidablePred F.sets] : ℕ :=
-  let all_sets := (Finset.powerset F.ground).filter F.sets
-  all_sets.sum Finset.card
+  ∑ x in ((Finset.powerset F.ground).filter F.sets), x.card
 
 --集合族のhyperedgeの個数
 def number_of_hyperedges (F : SetFamily α) [DecidablePred F.sets] : ℕ :=
@@ -83,7 +84,7 @@ noncomputable def ideal_degree (sf : IdealFamily α) (x : α) : ℕ :=
   degree (sf.toSetFamily) x
 
 --IntersectionClosedFamilyの定義
-structure IntersectionClosedFamily (α : Type) [DecidableEq α] [Fintype α] extends SetFamily α :=
+structure IntersectionClosedFamily (α : Type) [DecidableEq α] [Fintype α] extends SetFamily α where
   (has_ground : sets ground)  -- 全体集合が含まれる
   (intersection_closed : ∀ {s t : Finset α}, sets s→ sets t → sets (s ∩ t) ) -- 条件2: 共通部分で閉じている
 

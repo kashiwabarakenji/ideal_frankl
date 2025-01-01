@@ -1,14 +1,14 @@
-import Mathlib.Data.Finset.Basic
-import Mathlib.Data.Finset.Card
+--import Mathlib.Data.Finset.Basic
+--import Mathlib.Data.Finset.Card
 import Mathlib.Data.Fintype.Basic
-import Mathlib.Data.Finset.Powerset
-import Mathlib.Tactic
+--import Mathlib.Data.Finset.Powerset
+--import Mathlib.Tactic
 --import Mathlib.Init.Function
-import Mathlib.Init.Logic
+--import Mathlib.Init.Logic
 import Ideal.BasicDefinitions
 import Ideal.BasicLemmas
 import Ideal.IdealTrace
-import LeanCopilot
+--import LeanCopilot
 
 variable {α : Type} [DecidableEq α] [Fintype α]
 
@@ -131,10 +131,10 @@ lemma hyperedges_not_through_v {α : Type} [DecidableEq α] [Fintype α]
   rw [deg1 ] at deg2
   contradiction
 
-lemma total_degone_card {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) (v : α) (hv: v ∈ F.ground) (deg1: degree F v = 1) (hasGround: F.sets F.ground)(ground_ge_two: F.ground.card ≥ 2) :
+lemma total_degone_card {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) (v : α) (hv: v ∈ F.ground) (deg1: degree F v = 1) (hasGround: F.sets F.ground):--(ground_ge_two: F.ground.card ≥ 2) :
   total_size_of_hyperedges F = (F.ground.powerset.filter (λ s => F.sets s ∧ v ∉ s )).sum Finset.card + F.ground.card := by
   rw [total_size_of_hyperedges]
-  simp
+
 
   have union_lem:Finset.filter (λ s => F.sets s ∧ v ∉ s ) (F.ground.powerset) ∪ {F.ground} = Finset.filter (λ s => F.sets s) (F.ground.powerset) := by
     ext1 a
@@ -157,7 +157,7 @@ lemma total_degone_card {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily
     tauto
 
   have card_sum: (Finset.filter (λ s => F.sets s) (F.ground.powerset)).sum Finset.card = (Finset.filter (λ s => F.sets s ∧ v ∉ s ) (F.ground.powerset)).sum Finset.card + F.ground.card := by
-    simp_all only [ge_iff_le, Finset.disjoint_singleton_right]
+    --simp_all only [ge_iff_le, Finset.disjoint_singleton_right]
     symm
     rw [← union_lem, Finset.sum_union]
     · rw [Finset.sum_singleton]
@@ -503,7 +503,7 @@ lemma count_subsets_containing_a {α : Type} [DecidableEq α][Fintype α]
 
 -- 和の数える順番の補題。
 lemma sum_card_powerset_eq_sum_subsets_containing {α : Type} [DecidableEq α] [Fintype α] {FG : Finset α} :
-  FG.powerset.sum (λ s => ∑ a ∈ s, 1) = FG.sum (λ a => (FG.powerset.filter (λ S => a ∈ S)).card) :=
+  FG.powerset.sum (λ s => ∑ _ ∈ s, 1) = FG.sum (λ a => (FG.powerset.filter (λ S => a ∈ S)).card) :=
 by
   let fn (a : α) (s : Finset α): Nat := if a ∈ s then 1 else 0
   -- 左辺を展開して、card s を ∑ a ∈ s, 1 と等しくする
@@ -590,7 +590,7 @@ lemma ground_minus_v_ideal_total {α : Type} [DecidableEq α] [Fintype α] (F : 
   total_size_of_hyperedges F.toSetFamily = (F.ground.card - 1)*2^(F.ground.card - 2) + F.ground.card := by
         have degree_one: degree F.toSetFamily v = 1 := by
             exact degree_one_if_not_hyperedge F hv hv_singleton
-        rw [Ideal.total_degone_card F.toSetFamily v hv degree_one F.has_ground hcard0]
+        rw [Ideal.total_degone_card F.toSetFamily v hv degree_one F.has_ground]
         simp_all only [Finset.disjoint_singleton_right, add_tsub_cancel_right, add_left_inj]
         --goal (Finset.filter (fun s => F.sets s ∧ v ∉ s) F.ground.powerset).sum Finset.card = n * 2 ^ (n - 1)
         --let A := Finset.filter (λ s=> v ∉ s) F.ground.powerset

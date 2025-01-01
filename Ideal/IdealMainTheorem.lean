@@ -132,6 +132,9 @@ lemma fin_number_eq (F: IdealFamily α)(h : F.ground.card ≥ 2) (hn: Fintype.ca
           simp_all only [Finset.mem_image, Subtype.exists, Finset.mem_filter, Finset.mem_attach, true_and,Subtype.mk.injEq,exists_and_left]--
           apply Iff.intro
           · intro a_1
+            simp_all only [ge_iff_le, exists_true_left, n]
+          /-
+          · intro a_1
             obtain ⟨w_1, h⟩ := a_1
             obtain ⟨w_2, h⟩ := h
             obtain ⟨left_4, right_2⟩ := h
@@ -143,17 +146,23 @@ lemma fin_number_eq (F: IdealFamily α)(h : F.ground.card ≥ 2) (hn: Fintype.ca
                 on_goal 2 => {rfl
                 }
                 · simp_all only
+              · simp_all only
+                search_proof
               · simp_all only [exists_const]
+          -/
           · intro a_1
             obtain ⟨w_1, h⟩ := a_1
             obtain ⟨left_4, right_2⟩ := h
-            obtain ⟨w_2, h⟩ := left_4
+            --obtain ⟨w_2, h⟩ := left_4
             obtain ⟨w_3, h_1⟩ := right_2
-            obtain ⟨left_4, right_2⟩ := h
-            obtain ⟨_, right_3⟩ := left_4
-            obtain ⟨w_4, h⟩ := right_2
-            subst right_3 h_1
-            simp_all only [EmbeddingLike.apply_eq_iff_eq, Subtype.mk.injEq, exists_and_right, exists_eq_right, exists_const]
+            --obtain ⟨left_4, right_2⟩ := h
+            --obtain ⟨_, right_3⟩ := left_4
+            --obtain ⟨w_4, h⟩ := right_2
+            --subst right_3 h_1
+            subst h_1
+            simp_all only [ge_iff_le, exists_true_left, EmbeddingLike.apply_eq_iff_eq, Subtype.mk.injEq,
+              exists_and_right, exists_eq_right, exists_const, n]
+            --simp_all only [EmbeddingLike.apply_eq_iff_eq, Subtype.mk.injEq, exists_and_right, exists_eq_right, exists_const]
       · --(∃ a,    (a ⊆ F.ground ∧ F.sets a) ∧ T =Finset.image (⇑(Fintype.equivFinOfCardEq hn))(Finset.filter (fun y => ∃ x, (∃ (x_1 : x ∈ F.ground), ⟨x, x_1⟩ = y) ∧ x ∈ a) F.ground.attach)) → T ⊆ (F.toFinFamily F.ground.card hn).ground ∧ ∃ S, F.sets (Finset.map (Function.Embedding.subtype fun x => x ∈ F.ground) S) ∧ T = Finset.image (⇑(Fintype.equivFinOfCardEq hn)) S
         --simp_all
         intro a
@@ -222,6 +231,8 @@ lemma fin_number_eq (F: IdealFamily α)(h : F.ground.card ≥ 2) (hn: Fintype.ca
               exact ha a_1
 
           · --goal Finset.image (⇑(Fintype.equivFinOfCardEq hn)) (Finset.filter (fun y => ∃ x, (∃ (x_1 : x ∈ F.ground), ⟨x, x_1⟩ = y) ∧ x ∈ w) F.ground.attach) = Finset.image (⇑(Fintype.equivFinOfCardEq hn)) (Finset.filter (fun x => ↑x ∈ w) F.ground.attach)
+            simp_all only [n]
+            /-
             ext1 a
             simp_all only [Finset.mem_image, Finset.mem_filter, Finset.mem_attach, true_and, Subtype.exists,
               Subtype.mk.injEq, exists_prop, exists_and_left]
@@ -244,6 +255,7 @@ lemma fin_number_eq (F: IdealFamily α)(h : F.ground.card ≥ 2) (hn: Fintype.ca
               simp_all only [EmbeddingLike.apply_eq_iff_eq, Subtype.mk.injEq, exists_prop, exists_eq_right_right,
                 and_true]
               use w_1
+            -/
 
     have FG_eq: FSet2.card = GSet.card:= by
       apply same_cardinality FSet2 GSet embedding hf hFG2
@@ -373,7 +385,7 @@ open Finset
 --variable {α : Type*} (FG : Finset α) (Fsets : Finset α → Prop)
 
 --omit [Nonempty α] in
-lemma FG_same_card (FG : Finset α) (Fsets : Finset α → Prop) [DecidablePred Fsets] (a : Finset α) (ha : a ∈ Finset.filter Fsets FG.powerset) (a_in_FG : a ⊆ FG) :
+lemma FG_same_card (FG : Finset α) (Fsets : Finset α → Prop) [DecidablePred Fsets] (a : Finset α) (_ : a ∈ Finset.filter Fsets FG.powerset) (a_in_FG : a ⊆ FG) :
   FG.sum (fun x => if x ∈ a then 1 else 0) = ∑ a_1 in FG.attach, if ∃ x, (∃ (hx : x ∈ FG), ⟨x, hx⟩ = a_1) ∧ x ∈ a then 1 else 0 :=
 by
   let f := λ x => if x ∈ a then 1 else 0
@@ -467,6 +479,16 @@ by
   ext x : 2
   obtain ⟨val, property⟩ := x
   simp_all only [Subtype.mk.injEq, exists_prop]
+  simp_all only [Subtype.mk.injEq, implies_true, exists_prop, i, f, g]
+  apply Iff.intro
+  · intro a_1
+    obtain ⟨w, h_1⟩ := a_1
+    obtain ⟨left, right⟩ := h_1
+    obtain ⟨left, right_1⟩ := left
+    subst right_1
+    simp_all only
+  · intro a_1
+    use val
 
 --omit [Nonempty α] in
 theorem card_sum_bijection (FG: Finset α) (Fsets: Finset α → Prop) [DecidablePred Fsets] :
@@ -597,7 +619,7 @@ by
   -- すべての仮定が整ったので、`Finset.sum_bij`を適用
   exact Finset.sum_bij i hi i_inj i_surj h
 
-lemma fin_total_eq (F: IdealFamily α)(ge_2 : F.ground.card ≥ 2) (hn: Fintype.card F.ground = F.ground.card):
+lemma fin_total_eq (F: IdealFamily α)(_ : F.ground.card ≥ 2) (hn: Fintype.card F.ground = F.ground.card):
   total_size_of_hyperedges (toIdealFinFamily F F.ground.card hn).toSetFamily = total_size_of_hyperedges F.toSetFamily := by
 
   let n := F.ground.card
@@ -653,19 +675,15 @@ lemma fin_total_eq (F: IdealFamily α)(ge_2 : F.ground.card ≥ 2) (hn: Fintype.
         apply Iff.intro
         · intro a
           obtain ⟨w_1, h⟩ := a
-          obtain ⟨left_2, right⟩ := h
-          obtain ⟨_, right_1⟩ := left_2
-          obtain ⟨w_2, h⟩ := right
-          subst right_1
+          --obtain ⟨left_2, right⟩ := h
+          --obtain ⟨_, right_1⟩ := left_2
+          --obtain ⟨w_2, h⟩ := right
+          --subst right_1
           simp_all only
         · intro a
           apply Exists.intro
-          · apply And.intro
-            · apply And.intro
-              on_goal 2 => {rfl
-              }
-              · simp_all only
-            · simp_all only [exists_const]
+          · exact a
+          · simp_all only [Finset.mem_map, Function.Embedding.coe_subtype, Subtype.exists, exists_and_right,exists_eq_right]--
     · intro h
       obtain ⟨w, h⟩ := h
       obtain ⟨left, right⟩ := h
@@ -681,11 +699,13 @@ lemma fin_total_eq (F: IdealFamily α)(ge_2 : F.ground.card ≥ 2) (hn: Fintype.
           Subtype.mk.injEq,  exists_and_left, Finset.mem_map, Function.Embedding.coeFn_mk]--
         obtain ⟨w, h⟩ := hx
         obtain ⟨left_2, right_1⟩ := h
-        obtain ⟨w_1, h⟩ := left_2
+        --obtain ⟨w_1, h⟩ := left_2
         obtain ⟨w_2, h_1⟩ := right_1
-        obtain ⟨left_2, _⟩ := h
-        obtain ⟨_, right_2⟩ := left_2
-        subst h_1 right_2
+        --obtain ⟨left_2, _⟩ := h
+        --obtain ⟨_, right_2⟩ := left_2
+        --subst h_1 right_2
+        --simp_all only [EmbeddingLike.apply_eq_iff_eq, Subtype.mk.injEq, exists_prop, exists_eq_right]
+        subst h_1
         simp_all only [EmbeddingLike.apply_eq_iff_eq, Subtype.mk.injEq, exists_prop, exists_eq_right]
       · --goal ∃ t,  F.sets (Finset.image Subtype.val t) ∧ ...
         use F.ground.attach.filter (λ x => x.1 ∈ left)
@@ -699,6 +719,7 @@ lemma fin_total_eq (F: IdealFamily α)(ge_2 : F.ground.card ≥ 2) (hn: Fintype.
           exact left_1 a_1
         · ext1 a
           simp_all only [Finset.mem_image, Finset.mem_filter, Finset.mem_attach, true_and, Subtype.exists,Subtype.mk.injEq,  exists_and_left]
+          /-
           apply Iff.intro
           · intro a_1
             obtain ⟨w, h⟩ := a_1
@@ -717,6 +738,7 @@ lemma fin_total_eq (F: IdealFamily α)(ge_2 : F.ground.card ≥ 2) (hn: Fintype.
             simp_all only [EmbeddingLike.apply_eq_iff_eq, Subtype.mk.injEq, exists_prop, exists_eq_right_right,
               and_true]
             use w
+          -/
 
   --#check same_summation FSet2 GSet embedding hf hFG
   have FG_sum_eq: FSet2.sum Finset.card = GSet.sum Finset.card:= by

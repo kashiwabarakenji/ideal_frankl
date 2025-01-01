@@ -16,6 +16,7 @@ namespace Ideal
 variable {α : Type} [DecidableEq α] [Fintype α]
 --
 --IdealSumから1回呼ばれている。vを含むか含まないかでtotalを分割。
+omit [Fintype α] in
 lemma sum_partition_by_v (F : SetFamily α) (v : α) [DecidablePred F.sets] :
   total_size_of_hyperedges { F with sets := λ s => F.sets s ∧ v ∈ s,
                                      inc_ground := λ s hs => F.inc_ground s (hs.1) } +

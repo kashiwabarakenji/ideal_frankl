@@ -31,9 +31,9 @@ def trace {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) (x : α) 
         rw [Finset.subset_erase]
         constructor
            -- x ∉ s
-        all_goals
-          intro h
-          exact left h
+        --all_goals
+        --  intro h
+        --  exact left h
         -- F.sets s ∨ F.sets (s ∪ {x})
         cases right with
         -- F.sets s
@@ -46,6 +46,8 @@ def trace {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) (x : α) 
           simp_all only [ge_iff_le]
           intro y hy
           exact hhh (mem_union_left _ hy)
+
+        simp_all only [ge_iff_le, not_false_eq_true]
   }
 
 --idealという性質が、traceの演算で閉じていることの証明
