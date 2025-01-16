@@ -143,22 +143,18 @@ noncomputable def rootedSetsFromSetFamily (SF : SetFamily α) [DecidableEq α] [
   {
     ground := SF.ground
     rootedsets := by
-    ----------------------------------------------------------------
+
     -- Step 1: ground のすべての部分集合 (powerset) を列挙
-    ----------------------------------------------------------------
       let all_stems := SF.ground.powerset
 
-      ----------------------------------------------------------------
       -- Step 2: 各 stem に対し、有効な root をフィルタ
       --   条件: root ∉ stem ∧ ∀ s, SF.sets s → (s ⊆ stem → root ∈ s)
-      ----------------------------------------------------------------
+
       let filter_roots_for_stem := λ (stem : Finset α) =>
         SF.ground.filter (λ root =>
           root ∉ stem
           ∧ ∀ s, SF.sets s → (s ⊆ stem → root ∈ s)
         )
-
-      ----------------------------------------------------------------
       -- Step 3: stem と root を組み合わせて ValidPair を作る
       --
       --   ただし、Finset.image のラムダ式内では「r が valid_roots に属している」
@@ -166,23 +162,39 @@ noncomputable def rootedSetsFromSetFamily (SF : SetFamily α) [DecidableEq α] [
       --
       --   valid_roots.attach は、各 r ∈ valid_roots を 「⟨r, (r ∈ valid_roots) の証拠⟩」
       --   という形に変換するので、その証拠を取り出して root_not_in_stem を証明できる
-      ----------------------------------------------------------------
-      let make_pairs_for_stem := λ (stem : Finset α) =>
+      let make_pairs_for_stem0 := λ (stem : Finset α) =>
         let valid_roots := filter_roots_for_stem stem
-        valid_roots.attach.apply_function_to_subtype (λ r =>
-          -- ここで r : { x // x ∈ valid_roots }
-          have hg:r ∈ SF.ground := by
-            sorry
-          have hs: stem ⊆ SF.ground := by
-              -- stem は powerset なので、stem ⊆ SF.ground が成り立つ
-            sorry
-          have h : r ∉ stem := by
-            sorry
-            -- r.2 : r.val ∈ valid_roots
-          ValidPair.mk stem r h
+        valid_roots.image (fun r => (stem,r))
 
+      have rs_relation: ∀ (stem : Finset α) (r : α), (stem,r) ∈ make_pairs_for_stem0 stem → r ∉ stem :=
+      by
+        intros stem r
+        intro a
+        simp_all only [Finset.mem_image, Finset.mem_filter, Prod.mk.injEq, true_and, exists_eq_right,
+          not_false_eq_true, make_pairs_for_stem0, filter_roots_for_stem]
 
-        )
+      let allValidPairs := all_stems.attach.biUnion (λ stem =>
+        let pairs := make_pairs_for_stem0 stem.val
+        if pairs.Nonempty then pairs else ∅
+      )
+
+      let make_pairs_for_stem := allValidPairs.image (λ vp =>
+        ValidPair.mk vp.1 vp.2 (rs_relation vp.1 vp.2 (by
+        have: (vp.1,vp.2) ∈ make_pairs_for_stem0 vp.1 := by
+          dsimp [make_pairs_for_stem0]
+          dsimp [filter_roots_for_stem]
+          simp
+          use vp.2
+          constructor
+          constructor
+          sorry --証明可能
+          constructor
+          sorry --難しい
+          sorry --よくわからない。
+          simp_all only [Finset.mem_image, Finset.mem_filter, Prod.mk.injEq, true_and, exists_eq_right,
+            not_false_eq_true, implies_true, Prod.mk.eta, make_pairs_for_stem0, filter_roots_for_stem]
+        simp_all only [Finset.mem_image, Finset.mem_filter, Prod.mk.injEq, true_and, exists_eq_right,
+          not_false_eq_true, implies_true, Prod.mk.eta, make_pairs_for_stem0, filter_roots_for_stem]
 
         ----------------------------------------------------------------
       -- Step 4: すべての stem についてペアの集合を作り、それを biUnion で結合
