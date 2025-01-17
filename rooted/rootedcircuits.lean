@@ -353,3 +353,80 @@ theorem ClosureSystemTheorem (SF : ClosureSystem α) [DecidablePred SF.sets] [�
       apply ClosureSystemLemma SF
       exact hs --なぜか上にもってこれない。
       exact hp
+
+--台集合に入っているかを考慮した方がよいかも。
+lemma rootedcircuits_setfamily (RS : RootedSets α) (SF:ClosureSystem α)
+  --(eq:  ∀ (s : Finset α),(filteredSetFamily_closed_under_intersection RS).sets s ↔ (SF.sets s)) :
+ (eq:  filteredSetFamily_closed_under_intersection RS = SF) :
+  ∀ (s : Finset α), s ⊆ SF.ground → (¬ SF.sets s ↔ ∃ (p : ValidPair α), p ∈ (rootedcircuits_from_RS RS).rootedsets ∧ p.stem ⊆ s ∧ p.root ∉ s) :=
+by
+  have eqsets: ∀ (s : Finset α), (filteredSetFamily_closed_under_intersection RS).sets s ↔ (SF.sets s) :=
+  by
+    intro s
+    subst eq
+    simp_all only
+  have eqground: RS.ground = SF.ground :=
+  by
+    subst eq
+    simp_all only
+    simp_all only [implies_true]
+    rfl
+  intro s
+  intro hs
+  dsimp [filteredSetFamily_closed_under_intersection] at eqsets
+  dsimp [filteredFamily] at eqsets
+  dsimp [rootedcircuits_from_RS]
+  simp_all only [not_and, Decidable.not_not, Finset.mem_filter, Finset.mem_powerset]
+  apply Iff.intro
+  · intro a
+    specialize eqsets s
+    rw [←eqsets] at a
+    push_neg at a
+    let ahs := a hs
+    obtain ⟨p, hp⟩ := ahs
+    use p  --これがあっているか不明。
+    constructor
+    constructor
+    · exact hp.1
+    · intro q hq
+      intro pq
+      sorry
+    · subst eq
+      simp_all only [true_and, forall_const, not_false_eq_true, and_self]
+
+  · intro a
+    obtain ⟨w, h⟩ := a
+    obtain ⟨left, right⟩ := h
+    obtain ⟨left, right_1⟩ := left
+    obtain ⟨left_1, right⟩ := right
+    apply Aesop.BuiltinRules.not_intro
+    intro a
+    --eqsetsの記述と、left_1 rightの記述が矛盾しているのでは。
+    let eqsetss := (eqsets s).mpr a
+    let eqsetss2 := eqsetss.2 w left left_1
+    contradiction
+
+theorem rootedcircuits_makes_same_setfamily: ∀ (RS : RootedSets α), ∀ (s : Finset α),
+  (filteredSetFamily_closed_under_intersection (rootedcircuits_from_RS RS).toRootedSets).sets s = (filteredSetFamily_closed_under_intersection RS).sets s :=
+by
+  intro RS s
+  simp_all
+  apply Iff.intro
+  · intro h
+    dsimp [filteredSetFamily_closed_under_intersection] at h
+    dsimp [filteredFamily] at h
+    simp_all
+    dsimp [rootedcircuits_from_RS] at h
+    by_contra hcontra
+    dsimp [filteredSetFamily_closed_under_intersection] at hcontra
+    dsimp [filteredFamily] at hcontra
+    dsimp [Membership.mem] at hcontra
+    simp at hcontra
+    -- ある根付きサーキットが存在して、sを集合ではなくするという言明にしてほしい。補題を作ってもいいかも。
+    rw [Multiset.Mem] at hcontra
+    let h1:= h.1
+    let h2:= h.2
+    sorry
+
+  · intro h
+    sorry
