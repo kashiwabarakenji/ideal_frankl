@@ -3,6 +3,8 @@ import Mathlib.Data.Finset.Powerset
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Logic.Basic
 import Mathlib.Data.Finset.Union
+import Mathlib.Data.Multiset.Basic
+import Mathlib.Data.Finset.Prod
 import LeanCopilot
 
 -- 有限集合の型
@@ -18,6 +20,9 @@ structure SetFamily (α : Type) where --[DecidableEq α]  where DecidableEqを�
   --[decidableSets : DecidablePred sets]
   --[fintype_ground : Fintype ground]
 
+structure ClosureSystem (α : Type) [DecidableEq α]  [Fintype α] extends SetFamily α where
+  (intersection_closed : ∀ s t , sets s → sets t → sets (s ∩ t))
+  (has_ground : sets ground)
 
 --instance (SF : SetFamily α) : DecidablePred SF.sets :=
 --  classical.dec_pred _
@@ -27,6 +32,30 @@ structure ValidPair (α : Type) where
   stem : Finset α
   root : α
   root_not_in_stem : root ∉ stem
+
+noncomputable def allPairs (SF : SetFamily α) : Finset (Finset α × α) :=
+  SF.ground.powerset.product SF.ground
+
+def isValid (SF : SetFamily α) (stem : Finset α) (root : α) : Prop :=
+  root ∉ stem ∧ ∀ t, SF.sets t → (stem ⊆ t → root ∈ t)
+
+noncomputable def allValidPairs (SF : SetFamily α) : Finset (Finset α × α) :=
+  (allPairs SF).filter (λ (p : Finset α × α) =>
+    isValid SF p.1 p.2
+  )
+
+noncomputable def rootedSets (SF : SetFamily α) [DecidableEq α] : Finset (ValidPair α) :=
+  (allValidPairs SF).attach.image (λ ⟨p, h_p_in⟩ =>
+    -- p : (Finset α × α)
+    -- h_p_in : p ∈ allValidPairs SF
+    ValidPair.mk p.1 p.2 (by
+      -- root_not_in_stem の証明
+      --   いま p ∈ allValidPairs SF だから、(p ∈ filter (λ p => isValid SF p.1 p.2))
+      --   すなわち isValid SF (p.1) (p.2) が成り立つ
+      simp only [allValidPairs, allPairs, Finset.mem_filter] at h_p_in
+      exact h_p_in.2.1
+    )
+  )
 
 structure RootedSets (α : Type) [DecidableEq α] where
   ground : Finset α
@@ -109,7 +138,7 @@ def rootedcircuits_from_RS (RS : RootedSets α) : RootedCircuits α :=
 }
 
 omit [Fintype α] in
-theorem filteredFamily_closed_under_intersection (RS : RootedSets α) [DecidablePred rootedsets]:
+theorem filteredFamily_closed_under_intersection (RS : RootedSets α) [DecidablePred (λ p => p ∈ RS.rootedsets)]:
   ∀ B₁ B₂ : Finset α, B₁ ∈ filteredFamily RS → B₂ ∈ filteredFamily RS → (B₁ ∩ B₂) ∈ filteredFamily RS :=
 by
   intros B₁ B₂ hB₁ hB₂
@@ -134,6 +163,33 @@ by
   simp_all only [Finset.mem_powerset, true_and, Decidable.not_not, Finset.mem_inter, and_self, not_true_eq_false,
     and_false]
 
+def filteredSetFamily_closed_under_intersection (RS : RootedSets α) :--[DecidablePred rootedsets]:
+  ClosureSystem α :=
+{
+  ground := RS.ground
+  intersection_closed := filteredFamily_closed_under_intersection RS,
+  has_ground := by
+    simp only [filteredFamily, Finset.mem_filter]
+    constructor
+    simp only [Finset.mem_powerset, not_and, Decidable.not_not]
+    intro p hp
+    simp_all only
+
+    intro q hq
+    have : q.root ∈ RS.ground := by
+      exact (RS.inc_ground q hq).2
+    simp_all only [not_true_eq_false, and_false, not_false_eq_true]
+
+  inc_ground := by
+    intro p hp
+    simp only [filteredFamily, Finset.mem_filter] at hp
+    obtain ⟨hsub, hcond⟩ := hp
+    simp_all only [Finset.mem_powerset, not_and, Decidable.not_not]
+
+  nonempty_ground := RS.nonempty_ground
+
+}
+
 def Finset.apply_function_to_subtype {α β : Type*} [DecidableEq β] {p : α → Prop}
     (s : Finset {x // p x}) (f : α → β) : Finset β :=
   s.image (λ x => f x.val)
@@ -142,6 +198,10 @@ def Finset.apply_function_to_subtype {α β : Type*} [DecidableEq β] {p : α �
 noncomputable def rootedSetsFromSetFamily (SF : SetFamily α) [DecidableEq α] [DecidablePred SF.sets][Fintype SF.ground] : RootedSets α :=
   {
     ground := SF.ground
+
+    rootedsets := rootedSets SF
+
+   /-
     rootedsets := by
 
     -- Step 1: ground のすべての部分集合 (powerset) を列挙
@@ -152,161 +212,157 @@ noncomputable def rootedSetsFromSetFamily (SF : SetFamily α) [DecidableEq α] [
 
       let filter_roots_for_stem := λ (stem : Finset α) =>
         SF.ground.filter (λ root =>
-          root ∉ stem
-          ∧ ∀ s, SF.sets s → (s ⊆ stem → root ∈ s)
+          root ∉ stem ∧ ∀ s, SF.sets s → (s ⊆ stem → root ∈ s)
         )
-      -- Step 3: stem と root を組み合わせて ValidPair を作る
-      --
-      --   ただし、Finset.image のラムダ式内では「r が valid_roots に属している」
-      --   という事実を tactic mode で直接使いにくいので、Finset.attach を用いる
-      --
-      --   valid_roots.attach は、各 r ∈ valid_roots を 「⟨r, (r ∈ valid_roots) の証拠⟩」
-      --   という形に変換するので、その証拠を取り出して root_not_in_stem を証明できる
-      let make_pairs_for_stem0 := λ (stem : Finset α) =>
-        let valid_roots := filter_roots_for_stem stem
-        valid_roots.image (fun r => (stem,r))
+      -- Step 3: stem と root を組み合わせて 組みを作る。
+      let make_pairs := λ stem =>
+        (filter_roots_for_stem stem).image (fun r => (stem, r))
 
-      have rs_relation: ∀ (stem : Finset α) (r : α), (stem,r) ∈ make_pairs_for_stem0 stem → r ∉ stem :=
+      let allValidPairs :=
+        all_stems.attach.biUnion (λ ⟨stem, _⟩ =>
+          let pairs := make_pairs stem
+          if pairs.Nonempty then pairs else ∅
+        )
+
+      have h_proof: ∀ (root:α), ∀ (stem:Finset α), (stem,root) ∈ allValidPairs → root ∉ stem :=
       by
-        intros stem r
+        intro root stem a
+        simp_all [allValidPairs, all_stems, make_pairs, filter_roots_for_stem]
+        obtain ⟨w, h⟩ := a
+        obtain ⟨w_1, h⟩ := h
+        apply Aesop.BuiltinRules.not_intro
         intro a
-        simp_all only [Finset.mem_image, Finset.mem_filter, Prod.mk.injEq, true_and, exists_eq_right,
-          not_false_eq_true, make_pairs_for_stem0, filter_roots_for_stem]
+        split at h
+        next h_1 =>
+          simp_all only [Finset.mem_image, Finset.mem_filter, Prod.mk.injEq, exists_eq_right_right]
+          simp_all only
+          obtain ⟨left, right⟩ := h
+          obtain ⟨left, right_1⟩ := left
+          obtain ⟨left_1, right_1⟩ := right_1
+          subst right
+          simp_all only [not_true_eq_false]
+        next h_1 => simp_all only [Finset.not_nonempty_iff_eq_empty, Finset.not_mem_empty]
 
-      let allValidPairs := all_stems.attach.biUnion (λ stem =>
-        let pairs := make_pairs_for_stem0 stem.val
-        if pairs.Nonempty then pairs else ∅
-      )
-
-      let make_pairs_for_stem := allValidPairs.image (λ vp =>
-        ValidPair.mk vp.1 vp.2 (rs_relation vp.1 vp.2 (by
-        have: (vp.1,vp.2) ∈ make_pairs_for_stem0 vp.1 := by
-          dsimp [make_pairs_for_stem0]
-          dsimp [filter_roots_for_stem]
-          simp
-          use vp.2
-          constructor
-          constructor
-          sorry --証明可能
-          constructor
-          sorry --難しい
-          sorry --よくわからない。
-          simp_all only [Finset.mem_image, Finset.mem_filter, Prod.mk.injEq, true_and, exists_eq_right,
-            not_false_eq_true, implies_true, Prod.mk.eta, make_pairs_for_stem0, filter_roots_for_stem]
-        simp_all only [Finset.mem_image, Finset.mem_filter, Prod.mk.injEq, true_and, exists_eq_right,
-          not_false_eq_true, implies_true, Prod.mk.eta, make_pairs_for_stem0, filter_roots_for_stem]
-
-        ----------------------------------------------------------------
-      -- Step 4: すべての stem についてペアの集合を作り、それを biUnion で結合
-      --
-      --   if pairs.Nonempty then pairs else ∅
-      --   にしているのは、空の場合を除外するためのサンプル処理
-      ----------------------------------------------------------------
-      let valid_pairs :=
-        all_stems.biUnion (λ stem =>
-          let pairs := make_pairs_for_stem stem
-          if pairs.Nonempty then pairs else ∅
+      -- allValidPairs から ValidPair を構築。attachを利用。
+      let validPairsProof : Finset (ValidPair α) :=
+        allValidPairs.attach.image (λ vp =>
+          ValidPair.mk vp.val.1 vp.val.2 (by
+            have : ⟨vp.val.1, vp.val.2⟩ ∈ allValidPairs := by
+              exact vp.property
+            exact h_proof vp.val.2 vp.val.1 this
+          )
         )
-
       -- 最後に Finset (ValidPair α) を返す
-      exact valid_pairs,
-
-    /-
-    rootedsets := by
-      ----------------------------------------------------------------
-      -- Step 1: stem (全体の台集合 ground の部分集合) を列挙
-      ----------------------------------------------------------------
-      let all_stems := SF.ground.powerset
-
-      ----------------------------------------------------------------
-      -- Step 2: stem ごとに root をフィルタリング
-      ----------------------------------------------------------------
-      let filter_roots_for_stem := λ (stem : Finset α) =>
-        SF.ground.filter (λ root =>
-          root ∉ stem
-          ∧ ∀ s, SF.sets s → (s ⊆ stem → root ∈ s)
-        )
-
-      ----------------------------------------------------------------
-      -- Step 3: stem と root のペア (ValidPair) を生成
-      ----------------------------------------------------------------
-      let make_pairs_for_stem := λ (stem : Finset α) =>
-        let valid_roots := filter_roots_for_stem stem
-
-        -- (1) 「valid_roots にいる root は全て root ∉ stem ∧ ∀ s, SF.sets s → ...」という補題
-        have h_valid_roots : ∀ root ∈ valid_roots,
-          root ∉ stem ∧ ∀ s, SF.sets s → (s ⊆ stem → root ∈ s) :=
-        by
-          -- r ∈ valid_roots = SF.ground.filter p
-          -- から r ∈ SF.ground ∧ p(r) が出る
-          intros r hr
-          simp_all only [Finset.mem_filter, not_false_eq_true, implies_true, and_self, valid_roots,
-            filter_roots_for_stem]
-
-        -- (2) ValidPair にパッケージ化
-        valid_roots.image (λ root =>
-          ValidPair.mk stem root
-            ( (h_valid_roots root (by
-                -- ここでは「root ∈ valid_roots」だけ示せればOK
-                -- つまり root ∈ SF.ground ∧ root ∉ stem ∧ ...
-                dsimp only [valid_roots]
-                dsimp [filter_roots_for_stem]
-                rw [Finset.mem_filter]
-                constructor
-                simp_all only [Finset.mem_filter, not_false_eq_true, implies_true, and_self, valid_roots,
-                  filter_roots_for_stem]
-                sorry -- root ∉ stem ∧ ∀ s, ..
-
-                simp_all only [Finset.mem_filter, not_false_eq_true, implies_true, and_self, valid_roots,
-                  filter_roots_for_stem]
-                apply And.intro
-                · sorry --root ∉ stem
-
-                · intro s a a_1
-                  sorry
-              )).1
-            )
-        )
-
-      ----------------------------------------------------------------
-      -- Step 4: 全ての stem に対してペアを作り、biUnion
-      ----------------------------------------------------------------
-      let valid_pairs :=
-        all_stems.biUnion (λ (stem : Finset α) =>
-          let pairs := make_pairs_for_stem stem
-          if pairs.Nonempty then pairs else ∅
-        )
-
-      exact valid_pairs,
+      exact validPairsProof,
     -/
 
     inc_ground := by
-      intros p hp
-      simp only [Finset.mem_filterMap, Finset.mem_powerset] at hp
-      obtain ⟨stem, hstem, hp⟩ := Finset.mem_biUnion.mp hp
-      rename_i hp_1
-      simp_all only [Finset.mem_biUnion, Finset.mem_powerset]
-      obtain ⟨w, h⟩ := hp_1
-      obtain ⟨left, right⟩ := h
-      apply And.intro
-      · split at hp
-        next h =>
-          split at right
-          next h_1 => sorry
-          next h_1 => simp_all only [Finset.not_nonempty_iff_eq_empty, Finset.not_mem_empty]
-        next h =>
-          split at right
-          next h_1 => simp_all only [Finset.not_nonempty_iff_eq_empty, Finset.not_mem_empty]
-          next h_1 => simp_all only [Finset.not_nonempty_iff_eq_empty, Finset.not_mem_empty]
-      · split at hp
-        next h =>
-          split at right
-          next h_1 => sorry
-          next h_1 => simp_all only [Finset.not_nonempty_iff_eq_empty, Finset.not_mem_empty]
-        next h =>
-          split at right
-          next h_1 => simp_all only [Finset.not_nonempty_iff_eq_empty, Finset.not_mem_empty]
-          next h_1 => simp_all only [Finset.not_nonempty_iff_eq_empty, Finset.not_mem_empty]
+      intro p a
+      dsimp [rootedSets] at a
+      dsimp [allValidPairs] at a
+      --constructor
+      simp_all
+      obtain ⟨w, h⟩ := a
+      obtain ⟨w_1, h⟩ := h
+      obtain ⟨w_2, h⟩ := h
+      obtain ⟨left, right⟩ := w_2
+      subst h
+      simp_all only
+      dsimp [isValid] at right
+      dsimp [allPairs] at left
+      rw [Finset.product] at left
+      simp at left
+      set wp :=  (w, w_1)
+      let fmp := @Finset.mem_product _ _ SF.ground.powerset SF.ground wp --なぜか直接rwできなかった。
+      have :wp.1 ∈ SF.ground.powerset ∧ wp.2 ∈ SF.ground  :=
+      by
+        exact fmp.mp left
+      rw [Finset.mem_powerset] at this
+      dsimp [wp] at this
+      exact this
 
     nonempty_ground := SF.nonempty_ground
   }
+
+--sがhyperedgeであるときには、sにステムが含まれて、sの外にrootがあるような根付きサーキットはない。
+--rootedSetsFromSetFamilyのrooted setの定義をもっと簡単にしたほうがよい。
+lemma ClosureSystemLemma  (SF : ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)]:
+  ∀ s : Finset α, SF.sets s → rc ∈(rootedSetsFromSetFamily SF.toSetFamily).rootedsets
+  → rc.stem ⊆ s → rc.root ∈ s :=
+by
+  intro s a a_1 a_2
+  dsimp [rootedSetsFromSetFamily] at a_1
+  dsimp [rootedSets] at a_1
+  dsimp [allValidPairs] at a_1
+  rw [Finset.mem_image] at a_1
+  obtain ⟨w, h⟩ := a_1
+  let h1 := h.1
+  let h2 := h.2
+  rw [Finset.attach] at h1
+  simp at h1
+  obtain ⟨val, property⟩ := w
+  obtain ⟨fst, snd⟩ := val
+  obtain ⟨left, right⟩ := h
+  subst right
+  simp_all only
+  dsimp [isValid] at h2
+  dsimp [isValid] at h1
+  dsimp [isValid] at property
+  dsimp [allPairs] at property
+  --haveI : DecidablePred (λ a : Finset α × α, a.2 ∉ a.1 ∧ ∀ (t : Finset α), SF.sets t → t ⊆ a.1 → a.2 ∈ t) :=
+  --  λ a, instDecidableAnd _ _,
+  have pro1:snd ∉ fst := by
+    apply Aesop.BuiltinRules.not_intro
+    intro a_1
+    simp [a_1, a_2] at property
+  have pro2 :∀ (t : Finset α), SF.sets t → fst ⊆ SF.ground → fst ⊆ t  → snd ∈ t :=
+  by
+    intro t h
+    intro a_1
+    intro a_3
+    dsimp [Finset.product] at property
+    simp at property
+    simp_all only [not_false_eq_true]
+
+  have pro3: fst ⊆ SF.ground :=
+  by
+    dsimp [Finset.product] at property
+    simp at property
+    simp_all only [not_false_eq_true, implies_true]
+    obtain ⟨left_1, right⟩ := property
+    obtain ⟨left_2, right⟩ := right
+    have: s⊆ SF.ground := by
+      exact SF.inc_ground s a
+    tauto
+
+  apply pro2 s a pro3 a_2
+
+theorem ClosureSystemTheorem (SF : ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)]:
+  ∀ s : Finset α, SF.sets s → (filteredSetFamily_closed_under_intersection (rootedSetsFromSetFamily SF.toSetFamily)).sets s :=
+  by
+    intro s hs
+    dsimp [filteredSetFamily_closed_under_intersection, rootedSetsFromSetFamily]
+    --haveI : DecidablePred (filteredSetFamily_closed_under_intersection (rootedSetsFromSetFamily SF.toSetFamily)).sets :=
+    --  classical.decPred _
+    dsimp [filteredFamily]
+    simp_all
+
+    constructor
+    · intro p hp
+      have : p ∈ SF.ground :=
+      by
+        have :s ⊆ SF.ground := by
+          exact SF.inc_ground s hs
+        exact this hp
+      --simp_all only
+      --intro q hq
+      --intro x hx hh
+      exact this
+
+    · dsimp [rootedSetsFromSetFamily]
+      dsimp [rootedSets]
+      dsimp [allValidPairs]
+      intro p hp
+      apply ClosureSystemLemma SF
+      exact hs --なぜか上にもってこれない。
+      exact hp
