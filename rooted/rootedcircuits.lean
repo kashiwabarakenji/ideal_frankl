@@ -24,6 +24,7 @@ structure SetFamily (α : Type) where --[DecidableEq α]  where DecidableEqを�
   --instance (SF : SetFamily α) : DecidablePred SF.sets :=
 --  classical.dec_pred _
 
+@[ext]
 structure ClosureSystem (α : Type) [DecidableEq α]  [Fintype α] extends SetFamily α where
   (intersection_closed : ∀ s t , sets s → sets t → sets (s ∩ t))
   (has_ground : sets ground)
@@ -321,6 +322,7 @@ by
 
   apply pro2 s a pro3 a_2
 
+--逆方向を示していない。
 theorem ClosureSystemTheorem (SF : ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)]:
   ∀ s : Finset α, SF.sets s → (filteredSetFamily_closed_under_intersection (rootedSetsFromSetFamily SF.toSetFamily)).sets s :=
   by
@@ -475,7 +477,7 @@ lemma rootedcircuits_minimality (RS : RootedSets α) (p₁:(ValidPair α)):
       simp_all only [ and_imp, forall_exists_index, forall_const,
         not_false_eq_true, F]
 
---台集合に入っているかを考慮した方がよいかも。
+--根つきサーキットを与えるバージョン。
 lemma rootedcircuits_setfamily (RS : RootedSets α) (SF:ClosureSystem α)
   --(eq:  ∀ (s : Finset α),(filteredSetFamily_closed_under_intersection RS).sets s ↔ (SF.sets s)) :
  (eq:  filteredSetFamily_closed_under_intersection RS = SF) :
@@ -540,6 +542,107 @@ by
     let eqsetss := (eqsets s).mpr a
     let eqsetss2 := eqsetss.2 w left left_1
     contradiction
+
+--根つきサーキットと集合族が戻ることを前提にした定理を使っては証明できないのかも。独自に証明する必要あるかも。
+--この定理の解決が次の大目標。
+theorem ClosureSystemTheorem_mpr (SF : ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)]:
+  ∀ s : Finset α, (filteredSetFamily_closed_under_intersection (rootedSetsFromSetFamily SF.toSetFamily)).sets s → SF.sets s :=
+by
+  intro s hs
+  dsimp [filteredSetFamily_closed_under_intersection] at hs
+  dsimp [filteredFamily] at hs
+  have eqsets: ∀ (s : Finset α), (filteredSetFamily_closed_under_intersection (rootedSetsFromSetFamily SF.toSetFamily)).sets s ↔ (SF.sets s) :=
+  by
+    intro s
+    apply Iff.intro
+    · intro a
+      by_contra acontra
+      --独自に証明する必要あり。
+      --closure systemからrootedsetをどうやって定義したかに従う。rootedSets SFの定義を使う。
+      let rs := rootedSets SF.toSetFamily
+      have : ∃ (p : ValidPair α), p ∈ rs ∧ p.stem ⊆ s ∧ p.root ∉ s := by
+        dsimp [rs]
+        dsimp [rootedSets]
+        --useで証明するのではなく、allの否定として、あるになるはず。
+        sorry
+
+
+
+
+      --apply ClosureSystemTheorem SF
+      --exact a
+    · intro a
+      apply ClosureSystemTheorem SF
+      exact a
+  have eqground: (rootedSetsFromSetFamily SF.toSetFamily).ground = SF.ground :=
+  by
+    simp_all only [not_and, Decidable.not_not, Finset.mem_filter, Finset.mem_powerset]
+    obtain ⟨left, right⟩ := hs
+    rfl
+  --by_contra hscontra
+
+  have eq : filteredSetFamily_closed_under_intersection (rootedSetsFromSetFamily SF.toSetFamily) = SF := by
+    sorry --これが証明できないのでこの証明は無意味。定理よりも強い言明になっている。
+  have h := rootedcircuits_setfamily (rootedSetsFromSetFamily SF.toSetFamily) SF eq
+  specialize h s (SF.inc_ground s ((eqsets s).mp hs))
+  have h_subset : s ⊆ SF.ground := by
+    simp_all only [not_and, Decidable.not_not, Finset.mem_filter, Finset.mem_powerset, implies_true]
+  let rsr := rootedcircuits_setfamily (rootedSetsFromSetFamily SF.toSetFamily) SF eq s h_subset
+  simp_all only [not_and, Decidable.not_not, Finset.mem_filter, Finset.mem_powerset, true_and, implies_true, rsr]
+  rw [← eq]
+  simp_all only
+  rw [← eq]
+  simp_all only
+  rw [← eq]
+  simp_all only
+  rw [rootedSetsFromSetFamily] at eq
+  rw [← eqground] at *
+  simp_all only
+  rw [rootedSetsFromSetFamily] at rsr
+  rw [← eqground] at h_subset
+  simp_all only
+  rw [← eqground] at h_subset
+  simp_all only
+  obtain ⟨p, hp⟩ := rsr
+  simp_all only [forall_exists_index, and_imp]
+  contrapose! hs
+  simp_all only [not_false_eq_true, forall_const, implies_true]
+  obtain ⟨w, h⟩ := p
+  obtain ⟨left, right⟩ := h
+  obtain ⟨left_1, right⟩ := right
+  simp only [rootedcircuits_from_RS] at left left
+  simp_all only [Finset.mem_filter]
+  obtain ⟨left, right_1⟩ := left
+  simp only [rootedSetsFromSetFamily]
+  use w
+
+lemma closuresystem_rootedcircuits_eq (SF:ClosureSystem α) :
+  let RS := rootedSetsFromSetFamily SF.toSetFamily
+  filteredSetFamily_closed_under_intersection RS = SF :=
+by
+  let RS := rootedSetsFromSetFamily SF.toSetFamily
+  simp
+  --rw [filteredSetFamily_closed_under_intersection]
+  --rw [rootedSetsFromSetFamily]
+  cases SF
+  ext --closureに@extにつけた。
+  simp
+  rfl
+
+  apply Iff.intro
+  sorry --既存の定理を使って証明できそう。
+  sorry --既存の定理を使って証明できそう。
+
+lemma closuresystem_rootedcircuits (SF:ClosureSystem α) :
+  let RS := rootedSetsFromSetFamily SF.toSetFamily
+  ∀ (s : Finset α), s ⊆ SF.ground → (¬ SF.sets s ↔ ∃ (p : ValidPair α), p ∈ (rootedcircuits_from_RS RS).rootedsets ∧ p.stem ⊆ s ∧ p.root ∉ s) :=
+by
+  simp
+  let RS := rootedSetsFromSetFamily SF.toSetFamily
+  have eq: filteredSetFamily_closed_under_intersection RS = SF := by
+    dsimp [RS]
+    sorry --前の定理が確立されたら、この補題が成り立つ。というかこの補題よりも強い言明になる。
+  exact rootedcircuits_setfamily RS SF eq
 
 theorem rootedcircuits_makes_same_setfamily: ∀ (RS : RootedSets α), ∀ (s : Finset α),
   (filteredSetFamily_closed_under_intersection (rootedcircuits_from_RS RS).toRootedSets).sets s = (filteredSetFamily_closed_under_intersection RS).sets s :=
