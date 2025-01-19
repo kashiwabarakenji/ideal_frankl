@@ -38,17 +38,18 @@ structure ValidPair (α : Type) where
 noncomputable def allPairs (SF : SetFamily α) : Finset (Finset α × α) :=
   SF.ground.powerset.product SF.ground
 
-def isValid (SF : SetFamily α) (stem : Finset α) (root : α) : Prop :=
+
+def isCompatible (SF : SetFamily α) (stem : Finset α) (root : α) : Prop :=
   root ∉ stem ∧ ∀ t, SF.sets t → (stem ⊆ t → root ∈ t)
 
 --disjointの証明付きの構造。集合族から定義される根付きサーキット。
 noncomputable def allValidPairs (SF : SetFamily α) : Finset (Finset α × α) :=
   (allPairs SF).filter (λ (p : Finset α × α) =>
-    isValid SF p.1 p.2
+    isCompatible SF p.1 p.2
   )
 
 --集合族から定義される根付きサーキット全体を与える関数。
-noncomputable def rootedSets (SF : SetFamily α) [DecidableEq α] : Finset (ValidPair α) :=
+noncomputable def rootedSetsSF (SF : SetFamily α) [DecidableEq α] : Finset (ValidPair α) :=
   (allValidPairs SF).attach.image (λ ⟨p, h_p_in⟩ =>
     -- p : (Finset α × α)   -- h_p_in : p ∈ allValidPairs SF
     ValidPair.mk p.1 p.2 (by
@@ -204,7 +205,7 @@ noncomputable def rootedSetsFromSetFamily (SF : SetFamily α) [DecidableEq α] [
   {
     ground := SF.ground
 
-    rootedsets := rootedSets SF
+    rootedsets := rootedSetsSF SF
 
    /- 以下は、苦労して作った証明が通っているが、o1に証明を簡略化してもらって外部に出したので消してもよい。
     rootedsets := by
@@ -263,7 +264,7 @@ noncomputable def rootedSetsFromSetFamily (SF : SetFamily α) [DecidableEq α] [
 
     inc_ground := by
       intro p pa
-      dsimp [rootedSets] at pa
+      dsimp [rootedSetsSF] at pa
       dsimp [allValidPairs] at pa
       simp_all --必要
       obtain ⟨w, h⟩ := pa
@@ -292,7 +293,7 @@ lemma ClosureSystemLemma  (SF : ClosureSystem α) [DecidablePred SF.sets] [∀ s
 by
   intro s a a_1 a_2
   dsimp [rootedSetsFromSetFamily] at a_1
-  dsimp [rootedSets] at a_1
+  dsimp [rootedSetsSF] at a_1
   dsimp [allValidPairs] at a_1
   rw [Finset.mem_image] at a_1
   obtain ⟨w, h⟩ := a_1
@@ -301,7 +302,7 @@ by
   obtain ⟨left, right⟩ := h
   subst right
   simp_all only
-  dsimp [isValid] at property
+  dsimp [isCompatible] at property
   dsimp [allPairs] at property
   have pro1:snd ∉ fst := by
     apply Aesop.BuiltinRules.not_intro
@@ -341,7 +342,7 @@ theorem ClosureSystemTheorem (SF : ClosureSystem α) [DecidablePred SF.sets] [�
       exact this
 
     · dsimp [rootedSetsFromSetFamily]
-      dsimp [rootedSets]
+      dsimp [rootedSetsSF]
       dsimp [allValidPairs]
       intro p hp
       apply ClosureSystemLemma SF
@@ -543,6 +544,83 @@ by
     let eqsetss2 := eqsetss.2 w left left_1
     contradiction
 
+lemma exists_mem_of_ne_empty {α : Type} [DecidableEq α] (s : Finset α) (h : s ≠ ∅) :
+  ∃ x, x ∈ s :=
+by
+  -- Finset の内部構造を展開
+  match s with
+  | ⟨val, nodup⟩ =>
+  simp at h -- s ≠ ∅ を Multiset の条件に変換
+  -- Multiset に要素があることを証明
+  simp_all only [Finset.mem_mk]
+  contrapose! h
+  ext a : 1
+  simp_all only [Finset.mem_mk, Finset.not_mem_empty]
+
+theorem ClosureSystemTheorem_mpr_lemma (SF : ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)]:
+ ∀ s : Finset α, s ⊆ SF.ground → ¬ SF.sets s → ∃ (p : ValidPair α), p ∈ (rootedcircuits_from_RS (rootedSetsFromSetFamily SF.toSetFamily)).rootedsets ∧ p.stem ⊆ s ∧ p.root ∉ s :=
+by
+  intro s hs hsets
+  have : s ≠ SF.ground := by --ここは、sとcl sが違うと変更するべき。closure operatorをpdfproofから持ってくる。
+    intro a
+    subst a
+    exact hsets SF.has_ground
+
+  let ss: Finset α := SF.ground \ s --(cl s ) setminus sとすべき。
+  have himp_himp: ss ≠ ∅ := by
+    intro h
+    dsimp [ss] at h
+    simp at h
+    let fs := Finset.Subset.antisymm hs h
+    exact this fs
+
+  --なぜかobtainが使えなかった。ここだけの問題か、obtainの文法がかわかったのか。
+  match exists_mem_of_ne_empty ss himp_himp with
+  | ⟨ess, ess_mem⟩ =>
+
+    have rnis : ess ∉ s := by
+      simp_all only [ne_eq, Finset.sdiff_eq_empty_iff_subset, Finset.mem_sdiff, not_false_eq_true, ss]
+
+    let p : ValidPair α := { stem := s, root := ess, root_not_in_stem := rnis }
+
+    have p_in_RS : p ∈ (rootedcircuits_from_RS (rootedSetsFromSetFamily SF.toSetFamily)).rootedsets := by
+      dsimp [rootedcircuits_from_RS]
+      dsimp [rootedSetsFromSetFamily]
+      dsimp [rootedSetsSF]
+      dsimp [allValidPairs]
+      simp_all [ss, p]
+      apply And.intro
+      · apply And.intro
+        · dsimp [allPairs]
+          apply Finset.mem_product.mpr
+          constructor
+          · simp
+            simp_all only
+          · exact ess_mem
+        · dsimp [isCompatible] --Compatibleかどうかの判定 sとessの作り方が雑なので成り立たない。closure operatorを考えるべき。
+          simp_all only
+          apply And.intro
+          · simp
+          · intros t ht hts
+            sorry
+
+      · intro q x x_1 x_2 h a
+        subst a h
+        simp_all only
+        obtain ⟨left, right⟩ := x_2
+        apply Aesop.BuiltinRules.not_intro
+        intro a
+        sorry
+
+
+
+
+
+    rw [Finset.sdiff_eq_empty_iff_subset] at h
+    simp_all only [ne_eq]
+    by_contra h_con
+
+
 --根つきサーキットと集合族が戻ることを前提にした定理を使っては証明できないのかも。独自に証明する必要あるかも。
 --この定理の解決が次の大目標。
 theorem ClosureSystemTheorem_mpr (SF : ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)]:
@@ -559,10 +637,10 @@ by
       by_contra acontra
       --独自に証明する必要あり。
       --closure systemからrootedsetをどうやって定義したかに従う。rootedSets SFの定義を使う。
-      let rs := rootedSets SF.toSetFamily
+      let rs := rootedSetsSF SF.toSetFamily
       have : ∃ (p : ValidPair α), p ∈ rs ∧ p.stem ⊆ s ∧ p.root ∉ s := by
         dsimp [rs]
-        dsimp [rootedSets]
+        dsimp [rootedSetsSF]
         --useで証明するのではなく、allの否定として、あるになるはず。
         sorry
 
