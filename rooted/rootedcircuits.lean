@@ -6,28 +6,14 @@ import Mathlib.Logic.Basic
 import Mathlib.Data.Finset.Union
 import Mathlib.Data.Multiset.Basic
 import Mathlib.Data.Finset.Prod
+import rooted.CommonDefinition
+import rooted.ClosureOperator
 import LeanCopilot
 
 -- 有限集合の型
 variable {α : Type} [Fintype α] [DecidableEq α]
 
 open Classical  --これでsetsのdecidablePredの問題が解決した。
-
-structure SetFamily (α : Type) where --[DecidableEq α]  where DecidableEqをつけると、別のところで、synthesized type classエラー
-  (ground : Finset α)
-  (sets : Finset α → Prop)
-  (inc_ground : ∀ s, sets s → s ⊆ ground)
-  (nonempty_ground : ground.Nonempty)
-  --[decidableSets : DecidablePred sets]
-  --[fintype_ground : Fintype ground]
-
-  --instance (SF : SetFamily α) : DecidablePred SF.sets :=
---  classical.dec_pred _
-
-@[ext]
-structure ClosureSystem (α : Type) [DecidableEq α]  [Fintype α] extends SetFamily α where
-  (intersection_closed : ∀ s t , sets s → sets t → sets (s ∩ t))
-  (has_ground : sets ground)
 
 -- ValidPair の定義: ステム A と根 a
 structure ValidPair (α : Type) where
@@ -37,7 +23,6 @@ structure ValidPair (α : Type) where
 
 noncomputable def allPairs (SF : SetFamily α) : Finset (Finset α × α) :=
   SF.ground.powerset.product SF.ground
-
 
 def isCompatible (SF : SetFamily α) (stem : Finset α) (root : α) : Prop :=
   root ∉ stem ∧ ∀ t, SF.sets t → (stem ⊆ t → root ∈ t)
@@ -544,7 +529,7 @@ by
     let eqsetss2 := eqsetss.2 w left left_1
     contradiction
 
-lemma exists_mem_of_ne_empty {α : Type} [DecidableEq α] (s : Finset α) (h : s ≠ ∅) :
+lemma Finset.exists_mem_of_ne_empty {α : Type} [DecidableEq α] (s : Finset α) (h : s ≠ ∅) :
   ∃ x, x ∈ s :=
 by
   -- Finset の内部構造を展開
@@ -557,170 +542,199 @@ by
   ext a : 1
   simp_all only [Finset.mem_mk, Finset.not_mem_empty]
 
-theorem ClosureSystemTheorem_mpr_lemma (SF : ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)]:
- ∀ s : Finset α, s ⊆ SF.ground → ¬ SF.sets s → ∃ (p : ValidPair α), p ∈ (rootedcircuits_from_RS (rootedSetsFromSetFamily SF.toSetFamily)).rootedsets ∧ p.stem ⊆ s ∧ p.root ∉ s :=
+--hyperedgeがないときの、根付きサーキットの形が与えられる。
+lemma ClosureSystemTheorem_mpr_lemma (SF : ClosureSystem α) (empty: SF.has_empty) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)] :
+ ∀ s : Finset { x // x ∈ SF.ground }, ¬ SF.sets (s.image Subtype.val) → ∀ root : { x // x ∈ SF.ground }, root ∈ (closure_operator_from_SF SF empty).cl s →
+ (asm:root.val ∉ s.image Subtype.val) → ValidPair.mk (s.image Subtype.val) root.val asm ∈ (rootedSetsSF SF.toSetFamily) :=
 by
-  intro s hs hsets
-  have : s ≠ SF.ground := by --ここは、sとcl sが違うと変更するべき。closure operatorをpdfproofから持ってくる。
-    intro a
-    subst a
-    exact hsets SF.has_ground
+  intro s notsf
+  intro root hroot asm
+  dsimp [closure_operator_from_SF] at hroot
+  dsimp [rootedSetsSF]
+  simp
+  dsimp [allValidPairs]
+  simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, Subtype.coe_eta, Finset.coe_mem,
+    exists_const, Finset.mem_filter]
+  obtain ⟨rootval, roottype⟩ := root
+  simp_all only
+  apply And.intro
+  · dsimp [allPairs]
+    dsimp [Finset.product]
+    have comp1: Finset.image Subtype.val s ∈ SF.ground.powerset.val := by
+      simp_all only [Finset.mem_val, Finset.mem_powerset]
+      simp [Finset.image_subset_iff]
+    have comp2: rootval ∈ SF.ground.val := by
+      simp_all only [Finset.mem_val, Finset.mem_powerset]
+    exact Finset.mem_product.mpr ⟨comp1, comp2⟩
 
-  let ss: Finset α := SF.ground \ s --(cl s ) setminus sとすべき。
-  have himp_himp: ss ≠ ∅ := by
-    intro h
-    dsimp [ss] at h
-    simp at h
-    let fs := Finset.Subset.antisymm hs h
-    exact this fs
-
-  --なぜかobtainが使えなかった。ここだけの問題か、obtainの文法がかわかったのか。
-  match exists_mem_of_ne_empty ss himp_himp with
-  | ⟨ess, ess_mem⟩ =>
-
-    have rnis : ess ∉ s := by
-      simp_all only [ne_eq, Finset.sdiff_eq_empty_iff_subset, Finset.mem_sdiff, not_false_eq_true, ss]
-
-    let p : ValidPair α := { stem := s, root := ess, root_not_in_stem := rnis }
-
-    have p_in_RS : p ∈ (rootedcircuits_from_RS (rootedSetsFromSetFamily SF.toSetFamily)).rootedsets := by
-      dsimp [rootedcircuits_from_RS]
-      dsimp [rootedSetsFromSetFamily]
-      dsimp [rootedSetsSF]
-      dsimp [allValidPairs]
-      simp_all [ss, p]
-      apply And.intro
-      · apply And.intro
-        · dsimp [allPairs]
-          apply Finset.mem_product.mpr
-          constructor
-          · simp
-            simp_all only
-          · exact ess_mem
-        · dsimp [isCompatible] --Compatibleかどうかの判定 sとessの作り方が雑なので成り立たない。closure operatorを考えるべき。
-          simp_all only
-          apply And.intro
-          · simp
-          · intros t ht hts
-            sorry
-
-      · intro q x x_1 x_2 h a
-        subst a h
+  · dsimp [isCompatible]
+    constructor
+    · simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, exists_const,
+      not_false_eq_true]
+    · intro t ht hts
+      let cml := closure_monotone_lemma SF empty s (t.subtype (fun x => x ∈ SF.ground))
+      --lemma closure_monotone_lemma {α : Type} [DecidableEq α] [Fintype α] (F : ClosureSystem α) (has_empty : F.sets ∅) [DecidablePred F.sets] (s : Finset F.ground) (t : Finset F.ground) :
+      --  F.sets (t.image Subtype.val) → s ⊆ t → (closure_operator_from_SF F has_empty).cl s ⊆ t :=
+      have arg1: SF.sets (Finset.image Subtype.val (Finset.subtype (fun x => x ∈ SF.ground) t)) := by
+        have : t ⊆ SF.ground := by
+          exact SF.inc_ground t ht
+        have :Finset.image Subtype.val (Finset.subtype (fun x => x ∈ SF.ground) t) = t := by
+          ext a : 1
+          simp_all only [Finset.mem_image, Finset.mem_subtype, Subtype.exists, exists_and_left, exists_prop,
+            exists_eq_right_right, and_iff_left_iff_imp]
+          intro a_1
+          exact this a_1
+        rw [this]
+        exact ht
+      have arg2: s ⊆ Finset.subtype (fun x => x ∈ SF.ground) t :=
+      by
+        intro x hx
+        simp_all only [Finset.mem_subtype]
+        obtain ⟨val, property⟩ := x
         simp_all only
-        obtain ⟨left, right⟩ := x_2
-        apply Aesop.BuiltinRules.not_intro
-        intro a
-        sorry
+        exact hts (Finset.mem_image_of_mem _ hx)
+      let result := cml arg1 arg2
+      --resultの内容。(closure_operator_from_SF SF empty).cl s ⊆ Finset.subtype (fun x => x ∈ SF.ground) t
+      --hrootは、⟨rootval, roottype⟩ ∈ closureOperator SF s
+      have :⟨rootval, roottype⟩ ∈ Finset.subtype (fun x => x ∈ SF.ground) t := by
+        exact Finset.mem_of_subset result hroot
+      simp_all only [Finset.mem_subtype]
 
+lemma ClosureSystemTheorem_mpr_lemma2 (SF : ClosureSystem α) (empty: SF.has_empty) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)] :
+ ∀ s : Finset { x // x ∈ SF.ground }, ¬ SF.sets (s.image Subtype.val) → ∃ root ∈ (closure_operator_from_SF SF empty).cl s,
+root.val ∉ s.image Subtype.val ∧ ((asm:root.val ∉ s.image Subtype.val ) →
+(ValidPair.mk (s.image Subtype.val) root.val asm) ∈ (rootedSetsSF SF.toSetFamily)) :=
+by
+  intro s notsf
+  dsimp [closure_operator_from_SF]
+  dsimp [rootedSetsSF]
+  simp
+  dsimp [allValidPairs]
+  simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, Subtype.coe_eta, Finset.coe_mem,
+    exists_const, Finset.mem_filter]
 
+  have : ((closure_operator_from_SF SF empty).cl s) \ s ≠ ∅ := by
+    have sneq :((closure_operator_from_SF SF empty).cl s) ≠ s := by
+      intro a
+      contrapose! notsf
+      exact idempotent_from_SF_finset_lem_mpr SF empty s a
+    have sinc: s ⊆ ((closure_operator_from_SF SF empty).cl s) := by
+      exact extensive_from_SF_finset SF s
+    --以下、大した証明でもないのに長い。短くできないか。
+    rw [ne_eq,Finset.ext_iff] at sneq
+    simp_rw [Finset.subset_iff] at sinc
+    push_neg at sneq
+    simp_all only [implies_true, Subtype.forall, Subtype.exists, ne_eq, Finset.sdiff_eq_empty_iff_subset]
+    obtain ⟨w, h⟩ := sneq
+    obtain ⟨w_1, h⟩ := h
+    apply Aesop.BuiltinRules.not_intro
+    intro a
+    cases h with
+    | inl h_1 =>
+      obtain ⟨left, right⟩ := h_1
+      apply right
+      simp_all only
+      apply right
+      simp_all only
+      tauto
+    | inr h_2 =>
+      obtain ⟨left, right⟩ := h_2
+      simp_all only [not_true_eq_false]
 
+  match Finset.exists_mem_of_ne_empty ((closure_operator_from_SF SF empty).cl s \ s) this with
+  | ⟨root, hroot⟩ =>
+    have root_not_in_s : root ∉ s := by
+      simp_all only [Finset.mem_sdiff, not_false_eq_true]
+    use root
+    constructor
+    ·
+      simp_all only [implies_true, ne_eq, Finset.sdiff_eq_empty_iff_subset, Finset.mem_sdiff, not_false_eq_true,
+        and_true, Subtype.coe_eta, forall_const, true_and]
+      obtain ⟨rootval, roottype⟩ := root
+      simp_all only
+      apply And.intro
+      · exact hroot
+      · apply And.intro
+        ·
+          simp [allPairs]
+          apply Finset.mem_product.2
+          simp_all only [Finset.mem_powerset, and_true]
+          simp [Finset.image_subset_iff]
+        · dsimp [isCompatible]
+          simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, exists_const,
+          not_false_eq_true]
+          simp
+          intro t ht hts
+          let cml := closure_monotone_lemma SF empty s (t.subtype (fun x => x ∈ SF.ground))
+          --lemma closure_monotone_lemma {α : Type} [DecidableEq α] [Fintype α] (F : ClosureSystem α) (has_empty : F.sets ∅) [DecidablePred F.sets] (s : Finset F.ground) (t : Finset F.ground) :
+          --  F.sets (t.image Subtype.val) → s ⊆ t → (closure_operator_from_SF F has_empty).cl s ⊆ t :=
+          have arg1: SF.sets (Finset.image Subtype.val (Finset.subtype (fun x => x ∈ SF.ground) t)) := by
+            have : t ⊆ SF.ground := by
+              exact SF.inc_ground t ht
+            have :Finset.image Subtype.val (Finset.subtype (fun x => x ∈ SF.ground) t) = t := by
+              ext a : 1
+              simp_all only [Finset.mem_image, Finset.mem_subtype, Subtype.exists, exists_and_left, exists_prop,
+                exists_eq_right_right, and_iff_left_iff_imp]
+              intro a_1
+              exact this a_1
+            rw [this]
+            exact ht
+          have arg2: s ⊆ Finset.subtype (fun x => x ∈ SF.ground) t :=
+          by
+            intro x hx
+            simp_all only [Finset.mem_subtype]
+            obtain ⟨val, property⟩ := x
+            simp_all only
+            exact hts (Finset.mem_image_of_mem _ hx)
+          let result := cml arg1 arg2
+          --resultの内容。(closure_operator_from_SF SF empty).cl s ⊆ Finset.subtype (fun x => x ∈ SF.ground) t
+          --hrootは、⟨rootval, roottype⟩ ∈ closureOperator SF s
+          have :⟨rootval, roottype⟩ ∈ Finset.subtype (fun x => x ∈ SF.ground) t := by
+            exact Finset.mem_of_subset result hroot
+          simp_all only [Finset.mem_subtype]
 
-
-    rw [Finset.sdiff_eq_empty_iff_subset] at h
-    simp_all only [ne_eq]
-    by_contra h_con
-
+    · simp_all only [implies_true, ne_eq, Finset.sdiff_eq_empty_iff_subset, Finset.mem_sdiff, not_false_eq_true,
+      and_true, Finset.coe_mem]
 
 --根つきサーキットと集合族が戻ることを前提にした定理を使っては証明できないのかも。独自に証明する必要あるかも。
 --この定理の解決が次の大目標。
-theorem ClosureSystemTheorem_mpr (SF : ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)]:
-  ∀ s : Finset α, (filteredSetFamily_closed_under_intersection (rootedSetsFromSetFamily SF.toSetFamily)).sets s → SF.sets s :=
+theorem ClosureSystemTheorem_mpr (SF : ClosureSystem α) (empty: SF.has_empty) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)]:
+  ∀ s : Finset SF.ground, (filteredSetFamily_closed_under_intersection (rootedSetsFromSetFamily SF.toSetFamily)).sets (s.image Subtype.val) → SF.sets (s.image Subtype.val) :=
 by
   intro s hs
   dsimp [filteredSetFamily_closed_under_intersection] at hs
   dsimp [filteredFamily] at hs
-  have eqsets: ∀ (s : Finset α), (filteredSetFamily_closed_under_intersection (rootedSetsFromSetFamily SF.toSetFamily)).sets s ↔ (SF.sets s) :=
-  by
-    intro s
-    apply Iff.intro
-    · intro a
-      by_contra acontra
-      --独自に証明する必要あり。
-      --closure systemからrootedsetをどうやって定義したかに従う。rootedSets SFの定義を使う。
-      let rs := rootedSetsSF SF.toSetFamily
-      have : ∃ (p : ValidPair α), p ∈ rs ∧ p.stem ⊆ s ∧ p.root ∉ s := by
-        dsimp [rs]
-        dsimp [rootedSetsSF]
-        --useで証明するのではなく、allの否定として、あるになるはず。
-        sorry
-
-
-
-
-      --apply ClosureSystemTheorem SF
-      --exact a
-    · intro a
-      apply ClosureSystemTheorem SF
-      exact a
-  have eqground: (rootedSetsFromSetFamily SF.toSetFamily).ground = SF.ground :=
-  by
-    simp_all only [not_and, Decidable.not_not, Finset.mem_filter, Finset.mem_powerset]
-    obtain ⟨left, right⟩ := hs
-    rfl
-  --by_contra hscontra
-
-  have eq : filteredSetFamily_closed_under_intersection (rootedSetsFromSetFamily SF.toSetFamily) = SF := by
-    sorry --これが証明できないのでこの証明は無意味。定理よりも強い言明になっている。
-  have h := rootedcircuits_setfamily (rootedSetsFromSetFamily SF.toSetFamily) SF eq
-  specialize h s (SF.inc_ground s ((eqsets s).mp hs))
-  have h_subset : s ⊆ SF.ground := by
-    simp_all only [not_and, Decidable.not_not, Finset.mem_filter, Finset.mem_powerset, implies_true]
-  let rsr := rootedcircuits_setfamily (rootedSetsFromSetFamily SF.toSetFamily) SF eq s h_subset
-  simp_all only [not_and, Decidable.not_not, Finset.mem_filter, Finset.mem_powerset, true_and, implies_true, rsr]
-  rw [← eq]
-  simp_all only
-  rw [← eq]
-  simp_all only
-  rw [← eq]
-  simp_all only
-  rw [rootedSetsFromSetFamily] at eq
-  rw [← eqground] at *
-  simp_all only
-  rw [rootedSetsFromSetFamily] at rsr
-  rw [← eqground] at h_subset
-  simp_all only
-  rw [← eqground] at h_subset
-  simp_all only
-  obtain ⟨p, hp⟩ := rsr
-  simp_all only [forall_exists_index, and_imp]
-  contrapose! hs
-  simp_all only [not_false_eq_true, forall_const, implies_true]
-  obtain ⟨w, h⟩ := p
-  obtain ⟨left, right⟩ := h
-  obtain ⟨left_1, right⟩ := right
-  simp only [rootedcircuits_from_RS] at left left
-  simp_all only [Finset.mem_filter]
-  obtain ⟨left, right_1⟩ := left
-  simp only [rootedSetsFromSetFamily]
-  use w
-
-lemma closuresystem_rootedcircuits_eq (SF:ClosureSystem α) :
-  let RS := rootedSetsFromSetFamily SF.toSetFamily
-  filteredSetFamily_closed_under_intersection RS = SF :=
-by
-  let RS := rootedSetsFromSetFamily SF.toSetFamily
-  simp
-  --rw [filteredSetFamily_closed_under_intersection]
-  --rw [rootedSetsFromSetFamily]
-  cases SF
-  ext --closureに@extにつけた。
-  simp
-  rfl
-
-  apply Iff.intro
-  sorry --既存の定理を使って証明できそう。
-  sorry --既存の定理を使って証明できそう。
-
-lemma closuresystem_rootedcircuits (SF:ClosureSystem α) :
-  let RS := rootedSetsFromSetFamily SF.toSetFamily
-  ∀ (s : Finset α), s ⊆ SF.ground → (¬ SF.sets s ↔ ∃ (p : ValidPair α), p ∈ (rootedcircuits_from_RS RS).rootedsets ∧ p.stem ⊆ s ∧ p.root ∉ s) :=
-by
-  simp
-  let RS := rootedSetsFromSetFamily SF.toSetFamily
-  have eq: filteredSetFamily_closed_under_intersection RS = SF := by
-    dsimp [RS]
-    sorry --前の定理が確立されたら、この補題が成り立つ。というかこの補題よりも強い言明になる。
-  exact rootedcircuits_setfamily RS SF eq
+  simp_all only [not_and, Decidable.not_not, Finset.mem_filter, Finset.mem_powerset, Finset.mem_image, Subtype.exists,
+    exists_and_right, exists_eq_right]
+  obtain ⟨left, right⟩ := hs
+  contrapose right
+  push_neg
+  obtain ⟨root, hroot⟩ := ClosureSystemTheorem_mpr_lemma2 SF empty s right
+  have arg: root.val ∉ s.image Subtype.val := by
+    simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, Subtype.coe_eta, Finset.coe_mem,
+      exists_const, not_false_eq_true]
+  let v := ValidPair.mk (s.image Subtype.val) root arg
+  use v
+  constructor
+  ·
+    simp_all only [not_false_eq_true, forall_true_left, true_and, v]
+    obtain ⟨val, property⟩ := root
+    obtain ⟨left_1, right_1⟩ := hroot
+    simp_all only
+    exact right_1
+  · constructor
+    · simp_all only [not_false_eq_true, forall_true_left, true_and, subset_refl]
+    · intro x
+      simp_all only [not_false_eq_true, forall_true_left, true_and, Subtype.coe_eta]
+      simp_all only [Finset.coe_mem]
+      obtain ⟨val, property⟩ := root
+      obtain ⟨left_1, right_1⟩ := hroot
+      simp_all only
+      apply Aesop.BuiltinRules.not_intro
+      intro a
+      apply right
+      simp_all only
+      exact arg (Finset.mem_image_of_mem _ a)
 
 theorem rootedcircuits_makes_same_setfamily: ∀ (RS : RootedSets α), ∀ (s : Finset α),
   (filteredSetFamily_closed_under_intersection (rootedcircuits_from_RS RS).toRootedSets).sets s = (filteredSetFamily_closed_under_intersection RS).sets s :=
@@ -775,3 +789,79 @@ by
       · rw [rootedcircuits_from_RS] at a
         simp_all only [Finset.mem_filter]
       · simp_all only
+
+--ClosureSystemを出発点とした、根付きサーキットをとって、また集合族を考えると戻る定理。
+lemma closuresystem_rootedcircuits_eq (SF:ClosureSystem α)(empty: SF.has_empty) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)]:
+  let RS := rootedSetsFromSetFamily SF.toSetFamily
+  filteredSetFamily_closed_under_intersection RS = SF :=
+by
+  let RS := rootedSetsFromSetFamily SF.toSetFamily
+  simp
+  let tmp:= rootedcircuits_makes_same_setfamily RS
+  --sの範囲はsubtypeにすべきか？
+  have eqsets: ∀ (s : Finset α), s ⊆ SF.ground → ((filteredSetFamily_closed_under_intersection RS).sets s ↔ (SF.sets s)) :=
+  by
+    intro s hs
+    apply Iff.intro
+    · intro a
+      let result := ClosureSystemTheorem_mpr SF empty (s.subtype (λ x => x ∈ SF.ground))
+      have resultval: (filteredSetFamily_closed_under_intersection (rootedSetsFromSetFamily SF.toSetFamily)).sets s → SF.sets s :=
+      by
+        simp at result
+        intro a_1
+        simp_all only [RS]
+        have imp:(filteredSetFamily_closed_under_intersection (rootedSetsFromSetFamily SF.toSetFamily)).sets s → (filteredSetFamily_closed_under_intersection (rootedSetsFromSetFamily SF.toSetFamily)).sets (Finset.image Subtype.val (Finset.subtype (fun x => x ∈ SF.ground) s)) :=
+        by
+          intro a
+          simp_all only
+          convert a
+          ext a_1 : 1
+          simp_all only [Finset.mem_image, Finset.mem_subtype, Subtype.exists, exists_and_left, exists_prop,
+            exists_eq_right_right, and_iff_left_iff_imp]
+          intro a_2
+          exact hs a_2
+        have : Finset.image Subtype.val (Finset.subtype (fun x => x ∈ SF.ground) s) = s := by
+          ext a
+          simp only [Finset.mem_image, Finset.mem_subtype, Subtype.exists, exists_and_left, exists_prop, exists_eq_right_right, and_iff_left_iff_imp]
+          intro a_2
+          simp_all only [forall_const]
+          exact hs a_2
+        rw [←this]
+        exact result (imp a_1)
+
+      have :(filteredSetFamily_closed_under_intersection (rootedSetsFromSetFamily SF.toSetFamily)).sets (Finset.image Subtype.val (Finset.subtype (fun x => x ∈ SF.ground) s)) :=
+      by
+        simp_all only [forall_const, RS]
+        convert a
+        ext a_1 : 1
+        simp_all only [Finset.mem_image, Finset.mem_subtype, Subtype.exists, exists_and_left, exists_prop,
+          exists_eq_right_right, and_iff_left_iff_imp]
+        intro a_2
+        exact hs a_2
+
+      simp_all only [forall_const, RS]
+
+    · exact ClosureSystemTheorem SF s
+
+  let ground := SF.ground
+  let inc_ground := SF.inc_ground
+  let set := SF.sets
+
+  ext --closureに@extにつけた。extすることにより、各成分ごとに等しいことを示す。
+
+  simp_all only [RS]
+  rfl --ここはgroundが等しいことを示している。
+
+  rename_i s--sを復活させた。この辺りはかなり強引に証明している。やっていることがいまいちわからない。
+
+  apply Iff.intro
+  · intro a
+    have : s ⊆ ground := by
+      have : (filteredSetFamily_closed_under_intersection (rootedSetsFromSetFamily SF.toSetFamily)).sets s := by
+        simp_all only [RS]
+      exact (filteredSetFamily_closed_under_intersection (rootedSetsFromSetFamily SF.toSetFamily)).inc_ground s this
+    simp_all only [RS, ground, inc_ground]
+  · intro a
+    have : SF.sets s:= by
+      simp_all only [RS, ground, inc_ground]
+    simp_all only [RS, ground, inc_ground]
