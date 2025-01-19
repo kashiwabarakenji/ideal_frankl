@@ -12,7 +12,7 @@ package Ideal {
   ]
 }
 @[default_target]
-lean_lib «Ideal» where
+lean_lib «rooted» where
   --もともとの設定は以下で、src/Idealの下にファイルが置かれていた。
   --roots:= #[`Ideal]
   --srcDir := "src"
