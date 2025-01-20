@@ -3,6 +3,7 @@ import Mathlib.Data.Finset.Card
 import Mathlib.Data.Finset.Powerset
 import Mathlib.Data.Fintype.Basic
 import rooted.rootedcircuits
+import LeanCopilot
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 
@@ -77,3 +78,75 @@ by
   · intro a
     simp at a
     linarith
+
+omit [Fintype α] in
+lemma ssubset_lem (s t : Finset α) (v : α) (h1 : s ⊂ t) (h2 : t ⊆ s ∪ {v}) : t = s ∪ {v} :=
+by
+  -- 真部分集合の定義より、s ⊆ t かつ s ≠ t
+  have h3 : s ⊆ t := by
+    rw [Finset.ssubset_def] at h1
+    simp_all only
+  have h4 : s ≠ t := by
+    simp_all only [ne_eq]
+    apply Aesop.BuiltinRules.not_intro
+    intro a
+    subst a
+    simp_all only [Finset.subset_union_left, subset_refl]
+    rw [Finset.ssubset_def] at h1
+    simp_all only [subset_refl, not_true_eq_false, and_false]
+
+  -- v が t に含まれていることを示す
+  have hv_in_t : v ∈ t :=
+    by
+      by_contra hv_not_in_t
+      -- 仮定より t ⊆ s ∪ {v}
+      -- v ∉ t より t ⊆ s が成り立つ
+      have h_t_subset_s : t ⊆ s := by
+        rw [Finset.union_comm] at h2
+        rw [Finset.subset_iff]
+        rw [Finset.subset_iff] at h2
+        intro x hx
+        simp_all only [Finset.mem_union, Finset.mem_singleton, ne_eq]
+        obtain h | h := h2 hx
+        · subst h
+          simp_all only
+        · simp_all only
+      exact h4 (Finset.Subset.antisymm h3 h_t_subset_s)
+
+  -- s ∪ {v} ⊆ t を示す
+  have h_s_union_v_subset_t : s ∪ {v} ⊆ t :=
+    by
+      intros x hx
+      cases Finset.mem_union.1 hx with
+      | inl hs => exact h3 hs
+      | inr hv =>
+        have : v ∈ t := hv_in_t
+        simp_all only [ne_eq, Finset.mem_union, or_true, Finset.mem_singleton]
+
+  -- s ∪ {v} = t を示す
+  exact Finset.Subset.antisymm h2 h_s_union_v_subset_t
+
+lemma sv_lemma (SF: ClosureSystem α) [DecidablePred SF.sets] (s:Finset SF.ground)(v: SF.ground):
+ v ∉ s → ¬ SF.sets (s.image Subtype.val)  → SF.sets ((s.image Subtype.val) ∪ {v.val}) → (closure_operator_from_SF SF).cl s = s ∪ {v} :=
+by
+  intro h1 h2 h3
+  have h5: SF.sets (Finset.image Subtype.val (s ∪ {v})) := by
+      rw [Finset.image_union]
+      exact h3
+  have h1: (closure_operator_from_SF SF).cl (s ∪ {v}) = s ∪ {v} := by
+
+    let idem := idempotent_from_SF_finset_lem SF (s ∪ {v}) h5
+    obtain ⟨val, property⟩ := v
+    simp_all only
+    exact idem
+
+  --lemma closure_monotone_lemma {α : Type} [DecidableEq α] [Fintype α] (F : ClosureSystem α)[DecidablePred F.sets] (s : Finset F.ground) (t : Finset F.ground) :
+  --F.sets (t.image Subtype.val) → s ⊆ t → (closure_operator_from_SF F).cl s ⊆ t :=
+  let cml := closure_monotone_lemma SF s (s ∪ {v}) h5 (by simp)
+
+  have h6: (closure_operator_from_SF SF).cl s = s ∪ {v} := by
+    apply ssubset_lem s ((closure_operator_from_SF SF).cl s) v
+    · rw [Finset.ssubset_def]
+      constructor
+      exact (closure_operator_from_SF SF).extensive s
+      sorry--setssetsでないときは、等号ににならない定理を使う。
