@@ -118,7 +118,6 @@ by
 lemma finite_intersection_in_closureSystem
   {α : Type} [DecidableEq α] [Fintype α]
   (F : ClosureSystem α)
-  (has_empty : F.sets ∅)
   (M : Finset (Finset α))
   (M_nonempty : M.Nonempty)
   (all_inF : ∀ T ∈ M, F.sets T)
@@ -132,7 +131,7 @@ lemma finite_intersection_in_closureSystem
     -- finsetIntersection ∅ = F.ground なので F.sets (finsetIntersection ∅)
     dsimp [finsetIntersection]
     simp
-    exact has_empty
+    simp_all only [Finset.not_nonempty_empty]
 
     -- 2) induction step: s = insert T₀ M' と仮定
   case insert T₀ M' T₀_not_in_M' ih =>
@@ -211,7 +210,6 @@ lemma finite_intersection_in_closureSystem
 lemma closureOperator_image_in_sets
   {α : Type} [DecidableEq α] [Fintype α]
   (F : ClosureSystem α) [DecidablePred F.sets]
-  (has_empty : F.sets ∅)
   (s : Finset F.ground) :
   F.sets ((closureOperator F s).image Subtype.val) := by
 
@@ -240,7 +238,7 @@ lemma closureOperator_image_in_sets
   -- 3. 補題 finite_intersection_in_closureSystem を使って
   --    I = finsetIntersection M が F.sets であることを示す
   have I_inF : F.sets I := by
-    apply finite_intersection_in_closureSystem F has_empty M
+    apply finite_intersection_in_closureSystem F M
     · exact M_nonempty
     · -- M の要素は (F.sets t ∧ sval ⊆ t) を満たすから、F.sets t
       intro T hT
@@ -428,7 +426,7 @@ by
     exact ef hx
 
 lemma idempotent_from_SF_finset {α : Type} [DecidableEq α] [Fintype α]
-  (F : ClosureSystem α)[DecidablePred F.sets] (has_empty : F.sets ∅):
+  (F : ClosureSystem α)[DecidablePred F.sets] :
   ∀ s : Finset F.ground, closureOperator F s = closureOperator F (closureOperator F s) :=
 by
 
@@ -438,7 +436,7 @@ by
 
   -- (1) T.map val は F.sets に属する (closureOperator_image_in_sets の適用)
   have T_inF : F.sets (T.image Subtype.val) :=
-    closureOperator_image_in_sets F has_empty s
+    closureOperator_image_in_sets F s
 
   -- (2) T はすでに「F.sets (T.map val) をみたす Finset F.ground」なので、
   --     idempotent_from_SF_finset_lem を使えば closureOperator F T = T
@@ -458,12 +456,12 @@ by
 --idempotent_from_SF_finset_lemの逆方向。ただし、closureOperator_image_in_setsとほぼ同じ。
 lemma idempotent_from_SF_finset_lem_mpr
   {α : Type} [DecidableEq α] [Fintype α]
-  (F : ClosureSystem α) (hs: F.has_empty) [DecidablePred F.sets]
+  (F : ClosureSystem α) [DecidablePred F.sets]
   : ∀ s :Finset F.ground, closureOperator F s = s → F.sets (s.image Subtype.val) :=
   by
     intro s h
     rw [← h]
-    apply closureOperator_image_in_sets F hs  --なぜかexactではだめ。
+    apply closureOperator_image_in_sets F --なぜかexactではだめ。
 
 
 noncomputable def preclosure_operator_from_SF {α :Type} [DecidableEq α][Fintype α] (F: ClosureSystem α) [DecidablePred F.sets]: SetFamily.preclosure_operator F.ground :=
@@ -473,20 +471,20 @@ noncomputable def preclosure_operator_from_SF {α :Type} [DecidableEq α][Fintyp
   monotone := monotone_from_SF_finset F
 }
 
-noncomputable def closure_operator_from_SF {α :Type} [DecidableEq α][Fintype α] (F: ClosureSystem α)  (has_empty : F.sets ∅)[DecidablePred F.sets]: SetFamily.closure_operator F.ground :=
+noncomputable def closure_operator_from_SF {α :Type} [DecidableEq α][Fintype α] (F: ClosureSystem α) [DecidablePred F.sets]: SetFamily.closure_operator F.ground :=
 {
   cl := closureOperator F,
   extensive := extensive_from_SF_finset F,
   monotone := monotone_from_SF_finset F,
-  idempotent := idempotent_from_SF_finset F has_empty
+  idempotent := idempotent_from_SF_finset F
 }
 
 --monotoneとidempotentを組み合わせて言えるので、特に補題にするほどでもないかもしれないが。closureと根付きサーキットの関係の定理で利用。
-lemma closure_monotone_lemma {α : Type} [DecidableEq α] [Fintype α] (F : ClosureSystem α) (has_empty : F.sets ∅) [DecidablePred F.sets] (s : Finset F.ground) (t : Finset F.ground) :
-  F.sets (t.image Subtype.val) → s ⊆ t → (closure_operator_from_SF F has_empty).cl s ⊆ t :=
+lemma closure_monotone_lemma {α : Type} [DecidableEq α] [Fintype α] (F : ClosureSystem α)[DecidablePred F.sets] (s : Finset F.ground) (t : Finset F.ground) :
+  F.sets (t.image Subtype.val) → s ⊆ t → (closure_operator_from_SF F).cl s ⊆ t :=
 by
   intro h st
-  let cl := (closure_operator_from_SF F has_empty).cl
+  let cl := (closure_operator_from_SF F).cl
   have h_closure : cl s ⊆ cl t := monotone_from_SF_finset F s t st
   have : cl t = t :=
   by

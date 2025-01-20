@@ -500,8 +500,8 @@ by
   exact h
 
 --hyperedgeがないときの、根付きサーキットの形が与えられる。補題として使われる。
-lemma ClosureSystemTheorem_mpr_lemma (SF : ClosureSystem α) (empty: SF.has_empty) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)] :
- ∀ s : Finset { x // x ∈ SF.ground }, ¬ SF.sets (s.image Subtype.val) → ∀ root : { x // x ∈ SF.ground }, root ∈ (closure_operator_from_SF SF empty).cl s →
+lemma ClosureSystemTheorem_mpr_lemma (SF : ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)] :
+ ∀ s : Finset { x // x ∈ SF.ground }, ¬ SF.sets (s.image Subtype.val) → ∀ root : { x // x ∈ SF.ground }, root ∈ (closure_operator_from_SF SF).cl s →
  (asm:root.val ∉ s.image Subtype.val) → ValidPair.mk (s.image Subtype.val) root.val asm ∈ (rootedSetsSF SF.toSetFamily) :=
 by
   intro s notsf
@@ -529,9 +529,9 @@ by
     · simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, exists_const,
       not_false_eq_true]
     · intro t ht hts
-      let cml := closure_monotone_lemma SF empty s (t.subtype (fun x => x ∈ SF.ground))
-      --lemma closure_monotone_lemma {α : Type} [DecidableEq α] [Fintype α] (F : ClosureSystem α) (has_empty : F.sets ∅) [DecidablePred F.sets] (s : Finset F.ground) (t : Finset F.ground) :
-      --  F.sets (t.image Subtype.val) → s ⊆ t → (closure_operator_from_SF F has_empty).cl s ⊆ t :=
+      let cml := closure_monotone_lemma SF s (t.subtype (fun x => x ∈ SF.ground))
+      --lemma closure_monotone_lemma {α : Type} [DecidableEq α] [Fintype α] (F : ClosureSystem α)  [DecidablePred F.sets] (s : Finset F.ground) (t : Finset F.ground) :
+      --  F.sets (t.image Subtype.val) → s ⊆ t → (closure_operator_from_SF F ).cl s ⊆ t :=
       have arg1: SF.sets (Finset.image Subtype.val (Finset.subtype (fun x => x ∈ SF.ground) t)) := by
         have : t ⊆ SF.ground := by
           exact SF.inc_ground t ht
@@ -551,15 +551,15 @@ by
         simp_all only
         exact hts (Finset.mem_image_of_mem _ hx)
       let result := cml arg1 arg2
-      --resultの内容。(closure_operator_from_SF SF empty).cl s ⊆ Finset.subtype (fun x => x ∈ SF.ground) t
+      --resultの内容。(closure_operator_from_SF SF).cl s ⊆ Finset.subtype (fun x => x ∈ SF.ground) t
       --hrootは、⟨rootval, roottype⟩ ∈ closureOperator SF s
       have :⟨rootval, roottype⟩ ∈ Finset.subtype (fun x => x ∈ SF.ground) t := by
         exact Finset.mem_of_subset result hroot
       simp_all only [Finset.mem_subtype]
 
 --閉集合族とhyperedgeでない集合が与えられた時に、根つき集合が実際に存在する方の補題。
-lemma ClosureSystemTheorem_mpr_lemma2 (SF : ClosureSystem α) (empty: SF.has_empty) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)] :
- ∀ s : Finset { x // x ∈ SF.ground }, ¬ SF.sets (s.image Subtype.val) → ∃ root ∈ (closure_operator_from_SF SF empty).cl s,
+lemma ClosureSystemTheorem_mpr_lemma2 (SF : ClosureSystem α)  [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)] :
+ ∀ s : Finset { x // x ∈ SF.ground }, ¬ SF.sets (s.image Subtype.val) → ∃ root ∈ (closure_operator_from_SF SF).cl s,
 root.val ∉ s.image Subtype.val ∧ ((asm:root.val ∉ s.image Subtype.val ) →
 (ValidPair.mk (s.image Subtype.val) root.val asm) ∈ (rootedSetsSF SF.toSetFamily)) :=
 by
@@ -571,12 +571,12 @@ by
   simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, Subtype.coe_eta, Finset.coe_mem,
     exists_const, Finset.mem_filter]
 
-  have : ((closure_operator_from_SF SF empty).cl s) \ s ≠ ∅ := by
-    have sneq :((closure_operator_from_SF SF empty).cl s) ≠ s := by
+  have : ((closure_operator_from_SF SF).cl s) \ s ≠ ∅ := by
+    have sneq :((closure_operator_from_SF SF).cl s) ≠ s := by
       intro a
       contrapose! notsf
-      exact idempotent_from_SF_finset_lem_mpr SF empty s a
-    have sinc: s ⊆ ((closure_operator_from_SF SF empty).cl s) := by
+      exact idempotent_from_SF_finset_lem_mpr SF s a
+    have sinc: s ⊆ ((closure_operator_from_SF SF).cl s) := by
       exact extensive_from_SF_finset SF s
     --以下、大した証明でもないのに長い。短くできないか。
     rw [ne_eq,Finset.ext_iff] at sneq
@@ -599,7 +599,7 @@ by
       obtain ⟨left, right⟩ := h_2
       simp_all only [not_true_eq_false]
 
-  match Finset.exists_mem_of_ne_empty ((closure_operator_from_SF SF empty).cl s \ s) this with
+  match Finset.exists_mem_of_ne_empty ((closure_operator_from_SF SF).cl s \ s) this with
   | ⟨root, hroot⟩ =>
     have root_not_in_s : root ∉ s := by
       simp_all only [Finset.mem_sdiff, not_false_eq_true]
@@ -623,9 +623,9 @@ by
           not_false_eq_true]
           simp
           intro t ht hts
-          let cml := closure_monotone_lemma SF empty s (t.subtype (fun x => x ∈ SF.ground))
+          let cml := closure_monotone_lemma SF  s (t.subtype (fun x => x ∈ SF.ground))
           --lemma closure_monotone_lemma {α : Type} [DecidableEq α] [Fintype α] (F : ClosureSystem α) (has_empty : F.sets ∅) [DecidablePred F.sets] (s : Finset F.ground) (t : Finset F.ground) :
-          --  F.sets (t.image Subtype.val) → s ⊆ t → (closure_operator_from_SF F has_empty).cl s ⊆ t :=
+          --  F.sets (t.image Subtype.val) → s ⊆ t → (closure_operator_from_SF F).cl s ⊆ t :=
           have arg1: SF.sets (Finset.image Subtype.val (Finset.subtype (fun x => x ∈ SF.ground) t)) := by
             have : t ⊆ SF.ground := by
               exact SF.inc_ground t ht
@@ -645,7 +645,7 @@ by
             simp_all only
             exact hts (Finset.mem_image_of_mem _ hx)
           let result := cml arg1 arg2
-          --resultの内容。(closure_operator_from_SF SF empty).cl s ⊆ Finset.subtype (fun x => x ∈ SF.ground) t
+          --resultの内容。(closure_operator_from_SF SF).cl s ⊆ Finset.subtype (fun x => x ∈ SF.ground) t
           --hrootは、⟨rootval, roottype⟩ ∈ closureOperator SF s
           have :⟨rootval, roottype⟩ ∈ Finset.subtype (fun x => x ∈ SF.ground) t := by
             exact Finset.mem_of_subset result hroot
@@ -656,7 +656,7 @@ by
 
 --集合族が与えられた時に、そこから作った根つき集合から作った集合族の集合が、元の集合であることの定理。上の補題を使って証明した。
 --ClosureSystemTheoremと合わせて、必要十分条件になっている。
-theorem ClosureSystemTheorem_mpr (SF : ClosureSystem α) (empty: SF.has_empty) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)]:
+theorem ClosureSystemTheorem_mpr (SF : ClosureSystem α)[DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)]:
   ∀ s : Finset SF.ground, (rootedsetToClosureSystem (rootedSetsFromSetFamily SF.toSetFamily)).sets (s.image Subtype.val) → SF.sets (s.image Subtype.val) :=
 by
   intro s hs
@@ -667,7 +667,7 @@ by
   obtain ⟨left, right⟩ := hs
   contrapose right
   push_neg
-  obtain ⟨root, hroot⟩ := ClosureSystemTheorem_mpr_lemma2 SF empty s right
+  obtain ⟨root, hroot⟩ := ClosureSystemTheorem_mpr_lemma2 SF s right
   have arg: root.val ∉ s.image Subtype.val := by
     simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, Subtype.coe_eta, Finset.coe_mem,
       exists_const, not_false_eq_true]
@@ -751,7 +751,7 @@ by
 
 --ClosureSystemを出発点とした、根付きサーキットをとって、また集合族を考えると戻る定理。
 --これまで証明した言明を使って、構造体として等しいことを示している。
-lemma closuresystem_rootedcircuits_eq (SF:ClosureSystem α)(empty: SF.has_empty) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)]:
+lemma closuresystem_rootedcircuits_eq (SF:ClosureSystem α)[DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)]:
   let RS := rootedSetsFromSetFamily SF.toSetFamily
   rootedsetToClosureSystem RS = SF :=
 by
@@ -764,7 +764,7 @@ by
     intro s hs
     apply Iff.intro
     · intro a
-      let result := ClosureSystemTheorem_mpr SF empty (s.subtype (λ x => x ∈ SF.ground))
+      let result := ClosureSystemTheorem_mpr SF (s.subtype (λ x => x ∈ SF.ground))
       have resultval: (rootedsetToClosureSystem (rootedSetsFromSetFamily SF.toSetFamily)).sets s → SF.sets s :=
       by
         simp at result
