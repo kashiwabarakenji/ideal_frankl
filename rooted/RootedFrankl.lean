@@ -149,4 +149,31 @@ by
     · rw [Finset.ssubset_def]
       constructor
       exact (closure_operator_from_SF SF).extensive s
-      sorry--setssetsでないときは、等号ににならない定理を使う。
+      contrapose h2
+      simp at h2
+      have : (closure_operator_from_SF SF).cl s = s :=
+      by
+        have : s ⊆ (closure_operator_from_SF SF).cl s :=
+        by
+          exact (closure_operator_from_SF SF).extensive s
+        exact Finset.Subset.antisymm h2 this
+      exact not_not_intro (idempotent_from_SF_finset_lem_mpr SF s this)
+    · exact cml
+  simp_all only
+
+  lemma exists_rooted_set (SF: ClosureSystem α) [DecidablePred SF.sets] (s:Finset SF.ground)(v: SF.ground):
+  v ∉ s → ¬ SF.sets (s.image Subtype.val)  → SF.sets ((s.image Subtype.val) ∪ {v.val})→
+  ∃(p : (rootedSetsFromSetFamily SF.toSetFamily).rootedsets), p.val.root = v.val ∧ p.val.stem = s.image Subtype.val :=
+  by
+    intro h1 h2 h3
+    let svl := sv_lemma SF s v h1 h2 h3
+    set RS := rootedSetsFromSetFamily SF.toSetFamily with RS_def
+    have :rootedsetToClosureSystem RS = SF := by
+      sorry
+    have arg:Finset.image Subtype.val s ⊆ SF.ground := by
+      simp_all only [RS]
+      obtain ⟨val, property⟩ := v
+      simp [Finset.image_subset_iff]
+    let rcs := (rootedcircuits_setfamily RS SF this (s.image Subtype.val) arg).mp h2
+    obtain ⟨p, h4⟩ := rcs
+    search_proof

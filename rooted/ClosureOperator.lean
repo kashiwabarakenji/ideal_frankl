@@ -271,6 +271,7 @@ lemma closureOperator_image_in_sets
   simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, Finset.mem_map,
     Function.Embedding.coeFn_mk]
 
+--finsetIntersectionの基本的な命題。定義を展開するよりも、この補題を使った方が証明が簡単になる。
 lemma mem_finsetIntersection_iff_of_nonempty
   {α : Type} [DecidableEq α]
   {family : Finset (Finset α)} {x : α}

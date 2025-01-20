@@ -48,7 +48,7 @@ noncomputable def rootedSetsSF (SF : SetFamily α) [DecidableEq α] : Finset (Va
     )
   )
 
---根付き集合族の構造。台集合つき。
+--根付き集合族の構造。台集合つき。rootやstemはsubtypeではない。
 structure RootedSets (α : Type) [DecidableEq α] where
   ground : Finset α
   rootedsets : Finset (ValidPair α)
@@ -412,11 +412,12 @@ lemma rootedcircuits_minimality (RS : RootedSets α) (p₁:(ValidPair α)):
 
       simp_all only [F]
 
---閉集合族から根つきサーキットを与えるバージョン。
+--閉集合族から根つきサーキットを与えるバージョン。今は後ろにあるClosureSystemTheorem_mpr_lemma を使えないか。
+--rootedcircuitsでなく、根付き集合を考えた方がよくないか？そもそもrooted circuitsで成り立つのか。
 lemma rootedcircuits_setfamily (RS : RootedSets α) (SF:ClosureSystem α)
   --(eq:  ∀ (s : Finset α),(rootedsetToClosureSystem RS).sets s ↔ (SF.sets s)) :
  (eq:  rootedsetToClosureSystem RS = SF) :
-  ∀ (s : Finset α), s ⊆ SF.ground → (¬ SF.sets s ↔ ∃ (p : ValidPair α), p ∈ (rootedcircuits_from_RS RS).rootedsets ∧ p.stem ⊆ s ∧ p.root ∉ s) :=
+  ∀ (s : Finset α), s ⊆ SF.ground → (¬ SF.sets s ↔ ∃ (p : ValidPair α), p ∈ (rootedcircuits_from_RS RS).rootedsets ∧ p.stem ⊆ s ∧ p.root  ∈ (closureOperator SF (s.subtype (λ x => x ∈ SF.ground))).image Subtype.val ∧ p.root ∉ s) :=
 by
   have eqsets: ∀ (s : Finset α), (rootedsetToClosureSystem RS).sets s ↔ (SF.sets s) :=
   by
@@ -437,7 +438,7 @@ by
   simp_all only [not_and, Decidable.not_not, Finset.mem_filter, Finset.mem_powerset]
   apply Iff.intro
   · intro a
-    specialize eqsets s
+    --specialize eqsets s
     rw [←eqsets] at a
     push_neg at a
     let ahs := a hs
@@ -452,7 +453,7 @@ by
       subst eq
       simp_all only [true_and, forall_const, not_false_eq_true]
     ·
-      subst eq
+      --subst eq
       simp_all only [true_and, forall_const, not_false_eq_true, and_true]
       obtain ⟨left, right⟩ := hp
       obtain ⟨left_1, right_1⟩ := hq
@@ -462,9 +463,90 @@ by
       obtain ⟨left_4, right_2⟩ := h
       obtain ⟨left_5, right_1⟩ := right_1
       obtain ⟨left_6, right_2⟩ := right_2
-      intro q' hq'
-      apply left_2
-      exact left_5 hq'
+
+      · constructor
+        · intro q' hq'
+          apply left_2
+          exact left_5 hq'
+
+        ·
+          have :p.root ∈ SF.ground := by
+            convert (RS.inc_ground p left).2
+            subst eq
+            simp_all only
+          simp
+          rw [left_3] at this
+          use this
+          convert left_1
+          dsimp [RootedSets.rootedsets]
+
+          apply Iff.intro --pとqがあるが、qが極小のほう。
+          · intro a
+            simp_all only [Finset.mem_filter, Finset.mem_powerset]
+          · intro a --ここからがrootに関する部分。この仮定aは利用しているのか。
+            --sのclosureにはrootを含むことを言いたい。closureOperatorの定義は、intersectionを使っている。
+            --qは、RSのrootedsetsの例。
+            --eq:rootedsetToClosureSystem RS = SF
+            --sを含むものは、p.rootも含むので、sのclosureにはrootを含む。
+            dsimp [closureOperator]
+            --dsimp [finsetIntersection]
+            --p ∈ RS.rootedsets
+            --以下はpに関する命題だが、qに関することを示さなくていいのか。
+            have : p.stem ⊆ s → p.root ∉ s → ∀ t:Finset α, SF.sets t ∧ s ⊆ t → p.root ∈ t := by
+              intro h1 h2 t ht
+              specialize eqsets t
+              --subst eq
+              --simp_all only [not_false_eq_true]
+              obtain ⟨left_1, right_3⟩ := ht
+              apply (eqsets.mpr left_1).2
+              subst eq
+              simp_all only [not_false_eq_true, iff_true]
+              subst eq
+              simp_all only [not_false_eq_true, iff_true]
+              obtain ⟨left_2, right_4⟩ := eqsets
+              exact Set.Subset.trans h1 right_3
+            rw [←left_3] at right
+            let tlr := this left_2 right
+            let t:= (closure_operator_from_SF SF).cl (s.subtype (λ x => x ∈ SF.ground))
+            let tlrt := tlr (t.image Subtype.val)  --(Finset.subtype (fun x => x ∈ SF.ground) t)
+            --sを含むhyperedgeは、すべてrootを含むことがわかった。
+            --sを含むhyperedgeの共通部分もすべてrootを含む。
+            --共通部分の補題。すべてのtに含まれているvがあったら、共通部分にも含まれる。
+            --rw [Finset.subtype]
+            simp
+            rw [mem_finsetIntersection_iff_of_nonempty]
+            intro f hf
+            rw [Finset.mem_filter] at hf
+            let hf2 := hf.2.2
+            simp at hf2
+            have premis: SF.sets (Finset.image Subtype.val t) ∧ s ⊆ Finset.image Subtype.val t := by
+              constructor
+              · dsimp [t]
+                exact closureOperator_image_in_sets SF (Finset.subtype (fun x => x ∈ SF.ground) s)
+              · dsimp [t]
+                let ef := extensive_from_SF_finset SF (s.subtype (λ x => x ∈ SF.ground))
+                rw [Finset.subtype] at ef
+                rw [Finset.map_eq_image] at ef
+                rw [Finset.image_subset_iff] at ef
+                simp at ef
+                dsimp [closure_operator_from_SF]
+                rw [Finset.subset_iff]
+                intro x hx
+                let efx := ef x ⟨hx, hs hx⟩
+                rw [Finset.attach] at efx
+                simp at efx
+                let fm := Finset.mem_image_of_mem Subtype.val efx
+                convert fm
+                rw [Finset.subtype]
+                rw [Finset.map_eq_image]
+                congr
+
+            let tp := tlrt premis
+            rw [←left_3]
+            convert tp
+            dsimp [t]
+            search_proof
+
 
   · intro a
     obtain ⟨w, h⟩ := a
@@ -476,7 +558,9 @@ by
     --eqsetsの記述と、left_1 rightの記述が矛盾しているのでは。
     let eqsetss := (eqsets s).mpr a
     let eqsetss2 := eqsetss.2 w left left_1
-    contradiction
+    subst eq
+    simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, not_true_eq_false, and_false,
+      eqsetss]
 
 --Mathlibにないと思って証明したが、Finset.nonempty_iff_ne_emptyを使ってNonemptyを使えば良いとClaudeに教えてもらった。
 lemma Finset.exists_mem_of_ne_empty2 {α : Type} [DecidableEq α] (s : Finset α) (h : s ≠ ∅) :
