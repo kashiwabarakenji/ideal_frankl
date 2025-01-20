@@ -8,6 +8,7 @@ import Mathlib.Data.Multiset.Basic
 import Mathlib.Data.Finset.Prod
 import rooted.CommonDefinition
 import rooted.ClosureOperator
+import Mathlib.Tactic
 import LeanCopilot
 
 -- 有限集合の型
@@ -15,31 +16,34 @@ variable {α : Type} [Fintype α] [DecidableEq α]
 
 open Classical  --これでsetsのdecidablePredの問題が解決した。
 
--- ValidPair の定義: ステム A と根 a
+-- ValidPair の定義: ステム stem と根 root。Validは、根がステムに含まれていないことを示す。
+--個々の根つき集合は、ValidPairになる。根つき集合の族は、RootedSetsなどで表す。
 structure ValidPair (α : Type) where
   stem : Finset α
   root : α
   root_not_in_stem : root ∉ stem
 
+--Valid性を満たすとは限らないステムと根の組。allVaildPairsの定義に使う。
 noncomputable def allPairs (SF : SetFamily α) : Finset (Finset α × α) :=
   SF.ground.powerset.product SF.ground
 
+--compatibleは、集合族で排除されない根つき集合を表す。
 def isCompatible (SF : SetFamily α) (stem : Finset α) (root : α) : Prop :=
   root ∉ stem ∧ ∀ t, SF.sets t → (stem ⊆ t → root ∈ t)
 
---disjointの証明付きの構造。集合族から定義される根付きサーキット。
-noncomputable def allValidPairs (SF : SetFamily α) : Finset (Finset α × α) :=
+--disjointの証明付きの構造。集合族から定義される根付き集合。
+noncomputable def allCompatiblePairs (SF : SetFamily α) : Finset (Finset α × α) :=
   (allPairs SF).filter (λ (p : Finset α × α) =>
     isCompatible SF p.1 p.2
   )
 
---集合族から定義される根付きサーキット全体を与える関数。
+--集合族から定義される根付き集合全体を与える関数。
 noncomputable def rootedSetsSF (SF : SetFamily α) [DecidableEq α] : Finset (ValidPair α) :=
-  (allValidPairs SF).attach.image (λ ⟨p, h_p_in⟩ =>
-    -- p : (Finset α × α)   -- h_p_in : p ∈ allValidPairs SF
+  (allCompatiblePairs SF).attach.image (λ ⟨p, h_p_in⟩ =>
+    -- p : (Finset α × α)   -- h_p_in : p ∈ allCompatiblePairs SF
     ValidPair.mk p.1 p.2 (by
       -- root_not_in_stem の証明
-      simp only [allValidPairs, allPairs, Finset.mem_filter] at h_p_in
+      simp only [allCompatiblePairs, allPairs, Finset.mem_filter] at h_p_in
       exact h_p_in.2.1
     )
   )
@@ -62,18 +66,21 @@ noncomputable def filteredSetFamily (RS : RootedSets α):
   SetFamily α :=
 {
   ground := RS.ground
+
   sets := fun s => s ∈ filteredFamily RS
+
   inc_ground :=
   by
     intro s a
     rw [filteredFamily] at a
-    simp_all only [not_and, Decidable.not_not, Finset.mem_filter, Finset.mem_powerset]
+    simp_all only [Finset.mem_filter, Finset.mem_powerset]--
+
   nonempty_ground := by
     obtain ⟨x, hx⟩ := RS
     simp_all only
 }
 
--- RootedCircuits の構造の定義。RootedSetsから極少性を満たしたもの。
+-- RootedCircuits の構造の定義。RootedSetsから極小性を満たしたもの。
 structure RootedCircuits (α : Type) [DecidableEq α] extends RootedSets α where
   minimality :
     ∀ p₁ p₂:(ValidPair α), p₁ ∈ rootedsets → p₂ ∈ rootedsets →
@@ -83,7 +90,9 @@ structure RootedCircuits (α : Type) [DecidableEq α] extends RootedSets α wher
 def rootedcircuits_from_RS (RS : RootedSets α) : RootedCircuits α :=
 {
   ground := RS.ground
+
   rootedsets:= RS.rootedsets.filter (λ p => ∀ q ∈ RS.rootedsets, q.root = p.root → ¬(q.stem ⊂ p.stem))
+
   inc_ground :=
   by
     intro p a
@@ -103,7 +112,8 @@ def rootedcircuits_from_RS (RS : RootedSets α) : RootedCircuits α :=
     obtain ⟨hp₂_in_RS, hp₂_min⟩ := hp₂
     -- `p₁.stem ⊆ p₂.stem` を仮定している
     by_contra hneq
-    -- 仮定により `p₁.stem ⊂ p₂.stem` を導出 なぜか、定理が見つからない。
+
+    /- 対応するMathlibの定理が見つからなかったけど、ssubset_iff_subset_neが見つかった。
     have {s t : Finset α} :  s ⊆ t → s ≠ t → s ⊂ t :=
     by
       intro st snt
@@ -113,10 +123,10 @@ def rootedcircuits_from_RS (RS : RootedSets α) : RootedCircuits α :=
       by_contra hcontra
       let tmp := Finset.Subset.antisymm st hcontra
       contradiction
-
+    -/
     have hproper : p₁.stem ⊂ p₂.stem :=
     by
-      exact this hsubset hneq
+      exact ssubset_iff_subset_ne.mpr ⟨hsubset, hneq⟩
 
     simp_all only [ne_eq]
 
@@ -149,15 +159,16 @@ by
   specialize hB₂cond p hp
   by_contra hContr
   simp only [Finset.subset_inter_iff, not_and, not_not] at hContr
-  simp_all only [Finset.mem_powerset, true_and, Decidable.not_not, Finset.mem_inter, and_self, not_true_eq_false,
-    and_false]
+  simp_all only [true_and, Decidable.not_not, Finset.mem_inter,  not_true_eq_false]--
 
 --RootedSetsが与えられた時に、閉集合族を与える関数
-def filteredSetFamily_closed_under_intersection (RS : RootedSets α) :
+def rootedsetToClosureSystem (RS : RootedSets α) :
   ClosureSystem α :=
 {
   ground := RS.ground
+
   intersection_closed := filteredFamily_closed_under_intersection RS,
+
   has_ground := by
     simp only [filteredFamily, Finset.mem_filter]
     constructor
@@ -179,12 +190,6 @@ def filteredSetFamily_closed_under_intersection (RS : RootedSets α) :
   nonempty_ground := RS.nonempty_ground
 }
 
-/- いまのところ使ってないので、けしてよいかも。
-def Finset.apply_function_to_subtype {α β : Type*} [DecidableEq β] {p : α → Prop}
-    (s : Finset {x // p x}) (f : α → β) : Finset β :=
-  s.image (λ x => f x.val)
--/
-
 -- SetFamily から RootedSets を構築する関数 noncomputableはつけないとエラー。
 noncomputable def rootedSetsFromSetFamily (SF : SetFamily α) [DecidableEq α] [DecidablePred SF.sets][Fintype SF.ground] : RootedSets α :=
   {
@@ -192,65 +197,10 @@ noncomputable def rootedSetsFromSetFamily (SF : SetFamily α) [DecidableEq α] [
 
     rootedsets := rootedSetsSF SF
 
-   /- 以下は、苦労して作った証明が通っているが、o1に証明を簡略化してもらって外部に出したので消してもよい。
-    rootedsets := by
-
-    -- Step 1: ground のすべての部分集合 (powerset) を列挙
-      let all_stems := SF.ground.powerset
-
-      -- Step 2: 各 stem に対し、有効な root をフィルタ
-      --   条件: root ∉ stem ∧ ∀ s, SF.sets s → (s ⊆ stem → root ∈ s)
-
-      let filter_roots_for_stem := λ (stem : Finset α) =>
-        SF.ground.filter (λ root =>
-          root ∉ stem ∧ ∀ s, SF.sets s → (s ⊆ stem → root ∈ s)
-        )
-      -- Step 3: stem と root を組み合わせて 組みを作る。
-      let make_pairs := λ stem =>
-        (filter_roots_for_stem stem).image (fun r => (stem, r))
-
-      let allValidPairs :=
-        all_stems.attach.biUnion (λ ⟨stem, _⟩ =>
-          let pairs := make_pairs stem
-          if pairs.Nonempty then pairs else ∅
-        )
-
-      have h_proof: ∀ (root:α), ∀ (stem:Finset α), (stem,root) ∈ allValidPairs → root ∉ stem :=
-      by
-        intro root stem a
-        simp_all [allValidPairs, all_stems, make_pairs, filter_roots_for_stem]
-        obtain ⟨w, h⟩ := a
-        obtain ⟨w_1, h⟩ := h
-        apply Aesop.BuiltinRules.not_intro
-        intro a
-        split at h
-        next h_1 =>
-          simp_all only [Finset.mem_image, Finset.mem_filter, Prod.mk.injEq, exists_eq_right_right]
-          simp_all only
-          obtain ⟨left, right⟩ := h
-          obtain ⟨left, right_1⟩ := left
-          obtain ⟨left_1, right_1⟩ := right_1
-          subst right
-          simp_all only [not_true_eq_false]
-        next h_1 => simp_all only [Finset.not_nonempty_iff_eq_empty, Finset.not_mem_empty]
-
-      -- allValidPairs から ValidPair を構築。attachを利用。
-      let validPairsProof : Finset (ValidPair α) :=
-        allValidPairs.attach.image (λ vp =>
-          ValidPair.mk vp.val.1 vp.val.2 (by
-            have : ⟨vp.val.1, vp.val.2⟩ ∈ allValidPairs := by
-              exact vp.property
-            exact h_proof vp.val.2 vp.val.1 this
-          )
-        )
-      -- 最後に Finset (ValidPair α) を返す
-      exact validPairsProof,
-    -/
-
     inc_ground := by
       intro p pa
       dsimp [rootedSetsSF] at pa
-      dsimp [allValidPairs] at pa
+      dsimp [allCompatiblePairs] at pa
       simp_all --必要
       obtain ⟨w, h⟩ := pa
       obtain ⟨w_1, h⟩ := h
@@ -279,7 +229,7 @@ by
   intro s a a_1 a_2
   dsimp [rootedSetsFromSetFamily] at a_1
   dsimp [rootedSetsSF] at a_1
-  dsimp [allValidPairs] at a_1
+  dsimp [allCompatiblePairs] at a_1
   rw [Finset.mem_image] at a_1
   obtain ⟨w, h⟩ := a_1
   obtain ⟨val, property⟩ := w
@@ -308,12 +258,12 @@ by
 
   apply pro2 s a pro3 a_2
 
---逆方向を示していない。
+--逆方向の言明は、ClosureSystemTheorem_mprで証明済みなので、実際には必要十分条件。
 theorem ClosureSystemTheorem (SF : ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)]:
-  ∀ s : Finset α, SF.sets s → (filteredSetFamily_closed_under_intersection (rootedSetsFromSetFamily SF.toSetFamily)).sets s :=
+  ∀ s : Finset α, SF.sets s → (rootedsetToClosureSystem (rootedSetsFromSetFamily SF.toSetFamily)).sets s :=
   by
     intro s hs
-    dsimp [filteredSetFamily_closed_under_intersection, rootedSetsFromSetFamily]
+    dsimp [rootedsetToClosureSystem, rootedSetsFromSetFamily]
     dsimp [filteredFamily]
     simp_all
 
@@ -328,13 +278,13 @@ theorem ClosureSystemTheorem (SF : ClosureSystem α) [DecidablePred SF.sets] [�
 
     · dsimp [rootedSetsFromSetFamily]
       dsimp [rootedSetsSF]
-      dsimp [allValidPairs]
+      dsimp [allCompatiblePairs]
       intro p hp
       apply ClosureSystemLemma SF
-      exact hs --なぜか上にもってこれない。
-      exact hp
+      · exact hs --なぜか上にもってこれない。
+      · exact hp
 
---根つき集合が与えられたら、同じ根を持つものの中でステムが包含関係で極小なものが存在する。
+--根つき集合が与えられたら、同じ根を持つものの中でステムが包含関係で極小なものが存在する。補題として何回か利用している。
 omit [Fintype α] in
 lemma rootedcircuits_minimality (RS : RootedSets α) (p₁:(ValidPair α)):
   p₁ ∈ RS.rootedsets → ∃ p₂ ∈ RS.rootedsets , p₁.root = p₂.root ∧   p₂.stem ⊆ p₁.stem  ∧
@@ -396,7 +346,7 @@ lemma rootedcircuits_minimality (RS : RootedSets α) (p₁:(ValidPair α)):
     ) }
   --ht_minimal : ∀ x ∈ Fs, ¬x < t これは包含関係。後ろで使っている。
   use v --ここでは極小なstemのものを使っている。
-  simp_all only [Finset.mem_filter, Finset.mem_powerset, Finset.lt_eq_subset, and_imp, true_and, Fs, v]
+  simp_all only [Finset.mem_filter, Finset.lt_eq_subset, and_imp, true_and, Fs]--
   apply And.intro
   · dsimp [RootedSets.rootedsets]
     simp_all only [Finset.mem_filter, Finset.mem_powerset, and_imp, forall_exists_index, F]
@@ -460,16 +410,15 @@ lemma rootedcircuits_minimality (RS : RootedSets α) (p₁:(ValidPair α)):
             exact q.root_not_in_stem
           simp_all only [Finset.disjoint_singleton_right, not_false_eq_true]--
 
-      simp_all only [ and_imp, forall_exists_index, forall_const,
-        not_false_eq_true, F]
+      simp_all only [F]
 
---根つきサーキットを与えるバージョン。
+--閉集合族から根つきサーキットを与えるバージョン。
 lemma rootedcircuits_setfamily (RS : RootedSets α) (SF:ClosureSystem α)
-  --(eq:  ∀ (s : Finset α),(filteredSetFamily_closed_under_intersection RS).sets s ↔ (SF.sets s)) :
- (eq:  filteredSetFamily_closed_under_intersection RS = SF) :
+  --(eq:  ∀ (s : Finset α),(rootedsetToClosureSystem RS).sets s ↔ (SF.sets s)) :
+ (eq:  rootedsetToClosureSystem RS = SF) :
   ∀ (s : Finset α), s ⊆ SF.ground → (¬ SF.sets s ↔ ∃ (p : ValidPair α), p ∈ (rootedcircuits_from_RS RS).rootedsets ∧ p.stem ⊆ s ∧ p.root ∉ s) :=
 by
-  have eqsets: ∀ (s : Finset α), (filteredSetFamily_closed_under_intersection RS).sets s ↔ (SF.sets s) :=
+  have eqsets: ∀ (s : Finset α), (rootedsetToClosureSystem RS).sets s ↔ (SF.sets s) :=
   by
     intro s
     subst eq
@@ -482,7 +431,7 @@ by
     rfl
   intro s
   intro hs
-  dsimp [filteredSetFamily_closed_under_intersection] at eqsets
+  dsimp [rootedsetToClosureSystem] at eqsets
   dsimp [filteredFamily] at eqsets
   dsimp [rootedcircuits_from_RS]
   simp_all only [not_and, Decidable.not_not, Finset.mem_filter, Finset.mem_powerset]
@@ -529,7 +478,8 @@ by
     let eqsetss2 := eqsetss.2 w left left_1
     contradiction
 
-lemma Finset.exists_mem_of_ne_empty {α : Type} [DecidableEq α] (s : Finset α) (h : s ≠ ∅) :
+--Mathlibにないと思って証明したが、Finset.nonempty_iff_ne_emptyを使ってNonemptyを使えば良いとClaudeに教えてもらった。
+lemma Finset.exists_mem_of_ne_empty2 {α : Type} [DecidableEq α] (s : Finset α) (h : s ≠ ∅) :
   ∃ x, x ∈ s :=
 by
   -- Finset の内部構造を展開
@@ -542,7 +492,14 @@ by
   ext a : 1
   simp_all only [Finset.mem_mk, Finset.not_mem_empty]
 
---hyperedgeがないときの、根付きサーキットの形が与えられる。
+--結果的には、これで良かった。Nonemptyというのは、要素が存在するのと同じだった。
+lemma Finset.exists_mem_of_ne_empty {α : Type} [DecidableEq α] (s : Finset α) (h : s ≠ ∅) :
+  ∃ x, x ∈ s :=
+by
+  rw [←Finset.nonempty_iff_ne_empty] at h
+  exact h
+
+--hyperedgeがないときの、根付きサーキットの形が与えられる。補題として使われる。
 lemma ClosureSystemTheorem_mpr_lemma (SF : ClosureSystem α) (empty: SF.has_empty) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)] :
  ∀ s : Finset { x // x ∈ SF.ground }, ¬ SF.sets (s.image Subtype.val) → ∀ root : { x // x ∈ SF.ground }, root ∈ (closure_operator_from_SF SF empty).cl s →
  (asm:root.val ∉ s.image Subtype.val) → ValidPair.mk (s.image Subtype.val) root.val asm ∈ (rootedSetsSF SF.toSetFamily) :=
@@ -552,9 +509,9 @@ by
   dsimp [closure_operator_from_SF] at hroot
   dsimp [rootedSetsSF]
   simp
-  dsimp [allValidPairs]
+  dsimp [allCompatiblePairs]
   simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, Subtype.coe_eta, Finset.coe_mem,
-    exists_const, Finset.mem_filter]
+     exists_const, Finset.mem_filter]
   obtain ⟨rootval, roottype⟩ := root
   simp_all only
   apply And.intro
@@ -600,6 +557,7 @@ by
         exact Finset.mem_of_subset result hroot
       simp_all only [Finset.mem_subtype]
 
+--閉集合族とhyperedgeでない集合が与えられた時に、根つき集合が実際に存在する方の補題。
 lemma ClosureSystemTheorem_mpr_lemma2 (SF : ClosureSystem α) (empty: SF.has_empty) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)] :
  ∀ s : Finset { x // x ∈ SF.ground }, ¬ SF.sets (s.image Subtype.val) → ∃ root ∈ (closure_operator_from_SF SF empty).cl s,
 root.val ∉ s.image Subtype.val ∧ ((asm:root.val ∉ s.image Subtype.val ) →
@@ -609,7 +567,7 @@ by
   dsimp [closure_operator_from_SF]
   dsimp [rootedSetsSF]
   simp
-  dsimp [allValidPairs]
+  dsimp [allCompatiblePairs]
   simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, Subtype.coe_eta, Finset.coe_mem,
     exists_const, Finset.mem_filter]
 
@@ -696,13 +654,13 @@ by
     · simp_all only [implies_true, ne_eq, Finset.sdiff_eq_empty_iff_subset, Finset.mem_sdiff, not_false_eq_true,
       and_true, Finset.coe_mem]
 
---根つきサーキットと集合族が戻ることを前提にした定理を使っては証明できないのかも。独自に証明する必要あるかも。
---この定理の解決が次の大目標。
+--集合族が与えられた時に、そこから作った根つき集合から作った集合族の集合が、元の集合であることの定理。上の補題を使って証明した。
+--ClosureSystemTheoremと合わせて、必要十分条件になっている。
 theorem ClosureSystemTheorem_mpr (SF : ClosureSystem α) (empty: SF.has_empty) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)]:
-  ∀ s : Finset SF.ground, (filteredSetFamily_closed_under_intersection (rootedSetsFromSetFamily SF.toSetFamily)).sets (s.image Subtype.val) → SF.sets (s.image Subtype.val) :=
+  ∀ s : Finset SF.ground, (rootedsetToClosureSystem (rootedSetsFromSetFamily SF.toSetFamily)).sets (s.image Subtype.val) → SF.sets (s.image Subtype.val) :=
 by
   intro s hs
-  dsimp [filteredSetFamily_closed_under_intersection] at hs
+  dsimp [rootedsetToClosureSystem] at hs
   dsimp [filteredFamily] at hs
   simp_all only [not_and, Decidable.not_not, Finset.mem_filter, Finset.mem_powerset, Finset.mem_image, Subtype.exists,
     exists_and_right, exists_eq_right]
@@ -736,19 +694,20 @@ by
       simp_all only
       exact arg (Finset.mem_image_of_mem _ a)
 
+--rootedcircuitsを考えても、根つき集合族を考えても、集合族が同じであること。
 theorem rootedcircuits_makes_same_setfamily: ∀ (RS : RootedSets α), ∀ (s : Finset α),
-  (filteredSetFamily_closed_under_intersection (rootedcircuits_from_RS RS).toRootedSets).sets s = (filteredSetFamily_closed_under_intersection RS).sets s :=
+  (rootedsetToClosureSystem (rootedcircuits_from_RS RS).toRootedSets).sets s = (rootedsetToClosureSystem RS).sets s :=
 by
   intro RS s
   simp_all
   apply Iff.intro
   · intro h
-    dsimp [filteredSetFamily_closed_under_intersection] at h
+    dsimp [rootedsetToClosureSystem] at h
     dsimp [filteredFamily] at h
     simp_all
     dsimp [rootedcircuits_from_RS] at h
     by_contra hcontra --ここで背理法。sを排除するrooted circuitが存在することをいう。
-    dsimp [filteredSetFamily_closed_under_intersection] at hcontra
+    dsimp [rootedsetToClosureSystem] at hcontra
     dsimp [filteredFamily] at hcontra
     have : ∃ rs ∈ RS.rootedsets , rs.stem ⊆ s ∧ rs.root ∉ s := by
       simp_all
@@ -775,10 +734,10 @@ by
     contradiction
 
   · intro h
-    dsimp [filteredSetFamily_closed_under_intersection] at h
+    dsimp [rootedsetToClosureSystem] at h
     dsimp [filteredFamily] at h
     --simp_all
-    dsimp [filteredSetFamily_closed_under_intersection]
+    dsimp [rootedsetToClosureSystem]
     dsimp [filteredFamily]
     simp_all only [not_and, Decidable.not_not, Finset.mem_filter, Finset.mem_powerset]
     obtain ⟨left, right⟩ := h
@@ -791,26 +750,27 @@ by
       · simp_all only
 
 --ClosureSystemを出発点とした、根付きサーキットをとって、また集合族を考えると戻る定理。
+--これまで証明した言明を使って、構造体として等しいことを示している。
 lemma closuresystem_rootedcircuits_eq (SF:ClosureSystem α)(empty: SF.has_empty) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)]:
   let RS := rootedSetsFromSetFamily SF.toSetFamily
-  filteredSetFamily_closed_under_intersection RS = SF :=
+  rootedsetToClosureSystem RS = SF :=
 by
   let RS := rootedSetsFromSetFamily SF.toSetFamily
   simp
   let tmp:= rootedcircuits_makes_same_setfamily RS
   --sの範囲はsubtypeにすべきか？
-  have eqsets: ∀ (s : Finset α), s ⊆ SF.ground → ((filteredSetFamily_closed_under_intersection RS).sets s ↔ (SF.sets s)) :=
+  have eqsets: ∀ (s : Finset α), s ⊆ SF.ground → ((rootedsetToClosureSystem RS).sets s ↔ (SF.sets s)) :=
   by
     intro s hs
     apply Iff.intro
     · intro a
       let result := ClosureSystemTheorem_mpr SF empty (s.subtype (λ x => x ∈ SF.ground))
-      have resultval: (filteredSetFamily_closed_under_intersection (rootedSetsFromSetFamily SF.toSetFamily)).sets s → SF.sets s :=
+      have resultval: (rootedsetToClosureSystem (rootedSetsFromSetFamily SF.toSetFamily)).sets s → SF.sets s :=
       by
         simp at result
         intro a_1
         simp_all only [RS]
-        have imp:(filteredSetFamily_closed_under_intersection (rootedSetsFromSetFamily SF.toSetFamily)).sets s → (filteredSetFamily_closed_under_intersection (rootedSetsFromSetFamily SF.toSetFamily)).sets (Finset.image Subtype.val (Finset.subtype (fun x => x ∈ SF.ground) s)) :=
+        have imp:(rootedsetToClosureSystem (rootedSetsFromSetFamily SF.toSetFamily)).sets s → (rootedsetToClosureSystem (rootedSetsFromSetFamily SF.toSetFamily)).sets (Finset.image Subtype.val (Finset.subtype (fun x => x ∈ SF.ground) s)) :=
         by
           intro a
           simp_all only
@@ -829,7 +789,7 @@ by
         rw [←this]
         exact result (imp a_1)
 
-      have :(filteredSetFamily_closed_under_intersection (rootedSetsFromSetFamily SF.toSetFamily)).sets (Finset.image Subtype.val (Finset.subtype (fun x => x ∈ SF.ground) s)) :=
+      have :(rootedsetToClosureSystem (rootedSetsFromSetFamily SF.toSetFamily)).sets (Finset.image Subtype.val (Finset.subtype (fun x => x ∈ SF.ground) s)) :=
       by
         simp_all only [forall_const, RS]
         convert a
@@ -857,9 +817,9 @@ by
   apply Iff.intro
   · intro a
     have : s ⊆ ground := by
-      have : (filteredSetFamily_closed_under_intersection (rootedSetsFromSetFamily SF.toSetFamily)).sets s := by
+      have : (rootedsetToClosureSystem (rootedSetsFromSetFamily SF.toSetFamily)).sets s := by
         simp_all only [RS]
-      exact (filteredSetFamily_closed_under_intersection (rootedSetsFromSetFamily SF.toSetFamily)).inc_ground s this
+      exact (rootedsetToClosureSystem (rootedSetsFromSetFamily SF.toSetFamily)).inc_ground s this
     simp_all only [RS, ground, inc_ground]
   · intro a
     have : SF.sets s:= by
