@@ -1,5 +1,9 @@
 import Mathlib.Data.Finset.Basic
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Finset.Powerset
 import Mathlib.Data.Fintype.Basic
+
+variable {α : Type} [Fintype α] [DecidableEq α]
 
 structure SetFamily (α : Type) where --[DecidableEq α]  where DecidableEqをつけると、別のところで、synthesized type classエラー
   (ground : Finset α)
@@ -10,6 +14,15 @@ structure SetFamily (α : Type) where --[DecidableEq α]  where DecidableEqを�
   --[fintype_ground : Fintype ground]
   --instance (SF : SetFamily α) : DecidablePred SF.sets :=
   --  classical.dec_pred _
+
+noncomputable def SetFamily.number_of_hyperedges  (F : SetFamily α) [DecidablePred F.sets]: Int :=
+  Int.ofNat (Finset.card (Finset.filter (λ s => F.sets s ) (F.ground.powerset)))
+
+noncomputable def SetFamily.degree (F : SetFamily α)[DecidablePred F.sets]: α → Int := λ v => Int.ofNat (Finset.filter (λ s => F.sets s ∧ v ∈ s) F.ground.powerset).card
+
+
+def is_rare (F : SetFamily α) (v : α)  [DecidablePred F.sets]  : Prop :=
+  2 * F.degree v - F.number_of_hyperedges <= 0
 
 --ClosureSystemの定義から空集合を分離した。
 @[ext]
