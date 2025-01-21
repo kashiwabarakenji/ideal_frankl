@@ -417,7 +417,8 @@ lemma rootedcircuits_minimality (RS : RootedSets α) (p₁:(ValidPair α)):
 lemma rootedcircuits_setfamily (RS : RootedSets α) (SF:ClosureSystem α)
   --(eq:  ∀ (s : Finset α),(rootedsetToClosureSystem RS).sets s ↔ (SF.sets s)) :
  (eq:  rootedsetToClosureSystem RS = SF) :
-  ∀ (s : Finset α), s ⊆ SF.ground → (¬ SF.sets s ↔ ∃ (p : ValidPair α), p ∈ (rootedcircuits_from_RS RS).rootedsets ∧ p.stem ⊆ s ∧ p.root  ∈ (closureOperator SF (s.subtype (λ x => x ∈ SF.ground))).image Subtype.val ∧ p.root ∉ s) :=
+  ∀ (s : Finset α), s ⊆ SF.ground → (¬ SF.sets s ↔ ∃ (p : ValidPair α), p ∈ RS.rootedsets ∧ p.stem = s ∧ p.root  ∈ (closureOperator SF (s.subtype (λ x => x ∈ SF.ground))).image Subtype.val ∧ p.root ∉ s) :=
+   --∀ (s : Finset α), s ⊆ SF.ground → (¬ SF.sets s ↔ ∃ (p : ValidPair α), p ∈ (rootedcircuits_from_RS RS).rootedsets ∧ p.stem ⊆ s ∧ p.root  ∈ (closureOperator SF (s.subtype (λ x => x ∈ SF.ground))).image Subtype.val ∧ p.root ∉ s) :=
 by
   have eqsets: ∀ (s : Finset α), (rootedsetToClosureSystem RS).sets s ↔ (SF.sets s) :=
   by
@@ -434,7 +435,6 @@ by
   intro hs
   dsimp [rootedsetToClosureSystem] at eqsets
   dsimp [filteredFamily] at eqsets
-  dsimp [rootedcircuits_from_RS]
   simp_all only [not_and, Decidable.not_not, Finset.mem_filter, Finset.mem_powerset]
   apply Iff.intro
   · intro a
@@ -443,32 +443,68 @@ by
     push_neg at a
     let ahs := a hs
     obtain ⟨p, hp⟩ := ahs
-    obtain ⟨q, hq⟩ := rootedcircuits_minimality RS p hp.1
-    use q  --極小な要素を使う。
+    --obtain ⟨q, hq⟩ := rootedcircuits_minimality RS p hp.1
+    --use q  --極小な要素を使う。
+    use p
     constructor
-    constructor
-    · exact hq.1
-    · intro r hr
-      intro pr
-      subst eq
-      simp_all only [true_and, forall_const, not_false_eq_true]
-    ·
-      --subst eq
-      simp_all only [true_and, forall_const, not_false_eq_true, and_true]
-      obtain ⟨left, right⟩ := hp
-      obtain ⟨left_1, right_1⟩ := hq
-      obtain ⟨w, h⟩ := a
-      obtain ⟨left_2, right⟩ := right
-      obtain ⟨left_3, right_1⟩ := right_1
-      obtain ⟨left_4, right_2⟩ := h
-      obtain ⟨left_5, right_1⟩ := right_1
-      obtain ⟨left_6, right_2⟩ := right_2
-
+    · exact hp.1
+    · constructor
+      swap
       · constructor
-        · intro q' hq'
-          apply left_2
-          exact left_5 hq'
+        swap
+        · exact hp.2.2
+        · simp_all only [true_and, forall_const, not_false_eq_true, and_true]
+          obtain ⟨left, right⟩ := hp
+          obtain ⟨w, h⟩ := a
+          obtain ⟨left_2, right⟩ := right
+          obtain ⟨left_4, right_2⟩ := h
+          obtain ⟨left_6, right_2⟩ := right_2
+          dsimp [closureOperator]
+          rw [Finset.mem_image]
+          have : p.root ∈ SF.ground := by
+            let rsi := (RS.inc_ground p left ).2
+            rw [eqground] at rsi
+            exact rsi
+          use ⟨p.root, this⟩
+          simp
+          rw [mem_finsetIntersection_iff_of_nonempty] --ここでゴールが分かれる。
+          · intro f hf
+            rw [Finset.mem_filter] at hf
+            let eq := ((eqsets f).mpr hf.2.1).2
+            apply eq p left
+            let hf22 := hf.2.2
+            simp at hf22
+            have sf: s ⊆ f := by
+              rename_i eq_1
+              subst eq_1
+              obtain ⟨left_1, right_1⟩ := hf
+              obtain ⟨left_3, right_1⟩ := right_1
+              intro x hx
+              apply hf22
+              simp_all only [Finset.mem_map, Finset.mem_subtype, Function.Embedding.coeFn_mk, Subtype.exists,
+                exists_and_left, exists_prop, exists_eq_right_right, true_and]
+              exact hs hx
+            exact left_2.trans sf
+          · -- (Finset.filter (fun t => SF.sets t ∧ Finset.map { toFun := Subtype.val, inj' := ⋯ } (Finset.subtype (fun x => x ∈ SF.ground) s) ⊆ t)  SF.ground.powerset).Nonempty
+            use SF.ground
+            rw [Finset.mem_filter]
+            constructor
+            ·
+              subst eq
+              simp_all only [Finset.mem_powerset, subset_refl]
+            · constructor
+              · exact SF.has_ground
+              ·
+                subst eq
+                intro x hx
+                simp_all only [Finset.mem_map, Finset.mem_subtype, Function.Embedding.coeFn_mk, Subtype.exists,
+                  exists_and_left, exists_prop, exists_eq_right_right]
 
+      · --goal p.stem = s これはいえるか考えてみないとわからない。言えるかもしれないけど、今のpの取り方では条件が足りない。
+        --言明を変えるか、pの取り方を変えるかする必要があり。
+        sorry
+
+      /-古いもの 極小なものの存在を言おうとしていた頃。決して良いかも。
         ·
           have :p.root ∈ SF.ground := by
             convert (RS.inc_ground p left).2
@@ -545,22 +581,25 @@ by
             rw [←left_3]
             convert tp
             dsimp [t]
-            search_proof
-
+       -/
 
   · intro a
     obtain ⟨w, h⟩ := a
     obtain ⟨left, right⟩ := h
-    obtain ⟨left, right_1⟩ := left
-    obtain ⟨left_1, right⟩ := right
     apply Aesop.BuiltinRules.not_intro
     intro a
     --eqsetsの記述と、left_1 rightの記述が矛盾しているのでは。
     let eqsetss := (eqsets s).mpr a
-    let eqsetss2 := eqsetss.2 w left left_1
+    let eqsetss2 := eqsetss.2 w left
     subst eq
     simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, not_true_eq_false, and_false,
       eqsetss]
+    obtain ⟨left_1, right_1⟩ := eqsetss
+    obtain ⟨left_2, right⟩ := right
+    obtain ⟨left_3, right⟩ := right
+    obtain ⟨w_1, h⟩ := left_3
+    subst left_2
+    simp_all only [subset_refl, not_true_eq_false]
 
 --Mathlibにないと思って証明したが、Finset.nonempty_iff_ne_emptyを使ってNonemptyを使えば良いとClaudeに教えてもらった。
 lemma Finset.exists_mem_of_ne_empty2 {α : Type} [DecidableEq α] (s : Finset α) (h : s ≠ ∅) :
