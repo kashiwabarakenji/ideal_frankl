@@ -132,3 +132,110 @@ by
         · dsimp [isCompatible]
           simp_all only [Finset.mem_singleton, not_false_eq_true, Finset.singleton_subset_iff, implies_true, and_self]
       · simp_all only [not_false_eq_true, true_and, ne_eq, Finset.card_singleton, and_self]
+
+def vertexorder (SF:ClosureSystem α)[DecidablePred SF.sets] (x y:α) : Prop :=
+  x ∈ SF.ground ∧ ∀ s : Finset α, SF.sets s → (x ∈ s → y ∈ s)
+
+lemma vertexorderlemma (SF:ClosureSystem α)[DecidablePred SF.sets] :
+  let RS := rootedSetsFromSetFamily SF.toSetFamily
+  ∀ (x y:α), (vertexorder SF x y ∧ x ≠ y) ↔ ∃ p ∈ RS.rootedsets, p.root = y ∧ p.stem = {x} :=
+by
+  intro RS
+  intro x
+  intro y
+  apply Iff.intro
+  · intro h
+    dsimp [vertexorder] at h
+    obtain ⟨hx, hxy⟩ := h.left
+    have ynotinx: y ∉ ({x} : Finset α) := by
+      intro h
+      simp_all only [implies_true, and_self, true_and, Finset.mem_singleton, not_true_eq_false]
+    use ValidPair.mk {x} y ynotinx
+    constructor
+    · dsimp [rootedSetsFromSetFamily]
+      dsimp [RS]
+      dsimp [rootedSetsFromSetFamily]
+      dsimp [rootedSetsSF]
+      dsimp [allCompatiblePairs]
+      simp
+      constructor
+      · dsimp [allPairs]
+        dsimp [Finset.product]
+        simp
+        apply Finset.mem_product.mpr
+        constructor
+        simp_all only [implies_true, and_self, true_and, Finset.mem_singleton, Finset.mem_powerset,
+          Finset.singleton_subset_iff]
+        simp
+        let hxyground := hxy SF.ground SF.has_ground
+        simp_all only [implies_true, and_self, true_and, Finset.mem_singleton, hxyground]
+
+      · dsimp [isCompatible]
+        constructor
+        simp_all only [implies_true, and_self, true_and, Finset.mem_singleton, not_false_eq_true]
+
+        intro t a a_1
+        simp_all only [implies_true, and_self, true_and, Finset.mem_singleton, Finset.singleton_subset_iff]
+    · simp_all only [exists_prop, and_true]
+  ·
+    intro a
+    simp_all only [ne_eq, RS]
+    constructor
+    swap
+    ·
+      obtain ⟨w, h⟩ := a
+      obtain ⟨left, right⟩ := h
+      obtain ⟨left_1, right⟩ := right
+      have :w.root ∉ w.stem := by
+        exact w.root_not_in_stem
+      subst left_1
+      simp_all only [Finset.mem_singleton, ne_eq]
+      apply Aesop.BuiltinRules.not_intro
+      intro a
+      subst a
+      simp_all only [not_true_eq_false]
+    · dsimp [vertexorder]
+      obtain ⟨w, h⟩ := a
+      obtain ⟨left, right⟩ := h
+      obtain ⟨left_1, right⟩ := right
+      subst left_1
+      apply And.intro
+      · let gstem := (RS.inc_ground w left).1
+        simpa [right] using gstem
+      · intro s a a_1
+        dsimp [rootedSetsFromSetFamily] at left
+        dsimp [rootedSetsSF] at left
+        dsimp [allCompatiblePairs] at left
+        dsimp [allPairs] at left
+        simp_all
+        obtain ⟨w_1, h⟩ := left
+        obtain ⟨w_2, h⟩ := h
+        obtain ⟨w_3, h⟩ := h
+        obtain ⟨left, right_1⟩ := w_3
+        subst h right
+        simp_all only
+        dsimp [isCompatible] at right_1
+        let right12 := right_1.2 s a
+        simp_all only [Finset.singleton_subset_iff]
+
+--順序がpreorderであることを示す。この言明には、ステムの大きさには制限がない。ただし、順序に関係するのはステム1のみ。
+instance vertexorder_is_preorder (SF : ClosureSystem α) [DecidablePred SF.sets] :
+  Preorder {x // x ∈ SF.ground} where
+    le := fun x y => vertexorder SF x.1 y.1
+
+    le_refl := (
+    by
+      intro a
+      simp_all only
+      obtain ⟨val, property⟩ := a
+      simp_all only
+      constructor
+      · simp_all only
+      · intro s a a_1
+        simp_all only
+    )
+
+    le_trans := fun x y z hxy hyz => ⟨
+      hxy.1, -- x ∈ SF.ground は推移的に成立
+      fun s hs hxs => hyz.2 s hs (hxy.2 s hs hxs) -- x → y → z の推移性を保証
+    ⟩
