@@ -273,3 +273,27 @@ lemma vetex_equiv_is_equivalence (SF:ClosureSystem α)[DecidablePred SF.sets]:
     · exact (vertexorder_is_preorder SF).le_trans _ _ _ a.1 b.1
     · exact (vertexorder_is_preorder SF).le_trans _ _ _ b.2 a.2
 }
+
+lemma vertex_equiv_degree (SF:ClosureSystem α)[DecidablePred SF.sets]:
+  ∀ (x y:SF.ground), (vertex_equiv SF) x y →  SF.degree x.val = SF.degree y.val :=
+by
+  intro x y h
+  obtain ⟨hx, hxy⟩ := h.1
+  obtain ⟨hy, hyx⟩ := h.2
+  have hxy' := hxy SF.ground SF.has_ground
+  have hyx' := hyx SF.ground SF.has_ground
+  simp_all only [hx, hy, Finset.coe_mem]
+  dsimp [SetFamily.degree]
+  simp_all only [imp_self, Nat.cast_inj]
+  obtain ⟨val, property⟩ := x
+  obtain ⟨val_1, property_1⟩ := y
+  simp_all only
+  congr
+  ext x : 2
+  simp_all only [and_congr_right_iff]
+  intro a
+  apply Iff.intro
+  · intro a_1
+    simp_all only
+  · intro a_1
+    simp_all only
