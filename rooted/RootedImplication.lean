@@ -239,3 +239,37 @@ instance vertexorder_is_preorder (SF : ClosureSystem α) [DecidablePred SF.sets]
       hxy.1, -- x ∈ SF.ground は推移的に成立
       fun s hs hxs => hyz.2 s hs (hxy.2 s hs hxs) -- x → y → z の推移性を保証
     ⟩
+
+def vertex_equiv (SF:ClosureSystem α)[DecidablePred SF.sets] : {x // x ∈ SF.ground} → {x // x ∈ SF.ground} → Prop :=
+  fun x y => vertexorder SF x y ∧ vertexorder SF y x
+
+-- Preorder構造のある型での例
+lemma vetex_equiv_is_equivalence (SF:ClosureSystem α)[DecidablePred SF.sets]:
+  Equivalence (vertex_equiv SF) :=
+{
+  -- 反射性: x ∼ x
+  refl := fun x => by
+    dsimp [vertex_equiv]
+    simp
+    dsimp [vertexorder]
+    constructor
+    simp_all only [Finset.coe_mem]
+    intro h
+    simp
+
+  -- 対称性: x ∼ y → y ∼ x
+  symm := by
+    intro x y a
+    obtain ⟨val, property⟩ := x
+    obtain ⟨val_1, property_1⟩ := y
+    exact a.symm
+  -- 推移性: x ∼ y ∧ y ∼ z → x ∼ z
+
+  trans := by
+    intro x y z a b
+    dsimp [vertex_equiv] at a b
+    dsimp [vertex_equiv]
+    constructor
+    · exact (vertexorder_is_preorder SF).le_trans _ _ _ a.1 b.1
+    · exact (vertexorder_is_preorder SF).le_trans _ _ _ b.2 a.2
+}
