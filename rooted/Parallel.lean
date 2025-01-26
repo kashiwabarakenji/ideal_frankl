@@ -87,10 +87,9 @@ by
   rw [Finset.card_attach] at bi
   rw [bi]
 
---パラレルの1つの頂点をtraceしても、hyperedgeの数は変わらない。4時間ぐらい。
-lemma trace_paralel_vertex (SF: ClosureSystem α) [DecidablePred SF.sets] (x:α) (hx: x ∈ SF.ground):
-  (p:(∃ y: α, x ≠ y ∧ parallel SF x y)) →
- SF.number_of_hyperedges = (SF.toSetFamily.trace x hx (--台集合の大きさが2以上であること
+lemma ground_card_ge_two (SF : ClosureSystem α)  [DecidablePred SF.sets]
+  (x : α) (hx : x ∈ SF.ground) (p:(∃ y: α, x ≠ y ∧ parallel SF x y)) :
+  SF.ground.card ≥ 2 :=
 by
   obtain ⟨y, hy, h⟩ := p
   have xyinc: ({x,y}:Finset α) ⊆ SF.ground :=
@@ -116,7 +115,11 @@ by
     exact Finset.card_le_card xyinc
   simp_all only [ne_eq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem, Finset.card_singleton,
     Nat.reduceAdd, ge_iff_le]
- )).number_of_hyperedges :=
+
+--パラレルの1つの頂点をtraceしても、hyperedgeの数は変わらない。4時間ぐらい。
+lemma trace_paralel_vertex (SF: ClosureSystem α) [DecidablePred SF.sets] (x:α) (hx: x ∈ SF.ground):
+  (p:(∃ y: α, x ≠ y ∧ parallel SF x y)) →
+ SF.number_of_hyperedges = (SF.toSetFamily.trace x hx (ground_card_ge_two SF x hx p)).number_of_hyperedges :=
 by
   intro p
   obtain ⟨w, h⟩ := p
@@ -384,33 +387,7 @@ by
 --hyperedgeの数が変わらないことの証明と似ているが、違うので、その結果を利用したり、共通の補題を設けるよりも、直接証明した方が早い気がするので、直接証明する。
 lemma trace_paralel_vertex_degree (SF: ClosureSystem α) [DecidablePred SF.sets] (x:α) (hx: x ∈ SF.ground) (z:α):
   (p:(∃ y: α, x ≠ y ∧ parallel SF x y)) → z ≠ x →
- SF.degree z = (SF.toSetFamily.trace x hx (--台集合の大きさが2以上であること
-by
-  obtain ⟨y, hy, h⟩ := p
-  have xyinc: ({x,y}:Finset α) ⊆ SF.ground :=
-  by
-    have : y ∈ SF.ground := by
-      dsimp only [parallel] at h
-      exact (h.2.2 SF.ground SF.has_ground ).mp hx
-    simp_all only [ne_eq]
-    intro y' hy'
-    simp_all only [Finset.mem_insert, Finset.mem_singleton]
-    cases hy' with
-    | inl h_1 =>
-      subst h_1
-      simp_all only
-    | inr h_2 =>
-      subst h_2
-      simp_all only
-  --使ってない模様。
-  have _ : ({x, y}:Finset α).card = 2 := by
-    simp_all only [ne_eq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem, Finset.card_singleton,
-      Nat.reduceAdd]
-  have:({x,y}:Finset α).card ≤ SF.ground.card := by
-    exact Finset.card_le_card xyinc
-  simp_all only [ne_eq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem, Finset.card_singleton,
-    Nat.reduceAdd, ge_iff_le]
- )).degree z:=
+ SF.degree z = (SF.toSetFamily.trace x hx (ground_card_ge_two SF x hx p)).degree z:=
 by
   intro p
   intro hzx
@@ -689,33 +666,7 @@ by
 
 lemma trace_paralel_vertex_rare (SF: ClosureSystem α) [DecidablePred SF.sets] (x:α) (hx: x ∈ SF.ground):
   (p:(∃ y: α, x ≠ y ∧ parallel SF x y)) →
-  ((∃ z:α, z ∈ SF.ground ∧ SF.toSetFamily.is_rare z) ↔ ∃ z:α, (z ∈ SF.ground \ {x}) ∧ (SF.toSetFamily.trace x hx (
- by
-  obtain ⟨y, hy, h⟩ := p
-  have xyinc: ({x,y}:Finset α) ⊆ SF.ground :=
-  by
-    have : y ∈ SF.ground := by
-      dsimp only [parallel] at h
-      exact (h.2.2 SF.ground SF.has_ground ).mp hx
-    simp_all only [ne_eq]
-    intro y' hy'
-    simp_all only [Finset.mem_insert, Finset.mem_singleton]
-    cases hy' with
-    | inl h_1 =>
-      subst h_1
-      simp_all only
-    | inr h_2 =>
-      subst h_2
-      simp_all only
-  --使ってない模様。
-  have _ : ({x, y}:Finset α).card = 2 := by
-    simp_all only [ne_eq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem, Finset.card_singleton,
-      Nat.reduceAdd]
-  have:({x,y}:Finset α).card ≤ SF.ground.card := by
-    exact Finset.card_le_card xyinc
-  simp_all only [ne_eq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem, Finset.card_singleton,
-    Nat.reduceAdd, ge_iff_le]
- )).is_rare z) :=
+  ((∃ z:α, z ∈ SF.ground ∧ SF.toSetFamily.is_rare z) ↔ ∃ z:α, (z ∈ SF.ground \ {x}) ∧ (SF.toSetFamily.trace x hx (ground_card_ge_two SF x hx p)).is_rare z) :=
 by
   intro p
   obtain ⟨y, hy, h⟩ := p
