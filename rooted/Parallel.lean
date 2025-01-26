@@ -5,6 +5,88 @@ open Classical
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 
+--parallelの定義は、今のところimplicationのところにある。
+
+lemma parallel_same_degree (SF: ClosureSystem α) [DecidablePred SF.sets] (x y:α) (p:parallel SF x y):
+  SF.degree x = SF.degree y :=
+by
+  dsimp [SetFamily.degree]
+  let S:= (Finset.filter (fun s => SF.sets s ∧ x ∈ s) SF.ground.powerset)
+  let T:= (Finset.filter (fun s => SF.sets s ∧ y ∈ s) SF.ground.powerset)
+  let i: {s // s ∈ S} → {s // s ∈ T} := fun s => ⟨s.val, by
+    simp_all only [Finset.mem_filter, Finset.mem_powerset, T, S]
+    obtain ⟨val, property⟩ := s
+    dsimp [parallel] at p
+    let p21 := p.2.2
+
+    dsimp [S] at property
+    rw [Finset.mem_filter] at property
+    let p1 := property.1
+    rw [Finset.mem_powerset] at p1
+    let pv:= (p21 val property.2.1).mp property.2.2
+    constructor
+    · simp
+      exact p1
+    · constructor
+      · simp
+        exact property.2.1
+      · simp
+        exact pv
+  ⟩
+  let ii :  (a : { x // x ∈ S }) → a ∈ S.attach → { x // x ∈ T } := fun a ha => i a
+  have hi: ∀ (a : { x // x ∈ S }) (ha : a ∈ S.attach), ii a ha ∈ T.attach :=
+  by
+    intro a ha
+    simp_all only [Finset.mem_attach, T, ii, S, i]
+  have inj : ∀ (a₁ : { x // x ∈ S }) (ha₁ : a₁ ∈ S.attach) (a₂ : { x // x ∈ S }) (ha₂ : a₂ ∈ S.attach),
+    ii a₁ ha₁ = ii a₂ ha₂ → a₁ = a₂ :=
+  by
+    dsimp [S, T, i, ii]
+    intro a₁ ha₁ a₂ ha₂ h
+    simp_all
+    obtain ⟨val, property⟩ := a₁
+    obtain ⟨val_1, property_1⟩ := a₂
+    subst h
+    simp_all only
+  have surj: ∀ b ∈ T.attach, ∃ a, ∃ (ha : a ∈ S.attach), ii a ha = b :=
+  by
+    dsimp [S, T, i, ii]
+    dsimp [Finset.attach]
+    intro b hb
+    simp at hb
+    rw [Multiset.attach] at hb
+    simp at hb
+    --obtain ⟨val, property⟩ := b
+    --rw[Finset.mem_filter] at property
+    simp
+    --let p22:= property.2
+    obtain ⟨val2, property2⟩ := hb
+    obtain ⟨val, property⟩ := property2
+    use val2
+    constructor
+    · simp_all only [Finset.mem_filter, Finset.mem_powerset]
+      simp
+      rw [Multiset.attach]
+      simp
+      constructor
+      exact val.1
+      constructor
+      exact val.2.1
+      dsimp [parallel] at p
+      exact (p.2.2 val2 val.2.1).mpr val.2.2
+    · constructor
+      · exact val.1
+      · constructor
+        exact val.2.1
+        dsimp [parallel] at p
+        exact (p.2.2 val2 val.2.1).mpr val.2.2
+
+  let bi:= @Finset.card_bij S T S.attach T.attach ii hi inj surj
+  dsimp [S,T] at bi
+  rw [Finset.card_attach] at bi
+  rw [Finset.card_attach] at bi
+  rw [bi]
+
 --パラレルの1つの頂点をtraceしても、hyperedgeの数は変わらない。4時間ぐらい。
 lemma trace_paralel_vertex (SF: ClosureSystem α) [DecidablePred SF.sets] (x:α) (hx: x ∈ SF.ground):
   (p:(∃ y: α, x ≠ y ∧ parallel SF x y)) →
@@ -300,7 +382,7 @@ by
 
 --パラレルな頂点がある場合には、そのうち一つをtraceしても、traceした以外の頂点の次数が変わらない
 --hyperedgeの数が変わらないことの証明と似ているが、違うので、その結果を利用したり、共通の補題を設けるよりも、直接証明した方が早い気がするので、直接証明する。
-lemma trace_paralel_vertex_degree (SF: ClosureSystem α) [DecidablePred SF.sets] (x:α) (hx: x ∈ SF.ground) (z:α) (_:z ∈ SF.ground):
+lemma trace_paralel_vertex_degree (SF: ClosureSystem α) [DecidablePred SF.sets] (x:α) (hx: x ∈ SF.ground) (z:α):
   (p:(∃ y: α, x ≠ y ∧ parallel SF x y)) → z ≠ x →
  SF.degree z = (SF.toSetFamily.trace x hx (--台集合の大きさが2以上であること
 by
@@ -537,9 +619,9 @@ by
     dsimp [S, T, i, ii]
     dsimp [Finset.attach]
     intro b hb
-    simp at hb
-    rw [Multiset.attach] at hb
-    simp at hb --hbのほうも分解した方がいいか。
+    --simp at hb --hbは使ってない。
+    --rw [Multiset.attach] at hb
+    --simp at hb
     obtain ⟨val, property⟩ := b
     rw[Finset.mem_filter] at property
     simp
@@ -604,3 +686,99 @@ by
   · intro h
     simp_all only [Finset.mem_filter, Finset.mem_powerset]
     simp
+
+lemma trace_paralel_vertex_rare (SF: ClosureSystem α) [DecidablePred SF.sets] (x:α) (hx: x ∈ SF.ground):
+  (p:(∃ y: α, x ≠ y ∧ parallel SF x y)) →
+  ((∃ z:α, z ∈ SF.ground ∧ SF.toSetFamily.is_rare z) ↔ ∃ z:α, (z ∈ SF.ground \ {x}) ∧ (SF.toSetFamily.trace x hx (
+ by
+  obtain ⟨y, hy, h⟩ := p
+  have xyinc: ({x,y}:Finset α) ⊆ SF.ground :=
+  by
+    have : y ∈ SF.ground := by
+      dsimp only [parallel] at h
+      exact (h.2.2 SF.ground SF.has_ground ).mp hx
+    simp_all only [ne_eq]
+    intro y' hy'
+    simp_all only [Finset.mem_insert, Finset.mem_singleton]
+    cases hy' with
+    | inl h_1 =>
+      subst h_1
+      simp_all only
+    | inr h_2 =>
+      subst h_2
+      simp_all only
+  --使ってない模様。
+  have _ : ({x, y}:Finset α).card = 2 := by
+    simp_all only [ne_eq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem, Finset.card_singleton,
+      Nat.reduceAdd]
+  have:({x,y}:Finset α).card ≤ SF.ground.card := by
+    exact Finset.card_le_card xyinc
+  simp_all only [ne_eq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem, Finset.card_singleton,
+    Nat.reduceAdd, ge_iff_le]
+ )).is_rare z) :=
+by
+  intro p
+  obtain ⟨y, hy, h⟩ := p
+  --obtain ⟨left, right⟩ := h
+  dsimp [SetFamily.is_rare]
+  apply Iff.intro
+  · intro hh
+    obtain ⟨z, hz⟩ := hh
+    obtain ⟨hz1, hz2⟩ := hz
+    by_cases hzx: z = x
+    case pos =>
+      subst hzx
+      simp_all only [Finset.mem_sdiff, Finset.mem_singleton]
+      use y -- zがxのときは、代わりにyを使う。
+      have :SF.degree z = SF.degree y := by
+        exact parallel_same_degree SF z y h
+      rw [this] at hz2
+      constructor
+      ·
+        simp_all only [tsub_le_iff_right, zero_add, ne_eq]
+        apply And.intro
+        · dsimp [parallel] at h
+          exact (h.2.2 SF.ground SF.has_ground).mp hx
+        · apply Aesop.BuiltinRules.not_intro
+          intro a
+          subst a
+          simp_all only [not_true_eq_false]
+      ·
+        simp_all only [tsub_le_iff_right, zero_add]
+        let tpvd := trace_paralel_vertex_degree SF z hx y ⟨y, hy, h⟩ hy.symm
+        let tpv := trace_paralel_vertex SF z hx ⟨y, hy, h⟩
+        rw [←tpvd]
+        rw [←tpv]
+        exact hz2
+
+    case neg =>
+      obtain ⟨left, right⟩ := h
+      use z
+      constructor
+      · simp_all only [Finset.mem_sdiff, Finset.mem_singleton]
+        simp_all only [ne_eq, not_false_eq_true, tsub_le_iff_right, zero_add, and_self]
+      · --ここで、
+        --lemma trace_paralel_vertex_degree (SF: ClosureSystem α) [DecidablePred SF.sets] (x:α) (hx: x ∈ SF.ground) (z:α) (_:z ∈ SF.ground)
+        --trace_paralel_vertex (SF: ClosureSystem α) [DecidablePred SF.sets] (x:α) (hx: x ∈ SF.ground)
+        --を使う。
+        let tpvd := trace_paralel_vertex_degree SF x hx z ⟨y, hy, ⟨left, right⟩⟩ hzx
+        let tpv := trace_paralel_vertex SF x hx ⟨y, hy, ⟨left, right⟩⟩
+        rw [←tpvd]
+        rw [←tpv]
+        exact hz2
+  · obtain ⟨left, right⟩ := h
+    intro h
+    obtain ⟨z, hz⟩ := h
+    obtain ⟨hz1, hz2⟩ := hz
+    use z
+    constructor
+    · simp_all only [Finset.mem_sdiff, Finset.mem_singleton]
+    · have : z ≠ x := by
+        intro a
+        subst a
+        simp_all only [Finset.mem_sdiff, Finset.mem_singleton, not_true_eq_false, and_false]
+      let tpvd := trace_paralel_vertex_degree SF x hx z ⟨y, hy, ⟨left, right⟩⟩ this
+      let tpv := trace_paralel_vertex SF x hx ⟨y, hy, ⟨left, right⟩⟩
+      rw [tpvd]
+      rw [tpv]
+      exact hz2

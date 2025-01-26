@@ -21,7 +21,7 @@ noncomputable def SetFamily.number_of_hyperedges  (F : SetFamily α) [DecidableP
 noncomputable def SetFamily.degree (F : SetFamily α)[DecidablePred F.sets]: α → Int := λ v => Int.ofNat (Finset.filter (λ s => F.sets s ∧ v ∈ s) F.ground.powerset).card
 
 
-def is_rare (F : SetFamily α) (v : α)  [DecidablePred F.sets]  : Prop :=
+def SetFamily.is_rare (F : SetFamily α) (v : α)  [DecidablePred F.sets]  : Prop :=
   2 * F.degree v - F.number_of_hyperedges <= 0
 
 --ClosureSystemの定義から空集合を分離した。

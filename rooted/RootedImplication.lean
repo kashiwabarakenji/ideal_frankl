@@ -55,7 +55,7 @@ by
     · simp_all only
     · simp_all only [Finset.subset_union_left, and_self]
 
---xとyは異なるとして、parallelを定義したほうがよい？
+--xとyは異なるとして、parallelを定義したほうがよい？ Definitionのファイルか、Parallel.leanに移す。
 def parallel (SF:ClosureSystem α)[DecidablePred SF.sets] (x y:α) : Prop :=
   x ∈ SF.ground ∧ x ≠ y ∧ ∀ s : Finset α, SF.sets s → (x ∈ s ↔ y ∈ s)
 
