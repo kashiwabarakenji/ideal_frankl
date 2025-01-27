@@ -1,5 +1,6 @@
 import rooted.RootedImplication
 import rooted.ClosureMinors
+import Mathlib.Data.Nat.Defs
 
 open Classical
 
@@ -733,3 +734,101 @@ by
       rw [tpvd]
       rw [tpv]
       exact hz2
+
+def is_Parallel (SF:ClosureSystem α)[DecidablePred SF.sets] (x y:α) : Prop :=
+x ∈ SF.ground ∧ x ≠ y ∧ ∀ s : Finset α, SF.sets s → (x ∈ s ↔ y ∈ s)
+
+--vはF.groundに含まれれるという条件が必要？
+def isParallelFree (SF : ClosureSystem α) [DecidablePred SF.sets]: Prop :=
+  ∀ (v₁ v₂ : α), v₁ ∈ SF.ground → v₂ ∈ SF.ground → v₁ ≠ v₂ → ¬ is_Parallel SF v₁ v₂
+
+--n=0のときは、F.ground.card = 0なので、F.ground = ∅である。これは仮定により起こり得ない。
+def P  {α :Type} [DecidableEq α][Fintype α] (n : Nat) : Prop :=
+   (∀ (F : ClosureSystem α)[DecidablePred F.sets], F.ground.card = n → ∃ (v :α), v ∈ F.ground ∧ F.is_rare v)
+
+def PP {α :Type} [DecidableEq α][Fintype α] (n : Nat) : Prop :=
+   (∀ (F : ClosureSystem α)[DecidablePred F.sets], F.ground.card = n → isParallelFree F → ∃ (v :α), v ∈ F.ground ∧ F.is_rare v ∧ isParallelFree F)
+
+theorem parallel_free_theorem  {α :Type} [Fintype α] [DecidableEq α] :
+  (∀ (n:Nat), @P α _ _ n) ↔ (∀ (n:Nat), @PP α _ _ n) :=
+by
+  apply Iff.intro
+  · dsimp [P, PP]
+    intro h --簡単な方向。
+    intro n
+    intro F inst_1 a a_1
+    subst a
+    simp_all only [and_true]
+  · intro h
+    intro n
+    apply @Nat.strong_induction_on  (λ n  => @P α _ _ n)
+    intros n ih F dp fgc
+    -- PP n を用いて P n を導く
+    --let ipf := @isParallelFree α _ _ F dp
+    by_cases h_parallel : @isParallelFree α _ _ F dp
+    case pos =>
+      -- F がパラレルを持たない場合、PP n を直接適用
+      specialize h n F fgc h_parallel
+      obtain ⟨v, hv_ground, hv_rare, _⟩ := h
+      use v
+
+    case neg =>
+      -- F がパラレルを持つ場合、パラレルを削除して帰納仮定を適用
+      -- ihにより小さいnでは、P nが成り立つことが入っている。
+      dsimp [isParallelFree] at h_parallel
+      push_neg at h_parallel
+      obtain ⟨v₁, v₂, h_parallel_v⟩ := h_parallel
+      obtain ⟨v1fg, v2fg, n12, right⟩ := h_parallel_v
+      have h_subset : {v₁, v₂} ⊆ F.ground :=
+      by
+        subst fgc
+        simp_all only [ne_eq]
+        simp [Finset.insert_subset_iff]
+        simp_all only [and_self]
+      have h_card : ({v₁, v₂} : Finset α).card = 2 := by
+        subst fgc
+        simp_all only [ne_eq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem,
+          Finset.card_singleton, Nat.reduceAdd]
+      have gcard : F.ground.card >= 2:= by
+        have : 2 ≤ F.ground.card := by
+          rw [←h_card]
+          exact Finset.card_le_card h_subset
+        exact this
+
+      let F' := F.trace v₁ v1fg gcard
+      let F'_closure : ClosureSystem α := trace_closure_system F v₁ v1fg gcard
+      have h_closure_ground:F'_closure.ground = F.ground \ {v₁} := by
+        dsimp [F'_closure]
+        dsimp [trace_closure_system]
+        subst fgc
+        simp_all only [ne_eq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem,
+          Finset.card_singleton, Nat.reduceAdd]
+        ext a : 1
+        simp_all only [Finset.mem_erase, ne_eq, Finset.mem_sdiff, Finset.mem_singleton]
+        apply Iff.intro
+        · intro a_1
+          simp_all only [not_false_eq_true, and_self]
+        · intro a_1
+          simp_all only [not_false_eq_true, and_self]
+
+      have h_ground_card' : F'_closure.ground.card = n - 1 := by
+        dsimp [F']
+        dsimp [F'_closure]
+        dsimp [trace_closure_system]
+        subst fgc
+        simp_all only [ne_eq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem,
+          Finset.card_singleton, Nat.reduceAdd, Finset.card_erase_of_mem]
+
+         --F'がrare vertexを持つことを示す。
+      let tpv := trace_paralel_vertex_rare F v₁ v1fg ⟨v₂, n12, right⟩
+      apply tpv.mpr
+      have : n - 1 < n:= by
+        subst fgc
+        simp_all only [Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem, Finset.card_singleton,
+          Nat.reduceAdd, tsub_lt_self_iff, Finset.card_pos, zero_lt_one, and_true, F']
+        exact ⟨v₁, v1fg⟩
+      let ihn := (ih (n-1)) this
+      dsimp [P] at ihn
+      let ihnf := ihn F'_closure  h_ground_card'
+      rw [h_closure_ground] at ihnf
+      exact ihnf
