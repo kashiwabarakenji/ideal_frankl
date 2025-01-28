@@ -18,6 +18,7 @@ open Classical  --これでsetsのdecidablePredの問題が解決した。
 
 -- ValidPair の定義: ステム stem と根 root。Validは、根がステムに含まれていないことを示す。
 --個々の根つき集合は、ValidPairになる。根つき集合の族は、RootedSetsなどで表す。
+@[ext]
 structure ValidPair (α : Type) where
   stem : Finset α
   root : α
@@ -764,6 +765,77 @@ by
 
     · simp_all only [implies_true, ne_eq, Finset.sdiff_eq_empty_iff_subset, Finset.mem_sdiff, not_false_eq_true,
       and_true, Finset.coe_mem]
+
+--hyperedgeでない集合の外側にhyperedgeがあった場合に、根付き集合が存在する定理。前の補題からいえる。
+/-おそらくまちがいだった。消す。
+theorem RootedCircuitsTheorem_including (SF : ClosureSystem α)  [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)] :
+ ∀ s : Finset { x // x ∈ SF.ground }, ∀ t : Finset { x // x ∈ SF.ground }, s ⊆ t
+ → ¬ SF.sets (s.image Subtype.val) → SF.sets (t.image Subtype.val) →
+  ∃ root ∈ (t \ s).image Subtype.val,∃ stem ⊆ s.image Subtype.val, root ∉ s.image Subtype.val ∧
+  ((asm:root ∉ s.image Subtype.val ) →
+  (ValidPair.mk (s.image Subtype.val) root asm) ∈ (rootedSetsSF SF.toSetFamily)) :=
+by
+  intro s t hs hnsf hts
+  have : ((closure_operator_from_SF SF).cl s) ⊆ t := by
+    have : (closure_operator_from_SF SF).cl t = t := by
+      let id := idempotent_from_SF_finset_lem SF t
+      apply id
+      simp_all only
+    --intro x hx
+    rw [←this]
+    let mnt := monotone_from_SF_finset SF s t hs
+    exact mnt
+  let cst := ClosureSystemTheorem_mpr_lemma2 SF s hnsf
+  obtain ⟨root, hroot⟩ := cst
+  use root
+  constructor
+  · simp_all
+    obtain ⟨val, property⟩ := root
+    obtain ⟨left, right⟩ := hroot
+    obtain ⟨left_1, right⟩ := right
+    simp_all only [not_false_eq_true, forall_true_left]
+    exact this left
+  · use s.image Subtype.val
+    constructor
+    · simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, Subtype.coe_eta,
+      Finset.coe_mem, exists_const, Finset.mem_filter]
+      simp_all only [subset_refl]
+    · simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, Subtype.coe_eta,
+      Finset.coe_mem, exists_const, not_false_eq_true, imp_self, and_self]
+-/
+theorem RootedCircuitsTheorem_including (SF : ClosureSystem α)  [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)] :
+ ∀ s : Finset { x // x ∈ SF.ground }, ∀ t : Finset { x // x ∈ SF.ground }, s ⊆ t
+ → ¬ SF.sets (s.image Subtype.val) → SF.sets (t.image Subtype.val) →
+  ∃ root ∈ (t \ s).image Subtype.val, root ∉ s.image Subtype.val ∧
+  ((asm:root ∉ s.image Subtype.val ) →
+  (ValidPair.mk (s.image Subtype.val) root asm) ∈ (rootedSetsSF SF.toSetFamily)) :=
+by
+  intro s t hs hnsf hts
+  have : ((closure_operator_from_SF SF).cl s) ⊆ t := by
+    have : (closure_operator_from_SF SF).cl t = t := by
+      let id := idempotent_from_SF_finset_lem SF t
+      apply id
+      simp_all only
+    --intro x hx
+    rw [←this]
+    let mnt := monotone_from_SF_finset SF s t hs
+    exact mnt
+  let cst := ClosureSystemTheorem_mpr_lemma2 SF s hnsf
+  obtain ⟨root, hroot⟩ := cst
+  use root
+  constructor
+  · simp_all
+    obtain ⟨val, property⟩ := root
+    obtain ⟨left, right⟩ := hroot
+    obtain ⟨left_1, right⟩ := right
+    simp_all only [not_false_eq_true, forall_true_left]
+    exact this left
+  · constructor
+    · simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, Subtype.coe_eta,
+      Finset.coe_mem, exists_const, Finset.mem_filter]
+      simp_all only [not_false_eq_true]
+    · simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, Subtype.coe_eta,
+      Finset.coe_mem, exists_const, not_false_eq_true, imp_self, and_self]
 
 --集合族が与えられた時に、そこから作った根つき集合から作った集合族の集合が、元の集合であることの定理。上の補題を使って証明した。
 --ClosureSystemTheoremと合わせて、必要十分条件になっている。

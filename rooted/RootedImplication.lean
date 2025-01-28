@@ -298,3 +298,20 @@ by
     simp_all only
   · intro a_1
     simp_all only
+
+--ほぼ、定義そのままだが、使うので示しておく。
+lemma vertex_equiv_hyperedge (SF:ClosureSystem α)[DecidablePred SF.sets]:
+  ∀ (x y:SF.ground), (vertex_equiv SF) x y → ∀ (s:Finset α), SF.sets s →  (x.val ∈ s ↔ y.val ∈ s) :=
+by
+  intro x y h
+  intro s hs
+  obtain ⟨hx, hxy⟩ := h.1
+  obtain ⟨hy, hyx⟩ := h.2
+  have hxy' := hxy s hs
+  have hyx' := hyx s hs
+  simp_all only [hx, hy, Finset.coe_mem]
+  apply Iff.intro
+  · intro a
+    simp_all only
+  · intro a
+    simp_all only
