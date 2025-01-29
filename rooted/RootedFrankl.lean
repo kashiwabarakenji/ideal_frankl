@@ -419,26 +419,71 @@ by
   · exact hx.2.trans hy.1
   · exact hy.2.trans hx.1
 
+--equivaent_vertexであれば、parallelであることも示す。parallelなので、次数が等しくなるし、1元を含めば、他のparallelな元も含む。
+lemma equivalent_vertex_parallel (SF: ClosureSystem α) [DecidablePred SF.sets] (v: SF.ground):
+  ∀ x:SF.ground, x ∈ equivalent_vertex SF v → x ≠ v  → parallel SF x v :=
+by
+  intro x hx
+  intro xneqv
+  dsimp [parallel]
+  dsimp [equivalent_vertex] at hx
+  dsimp [vertexorder_is_preorder] at hx
+  dsimp [vertexorder] at hx
+  simp_all only [Finset.mem_filter, Finset.mem_attach, true_and, Finset.coe_mem]
+  obtain ⟨val, property⟩ := v
+  obtain ⟨val_1, property_1⟩ := x
+  simp_all only [ne_eq, Subtype.mk.injEq, not_false_eq_true, true_and]
+  intro s a
+  apply Iff.intro
+  · intro a_1
+    simp_all only
+  · intro a_1
+    simp_all only
 
-lemma minimal_element_is_rare_lemma (SF: ClosureSystem α) [DecidablePred SF.sets] [∀ x, Decidable (∀ y, vertexorder SF x y → y = x)]:
+lemma equivalent_vertex_set_lemma (SF: ClosureSystem α) [DecidablePred SF.sets]:
+  ∀ x : SF.ground,
+  let P := equivalent_vertex SF ⟨x.val, x.property⟩
+  (∀ s : Finset SF.ground, SF.sets (s.image Subtype.val) → x ∈ s → P ⊆ s) :=
+by
+  simp
+  intro x hx
+  intro s hset hs
+  intro y hy
+  by_cases h1: y = x
+  case pos =>
+    subst h1
+    simp_all only [Subtype.coe_eta]
+  case neg =>
+    have h2: y ≠ ⟨x, hx⟩ := by
+      intro h2
+      subst h2
+      simp_all only [not_true_eq_false]
+    let evp := equivalent_vertex_parallel SF ⟨x,hx⟩ y hy h2
+    dsimp [parallel] at evp
+    have :x ∈ s.image Subtype.val := by
+      simp_all only [not_false_eq_true, Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right,
+        exists_const, evp]
+    let evp2 := (evp.2.2 (s.image Subtype.val) hset ).mpr this
+    rw [Finset.mem_image] at evp2
+    simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, exists_const,
+      exists_true_left]
+
+lemma minimal_element_is_rare_lemma (SF: ClosureSystem α) [DecidablePred SF.sets] :
   let RS := rootedSetsFromSetFamily SF.toSetFamily
-  --∀ x : SF.ground, --この仮定だとxはいらない。
-    ∀ (hp:p ∈ RS.rootedsets),
-    let S := Finset.filter (fun s => p.root ∈ s ∧ SF.sets s) SF.toSetFamily.ground.powerset
-    let T := Finset.filter (fun s => p.root ∉ s ∧ SF.sets s) SF.toSetFamily.ground.powerset
-    let P := equivalent_vertex SF ⟨p.root, (RS.inc_ground p hp).2⟩
-   (∀ q ∈ RS.rootedsets, q.stem ∩ (P.image Subtype.val) = ∅ → q.root ∉ (P.image Subtype.val)) →
+    ∀ x : SF.ground,
+    let S := Finset.filter (fun s => x.val ∈ s ∧ SF.sets s) SF.toSetFamily.ground.powerset
+    let T := Finset.filter (fun s => x.val ∉ s ∧ SF.sets s) SF.toSetFamily.ground.powerset
+    let P := equivalent_vertex SF ⟨x.val, x.property⟩
+   (∀ q ∈ RS.rootedsets, q.root = x → q.stem ∩ (P.image Subtype.val) ≠ ∅) → --q.root ∉ (P.image Subtype.val)) →
    (∀ s : S, (s.val \ (P.image Subtype.val)) ∈ T) :=
   by
     intro RS
-    --intro x
-    intro hp
+    intro x
     intro S T P
     intro hP
     intro H
     dsimp [S, T]
     simp_all only [Finset.mem_filter, Finset.mem_powerset, Finset.mem_sdiff, not_and, Decidable.not_not, RS]
-    --obtain ⟨xval, xproperty⟩ := x
     obtain ⟨Hval, H_property⟩ := H
     dsimp [S] at H_property
     rw [Finset.mem_filter] at H_property
@@ -455,9 +500,9 @@ lemma minimal_element_is_rare_lemma (SF: ClosureSystem α) [DecidablePred SF.set
         apply Exists.intro
         · simp [equivalent_vertex]
         · exact H_prop pr_prop
-      · --simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, not_exists, P]
-        by_contra h_contra --これで、RootedCircuitsTheorem_includingが使える形に持っていく。
-        have arg_lem: p.root ∈ P.image Subtype.val := by
+      · --
+        by_contra h_contra --これで、RootedCircuitsTheorem_closureが使える形に持っていく。
+        have arg_lem: x.val ∈ P.image Subtype.val := by
           simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, not_exists, P]
           apply Exists.intro
           · simp [equivalent_vertex]
@@ -471,7 +516,143 @@ lemma minimal_element_is_rare_lemma (SF: ClosureSystem α) [DecidablePred SF.set
           intro y hy
           simp_all only [Finset.mem_subtype, Finset.mem_sdiff, Finset.mem_image, Subtype.exists, exists_and_right,
             exists_eq_right, Subtype.coe_eta, Finset.coe_mem, exists_const]
-        have rcti := RootedCircuitsTheorem_including SF ((Hval \ (P.image Subtype.val)).subtype (fun s => s ∈ SF.ground)) (Hval.subtype (fun s => s ∈ SF.ground)) arg1
+        --theorem RootedCircuitsTheorem_closure (SF : ClosureSystem α)  [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)] (x:SF.ground):
+        -- ∀ s : Finset { x // x ∈ SF.ground }, x ∈ closureOperator SF s
+        --  → ¬ SF.sets (s.image Subtype.val)  →
+        --  (asm:↑x ∉ Finset.image Subtype.val s) →
+        --  (ValidPair.mk (s.image Subtype.val) x asm) ∈ (rootedSetsSF SF.toSetFamily) :=
+        have rcti := RootedCircuitsTheorem_closure SF x  (Hval.subtype (fun s => s ∈ SF.ground) \  P)
+        have : x ∈ closureOperator SF (Hval.subtype (fun s => s ∈ SF.ground) \  P):=
+        by
+          have :¬SF.sets (Finset.image Subtype.val (Hval.subtype (fun s => s ∈ SF.ground) \  P)) :=
+          by
+            dsimp [P]
+            convert h_contra
+            simp_all [P]
+            simp_all only
+            obtain ⟨val, property⟩ := x
+            simp_all only
+            ext a : 1
+            simp_all only [Finset.mem_image, Finset.mem_sdiff, Finset.mem_subtype, Subtype.exists, exists_and_right,
+              exists_and_left, exists_eq_right, not_exists, and_congr_right_iff]
+            intro a_1
+            apply Iff.intro
+            · intro a_2 x
+              simp_all only [exists_true_left, not_false_eq_true]
+            · intro a_2
+              simp_all only [not_false_eq_true, exists_prop, and_true]
+              exact H_prop a_1
+          let scs := closure_ssubset SF (Hval.subtype (fun s => s ∈ SF.ground) \  P) this
+          let scse := Finset.exists_of_ssubset scs
+          obtain ⟨v, v_prop⟩ := scse
+
+          have: v.val ∈ Hval :=
+          by
+            let cml := closure_monotone_lemma SF (Hval.subtype (fun s => s ∈ SF.ground) \  P) (Hval.subtype (fun s => s ∈ SF.ground))
+            have :SF.sets (Finset.image Subtype.val (Finset.subtype (fun s => s ∈ SF.ground) Hval)) :=
+            by
+              have :Finset.image Subtype.val (Finset.subtype (fun s => s ∈ SF.ground) Hval ) = Hval :=
+              by
+                ext a : 1
+                simp_all only [Finset.mem_image, Finset.mem_subtype, Subtype.exists, exists_and_left,
+                  exists_prop, exists_eq_right_right, and_iff_left_iff_imp]
+                intro a_1
+                exact H_prop a_1
+              rw [this]
+              simp_all only
+            let cml2 := cml this
+            have :Finset.subtype (fun s => s ∈ SF.ground) Hval \ P ⊆ Finset.subtype (fun s => s ∈ SF.ground) Hval :=
+            by
+              simp_all only [Subtype.coe_eta, ne_eq, Finset.mem_filter, Finset.mem_powerset,
+                and_self, not_false_eq_true, Finset.mem_image, Finset.mem_sdiff, Finset.mem_subtype,
+                Subtype.exists, exists_and_right, exists_and_left, exists_eq_right,
+                not_true_eq_false, exists_const, and_false, forall_true_left, forall_const, not_and,
+                Decidable.not_not, Finset.sdiff_subset]
+
+            let cml3 := cml2 this
+
+            have : v ∈ Finset.subtype (fun s => s ∈ SF.ground) Hval :=
+            by
+              let cml4 := cml3 v_prop.1
+              exact cml4
+
+
+            simp_all only [Subtype.coe_eta, ne_eq, Finset.mem_filter, Finset.mem_powerset, and_self, not_false_eq_true,
+              Finset.mem_image, Finset.mem_sdiff, Finset.mem_subtype, Subtype.exists, exists_and_right,
+              exists_and_left, exists_eq_right, not_true_eq_false, exists_const, and_false, forall_true_left,
+              forall_const, and_true, P]
+
+
+          have vinP: v ∈ P :=
+          by
+            dsimp [P]
+            simp_all only [Subtype.coe_eta, ne_eq, Finset.mem_filter, Finset.mem_powerset, and_self,
+              not_false_eq_true, Finset.mem_image, Finset.mem_sdiff, Finset.mem_subtype, Subtype.exists,
+              exists_and_right, exists_and_left, exists_eq_right, not_true_eq_false, exists_const, and_false,
+              forall_true_left, forall_const, true_and, Decidable.not_not, P]
+
+          have : x ∈ Finset.subtype (fun s => s ∈ SF.ground) Hval :=
+          by
+            simp_all only [Finset.mem_filter, Finset.mem_powerset, and_self, not_false_eq_true]
+            simp_all only [Subtype.coe_eta, ne_eq, Finset.mem_image, Finset.mem_sdiff, Finset.mem_subtype,
+              Subtype.exists, exists_and_right, exists_and_left, exists_eq_right, not_true_eq_false, exists_const,
+              and_false, not_false_eq_true, forall_true_left, forall_const, not_and, Decidable.not_not, P]
+
+          have xinP: x ∈ P :=
+          by
+            simp_all only [Subtype.coe_eta, ne_eq, Finset.mem_filter, Finset.mem_powerset, and_self,
+              not_false_eq_true, Finset.mem_image, Finset.mem_sdiff, Finset.mem_subtype, Subtype.exists,
+              exists_and_right, exists_and_left, exists_eq_right, not_true_eq_false, exists_const, and_false,
+              forall_true_left, forall_const, not_and, Decidable.not_not, P]
+
+          --xとvはparallelで、vはclosureの元なので、xもclosureの元。closureはhyperedgeであることも使う。
+          have para: v ≠ x → parallel SF v x :=
+          by
+            intro xneqv
+            simp [P] at vinP
+            simp [P] at xinP
+            exact equivalent_vertex_parallel SF x v vinP xneqv
+
+          have sfs:SF.sets ((closureOperator SF (Finset.subtype (fun s => s ∈ SF.ground) Hval \ P)).image Subtype.val) :=
+          by
+            let idm := closureOperator_image_in_sets SF (Finset.subtype (fun s => s ∈ SF.ground) Hval \ P)
+            simp_all only [Subtype.coe_eta, ne_eq, Finset.mem_filter, Finset.mem_powerset, and_self, not_false_eq_true,
+              Finset.mem_image, Finset.mem_sdiff, Finset.mem_subtype, Subtype.exists, exists_and_right,
+              exists_and_left, exists_eq_right, not_true_eq_false, exists_const, and_false, forall_true_left,
+              forall_const, and_true, P, idm]
+
+          by_cases h2: x = v
+          case pos =>
+            rw [h2]
+            subst h2
+            simp_all only [Subtype.coe_eta, ne_eq, Finset.mem_filter, Finset.mem_powerset, and_self,
+              not_false_eq_true, Finset.mem_image, Finset.mem_sdiff, Finset.mem_subtype,
+              Subtype.exists, exists_and_right, exists_and_left, exists_eq_right, not_true_eq_false,
+              exists_const, and_false, forall_true_left, forall_const, and_true, IsEmpty.forall_iff]
+          case neg =>
+            let para2 := para (Ne.symm h2)
+            let equ := equivalent_vertex_set_lemma SF v (closureOperator SF (Finset.subtype (fun s => s ∈ SF.ground) Hval \ P)) sfs v_prop.1
+            dsimp [P] at xinP
+            have : x ∈ equivalent_vertex SF v :=
+            by
+              dsimp [equivalent_vertex]
+              rw [Finset.mem_filter]
+              dsimp [P] at vinP
+              dsimp [equivalent_vertex] at vinP
+              rw [Finset.mem_filter] at vinP
+              simp_all only [Subtype.coe_eta, ne_eq, Finset.mem_filter, Finset.mem_powerset, and_self,
+                not_false_eq_true, Finset.mem_image, Finset.mem_sdiff, Finset.mem_subtype, Subtype.exists,
+                exists_and_right, exists_and_left, exists_eq_right, not_true_eq_false, exists_const, and_false,
+                forall_true_left, forall_const, Finset.mem_attach, true_and, P]
+            simp_all [P]
+            simp_all only
+            obtain ⟨val, property⟩ := x
+            obtain ⟨val_1, property_1⟩ := v
+            obtain ⟨left, right_1⟩ := v_prop
+            simp_all only
+            apply equ
+            simp_all only
+
         have HPreduce:Finset.image Subtype.val (Finset.subtype (fun s => s ∈ SF.ground) (Hval \ Finset.image Subtype.val P)) = Hval \ (P.image Subtype.val) :=
           by
             ext a : 1
@@ -486,6 +667,8 @@ lemma minimal_element_is_rare_lemma (SF: ClosureSystem α) [DecidablePred SF.set
               simp_all [RS]
               obtain ⟨left, right_1⟩ := a_1
               exact H_prop left
+
+        let rcti2 := rcti this
         have :¬SF.sets (Finset.image Subtype.val (Finset.subtype (fun s => s ∈ SF.ground) (Hval \ Finset.image Subtype.val P))) :=
         by
           rw [HPreduce]
@@ -493,259 +676,344 @@ lemma minimal_element_is_rare_lemma (SF: ClosureSystem α) [DecidablePred SF.set
             not_false_eq_true, Finset.mem_image, Finset.mem_sdiff, Finset.mem_subtype,
             Subtype.exists, exists_and_right, exists_eq_right, Subtype.coe_eta, Finset.coe_mem,
             exists_const, not_and, Decidable.not_not, exists_and_left, not_forall, forall_const]
-        let rcti2 := rcti this
-        have :SF.sets (Finset.image Subtype.val (Finset.subtype (fun s => s ∈ SF.ground) Hval)) := by
-          have :Finset.image Subtype.val (Finset.subtype (fun s => s ∈ SF.ground) Hval ) = Hval :=
-          by
-            ext a : 1
-            simp_all only [Finset.mem_image, Finset.mem_subtype, Subtype.exists, exists_and_left,
-              exists_prop, exists_eq_right_right, and_iff_left_iff_imp]
-            intro a_1
-            exact H_prop a_1
-          rw [this]
-          simp_all only
+        have :¬SF.sets (Finset.image Subtype.val (Finset.subtype (fun s => s ∈ SF.ground) Hval \ P)) :=
+        by
+           convert this
+           simp_all only [Subtype.coe_eta, ne_eq, Finset.mem_filter, Finset.mem_powerset, and_self, not_false_eq_true,
+             P]
+           simp_all only [Finset.coe_mem]
+           obtain ⟨val, property⟩ := x
+           simp_all only
+           ext a : 1
+           simp_all only [Finset.mem_sdiff, Finset.mem_subtype, Finset.mem_image, Subtype.exists, exists_and_right,
+             exists_eq_right, Subtype.coe_eta, Finset.coe_mem, exists_const]
+
         let rcti3 := rcti2 this
-        obtain ⟨root_val, rc_property⟩ := rcti3
-        simp at rc_property
-        let rc1 := rc_property.1
-        obtain ⟨rc12,rc12p⟩ := rc1.2
-        let rc3 := rc_property.2.1 rc1.1 rc12
-        let rc4 := rc_property.2.2
-        simp_all
-        --前提は、単にPの中の点ということのようにも思う。結論部分でこの点はrootになる。
-        --stemは、H \ Pに含まれている。このようなものは定理の前提に反するので矛盾が導かれるはず。
-        have :root_val ∈ Hval → ∀ (x : root_val ∈ SF.ground), ⟨root_val, rc12⟩ ∈ P :=
-          by
-            intro a
-            intro x
-            exact rc3
-        let rc4' := rc4 this
-        simp only [HPreduce] at rc4'
-        have lem1:root_val ∈ P.image Subtype.val := by
-            simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, exists_const, P]
-        let stem_val := Hval \ Finset.image Subtype.val P
-        have lem2:stem_val ∩ Finset.image Subtype.val P = ∅ := by
-            simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, exists_const,
-              Finset.sdiff_inter_self, P, stem_val]
-        have : root_val ∉ stem_val :=
+
+        have :↑x ∉ Finset.image Subtype.val (Finset.subtype (fun s => s ∈ SF.ground) Hval \ P) :=
         by
-          by_contra h_in
-          have :root_val ∈ stem_val ∩ P.image Subtype.val := by
-            rw [Finset.mem_inter]
-            constructor
-            · exact h_in
-            · exact lem1
-          rw [lem2] at this
-          contradiction
+          simp_all only [Subtype.coe_eta, ne_eq, Finset.mem_filter, Finset.mem_powerset, and_self, not_false_eq_true,
+            Finset.mem_image, Finset.mem_sdiff, Finset.mem_subtype, Subtype.exists, exists_and_right, exists_and_left,
+            exists_eq_right, not_true_eq_false, exists_const, and_false, P]
+        let rcti4 := rcti3 this
+        simp at rcti4
+        dsimp [rootedSetsSF] at rcti4
+        dsimp [allCompatiblePairs] at rcti4
+        simp at rcti4
+
+        let stem_val := Finset.image Subtype.val (Finset.subtype (fun s => s ∈ SF.ground) Hval \ P)
+        let root_val := x.val
         let rcp : ValidPair α := ⟨stem_val, root_val, this⟩
-        have rcp_def:  rcp = ⟨stem_val, root_val, this⟩ :=
+
+        have :rcp ∈ (rootedSetsFromSetFamily SF.toSetFamily).rootedsets :=
         by
-          ext
+          dsimp [rcp]
+          dsimp [rootedSetsFromSetFamily]
+          simp_all only [Subtype.coe_eta, ne_eq, Finset.mem_filter, Finset.mem_powerset, and_self, not_false_eq_true, P,
+            stem_val, root_val]
+
+        let hpp := hP rcp this
+
+        have: rcp.root = ↑x :=
+        by
+          simp_all only [Finset.mem_filter, Finset.mem_powerset, and_self, Subtype.coe_eta, not_false_eq_true, P,
+            root_val]
+        let hpp2 := hpp this
+
+        have :stem_val ∩ Finset.image Subtype.val (equivalent_vertex SF x) = ∅ := by
+          dsimp [stem_val]
+          dsimp [P]
           simp
-          dsimp [rcp]
+          by_contra h_in
+          rw [←Finset.not_nonempty_iff_eq_empty] at h_in
+          --rw [Finset.nonempty_iff_ne_empty] at h_in
+          rw [not_not] at h_in
+          obtain ⟨val, property⟩ := h_in
+          simp_all only [Finset.mem_filter, Finset.mem_powerset, and_self, Subtype.coe_eta, not_false_eq_true,
+            Finset.mem_inter, Finset.mem_image, Finset.mem_sdiff, Finset.mem_subtype, Subtype.exists,
+            exists_and_right, exists_and_left, exists_eq_right, P]
+          obtain ⟨left, right_1⟩ := rcti4
+          obtain ⟨left_1, right_2⟩ := property
+          obtain ⟨left_1, right_3⟩ := left_1
+          obtain ⟨w, h_1⟩ := right_2
+          obtain ⟨w_1, h_2⟩ := right_3
+          simp_all only
 
-        have :root_val ∉ Hval \ Finset.image Subtype.val P := by
-          simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right,
-            exists_const, not_false_eq_true]
-
-        have :rcp ∈ (rootedSetsFromSetFamily SF.toSetFamily).rootedsets := by
-          dsimp [rcp]
-          exact rc4'
-
-        let hpp := hP rcp this lem2
-        simp at hpp
-        have :root_val ∈ SF.ground := by
-          simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, exists_const,
-            not_false_eq_true, P, rcp, stem_val]
-        let hppp := hpp this
         contradiction
 
-lemma minimal_element_is_rare (SF: ClosureSystem α) [DecidablePred SF.sets] [∀ x, Decidable (∀ y, vertexorder SF x y → y = x)]:
+omit [Fintype α] [DecidableEq α] in
+theorem card_decomp [DecidableEq α] (SF : SetFamily α)[DecidablePred SF.sets] (x : α) :
+    (Finset.filter (fun s => SF.sets s) SF.ground.powerset).card
+  = (Finset.filter (fun s => x ∈ s ∧ SF.sets s) SF.ground.powerset).card
+  + (Finset.filter (fun s => x ∉ s ∧ SF.sets s) SF.ground.powerset).card :=
+by
+  -- T := 「SF.sets を満たす s」だけを取り出したフィンセット
+  let T := Finset.filter (fun s => SF.sets s) SF.ground.powerset
+
+  -- まず T を「x ∈ s」かどうかで分割する
+  let ST := Finset.filter (fun s => SF.sets s) SF.ground.powerset
+  have h := @Finset.filter_card_add_filter_neg_card_eq_card _ ST (fun s => x ∈ s) _ _
+  dsimp [ST] at h
+  rw [ Finset.filter_filter,  Finset.filter_filter] at h
+  rw [h.symm]
+  ring_nf
+  congr
+  ext x_1 : 2
+  apply Iff.intro
+  · intro a
+    simp_all only [and_self]
+  · intro a
+    simp_all only [and_self]
+  ext x_1 : 2
+  apply Iff.intro
+  · intro a
+    simp_all only [not_false_eq_true, and_self]
+  · intro a
+    simp_all only [not_false_eq_true, and_self]
+
+lemma injection_rare_lemma (SF: ClosureSystem α) [DecidablePred SF.sets] :
+    ∀ x : SF.ground,
+    let S := Finset.filter (fun s => x.val ∈ s ∧ SF.sets s) SF.toSetFamily.ground.powerset
+    let T := Finset.filter (fun s => x.val ∉ s ∧ SF.sets s) SF.toSetFamily.ground.powerset
+    (∃ i : S → T, ∀ s1 s2, i s1 = i s2 → s1 = s2) →
+    SF.is_rare x :=
+by
+  intro x
+  intro S T
+  intro h1
+  obtain ⟨i, h2⟩ := h1
+  have haa: ∀ a ∈ S.attach, i a ∈ T.attach :=
+  by
+    intro a ha
+    simp at ha
+    simp
+
+  have :Set.InjOn i ↑S.attach :=
+  by
+    dsimp [Set.InjOn]
+    intro a ha b hb
+    --simp_all
+    intro h
+    exact h2 ⟨a,a.property⟩ ⟨b,b.property⟩ h
+
+  have : S.card ≤ T.card :=
+  by
+    let c1 := @Finset.card_le_card_of_injOn S T S.attach T.attach i haa this
+    rw [Finset.card_attach, Finset.card_attach] at c1
+    exact c1
+
+  dsimp [SetFamily.is_rare]
+  have :SF.number_of_hyperedges  = S.card + T.card :=by
+    dsimp [SetFamily.number_of_hyperedges]
+    dsimp [S, T]
+    let cd := card_decomp SF.toSetFamily x
+    simp_all only [Subtype.forall, Finset.mem_filter, Finset.mem_powerset, Subtype.mk.injEq, Finset.mem_attach,
+      imp_self, implies_true, Nat.cast_add, S, T, cd]
+
+  dsimp [SetFamily.degree]
+  dsimp [SetFamily.number_of_hyperedges]
+  dsimp [S, T] at this
+  dsimp [SetFamily.number_of_hyperedges] at this
+  have sub1: ↑(Finset.filter (fun s => SF.sets s ∧ x.val ∈ s)) = ↑(Finset.filter (fun s => x.val ∈ s ∧ SF.sets s)) :=
+  by
+    ext x_1 : 1
+    simp only [Finset.mem_filter, and_comm]
+
+ /-つかわなかった
+  have sub2: ↑(Finset.filter (fun s => SF.sets s ∧ x.val ∉ s)) = ↑(Finset.filter (fun s => x.val ∉ s ∧ SF.sets s)) :=
+  by
+    ext a : 1
+    simp_all [S, T]
+    obtain ⟨val, property⟩ := x
+    simp_all only
+    ext a_1 : 1
+    simp_all only [Finset.mem_filter, and_congr_right_iff]
+    intro a_2
+    apply Iff.intro
+    · intro a_3
+      simp_all only [not_false_eq_true, and_self]
+    · intro a_3
+      simp_all only [not_false_eq_true, and_self]
+  -/
+
+  rw [sub1]
+  linarith [this]
+
+--根付き集合が条件を満たせばrareになる。
+lemma element_is_rare_rootedset (SF: ClosureSystem α) [DecidablePred SF.sets] [∀ x, Decidable (∀ y, vertexorder SF x y → y = x)]:
   let RS := rootedSetsFromSetFamily SF.toSetFamily
-  ∀ x : SF.ground, (∃ p ∈ RS.rootedsets,  p.root = x ∧ ∃ y : SF.ground, y.val ∈ p.stem ∧ ∃ q ∈ RS.rootedsets, q.root = y.val ∧ q.stem = ({x.val}:Finset α)) →
-  SF.is_rare x :=
+    ∀ x : SF.ground,
+   let P := equivalent_vertex SF ⟨x.val, x.property⟩
+   --(∀ p ∈ RS.rootedsets,  p.root = x ∧ ∃ z : SF.ground, z.val ∈ p.stem ∧ ∃ q ∈ RS.rootedsets, q.root = z.val ∧ q.stem = ({x.val}:Finset α))
+   (∀ r ∈ RS.rootedsets, r.root = x → r.stem ∩ (P.image Subtype.val) ≠ ∅)  →
+   --(∀ r ∈ RS.rootedsets, r.stem ∩ (P.image Subtype.val) = ∅ → r.root ∉ (P.image Subtype.val)) :=
+   SF.is_rare x :=
+
 by
   intro RS
   intro x
-  intro h
-  simp_all only [Subtype.exists, exists_and_left, exists_prop, RS]
-  obtain ⟨val, pr_property⟩ := x
-  obtain ⟨p, h⟩ := h
-  obtain ⟨p_property, H_right⟩ := h
-  obtain ⟨p_subtype, H_right⟩ := H_right
-  obtain ⟨w_1, h⟩ := H_right
-  obtain ⟨pq_stemroot, w2_right⟩ := h
-  obtain ⟨qr_property, q_right⟩ := w2_right
-  obtain ⟨q, h⟩ := q_right
-  obtain ⟨q_property, q_right⟩ := h
-  obtain ⟨q_left_5, q_right⟩ := q_right
-  subst q_left_5 p_subtype
-  simp_all only
-  let P:= equivalent_vertex SF ⟨p.root, pr_property⟩
-  have : ∀ s :Finset SF.ground, SF.sets (s.image Subtype.val) → p.root ∈ (s.image Subtype.val) → P ⊆ s :=
+  intro P
+  intro h1 --h1の仮定にあるzは、xと同値な頂点である。よって、z in Pとなる。よって、xを根とする任意のrooted setは、Pと共通部分を持つ。
+  let S := Finset.filter (fun s => x.val ∈ s ∧ SF.sets s) SF.toSetFamily.ground.powerset
+  let T := Finset.filter (fun s => x.val ∉ s ∧ SF.sets s) SF.toSetFamily.ground.powerset
+  let P := equivalent_vertex SF ⟨x.val, x.property⟩
+  have ha:  (∀ s : S, (s.val \ (P.image Subtype.val)) ∈ T) :=
   by
-    intro s
-    intro h1
-    intro h2
-    --lemma vertex_equiv_hyperedge (SF:ClosureSystem α)[DecidablePred SF.sets]:
-    -- ∀ (x y:SF.ground), (vertex_equiv SF) x y → ∀ (s:Finset α), SF.sets s →  (x.val ∈ s ↔ y.val ∈ s) :=
-    dsimp [P]
-    intro a ha
-    have ve: vertex_equiv SF a ⟨p.root, pr_property⟩ := by
-      dsimp [equivalent_vertex] at ha
-      simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, exists_true_left,
-        Finset.mem_filter, Finset.mem_attach, true_and]
-      obtain ⟨val, property_1⟩ := a
-      obtain ⟨left_1, right_1⟩ := ha
-      rw [vertex_equiv]
-      simp_all only
-      apply And.intro
-      · exact right_1
-      · exact left_1
-    dsimp [equivalent_vertex] at ha
-    have veh := (vertex_equiv_hyperedge SF a ⟨p.root, pr_property⟩ ve (s.image Subtype.val) h1).mpr
-    simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, exists_true_left,
-      Finset.mem_filter, Finset.mem_attach, true_and, exists_const, Subtype.coe_eta, Finset.coe_mem, forall_const]
-  simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, exists_true_left, P]
-  --p.rootを含むhyperedge Hから、p.rootを含まないhyperedge H \ Pがhyperedgeであることを示して、さらに単射であることを示せば、rareであることが示せる。
-  let S := Finset.filter (fun s => p.root ∈ s ∧ SF.sets s) SF.toSetFamily.ground.powerset
-  let T := Finset.filter (fun s => p.root ∉ s ∧ SF.sets s) SF.toSetFamily.ground.powerset
-  let i :S → T := fun ss => ⟨(ss.val \ (P.image Subtype.val)), by --この部分を外に出して独立させる。
-    have h := ss.property
-    simp_all only [Finset.coe_mem, Finset.mem_filter, Finset.mem_powerset, Finset.mem_sdiff, Finset.mem_image,
-      Subtype.exists, exists_and_right, exists_eq_right, exists_true_left, not_and, Decidable.not_not, S, T, P]
-    obtain ⟨H, property_1⟩ := ss --HがPを含むhyperedge
-    simp_all only [Finset.mem_filter, Finset.mem_powerset, forall_const, S]
-    apply And.intro
-    · simp_all only [Finset.mem_filter, Finset.mem_powerset, S]
-      obtain ⟨left, right⟩ := property_1
-      obtain ⟨left_1, right⟩ := right
-      assumption
-      /-
-      intro x hx
-      simp_all only [Finset.mem_sdiff, Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right,
-        not_exists]
-      obtain ⟨left_2, right_1⟩ := hx
-      exact left left_2
-      -/
-    · apply And.intro
-      · --show  ⟨p.root, ⋯⟩ ∈ equivalent_vertex SF ⟨p.root, property⟩
-        simp_all only [Finset.mem_filter, Finset.mem_powerset, S]
-        intro a
-        simp_all only
-        obtain ⟨left, right⟩ := property_1
-        obtain ⟨left_1, right⟩ := right
-        simp [equivalent_vertex]
-      · dsimp [equivalent_vertex]
-        --これが成り立たないとすると、この集合内にstemを持ち、P内にrootが含まれるようなrooted setが存在することになる。
-        --すると、Pの定義(equivalent_vertexの定義)に矛盾する。
-        --根付き集合の存在定理を使うのか。Aがhyperedgeで、B⊆ Aがhyperedgeでないときは、A-B内に根があり、stemがBに含まれるような根付き集合が存在する。
-        --theorem RootedCircuitsTheorem_including (SF : ClosureSystem α)  [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)] :
-        --  ∀ s : Finset { x // x ∈ SF.ground }, ∀ t : Finset { x // x ∈ SF.ground }, s ⊆ t
-        --  → ¬ SF.sets (s.image Subtype.val) → SF.sets (t.image Subtype.val) →
-        --    ∃ root ∈ (t \ s).image Subtype.val,∃ stem ⊆ s.image Subtype.val, root ∉ s.image Subtype.val ∧
-        --    ((asm:root ∉ s.image Subtype.val ) →
-        --  (ValidPair.mk (s.image Subtype.val) root asm) ∈ (rootedSetsSF SF.toSetFamily))
-        by_contra h_contra --この条件は、contra3の定義に使うthisの証明で使用済み。
-        have : (H.subtype (fun s => s ∈ SF.ground) \ (equivalent_vertex SF ⟨p.root, pr_property⟩)) ⊆ (H.subtype (fun s => s ∈ SF.ground)) :=
-        by
-          simp_all only [Finset.sdiff_subset]
-        have h_contra2 := RootedCircuitsTheorem_including SF (H.subtype (fun s => s ∈ SF.ground) \ (equivalent_vertex SF ⟨p.root, pr_property⟩)) (H.subtype (fun s => s ∈ SF.ground)) this
-        have : ¬SF.sets (Finset.image Subtype.val (Finset.subtype (fun s => s ∈ SF.ground) H \ equivalent_vertex SF ⟨p.root, pr_property⟩)) :=
-        by
-          have : Finset.image Subtype.val (Finset.subtype (fun s => s ∈ SF.ground) H \ equivalent_vertex SF ⟨p.root, pr_property⟩) = H \ Finset.image Subtype.val (equivalent_vertex SF ⟨p.root, pr_property⟩) :=
-          by
-            simp_all
-            ext a : 1
-            simp_all only [Finset.mem_image, Finset.mem_sdiff, Finset.mem_subtype, Subtype.exists, exists_and_right,
-              exists_and_left, exists_eq_right, not_exists, and_congr_right_iff]
-            intro a_1
-            apply Iff.intro
-            · intro a_2 x
-              simp_all only [exists_true_left, not_false_eq_true]
-            · intro a_2
-              simp_all only [not_false_eq_true, exists_prop, and_true]
-              simp_all only [Finset.mem_filter, Finset.mem_powerset, S]
-              obtain ⟨left, right⟩ := property_1
-              obtain ⟨left_1, right⟩ := right
-              exact left a_1
-          rw [this]
-          exact h_contra
-        have h_contra3 := h_contra2 this
-        clear h_contra2
-        have :SF.sets (Finset.image Subtype.val (Finset.subtype (fun s => s ∈ SF.ground) H)) :=
-        by
-          simp_all
-          have :  (Finset.image Subtype.val (Finset.subtype (fun s => s ∈ SF.ground) H)) = H :=
-          by
-            ext a : 1
-            simp_all only [Finset.mem_image, Finset.mem_subtype, Subtype.exists, exists_and_left, exists_prop,
-              exists_eq_right_right, and_iff_left_iff_imp]
-            intro a_1
-            simp_all only [Finset.mem_filter, Finset.mem_powerset, S]
-            obtain ⟨left, right⟩ := property_1
-            obtain ⟨left_1, right⟩ := right
-            exact left a_1
-          rw [this]
-          simp_all only [Finset.mem_filter, Finset.mem_powerset, forall_const, S]
-        let h_contra4 := h_contra3 this
-        obtain ⟨root, h⟩ := h_contra4
-        obtain ⟨cond, right_2⟩ := h
-        obtain ⟨stem, right_3⟩ := right_2
-        obtain ⟨stem_prop, right_4⟩ := right_3
-        simp at cond --rootの満たす条件 これがもともとのhの条件に矛盾するはず。
-        have : stem ⊆ H \ (equivalent_vertex SF ⟨p.root, pr_property⟩).image Subtype.val :=
-        by
-          simp_all only [Finset.subset_iff]
-          intro a ha
-          simp_all only [Finset.mem_sdiff, Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right,
-            not_exists]
-          apply And.intro
-          · simp_all only [Subtype.forall, Finset.mem_subtype, implies_true, not_and, Decidable.not_not,
-            exists_and_left, forall_const, true_and, forall_true_left, exists_const, and_self]
-          · intro a_1
-            let sp := stem_prop ha
-            obtain ⟨aa, aa_property⟩ := sp --使っているっぽい。
-            simp_all only [Subtype.forall, Finset.mem_subtype, implies_true, not_and, Decidable.not_not,
-              exists_and_left, forall_const, true_and, forall_true_left, exists_const, and_self, not_false_eq_true]
+    dsimp [RS] at h1
+    apply minimal_element_is_rare_lemma SF x h1
 
-        --(stem,root)の組み合わせに最初の条件を当てはめると、ステムサイズ1の根付き集合が存在することになる。
-        --その点は、equivalent_vertex SF ⟨p.root, pr_property⟩に属するのでthisに反する。
-        #check cond.2
-        obtain ⟨z,zprop⟩ = cond.2.1
-  ⟩
-        -- 1点の場合と同じようにiの単射性を示して、rareであることを示す。
-  have h_inj : Function.Injective i :=
+  let i : S → T := fun ss => ⟨(ss.val \ (P.image Subtype.val)), by
+    exact ha ss⟩
+
+  --iの単射性の証明
+  have i_inj: ∀ s1 s2 : S, i s1 = i s2 → s1 = s2 :=
   by
-    intros a b hab
-    simp only [i] at hab
-    simp only [Finset.sdiff_eq_self_iff_disjoint, Finset.disjoint_image, Finset.disjoint_iff_ne] at hab
-    ext x
-    simp only [Finset.mem_filter, Finset.mem_powerset, Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, exists_true_left, Finset.mem_sdiff, Finset.mem_singleton, not_and, Decidable.not_not, S, T, P]
-    constructor
-    · intro hx
-      by_contra h
-      simp_all only [Subtype.mk.injEq, T, S, P]
-      obtain ⟨val, property⟩ := a
-      obtain ⟨val_1, property_1⟩ := b
-      simp_all only
+    dsimp [i]
+    intro s1 s2
+    intro h
+    simp at h
+    obtain ⟨s1v,s1p⟩ := s1
+    obtain ⟨s2v,s2p⟩ := s2
+    have sfs1 :SF.sets (Finset.image Subtype.val (Finset.subtype (fun ss => ss ∈ SF.ground) s1v)):=
+    by
+      rename_i P_1
+      simp_all only [Subtype.coe_eta, ne_eq, RS, P_1, P]
       simp_all only [Finset.mem_filter, Finset.mem_powerset, S]
-      obtain ⟨left, right⟩ := property
-      obtain ⟨left_1, right_1⟩ := property_1
+      --obtain ⟨val, property⟩ := x
+      --obtain ⟨left, right⟩ := s1p
+      convert s1p.2.2
+      ext y
+      apply Iff.intro
+      · intro a
+        simp_all only [Finset.mem_image, Finset.mem_subtype, Subtype.exists, exists_and_left, exists_prop,
+          exists_eq_right_right]
+
+      · intro a
+        simp_all only [Finset.mem_image, Finset.mem_subtype, Subtype.exists, exists_and_left, exists_prop,
+          exists_eq_right_right, true_and]
+        obtain ⟨val, property⟩ := x
+        obtain ⟨left, right⟩ := s1p
+        obtain ⟨left_1, right_1⟩ := s2p
+        obtain ⟨left_2, right⟩ := right
+        obtain ⟨left_3, right_1⟩ := right_1
+        simp_all only
+        exact left a
+
+
+    have :x ∈ Finset.subtype (fun ss => ss ∈ SF.ground) s1v := by
+      dsimp [S] at s1p
+      rw [Finset.mem_filter] at s1p
+      rw [Finset.subtype]
+      simp
+      use x
+      simp
+      rename_i P_1 s1p_1
+      simp_all only [Subtype.coe_eta, ne_eq, Finset.mem_powerset, RS, P_1, P]
+
+    have pi1:P.image Subtype.val ⊆ s1v := by
+      dsimp [P]
+      let equiv := equivalent_vertex_set_lemma SF x (s1v.subtype (fun ss => ss ∈ SF.ground)) sfs1 this
+      rename_i P_1
+      simp_all only [Subtype.coe_eta, ne_eq, RS, P_1, P]
+      simp_all only [Finset.mem_filter, Finset.mem_powerset, S]
+      obtain ⟨val, property⟩ := x
+      obtain ⟨left, right⟩ := s1p
+      obtain ⟨left_1, right_1⟩ := s2p
       obtain ⟨left_2, right⟩ := right
       obtain ⟨left_3, right_1⟩ := right_1
-      sorry
-    · intro hx
-      by_contra h
-      simp_all only [Subtype.mk.injEq, T, S, P]
-      obtain ⟨val, property⟩ := a
-      obtain ⟨val_1, property_1⟩ := b
       simp_all only
+      intro y hy
+      simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right]
+      obtain ⟨w, h_1⟩ := hy
+      dsimp [equivalent_vertex] at h_1
+      simp_all only [Finset.mem_filter, Finset.mem_attach, true_and]
+      obtain ⟨left_4, right_2⟩ := h_1
+      dsimp [vertexorder_is_preorder] at right_2
+      dsimp [vertexorder] at right_2
+      dsimp [vertexorder_is_preorder] at left_4
+      dsimp [vertexorder] at left_4
+      simp_all only [true_and]
+
+    have xins:x ∈ Finset.subtype (fun ss => ss ∈ SF.ground) s2v := by
+      dsimp [S] at s1p
+      rw [Finset.mem_filter] at s2p
+      rw [Finset.subtype]
+      simp
+      use x
+      simp
+      rename_i P_1 s1p_1
+      simp_all only [Subtype.coe_eta, ne_eq, Finset.mem_powerset, RS, P_1, P]
+
+    have pi2:P.image Subtype.val ⊆ s2v := by
+      dsimp [P]
+      let equiv := equivalent_vertex_set_lemma SF x (s1v.subtype (fun ss => ss ∈ SF.ground)) sfs1 this
+      rename_i P_1
+      simp_all only [Subtype.coe_eta, ne_eq, RS, P_1, P]
       simp_all only [Finset.mem_filter, Finset.mem_powerset, S]
-      obtain ⟨left, right⟩ := property
-      obtain ⟨left_1, right_1⟩ := property_1
+      obtain ⟨val, property⟩ := x
+      obtain ⟨left, right⟩ := s2p
+      obtain ⟨left_1, right_1⟩ := s1p
       obtain ⟨left_2, right⟩ := right
       obtain ⟨left_3, right_1⟩ := right_1
-      sorry
-  sorry
-  --exact Finset.card_bij S T i (fun s => (i s).property) h_inj
+      simp_all only
+      intro y hy
+      simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right]
+      obtain ⟨w, h_1⟩ := hy
+      dsimp [equivalent_vertex] at h_1
+      simp_all only [Finset.mem_filter, Finset.mem_attach, true_and]
+      obtain ⟨left_4, right_2⟩ := h_1
+      dsimp [vertexorder_is_preorder] at right_2
+      dsimp [vertexorder] at right_2
+      dsimp [vertexorder_is_preorder] at left_4
+      dsimp [vertexorder] at left_4
+      simp_all only [true_and]
+
+    simp at h
+
+    have : s1v = s2v :=
+    by
+      ext a
+      apply Iff.intro
+      · intro a_1
+        by_cases h1: a ∈ Finset.image Subtype.val P
+        case pos =>
+          have :a ∈ s2v := by
+            exact pi2 h1
+          exact this
+        case neg =>
+          have :a ∈ (s1v \ Finset.image Subtype.val P) :=
+          by
+            rw [Finset.mem_sdiff]
+            constructor
+            exact a_1
+            exact h1
+          rw [h] at this
+          rename_i P_1 h1_1 this_1
+          simp_all only [Subtype.coe_eta, ne_eq, Finset.mem_filter, Finset.mem_powerset, Finset.mem_subtype,
+            Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, not_exists, Finset.mem_sdiff,
+            exists_false, not_false_eq_true, and_true, RS, P_1, S, P]
+
+      · intro a_1
+        by_cases h1: a ∈ Finset.image Subtype.val P
+        case pos =>
+          have :a ∈ s1v := by
+            exact pi1 h1
+          exact this
+        case neg =>
+          have :a ∈ (s2v \ Finset.image Subtype.val P) :=
+          by
+            rw [Finset.mem_sdiff]
+            constructor
+            exact a_1
+            exact h1
+          rw [←h] at this
+          rename_i P_1 h1_1 this_1
+          rw [Finset.mem_sdiff] at this
+          exact this.1
+    rename_i P_1 this_1
+    subst this
+    simp_all only [Subtype.coe_eta, ne_eq, Finset.mem_subtype, RS, P_1, P, S]
+    --ここで単射性の証明が終わり。
+  --あとは、単射が存在した場合に、頂点がrareになることを証明する補題を証明して、使う。
+  apply injection_rare_lemma SF x
+  use i

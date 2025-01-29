@@ -803,6 +803,7 @@ by
     · simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, Subtype.coe_eta,
       Finset.coe_mem, exists_const, not_false_eq_true, imp_self, and_self]
 -/
+--こちらの補題は、根は選べない。ステムは確定している。使いにくい補題。次の_mrt_closureの方が使いやすい。
 theorem RootedCircuitsTheorem_including (SF : ClosureSystem α)  [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)] :
  ∀ s : Finset { x // x ∈ SF.ground }, ∀ t : Finset { x // x ∈ SF.ground }, s ⊆ t
  → ¬ SF.sets (s.image Subtype.val) → SF.sets (t.image Subtype.val) →
@@ -836,6 +837,77 @@ by
       simp_all only [not_false_eq_true]
     · simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, Subtype.coe_eta,
       Finset.coe_mem, exists_const, not_false_eq_true, imp_self, and_self]
+
+--こちらの補題は、最初に与えたxがrootになる。
+theorem RootedCircuitsTheorem_closure (SF : ClosureSystem α)  [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)] (x:SF.ground):
+ ∀ s : Finset { x // x ∈ SF.ground }, x ∈ closureOperator SF s
+  → ¬ SF.sets (s.image Subtype.val)  →
+  (asm:↑x ∉ Finset.image Subtype.val s) →
+  (ValidPair.mk (s.image Subtype.val) x asm) ∈ (rootedSetsSF SF.toSetFamily) :=
+by
+  intro s hcl hnsf hns
+  dsimp [rootedSetsSF]
+  dsimp [allCompatiblePairs]
+  dsimp [isCompatible]
+  simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, Subtype.coe_eta, Finset.coe_mem,
+    exists_const, Finset.mem_filter]
+  simp
+  constructor
+  · dsimp [allPairs]
+    rw [Finset.product]
+    apply Finset.mem_product.mpr
+    constructor
+    · simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, Subtype.coe_eta, Finset.coe_mem,
+        exists_const, Finset.mem_powerset]
+      obtain ⟨val, property⟩ := x
+      simp [Finset.image_subset_iff]
+    · simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, Subtype.coe_eta,
+      Finset.coe_mem, exists_const]
+  · constructor
+    · simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, Subtype.coe_eta, Finset.coe_mem,
+        exists_const, not_false_eq_true]
+    · intro t ht hts
+      let tg : t ⊆ SF.ground := by
+        exact SF.inc_ground t ht
+      have : closureOperator SF s ⊆ t.subtype (λ x => x ∈ SF.ground) := by
+        have : s ⊆ (t.subtype (λ x => x ∈ SF.ground)) := by
+          simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, Subtype.coe_eta,
+            Finset.coe_mem, exists_const]
+          obtain ⟨val, property⟩ := x
+          intro x hx
+          simp_all only [Finset.mem_subtype]
+          obtain ⟨val_1, property_1⟩ := x
+          simp_all only
+          apply hts
+          simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, exists_const]
+        let mnt := monotone_from_SF_finset SF s (t.subtype (λ x => x ∈ SF.ground)) this
+        have :SF.sets (Finset.image Subtype.val (Finset.subtype (fun x => x ∈ SF.ground) t)) :=
+        by
+          have :Finset.image Subtype.val (Finset.subtype (fun x => x ∈ SF.ground) t) = t :=
+          by
+            simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, Subtype.coe_eta,
+              Finset.coe_mem, exists_const]
+            obtain ⟨val, property⟩ := x
+            ext a : 1
+            simp_all only [Finset.mem_image, Finset.mem_subtype, Subtype.exists, exists_and_left, exists_prop,
+              exists_eq_right_right, and_iff_left_iff_imp]
+            intro a_1
+            exact tg a_1
+          rw [this]
+          exact ht
+        have :t.subtype (λ x => x ∈ SF.ground) = closureOperator SF (Finset.subtype (fun x => x ∈ SF.ground) t) :=
+        by
+          let idem := idempotent_from_SF_finset_lem SF (t.subtype (λ x => x ∈ SF.ground)) this
+          simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, Subtype.coe_eta,
+            Finset.coe_mem, exists_const, idem]
+        rw [this]
+        exact mnt
+      let fm := Finset.mem_of_subset this hcl
+      simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, Subtype.coe_eta,
+        Finset.coe_mem, exists_const]
+      obtain ⟨val, property⟩ := x
+      simp_all only
+      simpa using fm
 
 --集合族が与えられた時に、そこから作った根つき集合から作った集合族の集合が、元の集合であることの定理。上の補題を使って証明した。
 --ClosureSystemTheoremと合わせて、必要十分条件になっている。

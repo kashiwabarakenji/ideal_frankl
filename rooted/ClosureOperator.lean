@@ -479,6 +479,7 @@ noncomputable def closure_operator_from_SF {α :Type} [DecidableEq α][Fintype �
   monotone := monotone_from_SF_finset F,
   idempotent := idempotent_from_SF_finset F
 }
+----便利な補題等
 
 --monotoneとidempotentを組み合わせて言えるので、特に補題にするほどでもないかもしれないが。closureと根付きサーキットの関係の定理で利用。
 lemma closure_monotone_lemma {α : Type} [DecidableEq α] [Fintype α] (F : ClosureSystem α)[DecidablePred F.sets] (s : Finset F.ground) (t : Finset F.ground) :
@@ -491,3 +492,22 @@ by
   by
      exact idempotent_from_SF_finset_lem F t h
   simp_all only [cl]
+
+--hyperedgeでないもののclosureをとると真に大きくなるという補題。
+lemma closure_ssubset {α : Type} [DecidableEq α] [Fintype α] (F : ClosureSystem α)[DecidablePred F.sets] (s : Finset F.ground) :
+  ¬ F.sets (s.image Subtype.val) → s ⊂ closureOperator F s :=
+by
+  intro h
+  let cl := (closure_operator_from_SF F).cl
+  have h_closure : s ⊆ cl s := extensive_from_SF_finset F s
+  have : s ≠ cl s :=
+  by
+    intro h1
+    apply h
+    apply idempotent_from_SF_finset_lem_mpr F s h1.symm
+  simp_all only [cl]
+  rw [@Finset.ssubset_iff_subset_ne]
+  simp_all only [ne_eq]
+  apply And.intro
+  · exact h_closure
+  · exact this
