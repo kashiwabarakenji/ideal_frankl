@@ -3,6 +3,9 @@ import Mathlib.Data.Finset.Card
 import Mathlib.Data.Finset.Powerset
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Logic.Function.Defs
+--import Mathlib.Relation.NullTransRel  -- ReflTransGen (推移的閉包)
+import Mathlib.Tactic
+
 import rooted.CommonDefinition
 import rooted.rootedcircuits
 import rooted.RootedImplication
@@ -11,7 +14,191 @@ import LeanCopilot
 
 open Classical
 
---variable {α : Type*} (U : Set α) (R : α → α → Prop)
+variable {α : Type} [DecidableEq α] [Fintype α]
+
+namespace o1
+
+open Finset
+open Relation
+
+--------------------------------------------------------------------------------
+-- 0. 前提: U は有限かつ可決定な等号を持つ型
+--------------------------------------------------------------------------------
+
+variable {U : Type} [DecidableEq U] [Fintype U]
+
+--------------------------------------------------------------------------------
+-- 1. 「有限集合 s が R に閉じている」ことを表す述語 closedUnder R s
+--------------------------------------------------------------------------------
+
+/--
+`s` が関係 `R` に閉じている:
+「もし R x y が成り立つなら、x ∈ s ⇒ y ∈ s」
+-/
+def closedUnder (R : U → U → Prop) (s : Finset U) : Prop :=
+  ∀ ⦃x y : U⦄, R x y → (x ∈ s → y ∈ s)
+
+--------------------------------------------------------------------------------
+-- 2. S_R R の定義
+--    「U のすべての部分有限集合のうち、R に閉じているもの」
+--------------------------------------------------------------------------------
+
+/-
+S_R R := { s ∣ s は R に閉じている } を Finset で表現する。
+-/
+noncomputable def S_R (R : U → U → Prop) : Finset (Finset U) :=
+  (univ.powerset).filter (λ s => closedUnder R s)
+
+/-
+`s ∈ S_R R` であることと、`s` が R に閉じていることの同値。
+-/
+
+omit [DecidableEq U] in
+lemma mem_S_R_iff {R : U → U → Prop} {s : Finset U} :
+    s ∈ S_R R ↔ closedUnder R s := by
+  -- 定義展開: s ∈ filter P X ↔ (s ∈ X ∧ P s)
+  simp only [S_R, mem_filter, mem_powerset]
+  -- s ∈ powerset univ  ↔  s ⊆ univ
+  -- ただし s ⊆ univ は常に真なので省略可だが、いちおうきちんと見る
+  constructor
+  · rintro ⟨hs_subset, h_closed⟩
+    exact h_closed
+  · intro h
+    -- s は `closedUnder R`
+    -- powerset の要件: s ⊆ univ, これは自明 (Finset.subset_univ s)
+    exact ⟨subset_univ s, h⟩
+
+--------------------------------------------------------------------------------
+-- 3. R_hat の定義
+--------------------------------------------------------------------------------
+
+/--
+R_hat R x y :=
+「すべての s ∈ S_R R に対して、もし x ∈ s なら y ∈ s」
+-/
+def R_hat (R : U → U → Prop) (x y : U) : Prop :=
+  ∀ (s : Finset U), s ∈ S_R R → (x ∈ s → y ∈ s)
+
+--------------------------------------------------------------------------------
+-- 4. 推移的閉包 ReflTransGen R x y (すでに mathlib 4 に定義あり)
+--------------------------------------------------------------------------------
+-- ReflTransGen R x y とは
+--   x = y (refl)  もしくは
+--   x ->* a かつ R a b を1ステップ -> b ->* y (tail)
+-- の有限回繰り返しで x から y に到達可能
+
+--------------------------------------------------------------------------------
+-- 5(1). ReflTransGen R x y → R_hat R x y
+--
+--      帰納法を使って示す
+--------------------------------------------------------------------------------
+
+omit [DecidableEq U] in
+lemma ReflTransGen.to_R_hat {R : U → U → Prop} {x y : U}
+  (h : ReflTransGen R x y) : R_hat R x y := by
+  -- ゴール: ∀ s ∈ S_R R, x ∈ s → y ∈ s
+  intro s hs hx
+  -- hs: s ∈ S_R R  => closedUnder R s
+  -- hx: x ∈ s
+  -- h : x から y への有限回の到達 (推移的閉包)
+  induction h
+  case refl z =>
+    -- x = y の場合 (0ステップ到達)
+    -- z とは x のこと。x = y なので trivially y ∈ s
+    simp_all only
+  case tail a b c hab rab ih =>
+    -- a から b へ (既に推移的閉包), さらに 1ステップ R b c => a から c
+    -- ih: x ∈ s ⇒ b ∈ s
+    -- さらに s は R に閉じている => b ∈ s ⇒ c ∈ s
+    -- 最終的に x ∈ s ⇒ c ∈ s
+    have hb : b ∈ s :=
+    by
+      simp_all only
+
+    -- mem_S_R_iff で closedUnder へ
+    rw [mem_S_R_iff] at hs
+    exact hs rab hb
+
+--------------------------------------------------------------------------------
+-- 5(2). R_hat R x y → ReflTransGen R x y
+--
+--      反証法：もし推移的閉包が成り立たないなら、
+--      「x から到達可能な要素」だけ集めた finset で矛盾を得る。
+--------------------------------------------------------------------------------
+
+omit [DecidableEq U] in
+lemma R_hat.to_ReflTransGen {R : U → U → Prop} {x y : U}
+  (h : R_hat R x y) : ReflTransGen R x y := by
+  by_contra hneg
+  -- hneg : ¬ ReflTransGen R x y
+
+  -- s := { z in univ | ReflTransGen R x z } (x から到達可能な要素)
+  -- Finset 版: filter univ
+  let s : Finset U := univ.filter (λ z => ReflTransGen R x z)
+
+  -- (i) s が R に閉じていることを示す => s ∈ S_R R
+  have s_closed : closedUnder R s := by
+    -- ゴール: ∀ a b, R a b → (a ∈ s → b ∈ s)
+    intros a b Rab ha
+    -- ha: a ∈ s => つまり a ∈ univ ∧ ReflTransGen R x a が真
+    -- b を s に入れたい => b ∈ univ ∧ ReflTransGen R x b
+    -- ReflTransGen R x a & R a b => ReflTransGen R x b (tail)
+    have : ReflTransGen R x a := by
+      -- a が s に入っている => filter の定義から ReflTransGen R x a が成り立つ
+      simp_all only [mem_filter, mem_univ, true_and, s]
+    apply mem_filter.2
+    constructor
+    · -- b ∈ univ は自明
+      exact mem_univ b
+    · -- ReflTransGen R x b
+      exact ReflTransGen.tail this Rab
+
+  -- s が R に閉じている => s ∈ S_R R
+  have s_in : s ∈ S_R R := by
+    rw [mem_S_R_iff]
+    exact s_closed
+
+  -- (ii) x ∈ s : x は自分自身に0ステップで到達 => ReflTransGen.refl x
+  have hx : x ∈ s := by
+    apply mem_filter.2
+    simp_all only [mem_univ, true_and, s]
+    rfl
+
+  -- (iii) y ∉ s : もし y ∈ s なら ReflTransGen R x y が真 (filter の定義上) になってしまうが，
+  -- それは hneg と矛盾
+  have hy : y ∉ s := fun hy_in =>
+    let ⟨_, hy_rel⟩ := mem_filter.1 hy_in
+    hneg hy_rel
+
+  -- (iv) ところが R_hat より，s を代入すれば x ∈ s ⇒ y ∈ s のはず
+  --      hx から y ∈ s が出るが hy と矛盾
+  apply hy
+  exact h s s_in hx
+
+--------------------------------------------------------------------------------
+-- 6. R_hat R x y と ReflTransGen R x y は同値
+--------------------------------------------------------------------------------
+
+omit [DecidableEq U] in
+lemma R_hat_iff_ReflTransGen {R : U → U → Prop} (x y : U) :
+    R_hat R x y ↔ ReflTransGen R x y :=
+  ⟨R_hat.to_ReflTransGen, ReflTransGen.to_R_hat⟩
+
+--------------------------------------------------------------------------------
+-- 7. 関係としての一致: R_hat R = ReflTransGen R
+--    （x y を一つずつみたとき同値なので、関係全体としても同じ）
+--------------------------------------------------------------------------------
+
+omit [DecidableEq U] in
+theorem R_hat_eq_ReflTransGen (R : U → U → Prop) :
+    R_hat R = ReflTransGen R := by
+  funext x
+  funext y
+  apply propext (R_hat_iff_ReflTransGen x y)
+
+end o1
+
+
 namespace PropVersion
 
 
@@ -117,7 +304,7 @@ noncomputable def S {U : Type} [Fintype U] (R : U → U → Prop) : Finset (Fins
 -/
 theorem S_eq_S_star
   {U : Type}[Fintype U] (R : U → U → Prop)
-  (hRefl : ∀ x, R x x)  -- R が反射的（問題文の仮定）
+  --(hRefl : ∀ x, R x x)  -- R が反射的（問題文の仮定）
   : S R = S (star R)
 := by
   apply Finset.ext
@@ -148,11 +335,12 @@ theorem S_eq_S_star
       ⟩ -- Finset.mem_filter.mpr で「∀ x y, R x y → (x ∈ s → y ∈ s)」を示す
 end PropVersion
 -------------
+/-
 namespace FiniteReconstruction
 
 variable {U : Type} (R : U → U → Prop) [Fintype U] [DecidableEq U]
 variable (R : U → U → Prop)
-/--
+/-
   有限集合 `U` であることを仮定：
   - `[DecidableEq U]`: 要素同定可能
   - `[Fintype U]`   : 有限集合
@@ -352,8 +540,22 @@ theorem R'_eq_Rhat :
           obtain ⟨left, right⟩ := this_2
           let ht := h_hat T left right
           --これでは矛盾にならない。not_xyと矛盾するのか？candのemptyとは矛盾しないというか、y in Tの場合は、candの要素にならない。
+          have : R' R x y:=
+          by
+            dsimp [R']
+            dsimp [S] at left
+            rw [Finset.mem_filter] at left
+            dsimp [R'] at left
+            dsimp [T] at left
+            simp at left
+            simp_all only [Finset.powerset_univ, Finset.not_mem_empty, IsEmpty.forall_iff, implies_true, and_true,
+              exists_const, not_false_eq_true, cand, allSubs, Family, T, ht]
+            dsimp [R'] at not_xy
+            dsimp [S] at hxy
+            dsimp [R_hat] at hxy
+            simp at hxy
+            sorry
 
-          sorry
         constructor
         . -- T ∈ S(R'R)
           simp_all only [Finset.powerset_univ, Finset.not_mem_empty, IsEmpty.forall_iff, implies_true, and_true,
@@ -415,6 +617,12 @@ theorem R'_eq_Rhat :
       dsimp [Family] at s_inSR'
       rw [Finset.mem_filter] at s_inSR'
 
+      let si := s_inSR'.2.1
+      dsimp [S] at si
+      dsimp [R']  at si
+      rw [Finset.mem_filter] at si
+      let si2 := si.2
+
       --#check sMaximal s s_inSR'.2.1 --この式は意味がない。sの極大性を言っている条件なので、sを入れても意味がない。
       sorry --Familyの極大性から、R x yを言いたいみたいだけど、よくわからず。
       --exact sMaximal (Relation.ReflTransGen.single rab) ha
@@ -437,61 +645,8 @@ theorem R'_eq_Rhat :
     simp_all only [Finset.mem_filter, Finset.mem_univ, not_true_eq_false, and_false, Family]
 
 end FiniteReconstruction
-/-
--- 推移的閉包の定義
-def R' (R : U → U → Prop) : U → U → Prop :=
-  Relation.TransGen R
-
--- S_R から R' を再構成する
-def R_hat (S_R : Set (Set U)) (x : U) (y : U):  Prop :=
-  ∀ s : Set U, s ∈ S_R → x ∈ s → y ∈ s
-
--- R_hat が推移的であることの証明
-lemma R_hat_transitive (S_R : Set (Set U)) :
-  ∀ (x y z : U), R_hat  S_R x y → R_hat  S_R y z → R_hat  S_R x z := by
-  intro x y z hxy hyz
-  unfold R_hat
-  intro s hs hx
-  apply hyz s hs (hxy s hs hx)
-
--- R_hat が R' と一致することを証明
-lemma R_hat_eq_R' (hS : S R = S (R' R)) :
-  R' R = R_hat (S R) := by
-  ext x y
-  constructor
-  · intro hxy
-    induction hxy with
-    | single hab =>
-      intro s hs ha
-      exact hs hab ha
-    | tail b hab ih =>
-      intro s hs ha
-      simp_all only
-      apply hs
-      · exact Relation.TransGen.single hab
-      · apply ih
-        · simp_all only
-        · simp_all only
-
-  · intro hxy
-    sorry
-    /--/
-    rw [hS] at hxy
-    dsimp [R_hat]
-    dsimp [S] at hxy
-    dsimp [R_hat] at hxy
-    dsimp [R']
-    dsimp [R'] at hxy
-    -/
-
-
-
--- 定理: S_R を用いて R' を再構成できることを証明
-lemma reconstruct_R' : R' R = R_hat (S R) :=
-  R_hat_eq_R' (S_R_eq_S_R' R)
-
-end PropVersion
 -/
+/-
 variable {α : Type} [Fintype α] [DecidableEq α]
 
 lemma size_one_rooted_circuits (RS : RootedSets α) (SF:ClosureSystem α) [DecidablePred SF.sets]
@@ -520,7 +675,7 @@ by
   --帰納法的な議論になると思われるが、なにに関する帰納法なのか思いついていない。
 
 
-
+-/
 
 
 def is_size_one_circuit (RS : RootedSets α):Prop:=
@@ -529,6 +684,8 @@ def is_size_one_circuit (RS : RootedSets α):Prop:=
 --でもそんなこともない気もする。包含関係で大きいものは条件として使われないので、極小なものだけが意味がある。
 --全部の根付き集合を考えている場合はそれでもよいが、部分的な表現だと、極小なものしか残さないと
 --導かれる集合族が変わってきてしまうということはないという理解であっているか。
+/- 一旦、お蔵入り。復活できるか考える。証明ができないというよりも命題がおかしいと思う。
+2項関係とPreorderとイデアルの関係をよく考えて、どのような言明が一番よいのかを考える。
 
 lemma size_one_circuits (RS : RootedSets α) (SF:ClosureSystem α) [DecidablePred SF.sets]
  (eq:  rootedsetToClosureSystem RS = SF) :
@@ -635,3 +792,4 @@ by
           simp_all only [lt_self_iff_false]
           --let ho := h_one q hq
   sorry
+-/
