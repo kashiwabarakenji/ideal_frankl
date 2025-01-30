@@ -177,7 +177,7 @@ noncomputable def S (R : U → U → Prop) : Finset (Finset U) :=
   `Relation.TransGen R x y` は「有限回 R をたどって x から y に行ける」という命題。
 -/
 def R' (R : U → U → Prop) : U → U → Prop :=
-  Relation.TransGen R
+  Relation.ReflTransGen R
 
 /--
   R_hat(S(R)) x y とは、
@@ -215,15 +215,16 @@ theorem R'_eq_Rhat :
     intro hxy
     -- hxy: Relation.TransGen R x y  (≒ R' R x y)
     induction hxy with
-    | single rxy =>
+    | refl =>
+      --rename_i b
       -- 1ステップ (x→y) の場合: R x y
       -- R_hat(S(R)) x y を示したい
       -- 具体的には「∀ s ∈ S(R), x ∈ s → y ∈ s」を示す
       intro s hs hx
-      sorry
-      /-
-      exact hs rxy hx
-      -/
+      dsimp [S] at hs
+      rw [Finset.mem_filter] at  hs
+      simp_all only [Finset.mem_univ, true_and]
+
     | tail rxy h_xz IH =>
       -- 多ステップ (x→z) は, x→y の 1ステップ + y→z の再帰
       intro s hs hx
@@ -252,7 +253,7 @@ theorem R'_eq_Rhat :
       ここで、「x を含むが y は含まない」かつ「R'R に閉じている (s ∈ S(R'R))」
       ような部分集合 s を集めた族の中で極大要素を取れば矛盾が導ける。
     -/
-    let Family := { s : Finset U | s ∈ S (R' R) ∧ x ∈ s ∧ y ∉ s }
+    let Family :Finset (Finset U):= { s : Finset U | s ∈ S (R' R) ∧ x ∈ s ∧ y ∉ s }
 
     /-
       **補題**: Family が空でないなら、その中で包含関係 (⊆) で極大な要素が存在する。
@@ -264,7 +265,8 @@ theorem R'_eq_Rhat :
       -- allSubs : U の全部分集合を列挙した Finset
       let allSubs := (Finset.univ : Finset U).powerset
       -- cand : 「Family に属する」集合をフィルタしたもの
-      simp_all only [Set.sep_and, Set.mem_inter_iff, Set.mem_setOf_eq, and_imp, true_and, Family]
+
+      --simp_all only [Finset.sep_and, Finset.mem_inter_iff, Finset.mem_setOf_eq, and_imp, true_and, Family]
 
       let cand := allSubs.filter (fun fset =>
         let S' := (fset : Finset U)
@@ -272,7 +274,7 @@ theorem R'_eq_Rhat :
       )
       -- cand が空かどうかで場合分け
       --haveI : LinearOrder (Finset U) := Finset.lex.linearOrder
-      by_cases cEmpty : ¬cand.Nonempty
+      by_cases cEmpty : cand = ∅
       case pos =>
         /-
           cand = ∅ の場合:
@@ -291,17 +293,26 @@ theorem R'_eq_Rhat :
           intro s hs hx_s
           by_contra hy_s
           -- もし y ∉ s なら s が cand に入るはずだが、cand = ∅
-          have s_family : s ∈ Family := ⟨hs, hx_s, hy_s⟩
+          have s_family : s ∈ Family := by
+            dsimp [Family]
+            rw [Finset.mem_filter]
+            constructor
+            simp_all only [Finset.powerset_univ, Finset.mem_univ, cand, allSubs]
+            constructor
+            simp_all only [Finset.powerset_univ, cand, allSubs]
+            constructor
+            simp_all only [Finset.powerset_univ, cand, allSubs]
+            simp_all only [Finset.powerset_univ, not_false_eq_true, cand, allSubs]
+
           -- これは cand によるフィルタ定義と一致
           have s_in_cand : s ∈ cand
           apply Finset.mem_filter.2
           constructor
           · apply Finset.mem_powerset.2
             apply Finset.subset_univ
-          · exact s_family
-          simp_all only [Finset.powerset_univ, Finset.not_nonempty_iff_eq_empty, Set.mem_setOf_eq, not_false_eq_true,
-            and_self, Finset.not_mem_empty, cand, allSubs, Family]
-
+          · intro S'
+            simp_all only [Finset.powerset_univ, Finset.not_mem_empty, cand, allSubs, Family]
+          simp_all only [Finset.powerset_univ, Finset.not_mem_empty, cand, allSubs, Family]
         -- つまり「R_hat (S(R'R)) x y」が成り立った
         -- すると多ステップの性質から R'R x y が示せる（TransGen理論上）
         -- しかし not_xy : ¬ R' R x y と矛盾
@@ -311,35 +322,55 @@ theorem R'_eq_Rhat :
         -- もう少し一工夫: 要素全体集合 U は R'R に閉じている(すぐに示せる) ので x ∈ U => y ∈ U trivially ではなく
         --   => これだけだと trivial なので最終的には contradiction で済む
         -- ここでは一番簡単に contradiction へ：
-        sorry
-        /-
-        apply not_xy
-        -- 背理法の仮定を打ち消す「R'R x y」を構築しよう。
-        -- ここで "∀ s ∈ S(R'R), x ∈ s ⇒ y ∈ s" はまさに "R_hat(S(R'R)) x y"
-        let h_hat : ∀ s ∈ S (R'R), x ∈ s → y ∈ s := this
+
+        by_contra not_xy
+            -- 背理法の仮定を打ち消す「R'R x y」を構築しよう。
+            -- ここで "∀ s ∈ S(R'R), x ∈ s ⇒ y ∈ s" はまさに "R_hat(S(R'R)) x y"
+        let h_hat : ∀ s ∈ S (R' R), x ∈ s → y ∈ s := this
         -- すると x,y ∈ R_hat(S(R'R)) => R'R x y が言えるかどうか… もう一度同じ背理法を使う？ 再帰ループ注意
         -- 代わりに、簡単な特定集合を考える: T = { z | R'R x z }. T は R'R-閉 で x ∈ T. cand=∅ ⇒ y ∈ T => R'R x y.
-        let T := { z | Relation.TransGen R x z }
+        let T :Finset U:= { z | Relation.ReflTransGen R x z }
         -- T が R'R に閉じていることを示す
-        suffices T ∈ S (R'R) ∧ x ∈ T by
+
+        suffices T ∈ S (R' R) ∧ x ∈ T by
+          --obtain ⟨h1,h2⟩ := h
           have : y ∈ T := by
             by_contra hynT
-            have T_family : T ∈ Family := ⟨this.left, this.right, hynT⟩
+            have T_family : T ∈ Family := by
+              simp_all only [Finset.powerset_univ, Finset.not_mem_empty, IsEmpty.forall_iff, implies_true, and_true,
+                exists_const, not_false_eq_true, Finset.mem_filter, Finset.mem_univ, true_and, and_self,
+                not_true_eq_false, cand, allSubs, Family, T]
             -- cand=∅ なのに T ∈ Family => cand≠∅ 矛盾
-            contradiction
+            simp_all only [Finset.powerset_univ, Finset.not_mem_empty, IsEmpty.forall_iff, implies_true, and_true,
+              exists_const, not_false_eq_true, Finset.mem_filter, Finset.mem_univ, true_and, and_self,
+              not_true_eq_false, cand, allSubs, Family, T]
           -- よって y ∈ T => R'R x y
-          contradiction
+          rename_i this_2
+          --simp_all only [Finset.powerset_univ, Finset.not_mem_empty, IsEmpty.forall_iff, implies_true, and_true,
+          --  exists_const, not_false_eq_true, Finset.mem_filter, Finset.mem_univ, true_and, and_self, cand, allSubs,
+          --  Family, T]
+          obtain ⟨left, right⟩ := this_2
+          let ht := h_hat T left right
+          --これでは矛盾にならない。not_xyと矛盾するのか？candのemptyとは矛盾しないというか、y in Tの場合は、candの要素にならない。
+
+          sorry
         constructor
         . -- T ∈ S(R'R)
-          intro a b hab ha
+          simp_all only [Finset.powerset_univ, Finset.not_mem_empty, IsEmpty.forall_iff, implies_true, and_true,
+            exists_const, not_false_eq_true, cand, allSubs, Family, T]
+          apply Finset.mem_filter.mpr
+          simp_all only [Finset.mem_univ, Finset.mem_filter, true_and]
+          intro x_1 y_1 a a_1
+          apply a_1.trans a
           -- hab : R'R a b, ha : a ∈ T => R'R x a
           -- => R'R x b => b ∈ T
-          exact Relation.TransGen.trans ha hab
         . -- x ∈ T
-          apply Relation.TransGen.refl x
-        -/
+          simp_all only [Finset.powerset_univ, Finset.not_mem_empty, IsEmpty.forall_iff, implies_true, and_true,
+            exists_const, not_false_eq_true, Finset.mem_filter, Finset.mem_univ, true_and, cand, allSubs, Family, T]
+          apply Relation.ReflTransGen.refl
+
       case neg =>
-        sorry
+        sorry --maxを求める関数は別に書く。
         /-
         let sMax := cand.max' ⟨_, Finset.nonempty_of_ne_empty cEmpty⟩
         have sMax_in : sMax ∈ cand := Finset.maxBy_mem neg
@@ -357,8 +388,11 @@ theorem R'_eq_Rhat :
           | Ordering.gt => rfl
         -/
 
+
     -- 上で得られた「包含関係で極大」な要素 s を取り出す
-    let ⟨s, ⟨s_inSR', x_in_s, y_notin_s⟩, sMaximal⟩ := existsMaxFamily
+    obtain ⟨s,  sMaximal⟩ := existsMaxFamily
+    obtain ⟨s_inSR', sMaximal⟩ := sMaximal
+
     /-
       s ∈ S(R'R) : ∀ a b, R' R a b → (a ∈ s → b ∈ s)
       x ∈ s, y ∉ s
@@ -369,7 +403,22 @@ theorem R'_eq_Rhat :
       => s ∈ S(R)
     -/
     have s_in_S_R : (s : Finset U) ∈ (S R) := by
-      sorry
+      dsimp [S]
+      dsimp [Family] at sMaximal
+      rw [Finset.mem_filter]
+      constructor
+      simp_all only [Finset.mem_filter, Finset.mem_univ, true_and, and_imp, Family]
+
+      simp at sMaximal
+
+      intro a b rab ha --元々のxとyとこのx' y'の関係がわからない。
+      dsimp [Family] at s_inSR'
+      rw [Finset.mem_filter] at s_inSR'
+
+      --#check sMaximal s s_inSR'.2.1 --この式は意味がない。sの極大性を言っている条件なので、sを入れても意味がない。
+      sorry --Familyの極大性から、R x yを言いたいみたいだけど、よくわからず。
+      --exact sMaximal (Relation.ReflTransGen.single rab) ha
+
       /-
       intro a b rab ha
       -- R a b => R'R a b (1ステップ)
@@ -380,8 +429,12 @@ theorem R'_eq_Rhat :
       ここで「R_hat(S(R)) x y」より「∀ s ∈ S(R), x ∈ s → y ∈ s」。
       とくにこの s に適用すると、x ∈ s なら y ∈ s となるが y ∉ s との矛盾。
     -/
-    have y_in_s : y ∈ s := hxy s s_in_S_R x_in_s
-    contradiction
+    have y_in_s : y ∈ s :=
+    by
+      apply hxy s s_in_S_R
+      simp_all only [Finset.mem_filter, Finset.mem_univ, true_and, and_imp, Family]
+
+    simp_all only [Finset.mem_filter, Finset.mem_univ, not_true_eq_false, and_false, Family]
 
 end FiniteReconstruction
 /-
@@ -429,7 +482,6 @@ lemma R_hat_eq_R' (hS : S R = S (R' R)) :
     dsimp [R_hat] at hxy
     dsimp [R']
     dsimp [R'] at hxy
-    search_proof
     -/
 
 
