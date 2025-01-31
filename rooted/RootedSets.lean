@@ -754,18 +754,43 @@ by
   dsimp [rootedSetsSF] at hr
   dsimp [allCompatiblePairs] at hr
   dsimp [isCompatible] at hr
-  simp at hr
-  sorry --このように分解するよりもなにか補題を使った方がいいかも。
+  simp at hr  --hrは使うのか？
+  --s ⊆ tで、tがclosed setであるとき、closure sも tのsubsetであることを使う気がする。
+  --lemma closure_monotone_lemma {α : Type} [DecidableEq α] [Fintype α] (F : ClosureSystem α)[DecidablePred F.sets] (s : Finset F.ground) (t : Finset F.ground) :
+  --F.sets (t.image Subtype.val) → s ⊆ t → (closure_operator_from_SF F).cl s ⊆ t :=
+  --するとmem_closure_iff_lemmaとか使わないで済むかも。
+  have sclosed: SF.sets (closureOperator SF r_sub.stem) :=
+  by
+    search_proof
+  have ex: r_sub.stem ⊆ closureOperator SF r_sub.stem :=
+  by
+    --これは extensive
+    sorry
+  let cm :=closure_monotone_lemma SF r_sub.stem closureOperator SF r_sub.stem sclosed ex
+
+  sorry
+  /-
+
+  have eq: rootedsetToClosureSystem RS = SF  :=
+  by
+    exact closuresystem_rootedsets_eq SF
+
+  have : (rootedsetToClosureSystem RS).sets r.stem :=
+  by
+    rw [eq]
+    sorry --これも使うかわからない。
+
+  dsimp [rootedsetToClosureSystem] at this
+  dsimp [filteredFamily] at this
+  simp at this
+  search_proof
+  let pr := this.2 r rrs (by trivial)
+-/
 
 lemma stem_is_not_hyperedge(SF:ClosureSystem α) :
  r ∈ rootedSetsSF SF.toSetFamily →  ¬ SF.sets r.stem:=
 by
   intro h
-  --dsimp [rootedSetsSF] at h
-  --dsimp [allCompatiblePairs] at h
-  --simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, Subtype.coe_eta, Finset.coe_mem,
-   -- exists_const, Finset.mem_filter]
-  --obtain ⟨left, right⟩ := h
   intro a
   let RS := rootedSetsFromSetFamily SF.toSetFamily
   have rrs: r ∈ RS.rootedsets := by
@@ -776,6 +801,28 @@ by
     exact closuresystem_rootedsets_eq SF
   have :r.stem ⊆ SF.ground := by
     exact ((RS.inc_ground r rrs).1)
+
+  dsimp [rootedSetsSF] at h
+  dsimp [allCompatiblePairs] at h
+  dsimp [isCompatible] at h
+  --simp at h
+  --obtain ⟨left, right,b, h⟩ := h
+  have eq: rootedsetToClosureSystem RS = SF  :=
+  by
+    exact closuresystem_rootedsets_eq SF
+
+  have : (rootedsetToClosureSystem RS).sets r.stem :=
+  by
+    rw [eq]
+    exact a
+
+  dsimp [rootedsetToClosureSystem] at this
+  dsimp [filteredFamily] at this
+  simp at this
+  let pr := this.2 r rrs (by trivial)
+  exact r.root_not_in_stem pr
+
+  /-当初の試み。消す
 
   let rcs := (rootedset_setfamily RS SF eq r.stem this).mpr
 
@@ -811,3 +858,4 @@ by
         · exact r.root_not_in_stem
 
   simp_all only [Finset.mem_attach, true_and]
+-/
