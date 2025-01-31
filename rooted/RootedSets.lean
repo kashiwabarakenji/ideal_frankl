@@ -735,78 +735,91 @@ by
       simp_all only [RS, ground, inc_ground]
     simp_all only [RS, ground, inc_ground]
 
-lemma root_stem_closureoperator (SF : ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)] (s : Finset α):
+--根付き集合表現と両立する集合sを取り出すと、本当に両立しているという証明。ステムを含むと根を含む。
+lemma rootedpair_compatible (RS : RootedSets α):
+  ∀ s:Finset α, (rootedsetToClosureSystem RS).sets s → (∀ r ∈ RS.rootedsets, r.stem ⊆ s → r.root ∈ s) :=
+by
+  intro s hs
+  intro r hr
+  intro rs
+  dsimp [rootedsetToClosureSystem] at hs
+  dsimp [filteredFamily] at hs
+  simp_all only [not_and, Decidable.not_not, Finset.mem_filter, Finset.mem_powerset]
+
+lemma subtype_val_eq {α : Type} {p : α → Prop} (x y : Subtype p) :
+    x = y ↔ Subtype.val x = Subtype.val y := by
+  apply Iff.intro
+  · intro h; rw [h]
+  · intro h; ext; exact h
+
+--ステムのclosureを取ると、根が含まれることを示す補題。まだどこでも使っていない。
+lemma root_stem_closure (SF : ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)]:
   let RS := rootedSetsFromSetFamily SF.toSetFamily
    ∀ (hr:r ∈ RS.rootedsets), let r_sub := rootedpair_to_subtype RS r hr
   r_sub.root ∈ closureOperator SF r_sub.stem :=
 by
   simp
   intro hr
-  dsimp [rootedpair_to_subtype]
   let RS := rootedSetsFromSetFamily SF.toSetFamily
   let r_sub := rootedpair_to_subtype RS r hr
   let mc := mem_closure_iff_lemma SF r_sub.stem r_sub.root
   dsimp [r_sub] at mc
-  dsimp [rootedpair_to_subtype] at mc
+  dsimp [rootedpair_to_subtype] at mc --これをなくすと後ろでエラー
   apply mc.mpr
   intro f hf sfs
-  dsimp [rootedSetsFromSetFamily] at hr
-  dsimp [rootedSetsSF] at hr
-  dsimp [allCompatiblePairs] at hr
-  dsimp [isCompatible] at hr
-  simp at hr  --hrは使うのか？
-  --s ⊆ tで、tがclosed setであるとき、closure sも tのsubsetであることを使う気がする。
-  --lemma closure_monotone_lemma {α : Type} [DecidableEq α] [Fintype α] (F : ClosureSystem α)[DecidablePred F.sets] (s : Finset F.ground) (t : Finset F.ground) :
-  --F.sets (t.image Subtype.val) → s ⊆ t → (closure_operator_from_SF F).cl s ⊆ t :=
-  --するとmem_closure_iff_lemmaとか使わないで済むかも。
-  have sclosed: SF.sets (closureOperator SF r_sub.stem) :=
-  by
-    search_proof
-  have ex: r_sub.stem ⊆ closureOperator SF r_sub.stem :=
-  by
-    --これは extensive
-    sorry
-  let cm :=closure_monotone_lemma SF r_sub.stem closureOperator SF r_sub.stem sclosed ex
 
-  sorry
-  /-
+  --下で使っている。
+  have r_rooted: r ∈ RS.rootedsets := by
+    simp_all only [RS]
 
-  have eq: rootedsetToClosureSystem RS = SF  :=
-  by
-    exact closuresystem_rootedsets_eq SF
+  have eq : SF = rootedsetToClosureSystem RS := by
+    exact (closuresystem_rootedsets_eq SF).symm
 
-  have : (rootedsetToClosureSystem RS).sets r.stem :=
-  by
-    rw [eq]
-    sorry --これも使うかわからない。
+  let tmp:= rootedpair_compatible RS (Finset.image Subtype.val f)
+  --dsimp [RS] at this
+  have : (rootedsetToClosureSystem RS).sets (Finset.image Subtype.val f) := by
+    simp_all only [RS]
+  let tmp2:= tmp this r r_rooted
+  have : r.stem ⊆ Finset.image Subtype.val f := by
+    intro x hx
+    simp_all only [Finset.mem_image,  Subtype.exists]
+    simp
+    dsimp [rootedsetToClosureSystem]
 
-  dsimp [rootedsetToClosureSystem] at this
-  dsimp [filteredFamily] at this
-  simp at this
-  search_proof
-  let pr := this.2 r rrs (by trivial)
--/
+    --すぐ下で暗黙に使っている。
+    have :x ∈ RS.ground := by
+      have: r.stem ⊆ RS.ground := by
+        exact (RS.inc_ground r r_rooted).1
+      exact this hx
+    simp_all only [exists_true_left, RS]
+    apply hf
+    simp_all only [Finset.mem_subtype]
 
+  let tmp3 := tmp2 this
+  --have : r.root ∈ SF.ground := by
+  --  exact (RS.inc_ground r r_rooted).2
+  simp at tmp3
+  obtain ⟨left, right⟩ := tmp3 --このあたりの挙動はよくわからない。
+  exact right
+
+--どの根付き集合に対しても、ステムは、hyperedgeではない。
 lemma stem_is_not_hyperedge(SF:ClosureSystem α) :
  r ∈ rootedSetsSF SF.toSetFamily →  ¬ SF.sets r.stem:=
 by
-  intro h
-  intro a
+  intro h a
   let RS := rootedSetsFromSetFamily SF.toSetFamily
   have rrs: r ∈ RS.rootedsets := by
     dsimp [RS]
     dsimp [rootedSetsFromSetFamily]
     simp_all only
-  have eq: rootedsetToClosureSystem RS = SF := by
-    exact closuresystem_rootedsets_eq SF
+
   have :r.stem ⊆ SF.ground := by
     exact ((RS.inc_ground r rrs).1)
 
   dsimp [rootedSetsSF] at h
   dsimp [allCompatiblePairs] at h
   dsimp [isCompatible] at h
-  --simp at h
-  --obtain ⟨left, right,b, h⟩ := h
+
   have eq: rootedsetToClosureSystem RS = SF  :=
   by
     exact closuresystem_rootedsets_eq SF
@@ -821,41 +834,3 @@ by
   simp at this
   let pr := this.2 r rrs (by trivial)
   exact r.root_not_in_stem pr
-
-  /-当初の試み。消す
-
-  let rcs := (rootedset_setfamily RS SF eq r.stem this).mpr
-
-  rw [imp_not_comm] at rcs
-
-  let rcs2 := rcs a
-
-  have : ∃ p ∈ RS.rootedsets,
-    p.stem ⊆ r.stem ∧
-      p.root ∈ Finset.image Subtype.val (closureOperator SF (Finset.subtype (fun x => x ∈ SF.ground) r.stem)) ∧
-        p.root ∉ r.stem :=
-  by
-    use r --ここはrでなくて、rを含むcircuitsを選ばないといけない。
-    constructor
-    · simp_all only [RS]
-    · constructor
-      · simp
-      · constructor
-        · --dsimp [closureOperator] --closure operatorは分解しないで定理を使いたい。
-          --lemma mem_finsetIntersection_iff_of_nonempty {α : Type} [DecidableEq α]
-          -- {family : Finset (Finset α)} {x : α} (hne : family.Nonempty) :
-          -- x ∈ finsetIntersection family ↔ ∀ f ∈ family, x ∈ f
-          --この定理のclosureOperator版を作れないか。
-         --apply mem_closure_iff_lemma
-          have :r.root ∈ SF.ground := by
-            exact (RS.inc_ground r rrs).2
-          let root_sub : {x // x ∈ SF.ground} := ⟨r.root, this⟩
-          have :root_sub ∈ closureOperator SF (Finset.subtype (fun x => x ∈ SF.ground) r.stem) :=
-          by
-            --stemのclosureをとるとrootが含まれるという補題があるか探して、なければ作る。
-            sorry
-          sorry
-        · exact r.root_not_in_stem
-
-  simp_all only [Finset.mem_attach, true_and]
--/
