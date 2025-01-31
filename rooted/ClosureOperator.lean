@@ -274,7 +274,7 @@ lemma closureOperator_image_in_sets
 --finsetIntersectionの基本的な命題。定義を展開するよりも、この補題を使った方が証明が簡単になる。
 lemma mem_finsetIntersection_iff_of_nonempty
   {α : Type} [DecidableEq α]
-  {family : Finset (Finset α)} {x : α}
+  {family : Finset (Finset α)} (x : α)
   (hne : family.Nonempty)
   :
   x ∈ finsetIntersection family
@@ -303,6 +303,90 @@ lemma mem_finsetIntersection_iff_of_nonempty
       -- 以上で (x ∈ sup id ∧ ∀ f∈family, x∈f) が示せる
       ⟨x_in_union, hx⟩
     )
+
+--mem_finsetIntersection_iff_of_nonemptyのclosure版。
+--mem_closure_iffだけだとtopological closureの定理と名前がかぶる。
+lemma mem_closure_iff_lemma
+  {α : Type} [DecidableEq α] [Fintype α]
+  (F : ClosureSystem α) [DecidablePred F.sets] (s : Finset F.ground) (x : F.ground) :
+  x ∈ closureOperator F s ↔ ∀ f :Finset F.ground, s ⊆ f → F.sets (f.image Subtype.val) → x ∈ f :=
+by
+  -- closureOperator の定義を展開
+  simp only [closureOperator]
+  -- finsetIntersection の性質を使って「x ∈ closureOperator F s」を展開
+  simp
+  let family := F.ground.powerset.filter (fun t => F.sets t ∧ s.image Subtype.val ⊆ t)
+  have hne: Finset.Nonempty family := by
+    use F.ground
+    dsimp [family]
+    rw [Finset.mem_filter]
+    constructor
+    · simp_all only [Finset.mem_powerset, subset_refl]
+    · constructor
+      · exact F.has_ground
+      ·
+        obtain ⟨val, property⟩ := x
+        rw [Finset.image_subset_iff]
+        intro x a
+        simp_all only [Finset.coe_mem]
+
+  let mfi := @mem_finsetIntersection_iff_of_nonempty _ _ family x hne
+  -- あとは、closureOperator の定義に戻す
+  dsimp [family] at mfi
+  simp at mfi
+  simp_all only [family]
+  obtain ⟨val, property⟩ := x
+  simp_all only
+  apply Iff.intro
+  · intro a f a_1 a_2
+    simp at a
+    rw [Finset.map_eq_image] at a
+    have : f.image Subtype.val ⊆ F.ground := by
+      rw [Finset.image_subset_iff]
+      intro x a_3
+      simp_all only [Function.Embedding.coeFn_mk, Finset.coe_mem]
+    let mfia := mfi.mp a (f.image Subtype.val) this a_2
+    have :Finset.image Subtype.val s ⊆ Finset.image Subtype.val f := by
+      rw [Finset.image_subset_iff]
+      intro x a_3
+      simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, Subtype.coe_eta,
+        Finset.coe_mem, exists_const]
+      obtain ⟨val_1, property_1⟩ := x
+      exact a_1 a_3
+    let miiaf := mfia this
+    rw [Finset.mem_image] at miiaf
+    simp_all only [Subtype.exists, exists_and_right, exists_eq_right, exists_true_left]
+
+  · intro a
+    have : (∀ f ⊆ F.ground, F.sets f → Finset.image Subtype.val s ⊆ f → val ∈ f):=
+    by
+      intro f a_1 a_2 a_3
+      have :s ⊆ (f.subtype (λ x => x ∈ F.ground)) :=
+      by
+        intro x hx
+        simp_all only [Finset.mem_subtype]
+        obtain ⟨val_1, property_1⟩ := x
+        simp_all only
+        apply a_3
+        simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, exists_const]
+      let afs := a (f.subtype (λ x => x ∈ F.ground)) this
+      have :F.sets (Finset.image Subtype.val (Finset.subtype (fun x => x ∈ F.ground) f)) :=
+      by
+        have : Finset.image Subtype.val (Finset.subtype (fun x => x ∈ F.ground) f) = f:= by
+          ext a_4 : 1
+          simp_all only [Finset.mem_image, Finset.mem_subtype, Subtype.exists, exists_and_left, exists_prop,
+            exists_eq_right_right, and_iff_left_iff_imp]
+          intro a_5
+          exact a_1 a_5
+        rw [this]
+        exact a_2
+      let afst := afs this
+      dsimp [Finset.subtype] at afst
+      simp at afst
+      exact afst.1
+    let mfia := mfi.mpr this
+    rw [Finset.map_eq_image]
+    simp_all only [Function.Embedding.coeFn_mk, implies_true]
 
 --逆方向も成り立つ。idempotent_from_SF_finset_lem_mpr
 lemma idempotent_from_SF_finset_lem
@@ -352,7 +436,7 @@ by
       simp_all only
     have M_nonempty : M.Nonempty := by
       use F.ground
-    let mf := (mem_finsetIntersection_iff_of_nonempty M_nonempty).mp hx
+    let mf := (mem_finsetIntersection_iff_of_nonempty x M_nonempty).mp hx
     simp_all only [Finset.mem_filter, Finset.mem_powerset, subset_refl, and_true, true_and]
     have : sval ∈ M :=
     by
