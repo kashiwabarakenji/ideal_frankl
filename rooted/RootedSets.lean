@@ -56,13 +56,20 @@ structure RootedSets (α : Type) [DecidableEq α] where
   inc_ground : ∀ p ∈ rootedsets, p.stem ⊆ ground ∧ p.root ∈ ground
   nonempty_ground : ground.Nonempty
 
---subtypeのvalidpiarに変換する関数。うまく動くかはわからない。
+--subtypeのvalidpiarに変換する関数。
 noncomputable def rootedpair_to_subtype (RS : RootedSets α) (p: ValidPair α) (pr: p ∈ RS.rootedsets): ValidPair { x // x ∈ RS.ground } :=
   ValidPair.mk (p.stem.subtype (λ x => x ∈ RS.ground)) ⟨p.root, (RS.inc_ground p pr).2⟩
   (by
     simp_all only [Finset.mem_subtype]
     exact p.root_not_in_stem
   )
+
+--subtypeに関する補題。どこかにまとめた方が良い。
+lemma subtype_val_eq {α : Type} {p : α → Prop} (x y : Subtype p) :
+    x = y ↔ Subtype.val x = Subtype.val y := by
+  apply Iff.intro
+  · intro h; rw [h]
+  · intro h; ext; exact h
 
 -- RootedSetsにフィルタされた通常の集合族の定義。こちらはSetFamilyではなく、ただの集合族。
 noncomputable def filteredFamily (RS : RootedSets α):
@@ -175,7 +182,19 @@ noncomputable def rootedSetsFromSetFamily (SF : SetFamily α) [DecidableEq α] [
     nonempty_ground := SF.nonempty_ground
   }
 
+--根付き集合表現と両立する集合sを取り出すと、本当に両立しているという証明。ステムを含むと根を含むの、生成表現からスタートしている版。
+lemma rootedpair_compatible (RS : RootedSets α):
+  ∀ s:Finset α, (rootedsetToClosureSystem RS).sets s → (∀ r ∈ RS.rootedsets, r.stem ⊆ s → r.root ∈ s) :=
+by
+  intro s hs
+  intro r hr
+  intro rs
+  dsimp [rootedsetToClosureSystem] at hs
+  dsimp [filteredFamily] at hs
+  simp_all only [not_and, Decidable.not_not, Finset.mem_filter, Finset.mem_powerset]
+
 --sがhyperedgeであるときには、sにステムが含まれて、sの外にrootがあるような根付きサーキットはない。
+--rootedpair_compatibleと似ているがこちらは、閉包システムからスタートしている。
 lemma ClosureSystemLemma  (SF : ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)]:
   ∀ s : Finset α, SF.sets s → rc ∈(rootedSetsFromSetFamily SF.toSetFamily).rootedsets
   → rc.stem ⊆ s → rc.root ∈ s :=
@@ -212,38 +231,45 @@ by
 
   apply pro2 s a pro3 a_2
 
---閉集合族が与えられたときに、根付き集合族を考えて、それから集合族の定義すると元に戻る。の片側。
---逆方向の言明は、ClosureSystemTheorem_mprで証明済みなので、実際には必要十分条件。
-theorem ClosureSystemTheorem (SF : ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)]:
-  ∀ s : Finset α, SF.sets s → (rootedsetToClosureSystem (rootedSetsFromSetFamily SF.toSetFamily)).sets s :=
-  by
-    intro s hs
-    dsimp [rootedsetToClosureSystem, rootedSetsFromSetFamily]
-    dsimp [filteredFamily]
-    simp_all
-
+--生成表現系の根付き集合は、完全表現系になっても残っている。
+lemma rootedgenerator_is_rootedset (RS : RootedSets α):
+  let SF := rootedsetToClosureSystem RS
+  ∀ r ∈ RS.rootedsets, r ∈ rootedSetsSF SF.toSetFamily :=
+by
+  intro SF
+  intro r hr
+  dsimp [rootedSetsSF]
+  dsimp [allCompatiblePairs]
+  dsimp [isCompatible]
+  simp_all
+  have :(r.stem,r.root) ∈ allPairs SF.toSetFamily := by
+    dsimp [allPairs]
+    apply Finset.mem_product.mpr
     constructor
-    · intro p hp
-      have : p ∈ SF.ground :=
-      by
-        have :s ⊆ SF.ground := by
-          exact SF.inc_ground s hs
-        exact this hp
-      exact this
-
-    · dsimp [rootedSetsFromSetFamily]
-      dsimp [rootedSetsSF]
-      dsimp [allCompatiblePairs]
-      intro p hp
-      apply ClosureSystemLemma SF
-      · exact hs --なぜか上にもってこれない。
-      · exact hp
+    simp
+    exact (RS.inc_ground r hr).1
+    simp
+    exact (RS.inc_ground r hr).2
+  use r.stem
+  use r.root
+  constructor
+  · simp
+  · constructor
+    · exact this
+    · constructor
+      · exact r.root_not_in_stem
+      · intro t st rts
+        simp_all only [SF]
+        apply rootedpair_compatible RS t st
+        · simp_all only
+        · exact rts
 
 ------------------------------
-----ここからは、閉集合族と根付きサーキットの表現の同値性について
+----ここからは、根付き集合族の存在定理
+----別ファイルに独立させてもよい。
 ------------------------------
 
---閉集合族から根つきサーキットを与えるバージョン。rootedcircuitsではなく、rootedsetsを返す。
+--閉集合族から根つき集合族を与えるバージョン。rootedcircuitsではなく、rootedsetsを返す。
 --rootedcircuits版は、rootedcircuits_setfamily。
 lemma rootedset_setfamily (RS : RootedSets α) (SF:ClosureSystem α)
   --(eq:  ∀ (s : Finset α),(rootedsetToClosureSystem RS).sets s ↔ (SF.sets s)) :
@@ -619,6 +645,38 @@ by
       simp_all only
       simpa using fm
 
+------------------------------
+----ここからは、閉集合族と根付きサーキットの表現の同値性について
+----別ファイルに独立させてもよい。
+------------------------------
+
+--閉集合族が与えられたときに、根付き集合族を考えて、それから集合族の定義すると元に戻る。の片側。
+--逆方向の言明は、ClosureSystemTheorem_mprで証明済みなので、実際には必要十分条件。
+theorem ClosureSystemTheorem (SF : ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)]:
+  ∀ s : Finset α, SF.sets s → (rootedsetToClosureSystem (rootedSetsFromSetFamily SF.toSetFamily)).sets s :=
+  by
+    intro s hs
+    dsimp [rootedsetToClosureSystem, rootedSetsFromSetFamily]
+    dsimp [filteredFamily]
+    simp_all
+
+    constructor
+    · intro p hp
+      have : p ∈ SF.ground :=
+      by
+        have :s ⊆ SF.ground := by
+          exact SF.inc_ground s hs
+        exact this hp
+      exact this
+
+    · dsimp [rootedSetsFromSetFamily]
+      dsimp [rootedSetsSF]
+      dsimp [allCompatiblePairs]
+      intro p hp
+      apply ClosureSystemLemma SF
+      · exact hs --なぜか上にもってこれない。
+      · exact hp
+
 --集合族が与えられた時に、そこから作った根つき集合から作った集合族の集合が、元の集合であることの定理。上の補題を使って証明した。
 --ClosureSystemTheoremと合わせて、必要十分条件になっている。
 theorem ClosureSystemTheorem_mpr (SF : ClosureSystem α)[DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)]:
@@ -735,24 +793,13 @@ by
       simp_all only [RS, ground, inc_ground]
     simp_all only [RS, ground, inc_ground]
 
---根付き集合表現と両立する集合sを取り出すと、本当に両立しているという証明。ステムを含むと根を含む。
-lemma rootedpair_compatible (RS : RootedSets α):
-  ∀ s:Finset α, (rootedsetToClosureSystem RS).sets s → (∀ r ∈ RS.rootedsets, r.stem ⊆ s → r.root ∈ s) :=
-by
-  intro s hs
-  intro r hr
-  intro rs
-  dsimp [rootedsetToClosureSystem] at hs
-  dsimp [filteredFamily] at hs
-  simp_all only [not_and, Decidable.not_not, Finset.mem_filter, Finset.mem_powerset]
 
-lemma subtype_val_eq {α : Type} {p : α → Prop} (x y : Subtype p) :
-    x = y ↔ Subtype.val x = Subtype.val y := by
-  apply Iff.intro
-  · intro h; rw [h]
-  · intro h; ext; exact h
+------------------------------
+----ここからは根付き集合と閉包システムの同値性を利用した補題
+------------------------------
 
 --ステムのclosureを取ると、根が含まれることを示す補題。まだどこでも使っていない。
+--closuresystem_rootedsets_eq を使って証明。
 lemma root_stem_closure (SF : ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)]:
   let RS := rootedSetsFromSetFamily SF.toSetFamily
    ∀ (hr:r ∈ RS.rootedsets), let r_sub := rootedpair_to_subtype RS r hr
@@ -802,7 +849,7 @@ by
   obtain ⟨left, right⟩ := tmp3 --このあたりの挙動はよくわからない。
   exact right
 
---どの根付き集合に対しても、ステムは、hyperedgeではない。
+--どの根付き集合に対しても、ステムは、hyperedgeではない。closuresystem_rootedsets_eqを使って証明。
 lemma stem_is_not_hyperedge(SF:ClosureSystem α) :
  r ∈ rootedSetsSF SF.toSetFamily →  ¬ SF.sets r.stem:=
 by
