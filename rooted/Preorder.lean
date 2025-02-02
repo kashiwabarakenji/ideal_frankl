@@ -310,6 +310,7 @@ lemma pathOfLength.induce
   S(R) = { s | ∀ x y, R x y → (x ∈ s → y ∈ s) }.
 -/
 
+--上のS_Rと被っている。
 noncomputable def S {α : Type} [Fintype α] (R : α → α → Prop) : Finset (Finset α) :=
   (Finset.univ).filter (λ s => ∀ ⦃x y : α⦄, R x y → (x ∈ s → y ∈ s))
 
