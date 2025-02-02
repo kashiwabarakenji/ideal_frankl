@@ -238,7 +238,6 @@ by
   -- 補題Cより，R_hat (R_from_RS1 RS) x q.root から目的の根付き集合が存在する
   exact lemma_C RS q hq x h_Rhat
 -/
-
 lemma size_one_rooted_circuits [Fintype α](RS : RootedSets α) [DecidablePred (rootedsetToClosureSystem RS).sets]
   (h₁ : ∀ p ∈ RS.rootedsets, p.stem.card = 1) :
   let SF := rootedsetToClosureSystem RS
@@ -251,7 +250,7 @@ by
   -- よって，仮定 h₁ より q.stem.card = 1 である．
   --intro h_one
   --RSからpreorderを作ることができる。
-  let R: α → α → Prop := λ x y => ∃ r ∈ RS.rootedsets, r.root ∈ r.stem ∧ x = r.root ∧ y ∈ r.stem
+  let R: α → α → Prop := λ x y => ∃ r ∈ RS.rootedsets, y = r.root ∧ r.stem = {x}
   --Rのidealと誘導された集合族が等しくなる。
   --let R_hat: α → α → Prop := sorry
 
@@ -316,10 +315,94 @@ by
           simp_all only [implies_true, add_left_eq_self, AddLeftCancelMonoid.add_eq_zero, one_ne_zero, and_false,
             not_false_eq_true, ne_eq, Finset.card_eq_zero, gt_iff_lt, lt_add_iff_pos_left, add_pos_iff, zero_lt_one,
             or_true, SF]
+    have ground_trans: ∀ a1 a2 :α, a1 ∈ RS.ground → R a1 a2 → a2 ∈ RS.ground := by
+      intro a1 a2 ha1
+      dsimp [R]
+      intro hr
+      obtain ⟨r, hr_RS, hroot, hstem⟩ := hr
+      let rsi := (RS.inc_ground r hr_RS).2
+      simp_all only [implies_true, not_false_eq_true, ne_eq, Finset.card_eq_zero, gt_iff_lt, Finset.mem_attach,
+        Finset.mem_univ, true_and, SF, R]
 
     let A := (q.stem.attach).biUnion (λ xInStem =>
                Finset.univ.filter (λ z => Relation.ReflTransGen R xInStem.val z))
     --Finset.biUnion s t is the union of t a over a ∈ s.
+
+    have A_in_ground: A ⊆ RS.ground := by
+      intro a ha
+      dsimp [A] at ha
+      rw [Finset.mem_biUnion] at ha
+      obtain ⟨x, hx_in, hz_in⟩ := ha
+      rw [Finset.mem_filter] at hz_in
+      cases hz_in.2 with
+      | refl =>
+        let qs := (rootedcircuits_from_RS (rootedSetsFromSetFamily SF.toSetFamily)).inc_ground q hq
+        have : (rootedcircuits_from_RS (rootedSetsFromSetFamily SF.toSetFamily)).ground = RS.ground := by
+          simp_all only [implies_true, not_false_eq_true, ne_eq, Finset.card_eq_zero, gt_iff_lt, forall_exists_index,
+            and_imp, Finset.mem_attach, Finset.mem_univ, true_and, SF, R]
+          obtain ⟨val, property⟩ := x
+          obtain ⟨left, right⟩ := qs
+          simp_all only [SF]
+          rfl
+        rw [←this]
+        simp_all only [implies_true, not_false_eq_true, ne_eq, Finset.card_eq_zero, gt_iff_lt, forall_exists_index,
+          and_imp, Finset.mem_attach, Finset.mem_univ, true_and, SF, R]
+        obtain ⟨val, property⟩ := x
+        obtain ⟨left, right⟩ := qs
+        simp_all only [SF]
+        tauto
+
+      | tail h1 h2 =>
+        let qs := (rootedcircuits_from_RS (rootedSetsFromSetFamily SF.toSetFamily)).inc_ground q hq
+        have : (rootedcircuits_from_RS (rootedSetsFromSetFamily SF.toSetFamily)).ground = RS.ground := by
+          simp_all only [implies_true, not_false_eq_true, ne_eq, Finset.card_eq_zero, gt_iff_lt, forall_exists_index,
+            and_imp, Finset.mem_attach, Finset.mem_univ, true_and, SF, R]
+          obtain ⟨val, property⟩ := x
+          obtain ⟨left, right⟩ := qs
+          simp_all only [SF]
+          rfl
+        rw [←this]
+        simp_all only [implies_true, not_false_eq_true, ne_eq, Finset.card_eq_zero, gt_iff_lt, forall_exists_index,
+          and_imp, Finset.mem_attach, Finset.mem_univ, true_and, SF, R]
+        obtain ⟨val, property⟩ := x
+        obtain ⟨left, right⟩ := qs
+        simp_all only [SF]
+        obtain ⟨r, hr_RS, hroot, hstem⟩ := h2
+        have r_in_ground: r.root ∈ RS.ground := by
+          let rsi := (RS.inc_ground r hr_RS).2
+          simp_all only [implies_true, not_false_eq_true, ne_eq, Finset.card_eq_zero, gt_iff_lt, Finset.mem_attach,
+            Finset.mem_univ, true_and, SF, R]
+
+        have: r.stem.Nonempty := by
+          apply Finset.card_ne_zero.mp
+          intro h
+          subst hroot
+          simp_all only [Finset.card_singleton, one_ne_zero]
+
+        obtain ⟨z, hz⟩ := this
+
+        have z_in_ground: z ∈ RS.ground := by
+          let rsi1 := (RS.inc_ground r hr_RS).1
+          subst hroot
+          simp_all only [Finset.mem_singleton]
+          subst hz
+          apply rsi1
+          simp_all only [Finset.mem_singleton]
+
+        have sz: r.stem = {z} :=
+        by
+          subst hroot
+          simp_all only [Finset.mem_singleton]
+
+        have :R z r.root := by
+          dsimp [R]
+          use r
+
+        let gt := ground_trans z r.root z_in_ground r hr_RS
+        simp at gt
+        let gs := gt sz
+        subst hroot
+        exact gs
 
     have h_stem_in_A : q.stem ⊆ A :=
     by
@@ -335,38 +418,61 @@ by
       dsimp [filteredFamily]
       simp
       constructor
-      · intro p hp
-        dsimp [A] at hp
-        rw [Finset.mem_biUnion] at hp
-        obtain ⟨x, hx_in, hz_in⟩ := hp
+      · intro y hy
+        dsimp [A] at hy
+        rw [Finset.mem_biUnion] at hy
+        obtain ⟨x, hx_in, hz_in⟩ := hy
         rw [Finset.mem_filter] at hz_in
-        have : ∀ a1 a2 :α, a1 ∈ RS.ground → R a1 a2 → a2 ∈ RS.ground := by
-          intro a1 a2 ha1
-          dsimp [R]
-          intro hr
-          obtain ⟨r, hr_RS, hroot, hstem⟩ := hr
-          let rsi := (RS.inc_ground r hr_RS).1
-          simp_all only [implies_true, not_false_eq_true, ne_eq, Finset.card_eq_zero, gt_iff_lt, Finset.mem_attach,
-            Finset.mem_univ, true_and, SF, A, R]
-          obtain ⟨val, property⟩ := x
-          obtain ⟨left, right⟩ := hstem
-          subst left
-          simp_all only
-          apply rsi
-          simp_all only
-        sorry  --inductionだと思われるが、なにをinductionすればいいのか。
 
-      · --rootedpair_compatibleはAがhyperedgeであるとわかってないと使えない。
-        --ここは、Aの定義から示す必要がある。
-        intro p hp
+        cases hz_in.2 with
+        | refl =>
+          have : x.val ∈ A:=
+          by
+            simp_all only [implies_true, not_false_eq_true, ne_eq, Finset.card_eq_zero, gt_iff_lt,
+              forall_exists_index, and_imp, Finset.biUnion_subset_iff_forall_subset, Finset.mem_attach, forall_const,
+              Subtype.forall, Finset.mem_univ, true_and, Finset.mem_biUnion, Finset.mem_filter, Subtype.exists,
+              exists_prop, SF, R, A]
+            obtain ⟨val, property⟩ := x
+            simp_all only
+            exact ⟨val, property, hz_in⟩
+          have : x.val ∈ RS.ground := by
+            exact A_in_ground this
+          simp_all only [implies_true, not_false_eq_true, ne_eq, Finset.card_eq_zero, gt_iff_lt, forall_exists_index,
+            and_imp, Finset.biUnion_subset_iff_forall_subset, Finset.mem_attach, forall_const, Subtype.forall,
+            Finset.mem_univ, true_and, Finset.mem_biUnion, Finset.mem_filter, Subtype.exists, exists_prop, SF, R, A]
+
+          --exact hz_in.1
+        | tail h1 h2 =>
+          have : x.val ∈ A:= --これは使わないかもしれない。
+          by
+            simp_all only [implies_true, not_false_eq_true, ne_eq, Finset.card_eq_zero, gt_iff_lt,
+              forall_exists_index, and_imp, Finset.biUnion_subset_iff_forall_subset, Finset.mem_attach, forall_const,
+              Subtype.forall, Finset.mem_univ, true_and, Finset.mem_biUnion, Finset.mem_filter, Subtype.exists,
+              exists_prop, SF, R, A]
+            obtain ⟨val, property⟩ := x
+            simp_all only
+            obtain ⟨w, h⟩ := h2
+            obtain ⟨left, right⟩ := h
+            obtain ⟨left_1, right⟩ := right
+            subst left_1
+            use val
+          have : x.val ∈ RS.ground := by
+            exact A_in_ground this
+          simp_all only [implies_true, not_false_eq_true, ne_eq, Finset.card_eq_zero, gt_iff_lt, forall_exists_index,
+            and_imp, Finset.biUnion_subset_iff_forall_subset, Finset.mem_attach, forall_const, Subtype.forall,
+            Finset.mem_univ, true_and, Finset.mem_biUnion, Finset.mem_filter, Subtype.exists, exists_prop, SF, R, A]
+          show y ∈ RS.ground
+          sorry--h2とtrans_groundを使って証明する。これは証明できるかも。reflのケースを参考にする。
+          --exact h2 (this x.val y hx_in h1)
+      · show ∀ p ∈ RS.rootedsets, p.stem ⊆ A → p.root ∈ A
+        --p.stem.card=1であれば作り方から言えそうだが、そうでない場合はどうするか。
+        --qの取り方を工夫した方が良かったのかも。ちょっと難しいかも。
+        intro p hp hstem
         dsimp [A]
-        intro hs
+        rw [Finset.mem_biUnion]
         simp
         show ∃ a ∈ q.stem, Relation.ReflTransGen R a p.root
-        --dsimp [A] at h_stem_in_A
-        sorry --pのstemはAの中に入っているので、ReflTransGenの定義より、p.rootが入っているはず。
-        --aとしてはp.rootに辿れるaがあるはずなので、それを使えばよいが、どうすればいいか。
-        --h_stem_in_Aをもっと分解するといいのか?
+        sorry --ここから帰納法を使う？
 
     by_cases h_A : q.root ∈ A
     case pos =>
@@ -379,46 +485,41 @@ by
       have q_in_RS : q ∈ RS.rootedsets := by --間違っているかも。RSではなくて、推移性が成り立つR_hatのほうかも。
         dsimp [rootedcircuits_from_RS] at hq
         rw [Finset.mem_filter] at hq
-        sorry
+        sorry  --これは使わないかも。
+      --posのケースは証明できるかもしれない。
+      --R_hatのtransitivityより一気にxからq.rootまでR_hatで1歩で行ける事を示す。すると、
+      --q.rootもAに入っていないといけない。
 
-      --AIを参考に作ったが、この方針ではダメだと思われるので以下も意味がないかも。
-
-      have hx_R : ∃ r ∈ RS.rootedsets, r.root = q.root ∧ r.stem = {x} :=
-      by
-        simp_all only [implies_true, not_true_eq_false, SF]
-        --exact exists_singleton_rootedpair RS q q_in_RS ⟨x, q.stem.subset_of_mem hx_in⟩ hx_in
-
-      obtain ⟨r, hr_RS, rroot_eq, h_stem⟩ := hx_R
-
-      have h_proper : r.stem ⊂ q.stem :=
-      by
-        rw [h_stem]
-        apply Finset.ssubset_iff_subset_ne.mpr
-        constructor
-
-        simp_all only [implies_true, not_false_eq_true, ne_eq, Finset.card_eq_zero, Finset.singleton_subset_iff, SF]
-
-        intro h_eq
-        rw [←h_eq] at h_not1
-        simp at h_not1
-        simp_all only [implies_true, not_true_eq_false, SF]
-
-      have :r ∈ (rootedSetsFromSetFamily SF.toSetFamily).rootedsets:=
-      by
-        let rir := rootedgenerator_is_rootedset RS r hr_RS
-        simp_all only [implies_true, not_false_eq_true, ne_eq, Finset.card_eq_zero, SF]
-
-      have h_min := (Finset.mem_filter.mp hq).2 r this rroot_eq
-
-      specialize h_min h_proper
-      simp_all only [implies_true, not_true_eq_false, ne_eq, Finset.card_eq_zero, SF]
-
+      simp_all only [implies_true, not_true_eq_false, SF]
     case neg =>
       -- A が q.root を含まない場合
       -- すなわち，∀ x ∈ q.stem, ¬ R x q.root が成立する
       --qのstemがAに含まれて、qのrootがAに含まれないが、Aは、RSと両立することが示せるので、
       --矛盾が生じる。
-      sorry
+      --SF.sets A と r.stem ⊆ A → r.root ∈ A が成り立つことから、
+      let rc := rootedpair_compatible (rootedSetsFromSetFamily SF.toSetFamily) A
+      have :rootedsetToClosureSystem (rootedSetsFromSetFamily SF.toSetFamily) = SF :=
+      by
+        let cr := closuresystem_rootedsets_eq SF
+        simp_all only [implies_true, not_false_eq_true, ne_eq, Finset.card_eq_zero, gt_iff_lt, forall_exists_index,
+          and_imp, Finset.biUnion_subset_iff_forall_subset, Finset.mem_attach, forall_const, Subtype.forall,
+          Finset.mem_biUnion, Finset.mem_filter, Finset.mem_univ, true_and, Subtype.exists, exists_prop, not_exists,
+          not_and, SF, cr, R, A]
+      have :(rootedsetToClosureSystem (rootedSetsFromSetFamily SF.toSetFamily)).sets A :=
+      by
+        simp_all only [implies_true, not_false_eq_true, ne_eq, Finset.card_eq_zero, gt_iff_lt, forall_exists_index,
+          and_imp, Finset.biUnion_subset_iff_forall_subset, Finset.mem_attach, forall_const, Subtype.forall,
+          Finset.mem_biUnion, Finset.mem_filter, Finset.mem_univ, true_and, Subtype.exists, exists_prop, not_exists,
+          not_and, SF, R, A]
+      let rc2 := rc this q
+      have : q ∈ (rootedSetsFromSetFamily SF.toSetFamily).rootedsets := by
+        dsimp [rootedcircuits_from_RS] at hq
+        rw [Finset.mem_filter] at hq
+        exact hq.1
+        --circuitsならばねつき集合になるということがすでに証明されているので、それを使う。
+        --q ∈ (rootedcircuits_from_RS (rootedSetsFromSetFamily SF.toSetFamily)).rootedsets
+      let rc3 := rc2 this h_stem_in_A
+      contradiction --rootがAに属するか属さないかの矛盾。
 
   --ここまでを整理
   --qの極小性の条件は、hq_minに入っている。
