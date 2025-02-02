@@ -5,7 +5,7 @@ import Mathlib.Data.Finset.Powerset
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Logic.Function.Defs
 import rooted.CommonDefinition
-import rooted.rootedcircuits
+import rooted.RootedCircuits
 import rooted.RootedImplication
 import LeanCopilot
 

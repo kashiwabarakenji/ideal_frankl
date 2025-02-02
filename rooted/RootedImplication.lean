@@ -3,7 +3,7 @@ import Mathlib.Data.Finset.Card
 import Mathlib.Data.Finset.Powerset
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Logic.Function.Defs
-import rooted.rootedcircuits
+import rooted.RootedCircuits
 import LeanCopilot
 
 variable {α : Type} [Fintype α] [DecidableEq α]
