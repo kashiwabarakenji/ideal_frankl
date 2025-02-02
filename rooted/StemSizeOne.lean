@@ -555,7 +555,7 @@ by
         simp
         simp
         constructor
-        ·
+        · show ({↑x}, q.root) ∈ allPairs SF.toSetFamily
           dsimp [allPairs]
           rw [Finset.product]
           apply Finset.mem_product.mpr
@@ -569,7 +569,8 @@ by
               simp_all only
               rfl
           constructor
-          · simp
+          · show ({↑x}, q.root).1 ∈ SF.ground.powerset
+            simp
             let rs1 := ((rootedSetsFromSetFamily SF.toSetFamily).inc_ground q q_in_RSS).1
             let rs1p := rs1 x.property
             rw [SR_ground]
@@ -577,7 +578,7 @@ by
               forall_exists_index, and_imp, Finset.biUnion_subset_iff_forall_subset,
               Finset.mem_attach, forall_const, Subtype.forall, Finset.mem_filter, Finset.mem_univ,
               and_self]
-          · simp
+          · show q.root ∈ SF.ground
             let rs2 := ((rootedSetsFromSetFamily SF.toSetFamily).inc_ground q q_in_RSS).2
             rw [SR_ground]
             simp_all only [implies_true, not_false_eq_true, ne_eq, Finset.card_eq_zero, gt_iff_lt,
@@ -585,7 +586,8 @@ by
               Finset.mem_attach, forall_const, Subtype.forall, Finset.mem_filter, Finset.mem_univ,
               and_self]
         · constructor
-          · let qr := q.root_not_in_stem
+          · show ¬q.root = ↑x
+            let qr := q.root_not_in_stem
             simp_all only [implies_true, not_false_eq_true, ne_eq, Finset.card_eq_zero, gt_iff_lt, forall_exists_index,
               and_imp, Finset.biUnion_subset_iff_forall_subset, Finset.mem_attach, forall_const, Subtype.forall,
               Finset.mem_filter, Finset.mem_univ, and_self, SF, R, A]
@@ -595,21 +597,61 @@ by
             intro a
             subst a
             contradiction
-          · intro t st xt
+          · show ∀ (t : Finset α), SF.sets t → ↑x ∈ t → q.root ∈ t
+            intro t st xt
             show q.root ∈ t
-            sorry
-            /-
-            have : q.stem ⊆ t := --成り立たない？
-            by
-              simp_all only [implies_true, not_false_eq_true, ne_eq, Finset.card_eq_zero, gt_iff_lt,
-                forall_exists_index, and_imp, Finset.biUnion_subset_iff_forall_subset, Finset.mem_attach,
-                forall_const, Subtype.forall, Finset.mem_filter, Finset.mem_univ, and_self, SF, R, A]
+            --ここは、Aがq.rootを含む場合。
+            --qの極小性に反して、qより小さいvが存在するので矛盾をいうところのひとつ。
+            --vがrootedcircuits_from_RSに含まれることを示す部分。
+            --xからRで辿って行ったらq.rootに辿り着いたという状況。
+            have : preorder.R_hat R x.val q.root := by
+              dsimp [preorder.R_hat]
+              rw [Finset.mem_filter] at hR
+              simp_all only [implies_true, not_false_eq_true, ne_eq, Finset.card_eq_zero, gt_iff_lt, forall_exists_index,
+                and_imp, Finset.biUnion_subset_iff_forall_subset, Finset.mem_attach, forall_const, Subtype.forall,
+                Finset.mem_univ, true_and, SF, R, A]
+              intro s a a_1
               obtain ⟨val, property⟩ := x
               simp_all only
-              sorry
-
-            exact s_imp t st this --s_impを持ってきたのはよくなかった？preorderからR_hatの性質を持ってくるべき。
-            -/
+              apply this
+              · simp_all only
+              · simp_all only
+            --ここからpreorderの定理を使う。
+            dsimp [preorder.R_hat] at this
+            let pr := preorder.R_hat.to_ReflTransGen this
+            let prm := (preorder.mem_S_R_iff R t).mp
+            have : t ∈ preorder.S_R R :=
+            by
+              dsimp [preorder.S_R]
+              rw [Finset.mem_filter]
+              constructor
+              · simp_all only [implies_true, not_false_eq_true, ne_eq, Finset.card_eq_zero, gt_iff_lt,
+                forall_exists_index, and_imp, Finset.biUnion_subset_iff_forall_subset, Finset.mem_attach,
+                forall_const, Subtype.forall, Finset.mem_filter, Finset.mem_univ, and_self, Finset.powerset_univ, SF,
+                R, A, pr]
+              · dsimp [preorder.closedUnder]
+                dsimp [R]
+                intro a b ha hb
+                obtain ⟨r, hr_RS, hroot, hstem⟩ := ha
+                dsimp [SF] at st
+                dsimp [rootedsetToClosureSystem] at st
+                dsimp [filteredFamily] at st
+                simp at st
+                let st2 := st.2 r hr_RS
+                have :r.stem ⊆ t := by
+                  subst hroot
+                  simp_all only [implies_true, not_false_eq_true, ne_eq, Finset.card_eq_zero,
+                    gt_iff_lt, forall_exists_index, and_imp,
+                    Finset.biUnion_subset_iff_forall_subset, Finset.mem_attach, forall_const,
+                    Subtype.forall, Finset.mem_filter, Finset.mem_univ, and_self,
+                    Finset.singleton_subset_iff]
+                let st3 := st2 this
+                rw [←hroot] at st3
+                exact st3
+            simp_all only [implies_true, not_false_eq_true, ne_eq, Finset.card_eq_zero, gt_iff_lt,
+              forall_exists_index, and_imp, Finset.biUnion_subset_iff_forall_subset,
+              Finset.mem_attach, forall_const, Subtype.forall, Finset.mem_filter, Finset.mem_univ,
+              and_self]
 
       --qの極小性に反して、qより小さいvが存在するので矛盾
       simp_all only [implies_true, not_true_eq_false, SF]

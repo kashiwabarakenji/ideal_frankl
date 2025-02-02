@@ -57,7 +57,7 @@ noncomputable def S_R (R : α → α → Prop) : Finset (Finset α) :=
 -/
 
 omit [DecidableEq α] in
-lemma mem_S_R_iff {R : α → α → Prop} {s : Finset α} :
+lemma mem_S_R_iff (R : α → α → Prop) (s : Finset α) :
     s ∈ S_R R ↔ closedUnder R s := by
   -- 定義展開: s ∈ filter P X ↔ (s ∈ X ∧ P s)
   simp only [S_R, Finset.mem_filter, Finset.mem_powerset]
