@@ -503,4 +503,27 @@ lemma down_closure_eq_Inf (S : Finset P) :
     obtain ⟨_, hxx_le_s⟩ := hxxs
     exact ⟨s, hsS, hxx_le_s⟩
 
+lemma down_closure_is_closed (S : Finset P) :
+  ∀ x y, y ≤ x → x ∈ down_closure S → y ∈ down_closure S := by
+  intros x y hxy hy
+  -- down_closure の定義を開いて「biUnion の中にある」という情報を取り出す
+  rw [down_closure, Finset.mem_biUnion] at hy
+  rcases hy with ⟨s, hsS, hy_s⟩
+  -- s に対して「x ≤ s をみたす要素が入っている」という意味の filter を開く
+  rw [Finset.mem_filter] at hy_s
+  rcases hy_s with ⟨_, y_le_s⟩   -- ここで y ≤ s を得る
+  -- 目標「x ∈ down_closure S」も同様に定義を開く
+  rw [down_closure, Finset.mem_biUnion]
+  -- あとは x も同じ s によってフィルタの条件を満たすことを示せばよい
+  -- y ≤ s かつ x ≤ y ⇒ x ≤ s なので、x も filter によって選ばれる
+
+  refine ⟨s, hsS, Finset.mem_filter.mpr ⟨Finset.mem_univ y, hxy.trans y_le_s⟩⟩
+
+
+
+
+
+
+
+
 end preorder
