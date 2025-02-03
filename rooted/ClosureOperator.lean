@@ -114,7 +114,6 @@ by
         exists_eq_right, exists_true_left]
       exact h h_1
 
---定理の成立には、空集合を持つ必要がないが、帰納法を使うために使っている。証明を改善すれば必要なくなる。
 lemma finite_intersection_in_closureSystem
   {α : Type} [DecidableEq α] [Fintype α]
   (F : ClosureSystem α)
