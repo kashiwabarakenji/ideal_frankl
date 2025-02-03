@@ -24,7 +24,7 @@ lemma size_one_preorder_lemma {α : Type} [DecidableEq α] [Fintype α]
   (RS : RootedSets α) [DecidablePred (rootedsetToClosureSystem RS).sets]
   (h₁ : ∀ p ∈ RS.rootedsets, p.stem.card = 1) :
   let SF := rootedsetToClosureSystem RS
-  ∀ s : Finset RS.ground, SF.sets (s.image Subtype.val) ↔ (s ∈ (preorder.S (R_from_RS1 RS))) :=
+  ∀ s : Finset RS.ground, SF.sets (s.image Subtype.val) ↔ (s ∈ (preorder.S_R (R_from_RS1 RS))) :=
 by
   -- SFを定義展開しておく。
   intro SF s
@@ -51,37 +51,41 @@ by
   · -- SF.sets s → s ∈ S (R_from_RS1 RS)
     intro hs
     -- hs : ∀ p ∈ RS.rootedsets, ¬(p.stem ⊆ s ∧ p.root ∉ s)
-    dsimp [preorder.S]
+    dsimp [preorder.S_R]
     simp only [Finset.mem_filter]
     constructor
-    simp_all only [Finset.mem_univ, SF]
-    intro x y hR
+    · simp_all only [Finset.mem_univ, SF]
+      let rcci := (rootedsetToClosureSystem RS).inc_ground (s.image Subtype.val)
+      simp_all only [Finset.mem_powerset]
+      intro x hx
+      simp_all only [Finset.mem_attach]
+    · intro x y hR
     -- hR : ∃ p ∈ RS.rootedsets, p.root = x ∧ p.stem = {y}
-    obtain ⟨p, hp, py, hstem_eq⟩ := hR
-    -- h₁より，p.stem.card = 1．
-    have : p.stem = {x.val} := hstem_eq
-    -- ここで，filteredFamilyの条件 hs p hp は
-    --    ¬({y} ⊆ s ∧ p.root ∉ s) となる．
-    -- しかし {y} ⊆ s ↔ y ∈ s なので，
-    --    y ∈ s → p.root ∈ s
-    -- となる．すなわち，対偶で p.root ∉ s → y ∉ s である．
-    -- 今，x = p.root であり，仮定 hxs : x ∈ s なので，p.root ∈ s でなければならない．
-    by_contra hxy
-    push_neg at hxy  -- hxy : p.root ∈ s ∧ y ∉ s
-    have hstem : {x} ⊆ s := by simp_all only [Finset.singleton_subset_iff, SF]--simp [hxy.2]
-    have :p.stem ⊆ s.image Subtype.val :=
-    by
-        rw [this]
+      obtain ⟨p, hp, py, hstem_eq⟩ := hR
+      -- h₁より，p.stem.card = 1．
+      have : p.stem = {x.val} := hstem_eq
+      -- ここで，filteredFamilyの条件 hs p hp は
+      --    ¬({y} ⊆ s ∧ p.root ∉ s) となる．
+      -- しかし {y} ⊆ s ↔ y ∈ s なので，
+      --    y ∈ s → p.root ∈ s
+      -- となる．すなわち，対偶で p.root ∉ s → y ∉ s である．
+      -- 今，x = p.root であり，仮定 hxs : x ∈ s なので，p.root ∈ s でなければならない．
+      by_contra hxy
+      push_neg at hxy  -- hxy : p.root ∈ s ∧ y ∉ s
+      have hstem : {x} ⊆ s := by simp_all only [Finset.singleton_subset_iff, SF]--simp [hxy.2]
+      have :p.stem ⊆ s.image Subtype.val :=
+      by
+          rw [this]
+          simp_all only [Finset.singleton_subset_iff, Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right,
+            Subtype.coe_eta, Finset.coe_mem, exists_const, SF]
+
+      have : p.root ∈ s.image Subtype.val := by
+        apply rootedpair_compatible RS (s.image Subtype.val) hs p hp
         simp_all only [Finset.singleton_subset_iff, Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right,
           Subtype.coe_eta, Finset.coe_mem, exists_const, SF]
-
-    have : p.root ∈ s.image Subtype.val := by
-      apply rootedpair_compatible RS (s.image Subtype.val) hs p hp
+      simp_all only [not_true_eq_false, and_false, SF] --hs p hp hstem,
       simp_all only [Finset.singleton_subset_iff, Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right,
-        Subtype.coe_eta, Finset.coe_mem, exists_const, SF]
-    simp_all only [not_true_eq_false, and_false, SF] --hs p hp hstem,
-    simp_all only [Finset.singleton_subset_iff, Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right,
-      Subtype.coe_eta, Finset.coe_mem, exists_const]
+        Subtype.coe_eta, Finset.coe_mem, exists_const]
     --contradiction
   · -- s ∈ S (R_from_RS1 RS) → SF.sets s
     intro hs
@@ -95,7 +99,7 @@ by
     push_neg at hnot  -- hnot : p.stem ⊆ s ∧ p.root ∉ s
     -- p.stem = {y} となる y をひとつとる．
     --have hcard := h₁ p hp  -- p.stem.card = 1
-    dsimp [preorder.S] at hs
+    dsimp [preorder.S_R] at hs
     simp [Finset.mem_filter] at hs
     dsimp [SF] at hnot
     dsimp [rootedsetToClosureSystem] at hnot
@@ -139,30 +143,31 @@ by
         -- hs より，∀ (x y), (∃ p, p ∈ RS.rootedsets ∧ p.root = x ∧ p.stem = {y})
         -- → (x ∈ s → y ∈ s)．
       contrapose! hs
-      use y
-      have : y ∈ RS.ground := by
+      dsimp [preorder.closedUnder]
+      intro sr
+      push_neg
+
+      have :y ∈ RS.ground := by
         let rsi := (RS.inc_ground p hp).1
         simp_all only [Finset.singleton_subset_iff, forall_true_left, Finset.mem_singleton, Finset.mem_image,
-          Subtype.exists, exists_and_right, exists_eq_right, forall_const, SF]
+          Subtype.exists, exists_and_right, exists_eq_right, exists_true_left, SF]
         obtain ⟨w, h⟩ := hnot
         obtain ⟨w_1, h_1⟩ := hs
         obtain ⟨left, right⟩ := h
         obtain ⟨left_1, right⟩ := right
         simp_all only
-      use this
-      use p.root
-      have :p.root ∈ RS.ground := by
-        --rw [←eq_ground]
+      use ⟨y, this⟩
+      have : p.root ∈ RS.ground :=
+      by
         exact (RS.inc_ground p hp).2
-      use this
+      use ⟨p.root,this⟩
+
       constructor
       · dsimp [R_from_RS1]
         use p
-      · constructor
-        · simp_all only [Finset.singleton_subset_iff, forall_true_left, Finset.mem_singleton, Finset.mem_image,
-          Subtype.exists, exists_and_right, exists_eq_right, exists_true_left, SF]
-        · simp_all only [Finset.singleton_subset_iff, forall_true_left, Finset.mem_singleton, Finset.mem_image,
-          Subtype.exists, exists_and_right, exists_eq_right, not_false_eq_true, SF]
+      · simp_all only [Finset.singleton_subset_iff, forall_true_left, Finset.mem_singleton, Finset.mem_image,
+        Subtype.exists, exists_and_right, exists_eq_right, exists_true_left, not_false_eq_true, and_self, SF]
+
     simp_all only [Finset.singleton_subset_iff, Finset.mem_singleton, SF]
 
 /-
@@ -182,11 +187,13 @@ by
 以上から両者は同値であることがわかる．
 -/
 
+
 noncomputable def preorder_ideal {α : Type} [DecidableEq α] [Fintype α]
   (RS : RootedSets α) [DecidablePred (rootedsetToClosureSystem RS).sets]
   (s : Finset RS.ground) : Finset RS.ground :=
   Finset.filter (λ x => ∃ y ∈ s, preorder.R_hat (R_from_RS1 RS) y x) RS.ground.attach
 
+--preorderのところにあるdown_closure_eq_Infの集合続版。preorderのほうの定理を利用しても証明できると思われるが、直接証明する。
 lemma preorder_ideal_lemma {α : Type} [DecidableEq α] [Fintype α]
   (RS : RootedSets α) [DecidablePred (rootedsetToClosureSystem RS).sets]
   (h₁ : ∀ p ∈ RS.rootedsets, p.stem.card = 1) :
@@ -218,7 +225,7 @@ by
         simp_all only [Finset.coe_mem]
 
     let mf :=@mem_finsetIntersection_iff_of_nonempty _ _ (RS.ground.powerset.filter (fun (t : Finset α) => SF.sets t ∧ (s.image Subtype.val) ⊆ t)) ss this
-    apply mf.mpr
+    apply mf.mpr --preorderの方の証明のFinset.mem_infに相当。
     intro f hf
     rw [Finset.mem_filter] at hf
     obtain ⟨hSF, hst⟩ := hf.2
@@ -249,50 +256,60 @@ by
         simp_all only [Finset.mem_subtype, Finset.mem_attach]
       · show preorder.closedUnder (R_from_RS1 RS) (Finset.subtype (fun x => x ∈ RS.ground) f)
         intro x y rs xs
-        dsimp [preorder.S_R] at hR_hat --ゴールがssに関係ないのにssと関係のあるhR_hatを使っていておかしい？hSF=rightからいえないか？
-        simp at hR_hat
-        --dsimp [Finset.attach] at hR_hat
-        --fがhR_hatのsにたいおうしているっぽい。
-        have : f ⊆ RS.ground := by
-          simp_all only [Finset.mem_powerset, and_true, Finset.mem_attach, Finset.mem_image, Subtype.exists,
-            exists_and_right, exists_eq_right, Subtype.coe_eta, Finset.coe_mem, exists_const, SF]
-        let f_sub := f.subtype (fun x => x ∈ RS.ground)
-        let hR_hat' := hR_hat f_sub
-        have : f_sub ⊆ RS.ground.attach := by
-          simp_all only [Finset.mem_subtype, f_sub]
-          obtain ⟨val_1, property_1⟩ := x
-          obtain ⟨val_2, property_2⟩ := y
-          simp_all only
-          intro x hx
-          simp_all only [Finset.mem_subtype, Finset.mem_attach]
-        let hR_hat'' := hR_hat' this
-        have :preorder.closedUnder (R_from_RS1 RS) f_sub :=
+        let sop := (size_one_preorder_lemma RS h₁ (Finset.subtype (fun x => x ∈ RS.ground) f)).mpr
+        simp at sop
+        have :Finset.subtype (fun x => x ∈ RS.ground) f ∈ preorder.S_R (R_from_RS1 RS) :=
         by
-          simp_all only [Finset.mem_subtype, f_sub]
-          obtain ⟨val_1, property_1⟩ := x
-          obtain ⟨val_2, property_2⟩ := y
-          simp_all only
+          dsimp [preorder.S_R]
+          simp
           dsimp [preorder.closedUnder]
-          dsimp [R_from_RS1]
-          intro x y rs xs
-          dsimp [rootedsetToClosureSystem] at right
-          dsimp [filteredFamily] at right
-          simp at right
-          obtain ⟨w, h⟩ := right
-          simp_all only [Finset.mem_subtype]
-          obtain ⟨val_3, property_3⟩ := x
-          obtain ⟨val_4, property_4⟩ := y
-          obtain ⟨w_1, h_1⟩ := rs
-          obtain ⟨left, right⟩ := h_1
-          obtain ⟨left_1, right⟩ := right
-          subst left_1
-          simp_all only [Finset.singleton_subset_iff]
-        let hR_hat3 := hR_hat'' this
-        have :⟨val, property⟩ ∈ f_sub:=
+          constructor
+          · intro sss hsss
+            simp_all only [Finset.mem_subtype, Finset.mem_attach]
+          · intro xx yy rxy hxx
+            dsimp [rootedsetToClosureSystem] at right
+            dsimp [filteredFamily] at right
+            simp at right
+            obtain ⟨w, h⟩ := right
+            dsimp [R_from_RS1] at rxy
+            obtain ⟨r, hr, hroot, hstem⟩ := rxy
+            have : r.stem ⊆ f:=
+            by
+              simp_all only [Finset.mem_subtype, Finset.singleton_subset_iff]
+            --let hrh := h r hr this
+            simp_all only [Finset.mem_subtype]
+            obtain ⟨val_4, property_4⟩ := yy
+            subst hroot
+            simp_all only [Finset.singleton_subset_iff]
+        /-
+        have :ss ∈ f :=
         by
-          simp_all only [Finset.mem_subtype, f_sub]
-        let hR_hat4 := hR_hat3 this
-        sorry
+          apply hrh
+          exact this
+        -/
+        have :(rootedsetToClosureSystem RS).sets (Finset.image Subtype.val (Finset.subtype (fun x => x ∈ RS.ground) f)):=
+        by
+          apply sop
+          exact this
+
+        dsimp [rootedsetToClosureSystem] at this
+        dsimp [filteredFamily] at this
+        simp at this
+        obtain ⟨w, h⟩ := this
+
+        dsimp [R_from_RS1] at rs
+        obtain ⟨r, hr, hroot, hstem⟩ := rs
+        have rf: r.stem ⊆ f:=
+        by
+          simp_all only [Finset.mem_subtype, Finset.singleton_subset_iff]
+        simp_all only [forall_const, Finset.mem_subtype, Finset.singleton_subset_iff]
+        obtain ⟨val_1, property_1⟩ := x
+        obtain ⟨val_2, property_2⟩ := y
+        subst hroot
+        simp_all only [Finset.singleton_subset_iff, Finset.mem_image, Finset.mem_subtype, Subtype.exists,
+          exists_and_left, exists_prop, exists_eq_right_right, and_self]
+
+    simp_all only [Finset.mem_powerset, and_true, Finset.mem_attach, forall_const, SF]
 
 lemma size_one_preorder_closure {α : Type} [DecidableEq α] [Fintype α]
   (RS : RootedSets α) [DecidablePred (rootedsetToClosureSystem RS).sets]
