@@ -702,3 +702,114 @@ theorem R'_eq_Rhat :
 
 end FiniteReconstruction
 -/
+--import Mathlib.Order.Basic
+
+/-
+1. **`down_closure S` の定義**
+   \( S \) の各要素 \(s\) に対して、\( s \) より小さい（またはイコール）元をすべて集めて合併しています。
+2. **共通部分への包含 (前半の `· intro x hx ...`)**
+   \( x \) が `down_closure S` に属するとき、任意の「\( S \subseteq D \) かつ down set」\( D \) へ必ず属することを示しています。
+3. **共通部分からの包含 (後半の `· intro xx hx ...`)**
+   \( xx \) が「\( S \subseteq D \) かつ down set」のすべてに属するならば、あらかじめ構成したダウンセット \( D' \) にも属するので、そこから \( xx \) が `down_closure S` に属することを結論づけています。
+-/
+
+variable {P : Type*} [Preorder P][Fintype P][DecidableEq P]
+
+-- 定義: S の down set 閉包 (S が生成する down set)
+noncomputable def down_closure (S : Finset P) : Finset P :=
+  S.biUnion (fun s => (Finset.univ.filter (fun x => x ≤ s)))
+
+-- Sから辿れる集合と、Sを含むideal全体の共通部分が等しくなる。
+lemma down_closure_eq_Inf (S : Finset P) :
+  down_closure S = (Finset.univ.filter (fun D => S ⊆ D ∧ ∀ x ∈ D, ∀ y, y ≤ x → y ∈ D)).inf id := by
+  apply Finset.Subset.antisymm
+  -- down_closure S は共通部分に含まれることを示す
+  · intro x hx
+    rw [Finset.mem_inf]
+    simp
+    intro s hs hh
+    dsimp [down_closure] at hx
+    dsimp [Finset.biUnion] at hx
+    simp at hx
+    obtain ⟨w, h⟩ := hx
+    obtain ⟨left, right⟩ := h
+    exact hh _ (hs left) _ right
+
+  -- 共通部分は down_closure S に含まれることを示す
+  · intro xx hx
+    rw [Finset.mem_inf] at hx
+    simp at hx
+    -- 任意の down set D (S ⊆ D) について xx ∈ D である。
+    -- ここで、D' を「S を含む down set」として構成し、xx ∈ D' から結論を得る。
+    let D' := S.biUnion (fun s => Finset.univ.filter (fun z => z ≤ s))
+    have D'_in_filter : D' ∈ Finset.univ.filter (fun D => S ⊆ D ∧ ∀ x ∈ D, ∀ y, y ≤ x → y ∈ D) := by
+      rw [Finset.mem_filter]
+      refine ⟨Finset.mem_univ _, ?_⟩
+      constructor
+      · -- S ⊆ D' を示す
+        intro a ha
+        apply Finset.mem_biUnion.mpr
+        exact ⟨a, ha, by simp [ha]⟩
+      · -- D' が down set であることを示す
+        intro x hxD' y hyx
+        obtain ⟨s, hsS, hxFilt⟩ := Finset.mem_biUnion.mp hxD'
+        rw [Finset.mem_filter] at hxFilt
+        obtain ⟨_, hxLe⟩ := hxFilt
+        have : y ≤ s := le_trans hyx hxLe
+        apply Finset.mem_biUnion.mpr
+        exact ⟨s, hsS, by simp [this]⟩
+
+    -- xx はその交わり (inf) の要素なので、D' にも属する
+    have xx_in_D' : xx ∈ D' :=
+    by
+      dsimp [down_closure]
+      apply Finset.mem_biUnion.mpr
+      simp
+
+      by_contra h_not
+      have not_in: xx ∉ down_closure S := by
+        dsimp [down_closure]
+        dsimp [Finset.biUnion]
+        simp
+        push_neg at h_not
+        exact h_not
+
+      have : down_closure S ∈ Finset.univ.filter (fun D => S ⊆ D ∧ ∀ x ∈ D, ∀ y, y ≤ x → y ∈ D) :=
+      by
+        simp_all only [Finset.mem_filter, Finset.mem_univ, Finset.mem_biUnion, true_and, forall_exists_index, and_imp,
+          not_exists, not_and, D']
+        obtain ⟨left, right⟩ := D'_in_filter
+        apply And.intro
+        · exact left
+        · intro x a y a_1
+          dsimp [down_closure] at a
+          dsimp [down_closure]
+          simp_all only [Finset.mem_biUnion, Finset.mem_filter, Finset.mem_univ, true_and]
+          obtain ⟨w, h⟩ := a
+          obtain ⟨left_1, right_1⟩ := h
+          apply right
+          on_goal 3 => {exact a_1
+          }
+          on_goal 2 => {exact right_1
+          }
+          · simp_all only
+
+      simp_all only [Finset.mem_filter, Finset.mem_univ, Finset.mem_biUnion, true_and, forall_exists_index, and_imp,
+        not_exists, not_and, D']
+      obtain ⟨left, right⟩ := D'_in_filter
+      obtain ⟨left_1, right_1⟩ := this
+      apply h_not
+      · apply hx
+        · simp_all only [subset_refl]
+        · intro x a y a_1
+          tauto
+      · simp_all only [le_refl]
+
+    -- xx ∈ S.biUnion (...) なので、xx ≤ s を満たす s ∈ S を得る
+    dsimp [down_closure]
+    dsimp [Finset.biUnion]
+    simp
+    obtain ⟨s, hsS, hxxs⟩ := Finset.mem_biUnion.mp xx_in_D'
+    rw [Finset.mem_filter] at hxxs
+    obtain ⟨_, hxx_le_s⟩ := hxxs
+    exact ⟨s, hsS, hxx_le_s⟩
