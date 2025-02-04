@@ -193,7 +193,23 @@ noncomputable def preorder_ideal {α : Type} [DecidableEq α] [Fintype α]
   (s : Finset RS.ground) : Finset RS.ground :=
   Finset.filter (λ x => ∃ y ∈ s, preorder.R_hat (R_from_RS1 RS) y x) RS.ground.attach
 
---preorderのイデアルは、preorderの閉包の性質を持つ。
+lemma preorder_extensive {α : Type} [DecidableEq α] [Fintype α]
+  (RS : RootedSets α) [DecidablePred (rootedsetToClosureSystem RS).sets]
+  (s : Finset RS.ground) : s ⊆ (preorder_ideal RS s) :=
+by
+  dsimp [preorder_ideal]
+  intro x hx
+  rw [Finset.mem_filter]
+  constructor
+  · simp_all only [Finset.mem_attach]
+  · rw [preorder.R_hat_eq_ReflTransGen]
+    simp
+    use x
+    simp_all only [Subtype.coe_eta, true_and, Finset.coe_mem, exists_const]
+    obtain ⟨val, property⟩ := x
+    rfl
+
+--preorderのイデアルの集合preorder_idealは、本当にイデアルになっている。
 lemma preorder_ideal_closed_lemma  {α : Type} [DecidableEq α] [Fintype α]
   (RS : RootedSets α) [DecidablePred (rootedsetToClosureSystem RS).sets]
   --(h₁ : ∀ p ∈ RS.rootedsets, p.stem.card = 1)
@@ -225,7 +241,24 @@ by
     · simp_all only
     · simp_all only [rr2]
 
---上のlemmaを使って、証明をやり直す。
+lemma find_source_of_ideal_element {α : Type} [DecidableEq α] [Fintype α]
+  (RS : RootedSets α) [DecidablePred (rootedsetToClosureSystem RS).sets]
+  (s : Finset RS.ground) (x : RS.ground) (hx : x ∈ (preorder_ideal RS s)) :
+  ∃ y ∈ s, preorder.R_hat (R_from_RS1 RS) y x :=
+by
+  dsimp [preorder_ideal] at hx
+  simp at hx
+  obtain ⟨y, hy, hR⟩ := hx
+  rw [preorder.R_hat_eq_ReflTransGen]
+  simp
+  obtain ⟨r, hr⟩ := hR
+  rw [preorder.R_hat_eq_ReflTransGen] at hr
+  constructor
+  · exact ⟨_, r, hr⟩
+
+--上のlemma　preorder_ideal_closed_lemmaを使って、証明をやり直したつもりだったが、結果的に使ってない。
+--find_source_of_ideal_elementを使うように書き換えられるが、まだ行なっていない。
+--この補題preorder_ideal_closedは、preorder_idealがhyperedgeであることを示す。
 lemma preorder_ideal_closed {α : Type} [DecidableEq α] [Fintype α]
   (RS : RootedSets α) [DecidablePred (rootedsetToClosureSystem RS).sets]
   (h₁ : ∀ p ∈ RS.rootedsets, p.stem.card = 1) (s : Finset RS.ground) :
@@ -236,27 +269,52 @@ by
   dsimp [rootedsetToClosureSystem]
   dsimp [preorder_ideal]
   dsimp [filteredFamily]
-  dsimp [preorder.R_hat]
+  rw [preorder.R_hat_eq_ReflTransGen] --R_hatを分解せずにTransGenに持ち込むことが証明のポイント
   simp
-
   constructor
   · intro x hx --xは、preorder_idealの中から取る。
     simp_all only [Finset.mem_filter, Finset.mem_attach, Finset.mem_univ, Finset.mem_image, Subtype.exists,
       exists_and_right, exists_eq_right, Subtype.coe_eta, Finset.coe_mem, exists_const]
     obtain ⟨hx, _, hR⟩ := hx --xの満たす性質が分解される。主な性質はhR
-    --obtain ⟨y, hy, hR1, hR2⟩ := hR --hRをさらに分解する。hR2がメイン。xの親玉はy。
     simp_all only
   · --ここで示すべきことは、ステムを含んでいる場合に、ルートも含まれること。
-    intro p hp
-    intro hpp --hppの条件がステムがidealに含まれるという条件を表している。
-    --hppを分解するのが難しい。
+    intro p hp --pがなにかというのが問題
+    intro hpp --hppの条件がステムがidealに含まれるという条件を表している。これをうまく扱うのが証明のポイント
 
-    dsimp [preorder.R_hat] at hpp
-    --rw [Finset.subset_iff] at hpp
-    --simp at hpp
-    contrapose hpp --背理法なので、ある2項関係が存在して、setsで無くしているとしたい。
-    --idealがステムを含むが、ルートを含まないようなpが存在するとしたいところだが。
-    push_neg at hpp
+    have prg:p.root ∈ RS.ground :=
+    by
+      exact (RS.inc_ground p hp).2
+    use prg  --不要なexistsを消すため。
+
+    --コメントアウトするとエラーになるので、暗黙に使っている？
+    have : ∀ x, x ∈ p.stem → x ∈ (preorder_ideal RS s).image Subtype.val :=
+    by
+      intro x hx
+      simp_all only [Finset.mem_filter, Finset.mem_attach, Finset.mem_univ, Finset.mem_image, Subtype.exists,
+        exists_and_right, exists_eq_right, Subtype.coe_eta, Finset.coe_mem, exists_const]
+      dsimp [preorder_ideal]
+      let hppx := hpp hx
+      simp at hppx
+      have :x ∈ RS.ground :=
+      by
+        obtain ⟨w, h⟩ := hppx
+        simp_all only
+      use this
+      rw [Finset.mem_filter]
+      constructor
+      simp_all only [exists_true_left, Finset.mem_attach]
+
+      rw [preorder.R_hat_eq_ReflTransGen]
+      simp_all only [exists_true_left, Subtype.exists]
+
+    --実は使ってないのか。参考までに消さずに残してもよい。
+    /- have stem_in_ideal: p.stem ⊆ (preorder_ideal RS s).image Subtype.val :=
+    by
+      intro x hx
+      exact this x hx
+    -/
+
+    --p.rootのひとつ上の要素がyとなる。
     have : p.stem.card = 1 := by
       exact h₁ p hp
     have :∃ y, y ∈ p.stem ∧ p.stem = {y} :=
@@ -267,48 +325,71 @@ by
         Subtype.exists, exists_and_right, exists_eq_right, Finset.card_singleton, Finset.mem_singleton,
         Finset.singleton_inj, exists_eq_left]
     obtain ⟨y, hy, hstem_eq⟩ := this
-    have :p.root ∈ RS.ground :=
-    by
-      exact (RS.inc_ground p hp).2
-    let hpp := hpp this y --他に入れるものがないので、p.stemを入れてみた。
-    simp at hpp
-    have :y ∈ RS.ground :=
+    have yg:y ∈ RS.ground :=
     by
       let ri := (RS.inc_ground p hp).1
-      rename_i hpp_1 hpp_2 this_1
       simp_all only [Finset.singleton_subset_iff, Finset.mem_image, Finset.mem_filter, Finset.mem_attach, true_and,
         Subtype.exists, exists_and_right, exists_eq_right, Finset.card_singleton, Finset.mem_singleton]
-      apply ri
-      simp_all only [Finset.mem_singleton]
-    let hpp := hpp this
-    simp at hpp
-    intro hroot
-    rw [Finset.subset_iff] at hroot
-    let hroot2 := hroot hy
-    simp at hroot2
-    --have : y ∈ RS.ground :=
-    --by
-    --  simp_all only [Finset.card_singleton, Finset.mem_singleton, Finset.mem_image, Finset.mem_filter,
-    --    Finset.mem_attach, true_and, Subtype.exists, exists_and_right, exists_eq_right, exists_true_left, forall_eq,
-    --    exists_const]
-    obtain ⟨yg, hsm, hrt,hsr, hroot3⟩ := hroot2
-    simp_all only [Finset.card_singleton, Finset.mem_singleton, Finset.mem_image, Finset.mem_filter,
-      Finset.mem_attach, true_and, Subtype.exists, exists_and_right, exists_eq_right, exists_true_left, forall_eq]
-    obtain ⟨w, h⟩ := hroot
-    obtain ⟨w_1, h⟩ := h
-    obtain ⟨left, right⟩ := h
+      simp_all only [forall_eq]
+      obtain ⟨w, h⟩ := hpp
+      simp_all only
 
-    sorry
+    have yp: (R_from_RS1 RS) ⟨y,yg⟩ ⟨p.root,prg⟩ :=
+    by
+      dsimp [R_from_RS1]
+      use p
 
+    --yの親玉がzとなる。
+    have exists_z: ∃ z:s, preorder.R_hat (R_from_RS1 RS) z ⟨y,yg⟩ :=
+    by
+      rw [preorder.R_hat_eq_ReflTransGen]
+      simp_all only [Finset.singleton_subset_iff, Finset.mem_image, Finset.mem_filter, Finset.mem_attach, true_and,
+        Subtype.exists, exists_and_right, exists_eq_right, exists_true_left, Finset.mem_singleton, forall_eq,
+        exists_const, Finset.card_singleton, exists_prop]
+    obtain ⟨z, hz⟩ := exists_z
 
+    /- 実はつかってないのかも。同じことを下で証明しているので、使った形でも書き直せる可能性あり。しばらく残す。
+    have pr_in_ideal : p.root ∈ (preorder_ideal RS s).image Subtype.val :=
+    by
+      simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, exists_true_left]
+      dsimp [preorder_ideal]
+      rw [preorder.R_hat_eq_ReflTransGen]
+      simp
+      use z
+      constructor
+      · constructor
+        · exact z.2
+        · rw [preorder.R_hat_eq_ReflTransGen] at hz
+          exact Relation.ReflTransGen.tail hz yp
+    -/
 
+    use z.val
+    have : z.val.val ∈ RS.ground :=
+    by
+      simp_all only [Finset.singleton_subset_iff, Finset.mem_image, Finset.mem_filter, Finset.mem_attach, true_and,
+        Subtype.exists, exists_and_right, exists_eq_right, exists_true_left, Finset.mem_singleton, forall_eq,
+        exists_const, Finset.card_singleton, Finset.coe_mem]
 
-
-
-
-
-
-
+    use this
+    constructor
+    · simp_all only [Finset.singleton_subset_iff, Finset.mem_image, Finset.mem_filter, Finset.mem_attach, true_and,
+      Subtype.exists, exists_and_right, exists_eq_right, exists_true_left, Finset.mem_singleton, forall_eq,
+      exists_const, Finset.card_singleton, Subtype.coe_eta, Finset.coe_mem]
+    · rw [preorder.R_hat_eq_ReflTransGen] at hz
+      simp_all only [Finset.singleton_subset_iff, Finset.mem_image, Finset.mem_filter, Finset.mem_attach, true_and,
+        Subtype.exists, exists_and_right, exists_eq_right, exists_true_left, Finset.mem_singleton, forall_eq,
+        exists_const, Finset.card_singleton, Subtype.coe_eta]
+      simp_all only [Finset.coe_mem]
+      obtain ⟨val, property⟩ := z
+      obtain ⟨w, h⟩ := hpp
+      obtain ⟨val, property⟩ := val
+      obtain ⟨w_1, h⟩ := h
+      obtain ⟨left, right⟩ := h
+      simp_all only
+      constructor
+      on_goal 2 => {exact yp
+      }
+      · simp_all only
 
 --preorderのところにあるdown_closure_eq_Infの集合続版。preorderのほうの定理を利用しても証明できると思われるが、直接証明する。
 lemma preorder_ideal_lemma {α : Type} [DecidableEq α] [Fintype α]
@@ -324,9 +405,9 @@ by
   constructor
   · intro hx
     simp at hx
-    obtain ⟨y, hR⟩ := hx
+    obtain ⟨hss, hR⟩ := hx
     dsimp [preorder_ideal] at hR
-    have :Finset.Nonempty (RS.ground.powerset.filter (fun (t : Finset α) => SF.sets t ∧ (s.image Subtype.val) ⊆ t)) :=
+    have : (RS.ground.powerset.filter (fun (t : Finset α) => SF.sets t ∧ (s.image Subtype.val) ⊆ t)).Nonempty :=
     by
       use RS.ground
       simp
@@ -425,8 +506,8 @@ by
 
     simp_all only [Finset.mem_powerset, and_true, Finset.mem_attach, forall_const, SF]
 
-  · intro hss
-    have :Finset.Nonempty (RS.ground.powerset.filter (fun (t : Finset α) => SF.sets t ∧ (s.image Subtype.val) ⊆ t)) :=
+  · intro hsss
+    have h_assum: (RS.ground.powerset.filter (fun (t : Finset α) => SF.sets t ∧ (s.image Subtype.val) ⊆ t)).Nonempty :=
     by
       use RS.ground
       simp
@@ -436,17 +517,53 @@ by
         rw [Finset.image_subset_iff]
         intro x_1 a
         simp_all only [Finset.coe_mem]
-    let mf :=@mem_finsetIntersection_iff_of_nonempty _ _ (RS.ground.powerset.filter (fun (t : Finset α) => SF.sets t ∧ (s.image Subtype.val) ⊆ t)) ss this
-    rw [mf] at hss
-    dsimp [preorder_ideal]
-    simp
+    let mf :=@mem_finsetIntersection_iff_of_nonempty _ _ (RS.ground.powerset.filter (fun (t : Finset α) => SF.sets t ∧ (s.image Subtype.val) ⊆ t)) ss h_assum
+    rw [mf] at hsss
+    simp at hsss
+    have ssg: ss ∈ RS.ground :=
+    by
+      let hssg := hsss RS.ground
+      simp at hssg
+      let hssg := hssg SF.has_ground
+      have : Finset.image Subtype.val s ⊆ RS.ground :=
+      by
+        simp_all only [SF]
+        rw [Finset.image_subset_iff]
+        intro x a
+        simp_all only [Finset.coe_mem]
+      exact hssg this
     constructor
-    · show ∃ a, ∃ (b : a ∈ RS.ground), ⟨a, b⟩ ∈ s ∧ preorder.R_hat (R_from_RS1 RS) ⟨a, b⟩ ⟨ss, _⟩
+    · --show ∃ a, ∃ (b : a ∈ RS.ground), ⟨a, b⟩ ∈ s ∧ preorder.R_hat (R_from_RS1 RS) ⟨a, b⟩ ⟨ss, _⟩
       --この集合がhyperedgeになることを示す。すると、この集合に入らない要素は、hyperedgeの共通部分に含まれない。
-      sorry
+      --have :⟨ss, ssg⟩ ∈ preorder_ideal RS s := これはしょうめいしようとしていることではないのか。
+      --obtain ⟨z,hz⟩ := find_source_of_ideal_element RS s ⟨ss,ssg⟩ これを使うためには、証明することを使うので直接は無理。
+      --use z.val
+      have pig: Finset.image Subtype.val (preorder_ideal RS s) ⊆ RS.ground :=
+      by
+        simp_all only [subset_refl, SF]
+        simp [Finset.image_subset_iff]
+      have s_in_ideal:Finset.image Subtype.val s ⊆ Finset.image Subtype.val (preorder_ideal RS s) :=
+      by
+        have :s ⊆ (preorder_ideal RS s) :=
+        by
+          exact preorder_extensive RS s
+        simp_all only [subset_refl, SF]
+        rw [Finset.image_subset_iff]
+        intro x a
+        simp_all only [subset_refl, Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right,
+          Subtype.coe_eta, Finset.coe_mem, exists_const]
+        obtain ⟨val, property⟩ := x
+        exact this a
+      have : SF.sets ((preorder_ideal RS s).image Subtype.val):=
+      by
+        exact preorder_ideal_closed RS h₁ s
+      let hssss := hsss ((preorder_ideal RS s).image Subtype.val) pig this s_in_ideal
+      rw [Finset.mem_image] at hssss
+      obtain ⟨a, ha, rfl⟩ := hssss
+      exact ha
 
-    ·
-      simp_all only [Finset.mem_filter, Finset.mem_powerset, and_imp, subset_refl, SF]
+    /- 後ろのゴールがなくなった？
+    · simp_all only [Finset.mem_filter, Finset.mem_powerset, and_imp, subset_refl, SF]
       rw [finsetIntersection] at mf
       simp_all only [Finset.mem_filter, Finset.mem_powerset, and_imp, Finset.mem_sup, id_eq, implies_true, and_true,
         iff_true, subset_refl, SF]
@@ -455,6 +572,7 @@ by
       obtain ⟨left, right_1⟩ := left
       apply left
       simp_all only
+    -/
 
 lemma size_one_preorder_closure {α : Type} [DecidableEq α] [Fintype α]
   (RS : RootedSets α) [DecidablePred (rootedsetToClosureSystem RS).sets]
