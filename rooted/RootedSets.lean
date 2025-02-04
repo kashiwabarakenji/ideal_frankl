@@ -50,6 +50,7 @@ noncomputable def rootedSetsSF (SF : SetFamily α) [DecidableEq α] : Finset (Va
   )
 
 --根付き集合族の構造。台集合つき。rootやstemはsubtypeではない。
+@[ext]
 structure RootedSets (α : Type) [DecidableEq α] where
   ground : Finset α
   rootedsets : Finset (ValidPair α)
@@ -648,6 +649,7 @@ by
 ------------------------------
 ----ここからは、閉集合族と根付きサーキットの表現の同値性について
 ----別ファイルに独立させてもよい。
+--閉集合族から初めて、RSを経て、集合が等しくなることが主要な結果。
 ------------------------------
 
 --閉集合族が与えられたときに、根付き集合族を考えて、それから集合族の定義すると元に戻る。の片側。
@@ -793,7 +795,6 @@ by
       simp_all only [RS, ground, inc_ground]
     simp_all only [RS, ground, inc_ground]
 
-
 ------------------------------
 ----ここからは根付き集合と閉包システムの同値性を利用した補題
 ------------------------------
@@ -802,11 +803,12 @@ by
 --closuresystem_rootedsets_eq を使って証明。
 lemma root_stem_closure (SF : ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)]:
   let RS := rootedSetsFromSetFamily SF.toSetFamily
-   ∀ (hr:r ∈ RS.rootedsets), let r_sub := rootedpair_to_subtype RS r hr
+   ∀ r:ValidPair α, (hr:r ∈ RS.rootedsets)→
+  let r_sub := rootedpair_to_subtype RS r hr
   r_sub.root ∈ closureOperator SF r_sub.stem :=
 by
   simp
-  intro hr
+  intro r hr
   let RS := rootedSetsFromSetFamily SF.toSetFamily
   let r_sub := rootedpair_to_subtype RS r hr
   let mc := mem_closure_iff_lemma SF r_sub.stem r_sub.root
