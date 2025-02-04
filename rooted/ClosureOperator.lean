@@ -271,9 +271,11 @@ lemma closureOperator_image_in_sets
     Function.Embedding.coeFn_mk]
 
 --finsetIntersectionの基本的な命題。定義を展開するよりも、この補題を使った方が証明が簡単になる。
+--familyを明示的な引数に変更。いろいろなところで変更する必要が出てくるかも。
+--同様な定理のclosure版は、mem_closure_iff_lemma
 lemma mem_finsetIntersection_iff_of_nonempty
   {α : Type} [DecidableEq α]
-  {family : Finset (Finset α)} (x : α)
+  (family : Finset (Finset α)) (x : α)
   (hne : family.Nonempty)
   :
   x ∈ finsetIntersection family
@@ -435,7 +437,7 @@ by
       simp_all only
     have M_nonempty : M.Nonempty := by
       use F.ground
-    let mf := (mem_finsetIntersection_iff_of_nonempty x M_nonempty).mp hx
+    let mf := (mem_finsetIntersection_iff_of_nonempty M x M_nonempty).mp hx
     simp_all only [Finset.mem_filter, Finset.mem_powerset, subset_refl, and_true, true_and]
     have : sval ∈ M :=
     by

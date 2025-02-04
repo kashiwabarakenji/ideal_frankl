@@ -574,7 +574,7 @@ by
     · simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, Subtype.coe_eta,
       Finset.coe_mem, exists_const, not_false_eq_true, imp_self, and_self]
 
---こちらの補題は、最初に与えたxがrootになる。
+--こちらの補題は、最初に与えたxがrootになるような根付き集合の存在定理。
 theorem RootedCircuitsTheorem_closure (SF : ClosureSystem α)  [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)] (x:SF.ground):
  ∀ s : Finset { x // x ∈ SF.ground }, x ∈ closureOperator SF s
   → ¬ SF.sets (s.image Subtype.val)  →

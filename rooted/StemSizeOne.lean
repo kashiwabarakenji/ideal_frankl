@@ -8,6 +8,7 @@ import Mathlib.Tactic
 import rooted.CommonDefinition
 import rooted.RootedCircuits
 import rooted.RootedImplication
+import rooted.ClosureOperator
 import rooted.RootedFrankl
 import rooted.RootedSets
 import rooted.Preorder
@@ -391,6 +392,21 @@ by
       }
       · simp_all only
 
+--デバッグのために補題を外に出す。別の補題でも役に立った。
+lemma nonempty_filtered_powerset {α : Type} [DecidableEq α] [Fintype α] (RS : RootedSets α)  [DecidablePred (rootedsetToClosureSystem RS).sets] (s : Finset RS.ground) :
+  let SF := rootedsetToClosureSystem RS
+  (Finset.filter (fun t => SF.sets t ∧ Finset.image Subtype.val s ⊆ t) RS.ground.powerset).Nonempty :=
+by
+  intro SF
+  use RS.ground
+  simp
+  constructor
+  · exact SF.has_ground
+  · show Finset.image Subtype.val s ⊆ RS.ground
+    rw [Finset.image_subset_iff]
+    intro x_1 a
+    simp_all only [Finset.coe_mem]
+
 --preorderのところにあるdown_closure_eq_Infの集合続版。preorderのほうの定理を利用しても証明できると思われるが、直接証明する。
 lemma preorder_ideal_lemma {α : Type} [DecidableEq α] [Fintype α]
   (RS : RootedSets α) [DecidablePred (rootedsetToClosureSystem RS).sets]
@@ -400,7 +416,7 @@ lemma preorder_ideal_lemma {α : Type} [DecidableEq α] [Fintype α]
   (preorder_ideal RS s).image Subtype.val = finsetIntersection (RS.ground.powerset.filter (fun (t : Finset α) => SF.sets t ∧ (s.image Subtype.val) ⊆ t)) :=
 by
   intro SF s --sはhyperedgeとは限らない。
-  ext ss --左の集合族からとってきた集合。
+  ext ss --左右の集合族からとってきた集合。
   simp
   constructor
   · intro hx
@@ -507,18 +523,14 @@ by
     simp_all only [Finset.mem_powerset, and_true, Finset.mem_attach, forall_const, SF]
 
   · intro hsss
-    have h_assum: (RS.ground.powerset.filter (fun (t : Finset α) => SF.sets t ∧ (s.image Subtype.val) ⊆ t)).Nonempty :=
+    --デバッグのために証明を外に出した。
+    have h_assume: (Finset.filter (fun t => SF.sets t ∧ Finset.image Subtype.val s ⊆ t) RS.ground.powerset).Nonempty :=
     by
-      use RS.ground
-      simp
-      constructor
-      · exact SF.has_ground
-      · show Finset.image Subtype.val s ⊆ RS.ground
-        rw [Finset.image_subset_iff]
-        intro x_1 a
-        simp_all only [Finset.coe_mem]
-    let mf :=@mem_finsetIntersection_iff_of_nonempty _ _ (RS.ground.powerset.filter (fun (t : Finset α) => SF.sets t ∧ (s.image Subtype.val) ⊆ t)) ss h_assum
-    rw [mf] at hsss
+      exact nonempty_filtered_powerset RS s
+    --ここがエラーなわけでもなさそう。
+    have mf := mem_finsetIntersection_iff_of_nonempty (RS.ground.powerset.filter (fun (t : Finset α) => SF.sets t ∧ (s.image Subtype.val) ⊆ t))
+
+    rw [mf ss h_assume] at hsss
     simp at hsss
     have ssg: ss ∈ RS.ground :=
     by
@@ -533,6 +545,8 @@ by
         simp_all only [Finset.coe_mem]
       exact hssg this
     constructor
+    swap --placeholder errorを回避するために追加
+    · simp_all only [Finset.mem_filter, Finset.mem_powerset, and_imp, forall_const, subset_refl, SF]
     · --show ∃ a, ∃ (b : a ∈ RS.ground), ⟨a, b⟩ ∈ s ∧ preorder.R_hat (R_from_RS1 RS) ⟨a, b⟩ ⟨ss, _⟩
       --この集合がhyperedgeになることを示す。すると、この集合に入らない要素は、hyperedgeの共通部分に含まれない。
       --have :⟨ss, ssg⟩ ∈ preorder_ideal RS s := これはしょうめいしようとしていることではないのか。
@@ -554,10 +568,10 @@ by
           Subtype.coe_eta, Finset.coe_mem, exists_const]
         obtain ⟨val, property⟩ := x
         exact this a
-      have : SF.sets ((preorder_ideal RS s).image Subtype.val):=
+      have ssp: SF.sets ((preorder_ideal RS s).image Subtype.val):=
       by
         exact preorder_ideal_closed RS h₁ s
-      let hssss := hsss ((preorder_ideal RS s).image Subtype.val) pig this s_in_ideal
+      let hssss := hsss ((preorder_ideal RS s).image Subtype.val) pig ssp s_in_ideal
       rw [Finset.mem_image] at hssss
       obtain ⟨a, ha, rfl⟩ := hssss
       exact ha
@@ -574,6 +588,7 @@ by
       simp_all only
     -/
 
+--いままで証明したことを利用するだけなので、証明がもっと短く書けるかもしれない。
 lemma size_one_preorder_closure {α : Type} [DecidableEq α] [Fintype α]
   (RS : RootedSets α) [DecidablePred (rootedsetToClosureSystem RS).sets]
   (h₁ : ∀ p ∈ RS.rootedsets, p.stem.card = 1) :
@@ -581,10 +596,102 @@ lemma size_one_preorder_closure {α : Type} [DecidableEq α] [Fintype α]
   ∀ s : Finset RS.ground, closureOperator SF s = preorder_ideal RS s :=
 by
   intro SF s
-  dsimp [preorder_ideal] --closureOperatorは展開しない方がいい？
-  simp
-  sorry
+  let pil := preorder_ideal_lemma RS h₁ s
+  have : preorder_ideal RS s = (finsetIntersection (Finset.filter (fun t => (rootedsetToClosureSystem RS).sets t ∧ Finset.image Subtype.val s ⊆ t) RS.ground.powerset)).subtype (fun x=> x ∈ RS.ground):=
+  by
+    rw [←pil]
+    ext y
+    apply Iff.intro
+    · intro h
+      simp at h
+      simp
+      exact h
+    · intro h
+      simp at h
+      simp_all only
+  rw [this]
 
+  ext x
+  constructor
+  · intro hx
+    rw [mem_closure_iff_lemma] at hx
+    simp
+    rw [mem_finsetIntersection_iff_of_nonempty]
+    · intro f hf
+      have :s ⊆ Finset.subtype (fun x => x ∈ SF.ground) f :=
+      by
+        simp_all only [Finset.mem_filter, Finset.mem_powerset, SF]
+        obtain ⟨left, right⟩ := hf
+        obtain ⟨left_1, right⟩ := right
+        intro x hx
+        simp_all only [Finset.mem_subtype]
+        obtain ⟨val_1, property_1⟩ := x
+        apply right
+        simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, exists_const]
+      let hxf := hx (Finset.subtype (λ x => x ∈ SF.ground) f) this
+      have :SF.sets (Finset.image Subtype.val (Finset.subtype (fun x => x ∈ SF.ground) f)):=
+      by
+        simp_all only [Finset.mem_filter, Finset.mem_powerset, SF]
+        obtain ⟨val, property⟩ := x
+        obtain ⟨left, right⟩ := hf
+        obtain ⟨left_1, right⟩ := right
+        convert left_1
+        ext a : 1
+        simp_all only [Finset.mem_image, Finset.mem_subtype, Subtype.exists, exists_and_left, exists_prop,
+          exists_eq_right_right, and_iff_left_iff_imp]
+        intro a_1
+        exact left a_1
+
+      let fxf2 := hxf this
+
+      simp_all only [Finset.mem_filter, Finset.mem_powerset]
+      obtain ⟨val, property⟩ := x
+      obtain ⟨left, right⟩ := hf
+      obtain ⟨left_1, right⟩ := right
+      simp_all only
+      simpa using fxf2
+
+    · show (Finset.filter (fun t => (rootedsetToClosureSystem RS).sets t ∧ Finset.image Subtype.val s ⊆ t) RS.ground.powerset).Nonempty
+      exact nonempty_filtered_powerset RS s
+
+  · intro hx
+    simp at hx
+    rw [mem_finsetIntersection_iff_of_nonempty] at hx
+    swap
+    exact nonempty_filtered_powerset RS s
+
+    rw [mem_closure_iff_lemma]
+    intro f hf
+    intro sfs
+    have :Finset.image Subtype.val f ∈ (Finset.filter (fun t => (rootedsetToClosureSystem RS).sets t ∧ Finset.image Subtype.val s ⊆ t) RS.ground.powerset) :=
+    by
+      simp_all only [Finset.mem_filter, Finset.mem_powerset]
+      constructor
+      swap
+      ·
+        simp_all only [and_imp, true_and, SF]
+        obtain ⟨val, property⟩ := x
+        simp_all only
+        simp_all only [SF]
+        rw [Finset.image_subset_iff]
+        intro x a
+        simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, Subtype.coe_eta,
+          Finset.coe_mem, exists_const]
+        obtain ⟨val_1, property_1⟩ := x
+        exact hf a
+      · simp_all only [and_imp, SF]
+        obtain ⟨val, property⟩ := x
+        simp_all only
+        simp_all only [SF]
+        simp [Finset.image_subset_iff]
+
+    let hxf := hx (f.image Subtype.val) this
+    simp_all only [SF]
+    obtain ⟨val, property⟩ := x
+    simp_all only [SF]
+    rw [Finset.mem_image] at hxf
+    simp_all only [Finset.mem_filter, Finset.mem_powerset, true_and, and_imp, Subtype.exists, exists_and_right,
+      exists_eq_right, exists_true_left, SF]
 
 lemma size_zero_rooted_sets [Fintype α](RS : RootedSets α) [DecidablePred (rootedsetToClosureSystem RS).sets]
   :
@@ -642,6 +749,7 @@ by
   -- 補題Cより，R_hat (R_from_RS1 RS) x q.root から目的の根付き集合が存在する
   exact lemma_C RS q hq x h_Rhat
 -/
+--rootedcircuitsはここでは、ステムが包含関係極小のものがRSに存在するかでは、なくて、SFから作った極小なものが存在するかであることに注意。
 lemma size_one_rooted_circuits [Fintype α](RS : RootedSets α) [DecidablePred (rootedsetToClosureSystem RS).sets]
   (h₁ : ∀ p ∈ RS.rootedsets, p.stem.card = 1) :
   let SF := rootedsetToClosureSystem RS
@@ -662,6 +770,21 @@ by
   let R: α → α → Prop := λ x y => ∃ r ∈ RS.rootedsets, y = r.root ∧ r.stem = {x}
   --Rのidealと誘導された集合族が等しくなる。
   --let R_hat: α → α → Prop := sorry
+  --def R_from_RS1 {α : Type} [DecidableEq α] (RS : RootedSets α) : {x // x ∈ RS.ground} → {x // x ∈ RS.ground} → Prop :=
+  --λ (x y:RS.ground) => ∃ r ∈ RS.rootedsets, r.root = y ∧ r.stem = {x.val}
+  have R_from_RS1_eq_R: ∀ (x y: RS.ground), R_from_RS1 RS x y = R x.val y.val:= by
+    intro x y
+    simp
+    constructor
+    · intro h
+      obtain ⟨r, hr, hroot, hstem⟩ := h
+      use r
+      simp_all only [implies_true, and_self, SF]
+    · intro h
+      obtain ⟨r, hr, hroot, hstem⟩ := h
+      use r
+      simp_all only [implies_true, and_self, SF]
+
 
   by_cases h_card : q.stem.card = 1
   case pos =>
@@ -888,25 +1011,74 @@ by
         rw [Finset.mem_biUnion]
         simp
         show ∃ b ∈ q.stem, Relation.ReflTransGen R b p.root
+        have pr_in_ground: p.root ∈ RS.ground := by
+          let rsi := (RS.inc_ground p hp).2
+          simp_all only [implies_true, not_false_eq_true, ne_eq, Finset.card_eq_zero, gt_iff_lt, Finset.mem_attach,
+            Finset.mem_univ, true_and, SF, R]
 
-        sorry --ここから帰納法を使う？
+        have ps_in_ground: p.stem ⊆ RS.ground := by
+          intro x hx
+          exact (RS.inc_ground p hp).1 hx
+        have : p ∈ (rootedSetsFromSetFamily SF.toSetFamily).rootedsets := by
+          exact rootedgenerator_is_rootedset RS p hp
+        have rs_closure: ⟨p.root,pr_in_ground⟩ ∈ closureOperator SF (p.stem.subtype (fun x => x ∈ RS.ground)) := by
+          exact root_stem_closure SF this
+        rw [size_one_preorder_closure RS h₁] at rs_closure
+
+        dsimp [preorder_ideal] at rs_closure
+        rw [Finset.mem_filter] at rs_closure
+        obtain ⟨h1,h2⟩ := rs_closure
+        obtain ⟨h3,h4⟩ := h2
+        rw [preorder.R_hat_eq_ReflTransGen] at h4
+        simp at h4
+        let ep := find_source_of_ideal_element RS (q.stem.subtype (fun x => x ∈ RS.ground)) ⟨p.root,pr_in_ground⟩
+        have :⟨p.root, pr_in_ground⟩ ∈ preorder_ideal RS (Finset.subtype (fun x => x ∈ RS.ground) q.stem) :=
+        by
+          --p.stemの点は、Aに入っているので、Aの定義からq.stemから辿れるし、
+          --p.stemからh1,h2,h3を使って、p.rootまで辿れることが証明される。
+          sorry
+
+        let ep := ep this
+        obtain ⟨z,hz⟩ := ep
+        use z
+
+        constructor
+        · simp_all only [implies_true, not_false_eq_true, ne_eq, Finset.card_eq_zero, gt_iff_lt, forall_exists_index,
+          and_imp, Finset.biUnion_subset_iff_forall_subset, Finset.mem_attach, forall_const, Subtype.forall,
+          Finset.mem_subtype, SF, R, A]
+        · show Relation.ReflTransGen R (↑z) p.root
+          rw [preorder.R_hat_eq_ReflTransGen] at hz
+          let hz2 := hz.2
+          convert hz2 using 1
+          apply Iff.intro
+          · intro h
+            simp_all only [implies_true, eq_iff_iff, Subtype.forall, not_false_eq_true, ne_eq, Finset.card_eq_zero,
+              gt_iff_lt, forall_exists_index, and_imp, Finset.biUnion_subset_iff_forall_subset, Finset.mem_attach,
+              forall_const, SF, R, A]
+          · intro h
+            sorry
+            --ReflTransGenを考える前に書き換える必要。
+
         --have h_A_in_SF : SF.sets Aの証明の中。
         --p.rootに辿り着くことができるq.stemの要素が存在することを示せば良い。つまりAの中の元ということ。
         --まだq.root in Aかどうかの場合分け前。Aは言明には直接は出てこないがpの条件として出てくる。
-        --登場するのは、qとRとpになる。
+        --よって、今までのようにq.stemからp.rootへのRのパスが存在するという前提での議論ではない。
+        --登場するのは、qとRとpになる。Aは、q.stemが生成するpreorder_ideal。
         --qは、ステムの大きさが2以上と仮定された根付き集合。
         --pもRSの根付き集合で、stemがAに含まれるもの。
         --Rは、fun x y => ∃ r ∈ RS.rootedsets, y = r.root ∧ r.stem = {x}
-        --pのステムの大きさが1であれば、Aの定義からp.rootがAに含まれることは問題ないが、問題はpのステムの大きさが2以上の場合。
-        --Aの大きさが最小になるようにqを取るなど、工夫が必要かもしれない。
-        --pを改めてqと取り直すと良さそうだが、証明ではどうかけばいいか。
-        --pを考えた時にqがまた出てくると巡回してしまう。もっとも下流のものをとりたい。
-        --循環するときは、qのステムをhyperedgeが含むことと、pのステムを含むことが同時になる。
-        --Aは、hyperedgeが示れば、qのステムのclosureということ。
-        --すると、このあとq.rootがAに含まれるかどうかで場合分けするのもおかしいというが自明なケースなのかも。
-        --結局、ここで示すことは、qのステムのclosureは、ステムサイズ2のものは考慮せずに1のものだけで計算できるということ。
-        --このことを別の補題で示す方針でどうか。
-        --ステムサイズ1の集合族では、closureとidealが同値であることはすでに証明済みのような。
+        --次の補題を利用して証明したい。この部分の証明のために証明した。
+        --lemma size_one_preorder_closure {α : Type} [DecidableEq α] [Fintype α]
+        --(RS : RootedSets α) [DecidablePred (rootedsetToClosureSystem RS).sets]
+        --(h₁ : ∀ p ∈ RS.rootedsets, p.stem.card = 1) : let SF := rootedsetToClosureSystem RS
+        -- ∀ s : Finset RS.ground, closureOperator SF s = preorder_ideal RS s
+        --q.stemのclosureにp.stemが含まれているので、q.stemのpreorder_idealにp.stemが含まれる。
+        --lemma root_stem_closure (SF : ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)]:
+        --let RS := rootedSetsFromSetFamily SF.toSetFamily
+        --∀ (hr:r ∈ RS.rootedsets), let r_sub := rootedpair_to_subtype RS r hr
+        --r_sub.root ∈ closureOperator SF r_sub.stem
+        --まず、p.rootがp.stemのclosureに含まれることを示して、よって、size_one_preorder_closureより、p.stemのpreorder_idealに含まれることを示す。
+        --よって、p.stemの点からp.rootの点にパスが存在する。上の言明を証明するためには、1歩で行けることまでは示す必要がない。
 
     by_cases h_A : q.root ∈ A
     case pos =>
@@ -1103,7 +1275,7 @@ by
       contradiction
 
     case neg =>
-      -- A が q.root を含まない場合
+      -- A が q.root を含まない場合。この場合は本当に考える必要があるのか。q.rootはAに含まれるのでは。
       -- すなわち，∀ x ∈ q.stem, ¬ R x q.root が成立する
       --qのstemがAに含まれて、qのrootがAに含まれないが、Aは、RSと両立することが示せるので、
       --矛盾が生じる。
@@ -1130,7 +1302,9 @@ by
         --circuitsならばねつき集合になるということがすでに証明されているので、それを使う。
         --q ∈ (rootedcircuits_from_RS (rootedSetsFromSetFamily SF.toSetFamily)).rootedsets
       let rc3 := rc2 this h_stem_in_A
-      contradiction --rootがAに属するか属さないかの矛盾。
+      --rw [Finset.mem_def] at h_A
+      exfalso
+      exact h_A rc3
 
 def is_size_one_circuit (RS : RootedSets α):Prop:=
   ∀ p ∈ (rootedcircuits_from_RS RS).rootedsets, p.stem.card = 1
