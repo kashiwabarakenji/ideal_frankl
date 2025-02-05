@@ -1,226 +1,74 @@
-# フランクルの予想のLean 4によるアプローチ -- Ideal集合族のケース --
+# 根付きサーキットと、閉包作用素と、閉集合族。フランクルの予想にからめて。
 
-## 概要
-フランクルの予想は、組合せ論の長年の未解決問題である。有限台集合上の共通部分で閉じた集合族で全体集合と空集合を持つものを考える。このような集合族は、必ずrareな頂点を持つという予想がフランクルの予想である。rareな頂点とは、その頂点を含むhyperedge(集合族の要素)の個数が、hyperedge全体の数の半分以下となるというものである。この予想は、未だに未解決ではあるが、いくつかの簡単なクラスでは成り立つことが知られている。そのひとつがIdeal集合族と呼ばれるクラスである。Ideal集合族は、空集合と全体集合を持ち、全体集合以外のhyperedgeは、部分集合で閉じているような集合族である。Ideal集合族は、共通部分で閉じていることが簡単にわかる。ここでは、このIdeal集合族に焦点をあてる。
+##概要
 
-一方、頂点全体の平均的な次数がrare(hyperedgeの大きさの合計が頂点数(つまり台集合の大きさ)とhyperedgeの数の積の半分以下である場合)である集合族は、rareな頂点を持つことは簡単にわかる。すべてのhyperedgeに関して、その大きさを足し合わせると、すべての頂点の次数の和に等しい(2重カウントの原理)ことに注意する。
-Ideal集合族が平均的にrare (((hyperedgeの大きさの合計)*2-(台集合の大きさ)*(hyperedge数))が負)であるかどうかは、一見簡単に証明できそうであるが、実際に示しそうとするとそれほど簡単ではない。今回は、このIdeal集合族が必ず平均rareであるという言明を(まず人力で)証明し、Lean 4でその証明を記述して、正しいことを検証してみた。このGitHUBリポジトリは、その言明に対するLean 4による証明を公開したものである。Lean 4は、数学の言明や証明を形式的に記述できて、その数学的な正しさを厳密に保証してくれるシステムである。
+共通部分で閉じた集合族に関する予想であるフランクルの予想を考えたい。
+共通部分で閉じた上に、全体集合を仮定しても、予想として、同値になる。
+共通部分で閉じていて、全体集合を持つような集合族は、閉集合族(Closure System)と呼ばれていて、根付きサーキットで表現できることが知られている。フランクルの予想は解決していないが、根付きサーキットの条件を絞ることによって、部分的な解決を目指す。
 
-## 証明の作成について
+## 定義と各ファイルの説明
 
-定理の証明がややこしいと言っても、自然言語で他人に説明すると10分ぐらいで証明を説明し終わると思われる。しかし、Lean 4で証明を記述すると、5000行ぐらい必要だった。また、Lean 4の初心者の私には、証明を完成させるのに3ヶ月ぐらいの日数がかかった。Lean 4の証明の作成において、支援ツールとして、ChatGPT PlusとLean CopilotとGitHUB Copilotを利用した。これらは、証明のコード作成を支援し、簡単な自動証明を行なってくれるツールとも言える。たとえば、ChatGPTは、人間が自然言語で与えた証明をLean 4に翻訳したものを提案してくれる。ChatGPTとGitHUBの提案するコードは、古いバージョンであるLean 3の文法やMathlib 3の定理を含んだものが多かったので、そのまま、採用とはいかず、かなりの程度、人力で修正する必要があった。Lean Copilotは、Leanのバージョンにあった正しいコードを提案してくれるが、複雑な証明はできない。証明のツリーにおいて、あとちょっとで証明が完了するようなゴール間近の状況で有用なツールと言える。Lean Copilotによる証明は人間の書く証明に比べて、無駄なところも多いので、可読性が必ずしも高くない。
-とりあえず、証明が検証を通ることを目指したので、作成した証明は、必ずしも人間がわかりやすいものになっていない部分もある。今後も継続して、コードのリファクタリングを行い、補題を適切に分離するなどして、可読性を上げようと思う。
+数学的な定義や言明に関しては、Lean 4で記述している。Lean 4のコードは、rootedのフォルダの下の各ファイルにある。(別のフォルダは別の古いプロジェクトが入っていて、このREADMEの対象外である。)
+Leanのファイルは、相互にimportしないように作成するので、以下の記述の上のほうがimportされる側の基本的なファイルになっている。
 
-## 主要な定理と定義について
+### 基本的定義 (CommonDefinition.lean)
 
-リポジトリのidealのフォルダに今回の定理のLeanの証明が格納されている。
-IdealMainTheorem.leanの中の最後の
+集合族(SetFamily)や閉集合族(Closure System)に関しては、
+CommonDefinition.leanに載っている。次数(degree)やhyperedgeの数(number_of_hyperedges)についても定義している。
 
-```
-theorem ideal_implies_average_rare (F : IdealFamily α) : normalized_degree_sum F.toSetFamily <= 0 
-```
+### 閉集合族と閉包作用素 (ClosureOperator.lean)
 
-の部分がメインの結果の言明である。normalized_degree_sum F.toSetFamilyが台集合の大きさがnの任意のideal集合族に対して、平均rareであることを示している。
+閉包作用素については、ClosureOperator.leanで、定義や定理を扱っている。
+閉集合族が、閉包作用素から定義される閉集合の全体と一致するための必要十分条件として、
+extensive, monotone, idempotentの3つの条件が知られているが、その同値性について証明をおこなっている。
 
-主要な定義を述べる。
+### 2項関係から導かれる前順序 (Preorder.lean)
 
-```
---集合族
-structure SetFamily (α : Type) [DecidableEq α] [Fintype α] :=
-  (ground : Finset α)
-  (sets : Finset α → Prop)
-  (inc_ground : ∀ s, sets s → s ⊆ ground)
-  (nonempty_ground : ground.Nonempty)
-  [fintype_ground : Fintype ground]
+Preorder.leanは、有限集合上の2項関係の推移的閉包で表現されるようなpreorderに関する定義や定理である。
+hyperedgeとして、順序で下に閉じているような集合、いわゆるorder idealを考えて、order idealに関する閉包作用素についての言明を証明している。たとえば、与えられた頂点集合に関して、そのある要素の下にある要素を集めた全体と、その頂点集合を含むようなideal全体の共通部分は一致するなど。
 
--- hyperedgeがが共通部分に対して閉じていることを定義
-def is_closed_under_intersection (sf : SetFamily α) : Prop :=
-  ∀ (A B : Finset α), sf.sets A → sf.sets B → sf.sets (A ∩ B)
+集合SがR x yという2項関係に関して、yは含んでxを含まないことを両立(compatible)でないと呼んでいる。
+2項関係が与えられた時に、推移的閉包をとっても、両立する集合全体は変わらないことも証明している。
 
--- 頂点がrareであることを定義
-def is_rare (sf : SetFamily α) (v : α)  [DecidablePred sf.sets]  : Prop :=
-  2 * degree sf v ≤ number_of_hyperedges sf
+このファイル内では、台集合を仮定せずに、alphaを全体集合として議論している。他のファイル内で全体集合を考えているのは、マイナーなど、台集合が変わったりすることがあるからである。台集合を考える場合は、Lean 4のsubtypeを用いて議論している。Preorderにおける2項関係は、ステムサイズ1の根付きサーキットの関係を抽象化している。Preorder.leanでは、subtypeも出てこないし、ステムサイズが2以上に相当するものがなく、ひたすら頂点間の2項関係だけから議論しているので、定理の証明などがすっきりしている。2項関係の世界では知られている内容だと思われるが、Lean 4で定式化されているかは不明。
 
---イデアル集合族
-structure IdealFamily (α : Type) [DecidableEq α] [Fintype α] extends SetFamily α :=
-(has_empty : sets ∅)  -- 空集合が含まれる
-(has_ground : sets ground)  -- 全体集合が含まれる
-(down_closed : ∀ (A B : Finset α), sets B → B ≠ ground → A ⊆ B → sets A)
+### 根付き集合族 (RootedSets.lean)
 
---hyperedgeの大きさの合計
-def total_size_of_hyperedges (F : SetFamily α)  [DecidablePred F.sets] : ℕ :=
-  let all_sets := (Finset.powerset F.ground).filter F.sets
-  all_sets.sum Finset.card
+根付き集合族に関しては、RootedSets.leanで記述している。根付き集合とは、通常は、集合内の1点とペアにした集合のことだが、ここでは、1点と1点以外の点に分けて、1点以外をステム(stem)と呼んで、根(root)と呼ぶ。そのペアは、Lean上ではValidPairと呼んで、rootがstemに含まれないという条件も合わせた三つ組になっている。
 
---hyperedge数
-def number_of_hyperedges (F : SetFamily α) [DecidablePred F.sets] : ℕ :=
-  ((Finset.powerset F.ground).filter F.sets).card
-  --let all_sets := (Finset.powerset F.ground).filter F.sets
-  --all_sets.card
+根付き集合の族RSから集合族を考えることができる。Sが根付き集合(stem,root)と両立しない、rootを含まずに、stemを部分集合として含む場合である。RSの任意の根付き集合と両立するような集合族を、RSが表現する集合族と呼ぶことにする。閉集合族になる。逆に閉集合族から両立するような根付き集合を集めてきて、根付き集合の族を作ることができる。RSから閉集合族を作って、根付き集合族を作るとRSを含むような根付き集合族ができて、対応する閉集合族は一致する。閉集合族から作れる根付きサーキットの族を完全表現(complete representation)と呼ぶことにする。
 
---頂点の次数
-noncomputable def degree (sf : SetFamily α) (v : α) : ℕ :=
-  Finset.card (Finset.filter (λ s => sf.sets s = true ∧ v ∈ s) (sf.ground.powerset))
+### 根付きサーキット (RootedCircuits.lean)
 
---標準化次数和=total_size * 2 - num_sets * base_set_size
-noncomputable def normalized_degree_sum {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) : ℤ :=
-  let total_size := (total_size_of_hyperedges F: ℤ)
-  let num_sets := (number_of_hyperedges F: ℤ)
-  let base_set_size := (F.ground.card: ℤ)
-  total_size * 2 - num_sets * base_set_size
+根付き集合の完全表現のなかで、rootが同じものの全体を考えた時に、ステムの包含関係で極小なものだけを考えても、表現する閉集合族は変わらない。このようなステムの包含関係で極小な根付き集合を根付きサーキットと呼ぶ。
 
---大きさnで標準化次数和が非正かどうかの述語。
-def P (x:Nat) : Prop := x ≥ 2  ∧ ∀ (F: IdealFamily (Fin x)), F.ground.card = x → normalized_degree_sum F.toSetFamily ≤ 0
-```
+### 根付き集合のimplication (RootedImplication.lean)
 
-## Ideal集合族のマイナー操作
+RootedSetsのimplicationの関係について。この根付き集合と、この根付き集合があれば、この根付き集合があるなど。また、現状では、ステムサイズが1の根付き集合によって、頂点間にPreorderが生成されることについての証明も入っている。現状では、2項関係の記号など、StemSizeOne.lean との記述が統一されていない部分もある。
 
-ideal集合族から1点台集合が小さいideal集合族を作る操作には、deletionとcontractionとtraceの3種類がある。
+### 閉集合族のマイナーであるtrace (ClosureMinors.lean)
 
-集合族に対して、頂点vによるcontractionは、vを含むhyperedge Hを動かして、H-vを集めた集合族である。contractionにより、downward-closed性は保存される。
-{v}がhyperedgeであるときに、contractionは空集合を持つので、Ideal集合族のcontractionはまたIdeal集合族になる。
+閉集合族のマイナー操作に関しては、とりあえずtraceが出てくるので、ClosureMinors.leanで記述している。パラレルの頂点を除去するときなどに使われる。閉集合族のtraceは、再び閉集合族になることも証明している。
 
-集合族に対して、頂点vによるdeletionは、vを含まないhyperedgeを全て集めてきたものである。
-ただし、deletion後の集合族は、部分集合では閉じているが、全体集合を持つとは限らないので、ground-vがhyperedgeでない場合は、ground-vを追加してあげることで、Ideal集合族になる。
+### Parallelな頂点 (Parallel.lean)
 
-集合族に対して、traceとは、hyperedge Hを動かして、H-vを集めたものである。ideal集合族のtraceは、またideal集合族になる。
+パラレルな頂点に関しては、Parallel.leanで記述している。頂点ペアがパラレルとは、任意のhyperedgeに関して、同時に含まれるか、含まれないかが一致する2頂点である。
 
-## 定理の証明
+パラレルな頂点ペアが存在するときに、その一方をtraceしても、次数は変わらずに、rare頂点が存在しても変わらないことを示した。よって、Franklの予想の解決には、Parallelな頂点がないものを考えれば十分であることも示した。
 
-Ideal集合族は必ず、平均rareになるという言明(P)がこの研究の主定理となる。
-この定理の証明の概略を述べる。
+### RootedFrankl.lean
 
-基本的には、台集合の大きさに関する帰納法を用いる。
+根付き集合の根が存在しない頂点は、rareであるなど、フランクルの予想に関係がある内容。
+頂点を含まないhyperedge全体から頂点を含むhyperedge全体への単射の存在から、rareであることを示すなど。
 
-ベースケースとしては、n = 2の場合を証明した(P 2)。IdealMain.leanにそのbasecaseの言明(theorem basecase)がある。
+### StemSizeOne.lean
 
-以下は、帰納的ステップの証明である。つまり、台集合がnの場合に言明が成り立つことを仮定する。
-この時に、台集合の大きさがn+1のIdeal集合族に対して、言明が成り立つことを証明する。つまり、標準化次数和((hyperedgeの大きさの合計)*2-(台集合の大きさ)*(hyperedge数))が負であることを証明すれば良い。(IdealMain.leanのinductive_step)
+ステムサイズがすべて1の根付き集合から生成される完全根付きサーキット表現は、すべてステムサイズが1であることが、主定理。その証明のために必要な補題もいくつか示す。
 
-まず、rare vetexを持つことを証明する(IdealRare.leanのtheorem ideal_version_of_frankl_conjecture)。その頂点をvとする。
+## これからの拡張予定
 
-groundを台集合として、ground-vがhyperedgeかどうかと、{v}がhyperedgeかどうかで、4通りに場合分けして考える。
+- ステムサイズがすべて1の根付きサーキットにrareな頂点が存在することの証明。
 
-それぞれに対して、hyperedgeの数と、hyperedgeの大きさの合計を、vをdeletionした集合族、vをcontractionした集合族のhyperedgeの数やhyperedgeの大きさで表すことができる。
+- abeのrareな頂点の十分条件をLean 4で記述する。
 
-Ideal集合族の1頂点をcontractionした集合族は、またIdeal集合族になることが証明できる。ただし、{v}がhyperedgeでないとcontractionしたものが空集合を持たないので、{v}がhyperedgeになるかどうかで場合分けして考える必要がある。{v}がhyperedgeでない時は、vの次数が1になる。この時は、contractionではなく、vをtraceして考えるとidealになる。
-また、Ideal集合族の1頂点をdeletionした集合族は、またIdeal集合族になる。しかし、ground-vがhyperedgeでないときは、deletionにより、全体集合がなくなるので、追加する必要がある。
-
-## 各ケースの補題
-
-### {v}がhyperedgeのときのhyperedge数の計算
-{v}がhyperedgeのときのhyperedge数の計算は、IdealNumbers.leanの中のtheorem hyperedge_count_deletion_contraction_none_z (ground-vがhyperedgeでない場合)やtheorem hyperedge_count_deletion_contraction_have_z  (ground-vがhyperedgeである場合)などに記述されている。
-
-hyperedgeの数は、deletionした集合族のhyperedgeの数と、contractionした集合族のhyperedgeの数から計算できる。
-```
-theorem hyperedge_count_deletion_contraction_have_z {α : Type} [DecidableEq α] [Fintype α]
-  (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (ground_ge_two: F.ground.card ≥ 2)
-  [DecidablePred F.sets] (hx_hyperedge : F.sets (F.ground \ {x}))(singleton_have: F.sets {x}) :
-  ((number_of_hyperedges F.toSetFamily):ℤ) =
-  ((number_of_hyperedges (idealdeletion F x hx ground_ge_two).toSetFamily):ℤ) +
-  ((number_of_hyperedges (contraction_ideal_family F x singleton_have ground_ge_two).toSetFamily) :ℤ)
-
-theorem hyperedge_count_deletion_contraction_none_z {α : Type} [DecidableEq α] [Fintype α]
-  (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (ground_ge_two: F.ground.card ≥ 2)
-  [DecidablePred F.sets] (ground_v_none : ¬ F.sets (F.ground \ {x})) (singleton_have: F.sets {x}) :
-  ((number_of_hyperedges F.toSetFamily):ℤ) + 1 =
-  (number_of_hyperedges (idealdeletion F x hx ground_ge_two).toSetFamily:ℤ)  +
-  (number_of_hyperedges (contraction_ideal_family F x singleton_have ground_ge_two).toSetFamily:ℤ) 
-```
-
-### {v}がhyperedgeのときのhyperedgeの和の計算
-{v}がhyperedgeのときのhyperedgeの大きさの和の計算は、IdealSum.leanの中のtheoremで、deletionやcontractionした集合族のhyperedgeの大きさの和から計算できる。
-
-```
-theorem hyperedge_totalsize_deletion_contraction_have_z {α : Type} [DecidableEq α] [Fintype α]
-  (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (ground_ge_two: F.ground.card ≥ 2)
-  [DecidablePred F.sets] (hx_hyperedge : F.sets (F.ground \ {x})) :
-  ((total_size_of_hyperedges F.toSetFamily):ℤ) =
-  ((total_size_of_hyperedges (idealdeletion F x hx ground_ge_two).toSetFamily):ℤ)   +
-  ((total_size_of_hyperedges (contraction F.toSetFamily x hx ground_ge_two)):ℤ)  + ((degree F.toSetFamily x):ℤ)
-
-theorem hyperedge_totalsize_deletion_contraction_none {α : Type} [DecidableEq α] [Fintype α]
-  (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (ground_ge_two: F.ground.card ≥ 2)
-  [DecidablePred F.sets] (ground_v_none : ¬ F.sets (F.ground \ {x})) (singleton_have : F.sets {x}) :
-  ((total_size_of_hyperedges F.toSetFamily):ℤ) + ((F.ground.card:ℤ) - 1)=
-  (total_size_of_hyperedges (idealdeletion F x hx ground_ge_two).toSetFamily:ℤ)  +
-  (total_size_of_hyperedges (contraction F.toSetFamily x hx ground_ge_two):ℤ) + ((degree F.toSetFamily x):ℤ)
-```
-### {v}がhyperedgeのときの標準化次数和の計算
-hyperedge数と、hyperedgeの大きさの和の関係から、標準化次数和は、contractionした集合族の標準化次数和とdeletionした集合族の標準化次数和から計算できる。
-```
-theorem hyperedge_average_have {α : Type} [DecidableEq α] [Fintype α]
-  (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (ground_ge_two: F.ground.card ≥ 2)
-  [DecidablePred F.sets] (hx_hyperedge : F.sets (F.ground \ {x})) (singleton_have : F.sets {x}) :
-  normalized_degree_sum F.toSetFamily =
-  normalized_degree_sum (idealdeletion F x hx ground_ge_two).toSetFamily  +
-  normalized_degree_sum (contraction_ideal_family F x singleton_have ground_ge_two).toSetFamily
-  +2*((degree F.toSetFamily x):ℤ) - ((number_of_hyperedges F.toSetFamily):ℤ)
-
-theorem hyperedge_average_none {α : Type} [DecidableEq α] [Fintype α]
-  (F : IdealFamily α) (x : α) (hx : x ∈ F.ground) (ground_ge_two: F.ground.card ≥ 2)
-  [DecidablePred F.sets] (ground_v_none : ¬ F.sets (F.ground \ {x})) (singleton_have : F.sets {x}) :
-  normalized_degree_sum F.toSetFamily + (F.ground.card:ℤ)=
-  normalized_degree_sum (idealdeletion F x hx ground_ge_two).toSetFamily  +
-  normalized_degree_sum (contraction_ideal_family F x singleton_have ground_ge_two).toSetFamily
-  + 2*((degree F.toSetFamily x):ℤ) - ((number_of_hyperedges F.toSetFamily):ℤ) + 1 
-```
-
-### {v}がhyperedgeでないときの計算
-
-{v}がhyperedgeでないideal集合族は、vの次数が1になる。このときは、vをtraceした集合族がideal集合族になることが示せる。
-もともとの集合族のhyperedge数とtraceした集合族のhyperedge数の関係が、ground-vがhyperedgeの場合と、そうでない場合でそれぞれで計算できる。また、もともとの集合族のhyperedgeの大きさの和と、traceした集合族のhyperedgeの大きさの和の関係が、ground-vがhyperedgeの場合と、そうでない場合でそれぞれで計算できる。
-
-そもそもground-vがhyperedgeで、{v}がhyperedgeでない場合は、Ideal集合族がnの大きさだけで決まるので、標準化次数和が計算できて、非負であることも確認できる。(IdealDegreeOne.lean)
-
-{v}がhyperedgeでなくて、ground-vがhyperedgeでないときのケースは、IdealDegOneMain.leanにて議論されている。vをtraceした集合族は、hyperedge数は元の集合族と変わらずに、hyperedgeの大きさの和は元の集合族に比べて1少ない。帰納法の仮定より、traceした集合族で、標準化次数和が非負であることより、元の集合族でも標準化次数和が非負であることがわかる。
-
-## leanのファイル構成
-
-Idealフォルダにleanファイルがある。
-
-- BasicDefinitions.lean  基本的な定義
-- BasicLemmas.lean  基本的な補題
-- IdealMainTheorem Ideal集合族が平均rareになるというメイン定理が収められている。他のIdealで始まるファイルに証明の詳細がある。
-
-メイン定理の証明に使ったもの
-
-- IdealDegOneMain.lean {v}がhyperedgeでないときのケース。
-- IdealDegreeOne.lean {v}がhyperedgeでないときの補題。さらにground-vがhyperedgeである場合も含む。
-- IdealDeletion.lean  deletionとcontractionに関する定義や補題
-- IdealNumbers.lean {v}がhyperedgeであるケースのhyperedgeの数に関する議論
-- IdealSum.lean {v}がhyperedgeであるケースのhyperedgeの大きさの和に関する議論
-- IdealSumBasic.lean IdealSumで使う補題を集めたもの。
-- IdealRare.lean  Ideal集合族がrareな頂点を持つことを示している。
-- IdealFin.lean 帰納法で(Fin n)と(Fin (n+1))を使ったのでその変換。今から考えると、Fin上に変換したのは手間が増えただけだった。
-
-その他のファイル
-- IdealTrace.lean  traceに関する定義や補題。結果的にあまり使わなかった。
-- IntersectionClosed.lean Ideal集合族が共通部分で閉じていることの証明。
-- AverageRare.lean 平均rareであれば、rare vertexを持つという言明の証明。
-
-## leanの環境
-
-使用したleanのバージョンは、leanprover/lean4:v4.14.0 である。
-これは、証明作成時点で、Lean Copilotが利用できるバージョンを使用した。
-lakefile.leanもLean Copilotがダウンロードされるように設定されている。
-importでもLean Copilotを読み込んでいる。Lean Copilotに対応してない環境で取り込む際には注意が必要。
-```
-git clone https://github.com/kashiwabarakenji/ideal_frankl.git
-```
-でローカルなマシンに取り込むことができる。すでにelan等でleanがインストールされている環境であれば、
-```
-cd ideal_frankl
-elan override set leanprover/lean4:v4.14.0
-lake update
-lake build
-```
-などのあとに、Lean 4の機能拡張がインストールされたVisual Studio Codeでideal_franklのフォルダを開けばよい。
-適宜、Visual Studio Codeでstart leanfileのボタンを押すとよい。
-
-## TODO
-
-- READMEにおいて、自然言語による言明の証明を完結しているものにする。
-- 証明のリファクタリングをする。コメントを整理して、一部を英語にするなど。
-- READMEなどを英語にする。
-
+ここまで行って、論文の作成に取り掛かる。
