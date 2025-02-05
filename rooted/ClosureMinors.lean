@@ -4,7 +4,7 @@ import Mathlib.Data.Fintype.Basic
 import Mathlib.Data.Finset.Powerset
 import Mathlib.Tactic
 import rooted.CommonDefinition
-import rooted.rootedcircuits
+import rooted.RootedCircuits
 import LeanCopilot
 
 variable {α : Type} [DecidableEq α] [Fintype α]
