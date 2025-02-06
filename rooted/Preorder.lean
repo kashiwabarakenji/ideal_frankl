@@ -391,7 +391,8 @@ theorem S_eq_S_star_fromR (R : α → α → Prop) :
     }
     · simp_all only
 
-
+--S_RがPreorderのinstanceであることは、ここまででは証明してない。
+--それと同等なことは、RootedImplication.leanのinstance vertexorder_is_preorder (SF : ClosureSystem α) [DecidablePred SF.sets] で示している。
 
 /-
 1. **`down_closure S` の定義**
@@ -518,12 +519,5 @@ lemma down_closure_is_closed (S : Finset P) :
   -- y ≤ s かつ x ≤ y ⇒ x ≤ s なので、x も filter によって選ばれる
 
   refine ⟨s, hsS, Finset.mem_filter.mpr ⟨Finset.mem_univ y, hxy.trans y_le_s⟩⟩
-
-
-
-
-
-
-
 
 end preorder

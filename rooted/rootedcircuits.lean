@@ -73,8 +73,10 @@ def rootedcircuits_from_RS (RS : RootedSets α) : RootedCircuits α :=
     simp_all only
 }
 
+
+
+
 --根つき集合が与えられたら、同じ根を持つものの中でステムが包含関係で極小なものが存在する。補題として何回か利用している。
---RootedCircuits.leanに移動する予定。
 omit [Fintype α] in
 lemma rootedcircuits_minimality (RS : RootedSets α) (p₁:(ValidPair α)):
   p₁ ∈ RS.rootedsets → ∃ p₂ ∈ RS.rootedsets , p₁.root = p₂.root ∧   p₂.stem ⊆ p₁.stem  ∧
@@ -202,7 +204,20 @@ lemma rootedcircuits_minimality (RS : RootedSets α) (p₁:(ValidPair α)):
 
       simp_all only [F]
 
---rootedset_setfamilyのrootedcircuits版。rooted set版は、rootedset_setfamily。subtype版は下にある。
+--rootedcircuits_minimalityとほぼ同じだが、rootedcircuitsの中から取れる形に書き換えた。
+omit [Fintype α] in
+lemma rootedcircuits_extsts (RS : RootedSets α) (p : ValidPair α) :
+  p ∈ RS.rootedsets → ∃r ∈ (rootedcircuits_from_RS RS).rootedsets, r.root = p.root ∧ r.stem ⊆ p.stem :=
+by
+  intro hp
+  simp_all only [rootedcircuits_from_RS]
+  obtain ⟨r,hr⟩ := rootedcircuits_minimality RS p hp
+  use r
+  simp_all only [Finset.mem_filter, not_false_eq_true, implies_true, and_self]
+
+
+--rootedset_setfamilyのrootedcircuits版。rootedcircuitsの中に存在することをいっている。
+--rooted set版は、rootedset_setfamily。subtype版は下にある。
 lemma rootedcircuits_setfamily (RS : RootedSets α) (SF:ClosureSystem α)
  (eq:  rootedsetToClosureSystem RS = SF) :
   ∀ (s : Finset α), s ⊆ SF.ground → (¬ SF.sets s ↔ ∃ (p : ValidPair α), p ∈ (rootedcircuits_from_RS RS).rootedsets ∧ p.stem ⊆ s ∧ p.root  ∈ (closureOperator SF (s.subtype (λ x => x ∈ SF.ground))).image Subtype.val ∧ p.root ∉ s) :=

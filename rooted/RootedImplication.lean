@@ -134,6 +134,8 @@ by
           simp_all only [Finset.mem_singleton, not_false_eq_true, Finset.singleton_subset_iff, implies_true, and_self]
       · simp_all only [not_false_eq_true, true_and, ne_eq, Finset.card_singleton, and_self]
 
+--vertex orderは、閉集合族Sが最初に与えられた時の、それと両立する順序。
+--vertexorderは、preorder.leanのR_hatと似ている。あちらは、RSから導入しているが、こちらは閉集合族から。統一した方がよいかもしれないが、とりあえず、あとまわし。
 def vertexorder (SF:ClosureSystem α)[DecidablePred SF.sets] (x y:α) : Prop :=
   x ∈ SF.ground ∧ ∀ s : Finset α, SF.sets s → (x ∈ s → y ∈ s)
 

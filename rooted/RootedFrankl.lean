@@ -405,6 +405,7 @@ by
 --instance vertexorder_is_preorder (SF : ClosureSystem α) [DecidablePred SF.sets]
 
 --頂点を与えると、それと同値な頂点集合全体を返す関数。vertex_orderでなく、vertexorder_is_preorderを使う必要があった。
+--preorder.leanのところとの記号の整合性を考える必要がある。
 noncomputable def equivalent_vertex (SF: ClosureSystem α) [DecidablePred SF.sets] (v: SF.ground):Finset SF.ground:=
 Finset.filter (fun x => (vertexorder_is_preorder SF).le v x ∧ (vertexorder_is_preorder SF).le x v) SF.ground.attach
 
