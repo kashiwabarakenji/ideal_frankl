@@ -982,14 +982,9 @@ by
     tauto
   exact ⟨m, this⟩
 
---以下の補題を使うのが証明のポイント
---  theorem element_is_rare_rootedset (SF: ClosureSystem α) [DecidablePred SF.sets] [∀ x, Decidable (∀ y, vertexorder SF x y → y = x)]:
---  let RS := rootedSetsFromSetFamily SF.toSetFamily
---    ∀ x : SF.ground,
---   let P := equivalent_vertex SF ⟨x.val, x.property⟩
---   (∀ r ∈ RS.rootedsets, r.root = x → r.stem ∩ (P.image Subtype.val) ≠ ∅)  →
---   SF.is_rare x :=
-lemma size_one_circuits_rare [Fintype α] (RS : RootedSets α) (SF: ClosureSystem α) [DecidablePred SF.sets]
+-- ステムサイズが1の根付き集合族は、rareな頂点が存在すること。重要な定理
+--以下の補題element_is_rare_rootedsetを使うのが証明のポイント
+theorem size_one_circuits_rare [Fintype α] (RS : RootedSets α) (SF: ClosureSystem α) [DecidablePred SF.sets]
  (eq:  rootedsetToClosureSystem RS = SF) :
   is_size_one_circuit RS → ∃ v ∈ RS.ground, SF.is_rare v :=
 by
@@ -1002,28 +997,30 @@ by
     obtain ⟨x, hx⟩ := RS
     rename_i nonempty_ground inst_1
     exact nonempty_ground
-  -- 極大な頂点としてvをとる。順序はすでにinstanceで定義されているのか。
+
+  -- 極小な頂点としてvをとる。これがrareであることを示す。順序はすでにinstanceで定義されている。
   obtain ⟨v, hv, hsf⟩ := Finset.exists_minimal (Finset.univ : Finset SF.ground) nonempty_ground
 
   have eq_ground : RS.ground  = SF.ground := by
     subst eq
     simp_all only [Finset.univ_eq_attach, Finset.attach_nonempty_iff, Finset.mem_attach, forall_const, Subtype.forall]
-    obtain ⟨val, property⟩ := v
     rfl
 
+  --let vprop := v.property
+  --simp [eq_ground] at vprop
+
   --vと同値な頂点集合としてPを取る。
-  let vprop := v.property
-  simp [eq_ground] at vprop
-  --(vertexorder_is_preorder SF).le v x
   let P := equivalent_vertex SF v --⟨v.val, vprop⟩
 
-  --使う補題 element_is_rare_rootedsetの前提を示す。
+  --使う補題 element_is_rare_rootedsetの前提条件が成り立っていることを示す。
   have assum: (∀ r ∈ (rootedSetsFromSetFamily SF.toSetFamily).rootedsets, r.root = v.val → r.stem ∩ (P.image Subtype.val) ≠ ∅) :=
   by
     intro r hr
     intro hroot
     dsimp [P]
     apply Finset.nonempty_iff_ne_empty.mp
+    dsimp [is_size_one_circuit] at h_one
+
     --前の補題より、その頂点にルートがあるような根付き集合にはステムサイズ2の根付き集合を含む。その点をuとする。
     --vは、極小な頂点なので(hsf)、前順序で真に大きいものは存在せず、逆向きのステムサイズ2の根付き集合があり、vとuはパラレルとなる。
     --利用する前の補題の言明
@@ -1031,14 +1028,23 @@ by
     --(h₁ : ∀ p ∈ RS.rootedsets, p.stem.card = 1) :
     --let SF := rootedsetToClosureSystem RS
     -- ∀ q, q ∈ (rootedcircuits_from_RS (rootedSetsFromSetFamily SF.toSetFamily)).rootedsets → q.stem.card = 1 :=
-    dsimp [is_size_one_circuit] at h_one
-    let RC := rootedcircuits_from_RS RS
 
-    have eq_SF: (rootedsetToClosureSystem RC.toRootedSets) = SF := by
+    let RC := rootedcircuits_from_RS RS
+    --ステムサイズが1になる証明で暗黙につかっている。
+    let sorc := size_one_rooted_circuits RC.toRootedSets h_one
+    --simp at sorc
+
+    --lemma rootedcircuits_extsts (RS : RootedSets α) (p : ValidPair α) :
+    --p ∈ RS.rootedsets → ∃r ∈ (rootedcircuits_from_RS RS).rootedsets, r.root = p.root ∧ r.stem ⊆ p.stem :=
+    obtain ⟨u, hu, hroot2, hstem⟩ := rootedcircuits_extsts (rootedSetsFromSetFamily SF.toSetFamily) r hr
+    --この根付き集合uのステムの大きさが1であることが、size_one_rooted_circuitsの仮定によりわかる。
+    --ここで構成したuが、欲しかった、vとパラレルな点。
+
+    have eq_SF: (rootedsetToClosureSystem RC.toRootedSets) = SF :=
+    by
       ext
       · subst eq
-        simp_all only [implies_true, Finset.univ_eq_attach, Finset.attach_nonempty_iff, Finset.mem_attach, forall_const,
-          Subtype.forall, RC]
+        simp_all only [implies_true, Finset.univ_eq_attach, Finset.attach_nonempty_iff, Finset.mem_attach, forall_const]
         --simp_all only
         obtain ⟨val, property⟩ := v
         subst hroot
@@ -1054,60 +1060,33 @@ by
           simp_all only [implies_true, Finset.univ_eq_attach, Finset.attach_nonempty_iff, Finset.mem_attach,
             forall_const, Subtype.forall, RC, rc]
 
-    let sorc := size_one_rooted_circuits RC.toRootedSets h_one
-    simp at sorc
-    --lemma rootedcircuits_extsts (RS : RootedSets α) (p : ValidPair α) :
-    --p ∈ RS.rootedsets → ∃r ∈ (rootedcircuits_from_RS RS).rootedsets, r.root = p.root ∧ r.stem ⊆ p.stem :=
-    obtain ⟨u, hu, hroot2, hstem⟩ := rootedcircuits_extsts (rootedSetsFromSetFamily SF.toSetFamily) r hr
-    --このuのステムの大きさが1であることが、size_one_rooted_circuitsの仮定によりわかる。
-    --ここで構成したuが、欲しかった、vと同値な点。
-
     --補題を適用するための準備。uのstemの大きさが1であることを示す定理で暗黙に使っている。
     have uinRC : u ∈ (rootedcircuits_from_RS (rootedSetsFromSetFamily (rootedsetToClosureSystem RC.toRootedSets).toSetFamily)).rootedsets :=
     by
-      simp_all only [implies_true, Finset.univ_eq_attach, Finset.attach_nonempty_iff, Finset.mem_attach, forall_const,
-        Subtype.forall, RC]
+      simp_all only [implies_true, Finset.univ_eq_attach, Finset.attach_nonempty_iff, Finset.mem_attach, forall_const]
       subst eq_SF
-      --simp_all only
-      obtain ⟨val, property⟩ := v
-      subst hroot2
-      simp_all only
       exact hu
 
-    --let sorcu := sorc u uinRC 次のstemの大きさが1であることを示すのに暗黙に使っているはず。
-
     have : u.stem.card = 1 := by
-      subst eq
-      simp_all only [implies_true, Finset.univ_eq_attach, Finset.attach_nonempty_iff, Finset.mem_attach, forall_const,
-        Subtype.forall, RC]
+      simp_all only [implies_true, Finset.univ_eq_attach, Finset.attach_nonempty_iff, Finset.mem_attach, forall_const]
 
     obtain ⟨u_point,u_prop⟩ := Finset.card_eq_one.mp this
 
     have rsg_eq:RS.ground = SF.ground := by
-      subst eq
-      simp_all only [implies_true, Finset.univ_eq_attach, Finset.attach_nonempty_iff, Finset.mem_attach, forall_const,
-        Subtype.forall, RC]
+      simp_all only [implies_true, Finset.univ_eq_attach, Finset.attach_nonempty_iff, Finset.mem_attach, forall_const]
 
     have : u.stem ⊆ SF.ground := by
       rw [←rsg_eq]
-      subst eq
+      subst eq  --これは必要。
       have rg:r.stem ⊆ (rootedSetsFromSetFamily (rootedsetToClosureSystem RS).toSetFamily).ground := by
         exact ((rootedSetsFromSetFamily (rootedsetToClosureSystem RS).toSetFamily).inc_ground r hr).1
-      have :u.stem ⊆ r.stem := by
-        rw [u_prop]
-        simp
-        simp_all only [implies_true, Finset.univ_eq_attach, Finset.attach_nonempty_iff, Finset.singleton_subset_iff,
-          Finset.card_singleton, Finset.mem_attach, forall_const, Subtype.forall, RC]
-      simp_all only [Finset.univ_eq_attach, Finset.attach_nonempty_iff, Finset.mem_attach,
-        forall_const, Subtype.forall, Finset.singleton_subset_iff, Finset.card_singleton]
+      simp_all only [Finset.univ_eq_attach, Finset.singleton_subset_iff]
       apply rg
       simp_all only
 
     have ug:u_point ∈ SF.ground :=
     by
-      subst eq
-      simp_all only [implies_true, Finset.univ_eq_attach, Finset.attach_nonempty_iff, Finset.mem_attach, forall_const,
-        Subtype.forall, Finset.singleton_subset_iff, Finset.card_singleton, RC]
+      simp_all only [implies_true, Finset.univ_eq_attach, Finset.mem_attach, forall_const,Finset.singleton_subset_iff]
 
     have vuneq: v.val ≠ u_point := by
       have : v.val ∉ ({u_point} :Finset α)  :=
@@ -1116,10 +1095,7 @@ by
         rw [←hroot2]
         rw [←u_prop]
         exact u.root_not_in_stem
-      subst eq
-      simp_all only [Finset.univ_eq_attach, Finset.attach_nonempty_iff, Finset.mem_attach,
-        forall_const, Subtype.forall, Finset.singleton_subset_iff, Finset.card_singleton,
-        Finset.mem_singleton, ne_eq, not_false_eq_true]
+      simp_all only [ Finset.card_singleton, Finset.mem_singleton, ne_eq, not_false_eq_true]
 
     --最初はこっち側の根付きサーキットが存在することがわかる。
     have ers: (∃ p ∈ (rootedSetsFromSetFamily SF.toSetFamily).rootedsets, p.root = ↑v ∧ p.stem = {u_point}) :=
@@ -1130,40 +1106,30 @@ by
           Subtype.forall, Finset.singleton_subset_iff, Finset.card_singleton, ne_eq, RC]
         dsimp [rootedcircuits_from_RS] at uinRC
         simp at uinRC
-        --いらなさそう。
-        --have: rootedsetToClosureSystem RC.toRootedSets = SF := by
-        --  subst eq_SF
-        --  simp_all only [RC]
         subst eq_SF
         obtain ⟨left, right⟩ := uinRC
         exact left
 
       · subst eq
-        simp_all only [implies_true, Finset.univ_eq_attach, Finset.attach_nonempty_iff, Finset.mem_attach, forall_const,
-          Subtype.forall, Finset.singleton_subset_iff, Finset.card_singleton, ne_eq, and_self, RC]
+        simp_all only [implies_true, Finset.univ_eq_attach, Finset.attach_nonempty_iff, Finset.mem_attach, and_self]
 
     have Ruv: vertexorder SF u_point v.val := --後ろがroot側
     by
       let vol := (vertexorderlemma SF u_point v.val).mpr
-      subst eq
       simp_all only [implies_true, Finset.univ_eq_attach, Finset.attach_nonempty_iff, Finset.mem_attach, forall_const,
-        Subtype.forall, Finset.singleton_subset_iff, Finset.card_singleton, ne_eq, RC, vol]
+        Subtype.forall, Finset.singleton_subset_iff, Finset.card_singleton, ne_eq]
 
-    --逆向きに根付きサーキットが存在すること。
+    --逆向きにvをステムでステムでuを根とする根付きサーキットが存在すること。
     have ers2: ∃ p ∈ (rootedSetsFromSetFamily SF.toSetFamily).rootedsets, p.root = u_point ∧ p.stem = {v.val} :=
     by
-      --subst eq
       simp_all only [implies_true, Finset.univ_eq_attach, Finset.attach_nonempty_iff, Finset.mem_attach, forall_const,
         Subtype.forall, Finset.singleton_subset_iff, Finset.card_singleton, RC]
-      --これは、vの極大性 hsfからいえる。hsfが順序の形で書かれているのでvertexorderの形で書き換える。
-      --当初、RS.groundとSF.groundでsubtypeの世界が世界が違ったが、なんとか修正。
-      --hsorderの順番はあっているのか。vertexorder_is_preorderも後ろがroot側。hsfから証明できるのはこっちだが、なんか違っているような。
-      --極大にとっているが、実は極小にとるのが正解なのか。
+      --これは、vの極小性 hsfからいえる。
+      --当初、RS.groundとSF.groundでsubtypeの世界が世界が違ったが、なんとか修正。--vは極大にとっていた、実は極小にとるのが正解だった。
       have hsforder: ∀ (a : α) (b : a ∈ SF.ground),   (vertexorder_is_preorder SF).le ⟨a ,b⟩ v  → (vertexorder_is_preorder SF).le  v ⟨a ,b⟩:=
       by
         intro a b hh
         let hsfab := hsf a b
-        --rw [←rsg_eq] at b
         have a_in_RS : a ∈ RS.ground := by
           subst eq
           simp_all only [Subtype.coe_eta]
@@ -1172,35 +1138,16 @@ by
         subst eq
         simp_all only [ne_eq, forall_const]
 
-      --vertexorderが成り立つ関係とステムサイズ1が存在することの関係を使う。
       dsimp [vertexorder_is_preorder] at hsforder
-      let hsorder2:= hsforder u_point ug
-      /-
-      have :vertexorder SF u_point (v.val)  := --(vertexorder_is_preorder SF).le v ⟨u_point,ug⟩ := by
-      by
-        let vl := (vertexorderlemma SF u_point v.val  ).mpr
-        simp at vl
-        have uinRS :u ∈ (rootedSetsFromSetFamily SF.toSetFamily).rootedsets:=
-        by
-           --huとRSからSFを定義すると、circuitsは、もとの根付き集合の極大元を持ってくるので、
-          dsimp [rootedcircuits_from_RS] at hu
-          simp at hu
-          exact hu.1
-
-        let vl2 := vl u uinRS hroot2 u_prop
-        subst eq
-        simp_all only [ne_eq, vl2]
-      -/
-      let hsorder3 := hsorder2 Ruv
-
-      obtain ⟨rr, hrr⟩ :=((vertexorderlemma SF v.val u_point).mp ⟨hsorder3, vuneq⟩)
+      let hsorder2:= hsforder u_point ug Ruv
+      --vertexorderが成り立つ関係とステムサイズ1が存在することの関係を使う。
+      obtain ⟨rr, hrr⟩ :=((vertexorderlemma SF v.val u_point).mp ⟨hsorder2, vuneq⟩)
 
       use rr
 
     have Rvu: vertexorder SF v.val u_point :=
     by
       let vol := (vertexorderlemma SF v.val u_point).mpr
-      subst eq
       simp_all only [implies_true, Finset.univ_eq_attach, Finset.attach_nonempty_iff, Finset.mem_attach, forall_const,
         Subtype.forall, Finset.singleton_subset_iff, Finset.card_singleton, ne_eq, not_false_eq_true, RC, vol]
 
@@ -1208,23 +1155,14 @@ by
       simp_all only [P]
       dsimp [equivalent_vertex]
       simp_all only [implies_true, Finset.univ_eq_attach, Finset.attach_nonempty_iff, Finset.mem_attach, forall_const,
-        Subtype.forall, Finset.singleton_subset_iff, Finset.card_singleton, ne_eq, Subtype.coe_eta, Finset.mem_filter,
+        Subtype.forall, Finset.singleton_subset_iff,ne_eq, Subtype.coe_eta, Finset.mem_filter,
         true_and]
       apply And.intro
       · exact Rvu
       · exact Ruv
 
-    subst eq
     simp_all only [implies_true, Finset.univ_eq_attach, Finset.attach_nonempty_iff, Finset.mem_attach, forall_const,
-      Subtype.forall, Finset.singleton_subset_iff, Finset.card_singleton, ne_eq, Subtype.coe_eta, RC, P]
-    obtain ⟨val, property⟩ := v
-    obtain ⟨w, h⟩ := ers
-    obtain ⟨w_1, h_1⟩ := ers2
-    obtain ⟨left, right⟩ := h
-    obtain ⟨left_1, right_1⟩ := h_1
-    obtain ⟨left_2, right⟩ := right
-    obtain ⟨left_3, right_1⟩ := right_1
-    simp_all only
+      Finset.singleton_subset_iff, ne_eq, Subtype.coe_eta, RC, P]
     constructor
     · simp_all only [Finset.mem_inter, Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right]
       apply And.intro
@@ -1232,8 +1170,6 @@ by
       · simp_all only [exists_const]
   --最後にrareの十分条件を使う必要がある。今証明したassumを使う。
   let eir := element_is_rare_rootedset SF v assum
-  subst eq
-  simp_all only [Finset.univ_eq_attach, Finset.attach_nonempty_iff, Finset.mem_attach, forall_const, Subtype.forall]
   use v
 
   simp_all only [Finset.coe_mem, and_self, eir]
