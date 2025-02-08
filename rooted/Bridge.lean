@@ -33,31 +33,38 @@ by
     let v := ValidPair.mk ∅ x.val this
     use v
     constructor
-    dsimp [RS]
-    dsimp [rootedSetsFromSetFamily]
-    dsimp[rootedSetsSF]
-    dsimp [allCompatiblePairs]
-    dsimp [isCompatible]
-    simp
-    use v.stem
-    use v.root
-    constructor
-    rfl
-    constructor
-    dsimp [allPairs]
-    rw [Finset.product]
-    simp
-    apply Finset.mem_product.mpr
-    constructor
-    simp
-    simp
-    constructor
-    exact v.root_not_in_stem
-    intro t a a_1
-    simp_all only [Finset.empty_subset]
-    apply h
-    simp_all only
-    simp_all only [and_self]
+    · dsimp [RS]
+      dsimp [rootedSetsFromSetFamily]
+      dsimp[rootedSetsSF]
+      dsimp [allCompatiblePairs]
+      dsimp [isCompatible]
+      simp
+      use v.stem
+      use v.root
+      constructor
+      · simp
+      · constructor
+        · dsimp [allPairs]
+          --rw [Finset.product]
+          simp
+          --apply Finset.mem_product.mpr
+          constructor
+          · simp_all only [Finset.empty_subset, RS, v]
+
+          · simp_all only [Finset.coe_mem, v, RS]
+        · constructor
+          · simp_all only [not_false_eq_true, v, RS]
+          · intro h
+            --dsimp [SetFamily.is_bridge]
+            intro t a
+            rename_i h_1
+            simp_all only [Finset.empty_subset, v, RS]
+            obtain ⟨val, property⟩ := x
+            simp_all only [RS]
+            apply h_1
+            simp_all only [RS]
+
+    · simp_all only [and_self, v, RS]
 
   · intro h
     simp_all only [RS]
@@ -348,8 +355,8 @@ by
           rw [@Finset.mem_erase]
           simp_all only [and_imp, ne_eq, not_false_eq_true, and_self, ii, S]
         have: y ∈ a2.erase x.val := by
-          simp_all only [Finset.mem_filter, Finset.mem_powerset, and_imp, Finset.mem_erase, ne_eq, not_false_eq_true,
-            true_and, and_self, S, S', SF', ii]
+          simp_all only [ne_eq, Finset.mem_filter, Finset.mem_powerset, and_self, and_imp,
+            Finset.mem_erase, not_false_eq_true, true_and, S, S', ii, SF']
         simp_all only [Finset.mem_filter, Finset.mem_powerset, and_imp, Finset.mem_erase, ne_eq, not_false_eq_true,
           true_and, S, S', SF', ii]
 
@@ -389,11 +396,9 @@ by
       · rw [Finset.mem_powerset]
         rw [@Finset.insert_subset_iff]
         constructor
-        · simp_all only [Finset.mem_filter, Finset.mem_powerset, and_self, and_imp, subset_refl, Finset.coe_mem, S, S', SF',
-            ii]
+        · simp_all only [Finset.mem_filter, Finset.mem_powerset, and_self, and_imp, subset_refl, Finset.coe_mem]
         ·
-          simp_all only [ne_eq, Finset.mem_filter, Finset.mem_powerset, and_self, implies_true, and_imp, subset_refl,
-            Finset.singleton_subset_iff, Finset.coe_mem, S, S', SF', ii]
+          simp_all only [ne_eq, Finset.mem_filter, Finset.mem_powerset, and_self, implies_true, and_imp, subset_refl]
           obtain ⟨val, property⟩ := x
           obtain ⟨val_1, property_1⟩ := y
           obtain ⟨left, right⟩ := hb2
@@ -406,15 +411,12 @@ by
             simp_all only [subset_refl, Finset.singleton_subset_iff, Finset.mem_erase, ne_eq]
       ·
         simp_all only [Finset.mem_filter, Finset.mem_powerset, and_self, and_imp, subset_refl,
-          Finset.singleton_subset_iff, Finset.coe_mem, S, S', SF', ii]
+          Finset.singleton_subset_iff, Finset.coe_mem]
         obtain ⟨val, property⟩ := x
         simp_all only [subset_refl, Finset.singleton_subset_iff]
         have : ¬ SF.sets b :=
         by
           simp_all only [subset_refl, implies_true, ne_eq, Finset.singleton_subset_iff]
-          obtain ⟨val_1, property_1⟩ := y
-          obtain ⟨left, right⟩ := hb2
-          simp_all only [subset_refl, Subtype.mk.injEq, Finset.singleton_subset_iff]
           apply Aesop.BuiltinRules.not_intro
           intro a
           simp_all only [subset_refl, not_true_eq_false]
@@ -422,9 +424,7 @@ by
         by
           simp_all only [subset_refl, implies_true, ne_eq, Finset.singleton_subset_iff, false_or]
         have : b ∪ {val} = insert val b := by
-          simp_all only [subset_refl, implies_true, ne_eq, Finset.singleton_subset_iff, or_true, and_true]
           obtain ⟨val_1, property_1⟩ := y
-          simp_all only [subset_refl, Finset.singleton_subset_iff, Subtype.mk.injEq]
           ext a : 1
           simp_all only [subset_refl, Finset.singleton_subset_iff, Finset.mem_union, Finset.mem_singleton,
             Finset.mem_insert]
@@ -446,8 +446,8 @@ by
     simp_all only [Finset.mem_filter, Finset.mem_powerset, and_self, and_imp, subset_refl, Finset.singleton_subset_iff,
       Finset.coe_mem, Nat.cast_inj, S, S', SF', ii]
     simp_all only [ne_eq, subset_refl, implies_true, Finset.singleton_subset_iff, Finset.coe_mem,
-      Finset.erase_insert_eq_erase, not_false_eq_true, Finset.erase_eq_of_not_mem, Finset.mem_insert, or_true,
-      and_self, exists_const]
+      Finset.erase_insert_eq_erase, not_false_eq_true, Finset.erase_eq_of_not_mem,
+      Finset.mem_insert, or_true, and_self, exists_const]
 
   have card_eq: S.card = S'.card := by
     apply @Finset.card_bij _ _ S S' ii hi2 inj surj
@@ -473,7 +473,7 @@ by
     intro a
     exact h_br _ a
 
-  --bridgeのvertexは、rare vertexではない。
+  --bridgeのvertexは、rare vertexではないという定理
   lemma bridge_notrare (SF : ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)] (x:SF.ground):
     SF.is_bridge x → ¬ SF.is_rare x :=
   by
@@ -499,7 +499,7 @@ by
         exact Finset.coe_mem x
     simp_all only [gt_iff_lt, mul_le_iff_le_one_right, Nat.not_ofNat_le_one]
 
-    --bridgeをtraceしても、rare vertexが存在するかは変わらない。
+  --bridgeをtraceしても、rare vertexが存在するかは変わらないという補題。
   lemma trace_bridge_rare (SF : ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)] (geq2: SF.ground.card ≥ 2) (x:SF.ground):
     SF.is_bridge x →
     ∀ (y:SF.ground), x≠y →
@@ -526,174 +526,514 @@ by
       dsimp [SetFamily.is_rare]
       simp_all only [ne_eq, tsub_le_iff_right, zero_add]
 
-def isBridgeFree (SF : ClosureSystem α) [DecidablePred SF.sets] : Prop :=
-  ∀ (v : α), v ∈ SF.ground → ¬ SF.is_bridge v
+--すべてのhyperedgeの共通部分を与える関数。
+def minimal_set (SF : ClosureSystem α) [DecidablePred SF.sets] : Finset α :=
+  finsetIntersection (SF.ground.powerset.filter (fun s => SF.sets s))
 
-noncomputable instance decidableIsBridgeFree (SF : ClosureSystem α) [DecidablePred SF.sets] : Decidable (isBridgeFree SF) :=
-  inferInstance
-
-def P_has_bridge {α : Type} [DecidableEq α] [Fintype α] (n : Nat) : Prop :=
-   (∀ (F : ClosureSystem α) [DecidablePred F.sets], F.ground.card = n → ∃ u, F.is_bridge u → ∃ (v : α), v ∈ F.ground ∧ F.is_rare v)
-
-def P_has_empty {α : Type} [DecidableEq α] [Fintype α] (n : Nat) : Prop :=
-   (∀ (F : ClosureSystem α) [DecidablePred F.sets], F.ground.card = n → F.has_empty → (∃ u, u ∉ F.ground) → ∃ (v : α), v ∈ F.ground ∧ F.is_rare v)
-
-
-
-theorem bridge_free_theorem {α : Type} [Infinite α] [Fintype α] [DecidableEq α] :
-  (∀ (n : Nat), @P_has_bridge α _ _ n) ↔ (∀ (n : Nat), @P_has_empty α _ _ n) :=
+--補題。閉集合族にとって、minimal_setはbridgeを与える関数ともいえる。
+lemma bridge_lemma (SF : ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)] (x:SF.ground):
+  SF.is_bridge x ↔ x.val ∈ (minimal_set SF) :=
 by
   apply Iff.intro
-  · -- bridgeを持つ場合にrare vertexが存在したとすると、emptyを持つ場合にもrare vertexが存在することを示す。
-    dsimp [P_has_bridge,P_has_empty]
+  · intro h
+    dsimp [minimal_set]
+    dsimp [finsetIntersection]
+    dsimp [SetFamily.is_bridge] at h
+    simp
+    constructor
+    · use SF.ground
+      constructor
+      · constructor
+        · simp
+        · exact SF.has_ground
+      · exact x.property
+    · intro s hs
+      intro sfs
+      simp_all only
+
+  · intro h
+    dsimp [minimal_set] at h
+    dsimp [finsetIntersection] at h
+    simp at h
+    dsimp [SetFamily.is_bridge]
+    intro s hs
+    have : s ⊆ SF.ground := by
+      exact SF.inc_ground s hs
+    exact h.2 s this hs
+
+--全体集合しかない閉集合族.すべての点がbridgeといってもいい。
+def is_trivial (SF : ClosureSystem α) [DecidablePred SF.sets]  : Prop :=
+  SF.number_of_hyperedges = 1
+
+--trivialでないときは、全体集合以外にもhyperedgeがある。必要十分条件。
+lemma trivial_lemma (SF : ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)]:
+  ¬is_trivial SF ↔ ∃ s, SF.sets s ∧ s ≠ SF.ground :=
+by
+  apply Iff.intro
+  · intro h
+    by_contra h_contra
+    simp at h_contra
+    apply h
+    dsimp [is_trivial]
+    dsimp [SetFamily.number_of_hyperedges]
+    simp_all only [Nat.cast_eq_one]
+    have : Finset.filter (fun s => SF.sets s) SF.ground.powerset = {SF.ground} :=
+    by
+      apply Finset.ext
+      intro s
+      apply Iff.intro
+      · intro h
+        rw [Finset.mem_singleton]
+        rw [Finset.mem_filter] at h
+        simp_all only [Finset.mem_powerset, and_self]
+        obtain ⟨left, right⟩ := h
+        simp_all only [SF.has_ground]
+      · intro h
+        rw [Finset.mem_singleton] at h
+        rw [Finset.mem_filter]
+        simp_all only [Finset.mem_powerset, and_self]
+        constructor
+        ·
+          subst h
+          simp_all only [subset_refl]
+        · exact SF.has_ground
+    rw [this]
+    simp
+  · intro h
+    obtain ⟨s, hs⟩ := h
+    dsimp [is_trivial]
+    dsimp [SetFamily.number_of_hyperedges]
+    have inc: {s, SF.ground} ⊆ Finset.filter (fun s => SF.sets s) SF.ground.powerset :=
+    by
+      intro x
+      intro h
+      rw [Finset.mem_insert] at h
+      cases h
+      ·
+        rw [Finset.mem_filter]
+        simp_all only [Finset.mem_powerset, and_self]
+        simp
+        exact SF.inc_ground s hs.1
+      ·
+        simp_all only [ne_eq, Finset.mem_singleton, Finset.mem_filter, Finset.mem_powerset, subset_refl, true_and]
+        exact SF.has_ground
+    have eq2: ({s, SF.ground}:Finset (Finset α)).card = 2 :=
+    by
+      simp_all only [ne_eq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem,
+        Finset.card_singleton, Nat.reduceAdd]
+    have : (Finset.filter (fun s => SF.sets s) SF.ground.powerset).card ≥ 2 :=
+    by
+      let fcl := Finset.card_le_card inc
+      simp_all only [ge_iff_le]
+      convert fcl
+      exact eq2.symm
+    simp_all only [ne_eq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem,
+      Finset.card_singleton, Nat.reduceAdd, ge_iff_le, Nat.cast_eq_one]
+    obtain ⟨left, right⟩ := hs
+    apply Aesop.BuiltinRules.not_intro
+    intro a
+    simp_all only [Nat.not_ofNat_le_one]
+
+--補題：空集合を持つことと、すべてのhyperedgeの共通部分が空集合であることが同値。
+lemma minimal_set_lemma (SF : ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)]:
+  SF.has_empty ↔ (minimal_set SF) = ∅ :=
+by
+  apply Iff.intro
+  · intro h
+    dsimp [minimal_set]
+    --rw [mem_finsetIntersection_iff_of_nonempty (Finset.filter (fun s => SF.sets s) SF.ground.powerset)]
+    by_contra h_contra
+    --simp at h_contra
+    apply Finset.nonempty_iff_ne_empty.mpr at h_contra
+    obtain ⟨v, hv⟩ := h_contra
+    dsimp [ClosureSystem.has_empty] at h
+    dsimp [finsetIntersection] at hv
+    simp at hv
+    let hv2 := hv.2 ∅
+    simp at hv2
+    contradiction
+
+  · intro h
+    have : (SF.ground.powerset.filter (fun s => SF.sets s)).Nonempty :=
+    by
+      use SF.ground
+      rw [Finset.mem_filter]
+      constructor
+      ·simp
+      · exact SF.has_ground
+    let fic := finite_intersection_in_closureSystem SF (SF.ground.powerset.filter (fun s => SF.sets s)) this
+    have :(∀ T ∈ Finset.filter (fun s => SF.sets s) SF.ground.powerset, SF.sets T) :=
+    by
+      intro T
+      intro hT
+      rw [Finset.mem_filter] at hT
+      exact hT.2
+    specialize fic this
+    dsimp [minimal_set] at h
+    rw [h] at fic
+    dsimp [ClosureSystem.has_empty]
+    exact fic
+
+--定理： 閉集合族は、空集合を持つことと、bridgeを持たないことが同値である。
+lemma has_empty_theorem (SF: ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)]:
+  SF.has_empty ↔ (∀ v, v ∈ SF.ground → ¬ SF.is_bridge v) :=
+by
+  constructor
+  · intro h
+    intro v
+    intro h_v
+    intro h_br
+    dsimp [SetFamily.is_bridge] at h_br
+    dsimp [ClosureSystem.has_empty] at h
+    specialize h_br ∅
+    simp_all only [Finset.not_mem_empty, imp_false, not_true_eq_false]
+  · intro h
+    dsimp [SetFamily.is_bridge] at h
+    simp at h
+
+    apply (minimal_set_lemma SF ).mpr
+    dsimp [minimal_set]
+    dsimp [finsetIntersection]
+    by_contra h_contra
+    simp at h_contra
+    apply Finset.nonempty_iff_ne_empty.mpr at h_contra
+    obtain ⟨v, hv⟩ := h_contra
+    have : v ∈ SF.ground :=
+    by
+      simp_all only [Finset.mem_filter, Finset.mem_sup, Finset.mem_powerset, id_eq, subset_refl]
+      obtain ⟨left, right⟩ := hv
+      obtain ⟨w, h_1⟩ := left
+      obtain ⟨left, right_1⟩ := h_1
+      obtain ⟨left, right_2⟩ := left
+      apply left
+      simp_all only
+    specialize h v this
+    rw [Finset.mem_filter] at hv
+    simp at hv
+    obtain ⟨s,hs⟩ := h
+    let fx := hv.2 s
+    have : s ⊆ SF.ground:=
+    by
+      exact SF.inc_ground s hs.1
+    specialize fx this
+    exact hs.2 (fx hs.1)
+
+--上の補題を対偶の形にしたもの。
+lemma has_empty_theorem2 (SF: ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)]:
+  ¬ SF.has_empty ↔ ∃ v, v ∈ SF.ground ∧ SF.is_bridge v :=
+by
+  apply Iff.intro
+  · intro h
+    contrapose! h
+    apply (has_empty_theorem SF).mpr
+    exact h
+  · intro h
+    contrapose! h
+    apply (has_empty_theorem SF).mp
+    exact h
+
+--補題：集合族が空集合を持つならば、nontrivialである。
+lemma has_empty_is_nontrivial (SF: ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)]:
+  SF.has_empty → ¬ is_trivial SF :=
+by
+  intro h
+  intro h_trivial
+  have h_bridge := has_empty_theorem SF
+  dsimp [ClosureSystem.has_empty] at h
+  dsimp [is_trivial] at h_trivial
+
+  have h_empty: ∅ ∈ Finset.filter (fun s => SF.sets s) SF.ground.powerset := by
+    rw [Finset.mem_filter]
+    constructor
+    · simp
+    · exact h
+  have h_ground:SF.ground ∈ Finset.filter (fun s => SF.sets s) SF.ground.powerset := by
+    rw [Finset.mem_filter]
+    constructor
+    · simp
+    · exact SF.has_ground
+  have inc: ({(∅:Finset α), SF.ground}:Finset (Finset α)) ⊆ Finset.filter (fun s => SF.sets s) SF.ground.powerset :=
+  by
+    simp_all only [Nat.cast_eq_one, ne_eq, Finset.mem_filter, Finset.mem_powerset, Finset.empty_subset, and_self,
+      subset_refl, true_and]
+    intro v hv
+    simp_all only [Finset.mem_insert, Finset.mem_singleton, Finset.mem_filter, Finset.mem_powerset]
+    cases hv with
+    | inl h_1 =>
+      subst h_1
+      simp_all only [Finset.empty_subset, and_self]
+    | inr h_2 =>
+      subst h_2
+      simp_all only [subset_refl, and_self]
+  have : SF.ground ≠ ∅ := by
+    let sfn := SF.nonempty_ground
+    rw [Finset.nonempty_iff_ne_empty] at sfn
+    exact sfn
+  dsimp [SetFamily.number_of_hyperedges] at h_trivial
+  have : ({(∅:Finset α), SF.ground}:Finset (Finset α)).card = 2 := by
+    simp_all only [Nat.cast_eq_one, Finset.mem_filter, Finset.mem_powerset, Finset.empty_subset, and_self,
+      subset_refl, true_and, ne_eq]
+    rw [Finset.card_insert_of_not_mem]
+    · simp_all only [Finset.card_singleton, Nat.reduceAdd]
+    · simp_all only [Finset.mem_singleton]
+      apply Aesop.BuiltinRules.not_intro
+      intro a
+      simp_all only [Finset.mem_singleton, Finset.insert_eq_of_mem, Finset.singleton_subset_iff, Finset.mem_filter,
+        Finset.mem_powerset, subset_refl, and_self, not_true_eq_false]
+  have :(Finset.filter (fun s => SF.sets s) SF.ground.powerset).card ≥ 2:= by
+    let fcl := Finset.card_le_card inc
+    simp_all only [Nat.cast_eq_one, Finset.mem_filter, Finset.mem_powerset, Finset.empty_subset, and_self,
+      subset_refl, true_and, ne_eq, ge_iff_le, Nat.not_ofNat_le_one]
+    omega
+  simp_all only [Nat.cast_eq_one, Finset.mem_filter, Finset.mem_powerset, Finset.empty_subset, and_self, subset_refl,
+    true_and, ne_eq, ge_iff_le, Nat.not_ofNat_le_one]
+
+--bridgeの頂点はrareにはならない。
+lemma bridge_is_not_rare (SF: ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)] (x:SF.ground):
+  SF.is_bridge x → ¬ SF.is_rare x :=
+by
+  intro h
+  intro h_rare
+  have h_deg := bridge_degree SF  x h
+  dsimp [SetFamily.is_rare] at h_rare
+  simp_all
+  rw [←h_deg] at h_rare
+  ring_nf at h_rare
+  have: SF.degree x > 0 :=
+  by
+    dsimp [SetFamily.degree]
+    simp
+    use SF.ground
+    rw [Finset.mem_filter]
+    constructor
+    · simp
+    · constructor
+      · exact SF.has_ground
+      · exact Finset.coe_mem x
+
+  simp_all only [gt_iff_lt, mul_le_iff_le_one_right, Nat.not_ofNat_le_one]
+
+--nontrivialな閉集合族のbridgeをtraceした後のnontrivialityを示す。
+lemma bridge_trace_nontrivial (SF : ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)] (geq2: SF.ground.card ≥ 2) (x:SF.ground):
+  SF.is_bridge x →
+  ¬is_trivial SF → ¬is_trivial (trace_closure_system SF x.val x.property geq2) :=
+by
+  intro h_br
+  intro h_trivial
+  intro h_trivial2
+  let SF' := (trace_closure_system SF x.val x.property geq2)
+  --もともとtrivialでないことからxの次数は2以上。よって、xを通る全体集合以外のhyperedge ssが存在する。
+  --ss - xは、trace後のhyperedgeであり、これは全体集合ではない。
+  --よって、traceは、2つ以上のhyperedgeを含むので、trivialでない。
+  obtain ⟨ss, hss⟩ := (trivial_lemma SF).mp h_trivial
+  let newss := ss.erase x.val
+  have h_newss: (trace_closure_system SF x.val x.property geq2).sets newss := by
+    dsimp [trace_closure_system]
+    constructor
+    ·
+      simp_all only [ne_eq, Finset.mem_erase, not_true_eq_false, false_and, not_false_eq_true, newss]
+    · right
+      have: ss = newss ∪ {x.val} := by
+        ext a : 1
+        simp_all only [Finset.mem_union, Finset.mem_erase, ne_eq, Finset.mem_singleton, Finset.mem_insert]
+        apply Iff.intro
+        · intro a_1
+          by_cases a = x.val
+          case pos =>
+            simp_all only [not_true_eq_false, and_true, or_true]
+          case neg =>
+            simp_all only [Finset.mem_erase, ne_eq, not_false_eq_true, and_self, or_false, newss]
+        · intro a_1
+          simp_all only [Finset.mem_erase, ne_eq, newss]
+          cases a_1 with
+          | inl h => simp_all only
+          | inr h_1 =>
+            subst h_1
+            apply h_br
+            simp_all only
+      rw [←this]
+      exact hss.1
+
+  have inc: ss ⊆ SF.ground := by
+      exact SF.inc_ground ss hss.1
+
+  have yexists: ∃ y:α, x.val ≠ y ∧ y ∈ SF.ground ∧ y ∉ ss := by
+    have ne: ¬SF.ground ⊆ ss := by
+      intro h
+      have :SF.ground = ss := by
+        exact Finset.Subset.antisymm h inc
+      exact hss.2 this.symm
+
+    obtain ⟨y, hyB, hyA⟩ := Finset.exists_of_ssubset ⟨inc, ne⟩
+    use y
+
+    constructor
+    · --x.val ∈ ssで、y ∉ ssなので、x.val ≠ y
+      intro h
+      subst h
+      dsimp [SetFamily.is_bridge] at h_br
+      exact hyA (h_br ss hss.1)
+    · simp_all only [ne_eq, not_false_eq_true, and_self, newss]
+
+  obtain ⟨y, hy⟩ := yexists
+
+  have SF'ground: SF'.ground = SF.ground.erase x.val := by
+    dsimp [trace_closure_system]
+    simp_all only [ne_eq, newss, SF']
+    obtain ⟨val, property⟩ := x
+    obtain ⟨left, right⟩ := hss
+    simp_all only
+    rfl
+
+  have h_newss2: newss ≠ SF'.ground := by
+    intro h
+    --x.valでなくて、y ¥not newssをつかって違いを示す。
+    have: y ∉ newss:= by
+      dsimp [newss]
+      intro hy
+      rw [@Finset.mem_erase] at hy
+      simp_all only [ne_eq, not_true_eq_false, and_false, SF', newss]
+    simp_all only [ne_eq, Finset.mem_erase, and_true, Decidable.not_not, not_true_eq_false, Finset.coe_mem, true_and,
+      false_and]
+
+  have newssin: newss ∈ Finset.filter (fun s => SF'.sets s) SF'.ground.powerset := by
+    rw [SF'ground]
+    rw [Finset.mem_filter]
+    constructor
+    ·
+      simp_all only [Finset.mem_powerset, subset_refl]
+      dsimp [newss]
+      intro x hx
+      simp_all only [Finset.mem_erase, ne_eq, not_false_eq_true, true_and]
+      obtain ⟨left_3, right_2⟩ := hx
+      exact inc right_2
+
+    ·
+      simp_all only [ne_eq, SF', newss]
+
+  have SF'in : SF'.ground ∈ Finset.filter (fun s => SF'.sets s) SF'.ground.powerset := by
+    rw [Finset.mem_filter]
+    constructor
+    ·
+      simp_all only [Finset.mem_powerset, subset_refl]
+    ·
+      simp_all only [ne_eq, SF', newss]
+      dsimp [trace_closure_system]
+      constructor
+      ·
+        simp_all only [ne_eq, Finset.mem_erase, not_true_eq_false, false_and, not_false_eq_true, newss]
+      · right
+        have: SF.ground = SF.ground.erase ↑x ∪ {↑x} := by
+          ext a : 1
+          simp_all only [Finset.mem_union, Finset.mem_erase, ne_eq, Finset.mem_singleton, Finset.mem_insert]
+          apply Iff.intro
+          · intro a_1
+            by_cases a = x.val
+            case pos =>
+              simp_all only [not_true_eq_false, and_true, or_true]
+            case neg =>
+              simp_all only [Finset.mem_erase, ne_eq, not_false_eq_true, and_self, or_false, newss]
+          · intro a_1
+            simp_all only [Finset.mem_filter, Finset.mem_powerset, and_true, SF', newss]
+            obtain ⟨val, property⟩ := x
+            cases a_1 with
+            | inl h => simp_all only
+            | inr h_1 =>
+              simp_all only
+        rw [←this]
+        exact SF.has_ground
+
+  have h_newss3: {newss,SF'.ground} ⊆ Finset.filter (fun s => SF'.sets s) SF'.ground.powerset := by
+    intro x hx
+    simp_all only [Finset.mem_insert, Finset.mem_singleton, Finset.mem_filter, Finset.mem_powerset]
+    cases hx with
+    | inl h =>
+      simp_all only [and_self]
+    | inr h_1 =>
+      simp_all only [subset_refl, and_self]
+
+  have : ({newss, SF'.ground}:Finset (Finset α)).card = 2 := by
+    simp_all only [ne_eq, Finset.mem_filter, Finset.mem_powerset, and_true, subset_refl, true_and, Finset.mem_singleton,
+      not_false_eq_true, Finset.card_insert_of_not_mem, Finset.card_singleton, Nat.reduceAdd, SF', newss]
+
+  have : (Finset.filter (fun s => SF'.sets s) SF'.ground.powerset).card ≥ 2 := by
+    let fcl := Finset.card_le_card h_newss3
+    simp_all only [ge_iff_le]
+    convert fcl
+    exact this.symm
+
+  have : SF'.number_of_hyperedges ≥ 2 := by
+    dsimp [SetFamily.number_of_hyperedges]
+    simp_all only [ne_eq, Finset.mem_filter, Finset.mem_powerset, and_true, subset_refl, true_and,
+      Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem, Finset.card_singleton,
+      ge_iff_le, Nat.ofNat_le_cast, SF', newss]
+  dsimp [is_trivial] at h_trivial2
+  simp_all only [ne_eq, Finset.mem_filter, Finset.mem_powerset, and_true, subset_refl, true_and,
+    Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem, Finset.card_singleton,
+    ge_iff_le, Nat.not_ofNat_le_one, SF', newss]
+
+def P_nontrivial {α : Type} [DecidableEq α] [Fintype α] (n : Nat) : Prop :=
+   (∀ (F : ClosureSystem α) [DecidablePred F.sets], F.ground.card = n → ¬ is_trivial F → ∃v, v ∈ F.ground ∧ F.is_rare v)
+
+def P_has_empty {α : Type} [DecidableEq α] [Fintype α] (n : Nat) : Prop :=
+   (∀ (F : ClosureSystem α) [DecidablePred F.sets], F.ground.card = n → F.has_empty → ∃ (v : α), v ∈ F.ground ∧ F.is_rare v)
+
+--定理： nontrivialな閉集合族に対してrare vertexが存在することと、空集合持つ集合族でrare vertexを持つことが同値。
+theorem bridge_free_theorem {α : Type} [Infinite α] [Fintype α] [DecidableEq α] :
+  (∀ (n : Nat), @P_nontrivial α _ _ n) ↔ (∀ (n : Nat), @P_has_empty α _ _ n) :=
+by
+  apply Iff.intro
+  · -- 簡単な方向。nontrivialな任意の集合族にrareなvertexが存在するので、
+    dsimp [P_nontrivial,P_has_empty]
     intro h --bridgeを持つ場合の仮定
     intro n
     intro F inst_1 a a_1
-    intro eu
-    obtain ⟨u, hu⟩ := eu
-    --ここから新しい集合族を考えたい。
-    --台集合は、F.groundにuを加えたもの。
-    --F.setsとなるhyperedgeは、F.sets sを満たすsにuを加えたもの。s cup u
-    --今のままだとF.sets sに対して、
-    let F' := SetFamily.mk (insert u F.ground) (fun s => u ∈ s ∧ F.sets (s.erase u)) (by --inc_ground
-      intro s
-      simp
-      intro su
-      intro sfs
-      intro x
-      rw [Finset.mem_insert]
-      intro hx
-      by_cases hxu: x = u
-      case pos =>
-        left
-        exact hxu
-      case neg =>
-        right
-        have : x ∈ s.erase u :=
-        by
-          subst a
-          simp_all only [Finset.mem_erase, ne_eq, not_false_eq_true, and_self]
-        have :s.erase u ⊆ F.ground :=
-        by
-          exact F.inc_ground (s.erase u) sfs
-        subst a
-        simp_all only [Finset.mem_erase, ne_eq, not_false_eq_true, and_self]
-        apply this
-        simp_all only [Finset.mem_erase, ne_eq, not_false_eq_true, and_self]
-    ) (by --nonempty_ground
-    subst a
-    simp_all only [Finset.insert_nonempty]
-    ) --ここまででF'の構築。
+    have :¬is_trivial F := by
+      exact has_empty_is_nontrivial F a_1
+    obtain ⟨v, hv_ground, hv_rare⟩ := h n F a this
+    use v
 
-    have F'_closure : ClosureSystem α :=
-    { ground := F'.ground
-      sets := F'.sets
-      inc_ground := F'.inc_ground
-      nonempty_ground := F'.nonempty_ground
-      intersection_closed :=
-      by
-        simp
-        intro s t
-        intro hs hss
-        intro ht hst
-        constructor
-        subst a
-        simp_all only [and_self]
-
-        have : s.erase u ∩ t.erase u = (s ∩ t).erase u :=
-        by
-          subst a
-          simp_all only [Finset.erase_inter, Finset.mem_inter, Finset.mem_erase, ne_eq, not_true_eq_false, and_true,
-            and_false, not_false_eq_true, Finset.erase_eq_of_not_mem]
-          ext a : 1
-          simp_all only [Finset.mem_inter, Finset.mem_erase, ne_eq]
-          apply Iff.intro
-          · intro a_2
-            simp_all only [not_false_eq_true, and_self]
-          · intro a_2
-            simp_all only [not_false_eq_true, and_self]
-        rw [←this]
-        exact F.intersection_closed (s.erase u) (t.erase u) hss hst
-
-      has_ground :=
-      by
-        constructor
-        simp
-        convert F.has_ground
-        simp
-        exact hu
-    }
-
-    have F'ground: F'.ground.card = n + 1 :=
-    by
-      subst a
-      simp_all only [not_false_eq_true, Finset.card_insert_of_not_mem]
-
-    have :(insert u F.ground).card = n + 1 :=
-    by
-      subst a
-      simp_all only [not_false_eq_true, Finset.card_insert_of_not_mem]
-
-    --#check F'_closure.ground
-
-    --have F'closureground : F'_closure.ground.card = F'.ground.card :=
-    --by
-    --  sorry
-
-    have F'closureground: F'_closure.ground.card = n + 1 :=
-    by
-      sorry
-
-    --#check h (n+1) F'_closure F'closureground
-
-    sorry
-
-  · -- 帰納法による方向: Bridge-Free でない場合に Bridge を除去して帰納仮定を適用
+  · -- 帰納法による方向: emptyに対する予想を仮定して、一般の場合を示す。
     intro h
     intro n
     dsimp [P_has_empty] at h
-    dsimp [P_has_bridge]
-    intro F inst_1 h_size
+    dsimp [P_nontrivial]
+    apply @Nat.strong_induction_on (λ n => ∀ (F : ClosureSystem α) [DecidablePred F.sets], F.ground.card = n → ¬is_trivial F → ∃ v ∈ F.ground, F.is_rare v)
+
+    intro n ih F inst_1 h_size h_trivial
+    --emptyを持つ場合と持たない場合に分ける。
     by_cases h_bridge : F.has_empty
-    apply @Nat.strong_induction_on (λ n => @P_has_bridge α _ _ n)
-    intros n ih F dp fgc
-    sorry
-    sorry
-    /-
-    by_cases h_bridge : @P_has_empty α _ _ n F dp fgc
     case pos =>
-      -- F が Bridge を持たない場合、PP_Bridge n を直接適用
-      specialize h n F fgc h_bridge
-      obtain ⟨v, hv_ground, hv_rare, _⟩ := h
+      have h_ground_card : F.ground.card = n := by
+        exact h_size
+      have h_trivial : ¬is_trivial F := by
+        exact h_trivial
+      obtain ⟨v, hv_ground, hv_rare⟩ := h n F h_ground_card h_bridge
       use v
-    -/
-    case neg =>
+
+    case neg => --emptyを持たない場合。帰納法を使って証明
+
+
       -- F が Bridge を持つ場合、Bridge を削除して帰納仮定を適用
       dsimp [ClosureSystem.has_empty] at h_bridge
-      sorry
-      /-
-      push_neg at h_bridge
-      obtain ⟨v, hv_ground, hv_bridge⟩ := h_bridge
+
       have h_ground_card' : F.ground.card ≥ 1 := by
-        subst fgc h_size
-        simp_all only [and_true, ge_iff_le, Finset.one_le_card]
-        use v
+        convert F.nonempty_ground
+        subst h_size
+        simp_all only [ge_iff_le, Finset.one_le_card]
       by_cases gc: F.ground.card = 1
-      case pos =>
+      case pos => --台集合の大きさが1のとき
+
         dsimp [SetFamily.is_rare]
-        -- F が 1 つの頂点だけからなる場合、その頂点は rare vertex である
-        -- 唯一の頂点を取り出す。vvとする。
-        -- F.has_groundより、全体集合がhyperedgeである。空集合がhyperedgeであっても、なくてもvvは、rareとなる。
-        -- なぜなら、vvが含まれるhyperedgeがあるとすると、vvを含むhyperedgeは、全体集合のみである。
-        -- このとき、vvを含むhyperedgeは、全体集合のみである。全体集合は、hyperedgeである。よって、vvは、rare vertexである。
-        dsimp [SetFamily.degree]
-        dsimp [SetFamily.number_of_hyperedges]
+        -- 台集合が1(gc)で、空集合を持たない(h_bridge)ということは、全体集合だけ。
+        -- このケースはtrivialになることを示す。
+        dsimp [is_trivial] at h_trivial
 
         rw [Finset.card_eq_one] at gc
         obtain ⟨vv, h_vv⟩ := gc
         use vv
         constructor
-        subst fgc h_size
+        subst h_size
         simp_all only [and_true, Finset.mem_singleton, Finset.card_singleton, ge_iff_le, le_refl, Nat.lt_one_iff,
           forall_eq]
         simp
@@ -702,80 +1042,150 @@ by
           simp_all only [Finset.mem_powerset, Finset.mem_singleton, Finset.mem_insert, Finset.mem_singleton]
           apply Iff.intro
           · intro a_1
-            subst h_size fgc hv_ground
+            subst h_size
             simp_all only [and_true, Finset.subset_singleton_iff, Finset.card_singleton, Nat.lt_one_iff, forall_eq,
               ge_iff_le, le_refl]
           · intro a_1
             cases a_1 with
             | inl h =>
-              subst h_size fgc hv_ground h
+              subst h_size  h
               simp_all only [and_true, Finset.card_singleton, Nat.lt_one_iff, forall_eq, ge_iff_le, le_refl,
                 Finset.subset_singleton_iff, true_or]
             | inr h_1 =>
               subst h_1
-              subst h_size fgc hv_ground
+              subst h_size
               simp_all only [and_true, Finset.card_singleton, Nat.lt_one_iff, forall_eq, ge_iff_le, le_refl,
                 subset_refl]
-        simp_all only [Finset.mem_singleton, Finset.mem_powerset, Finset.empty_subset, and_self]
-        rw [←pow]
-        rw [@Finset.card_filter]
-        rw [@Finset.card_filter]
-        simp_all only [Finset.mem_singleton, Finset.mem_powerset, Finset.empty_subset, and_self]
-        rw [Finset.sum_insert]
-        rw [Finset.sum_singleton]
 
-        by_cases fe: F.sets ∅
-        case pos =>
-          subst h_size fgc hv_ground
-          simp_all only [and_true, Finset.card_singleton, Nat.lt_one_iff, forall_eq, ge_iff_le, le_refl,
-            Finset.not_mem_empty, and_false, ↓reduceIte, Finset.mem_singleton, zero_add, Nat.cast_ite, Nat.cast_one,
-            CharP.cast_eq_zero, mul_ite, mul_one, mul_zero, Finset.sum_boole, Nat.cast_id]
-          split
-          next h_1 =>
-            simp_all only [Nat.ofNat_le_cast]
-            rw [@Finset.card_filter]
-            rw [Finset.sum_insert]
-            rw [Finset.sum_singleton]
-            simp_all only [↓reduceIte, Nat.reduceAdd, le_refl]
-            apply Finset.not_mem_singleton.mpr
-            intro h
-            have : v ∈ {v} := Finset.mem_singleton_self v
-            rw [← h] at this  -- `h : ∅ = {v}` を代入
-            simp at this
-
-          next h_1 =>
-            simp_all only [Nat.cast_nonneg]
-
-        case neg =>
-          --このケースは頂点はrareにならない。bridgeを持たないので仮定に矛盾。
-          exfalso
-          dsimp [isBridgeFree] at h_bridge
-
+        have : F.number_of_hyperedges = 1 := by
+          dsimp [SetFamily.number_of_hyperedges]
+          rw [h_vv]
+          rw [pow]
+          rw [@Finset.card_filter]
+          rw [Finset.sum_insert]
+          rw [Finset.sum_singleton]
+          simp
+          subst h_size
+          --((if F.sets ∅ then 1 else 0) + if F.sets {vv} then 1 else 0) = 1を示せばいいが、
+          -- h_bridgeよりF.sets ∅ = falseであり、F.has_groundより、F.sets {vv} = trueである。
+          have h0 : F.sets {vv} :=
+          by
+            rw [←h_vv]
+            exact F.has_ground
+          simp_all only [Finset.card_singleton, ge_iff_le, le_refl]
+          have h1 : (if F.sets ∅ then 1 else 0) = 0 := by simp [h_bridge]
+          have h2 : (if F.sets {vv} then 1 else 0) = 1 := by simp [h0]
+          simp
+          show ∅ ∉ {{vv}}
+          rw [Finset.mem_singleton]
+          exact ne_of_beq_false rfl
+        simp_all only [ge_iff_le, Nat.ofNat_le_cast]
+        subst h_size
+        simp_all only [not_true_eq_false]
 
       case neg =>
         have g_card : F.ground.card ≥ 2 := by
-          search_proof
-        let F' := F.trace v hv_ground h_ground_card'
-        let F'_closure : ClosureSystem α := trace_closure_system F v hv_ground h_ground_card'
-        have h_closure_ground : F'_closure.ground = F.ground \ {v} := by
+          subst h_size
+          simp_all only [ge_iff_le, Finset.one_le_card]
+          apply Nat.succ_le_of_lt
+          have h : F.ground.card > 1 :=
+          by
+            apply Nat.lt_iff_le_and_ne.mpr
+            constructor
+            simp_all only [Finset.one_le_card]
+
+            simp_all only [ne_eq]
+            apply Aesop.BuiltinRules.not_intro
+            intro a
+            simp_all only [not_true_eq_false]
+          simp_all only [gt_iff_lt]
+
+        --emptyを持たない場合は、bridgeを持つので、そのひとつを取り出して、vとする。
+        obtain ⟨v, hv⟩ := (has_empty_theorem2 F ).mp h_bridge
+
+        --let F' := F.trace v hv.1 g_card
+        let F'_closure : ClosureSystem α := trace_closure_system F v hv.1 g_card
+        let h_closure_ground : F'_closure.ground = F.ground \ {v} := by
           dsimp [F'_closure]
           dsimp [trace_closure_system]
-          subst fgc
-          simp_all only [Finset.card_erase_of_mem]
+          subst h_size
+          simp_all only [ge_iff_le, Finset.one_le_card, F'_closure]
+          obtain ⟨left, right⟩ := hv
+          ext a : 1
+          simp_all only [Finset.mem_erase, ne_eq, Finset.mem_sdiff, Finset.mem_singleton]
+          apply Iff.intro
+          · intro a_1
+            simp_all only [not_false_eq_true, and_self]
+          · intro a_1
+            simp_all only [not_false_eq_true, and_self]
         -- F' の ground の要素数を n - 1 に縮小
         have h_ground_card' : F'_closure.ground.card = n - 1 := by
           rw [h_closure_ground]
-          rw [Finset.card_erase_of_mem hv_ground]
-        -- F' が rare vertex を持つことを示す
-        let tpv := trace_bridge_vertex_rare F v hv_ground hv_bridge
-        apply tpv.mpr
-        have : n - 1 < n := by
-          apply Nat.sub_lt_self
-          exact h_ground_card'
-        let ihn := ih (n-1) this
-        dsimp [P_Bridge] at ihn
-        let ihnf := ihn F'_closure h_ground_card'
-        rw [h_closure_ground] at ihnf
-        exact ihnf
-      -/
-    · sorry
+          let fc := Finset.card_erase_of_mem hv.1
+          have :F.ground \ {v} = F.ground.erase v := by
+            ext a : 1
+            simp_all only [Finset.mem_erase, ne_eq, Finset.mem_sdiff, Finset.mem_singleton]
+            subst h_size
+            simp_all only [ge_iff_le, Finset.one_le_card, F'_closure]
+            obtain ⟨left, right⟩ := hv
+            apply Iff.intro
+            · intro a_1
+              simp_all only [not_false_eq_true, and_self]
+            · intro a_1
+              simp_all only [not_false_eq_true, and_self]
+          rw [←this] at fc
+          subst h_size
+          simp_all only [ge_iff_le, Finset.one_le_card, Finset.card_erase_of_mem, F'_closure]
+
+
+        -- F' が rare vertex を持つことを示す。
+        --まず、ihを使って、帰納法の仮定によりtraceした集合族にrareな頂点が存在していることを示す。
+        --そのあとに、trace_bridge_rareを使って、bridgeをtraceする前でもその頂点はrareであることを示す。
+        have h_trivial'  :¬is_trivial F'_closure := by
+          intro h_trivial'
+          --bridgeをtraceしたものも全体集合以外にもう1つ要素があることをいわないといけない。
+          --これは補題にしたほうがいいかも。
+          let btn := bridge_trace_nontrivial F g_card ⟨v,hv.1⟩ hv.2 h_trivial
+          subst h_size
+          simp_all only [ge_iff_le, Finset.one_le_card, F'_closure, btn]
+
+        have : n-1 < n := by
+          subst h_size
+          simp_all only [ge_iff_le, Finset.one_le_card, tsub_lt_self_iff, Finset.card_pos, Nat.lt_one_iff, pos_of_gt,
+            and_self, F'_closure]
+        let iht := ih (n-1) this F'_closure h_ground_card' h_trivial' -- FでなくF'のnontrivialが必要。
+        let tpv := trace_bridge_rare F g_card ⟨v,hv.1⟩ hv.2
+        --hを使ってrare vertexが存在することを示すのか。どの集合族に対して使うかが問題。traceしたものが空集合を持つとは限らない。
+        --specialize h (n-1) F'_closure h_ground_card'
+        --hは空集合を持つものだが、hを使うのではなくて、casesを使って帰納法の仮定でひとつ小さいものに対して、言明が成り立つことを使うのでは。
+        --もういちど、chatGPTの回答を復習してみる。
+        obtain ⟨v', hv'⟩ := iht
+        use v'
+        have hv'': v' ∈ F.ground := by
+            subst h_size
+            simp_all only [ge_iff_le, Finset.one_le_card, tsub_lt_self_iff, Finset.card_pos, Nat.lt_one_iff,
+              pos_of_gt, and_self, F'_closure]
+            rw [h_closure_ground] at hv'
+            simp_all only [Finset.mem_sdiff, Finset.mem_singleton, F'_closure]
+        constructor
+        ·
+          subst h_size
+          simp_all only [ge_iff_le, Finset.one_le_card, tsub_lt_self_iff, Finset.card_pos, Nat.lt_one_iff, pos_of_gt,
+            and_self, F'_closure]
+        ·
+          let tpvv := tpv ⟨v',hv''⟩
+          show F.is_rare v'
+          have vneq: v ≠ v' := by
+            intro h
+            subst h
+            subst h_size
+            simp_all only [ge_iff_le, Finset.one_le_card, tsub_lt_self_iff, Finset.card_pos, Nat.lt_one_iff,
+              pos_of_gt, and_self, F'_closure]
+            rw [h_closure_ground] at hv'
+            simp_all only [Finset.mem_sdiff, Finset.mem_singleton, F'_closure]
+            simp_all only [not_true_eq_false, and_false, false_and, F'_closure]
+          --have vneq': ⟨v',hv''⟩ ≠ ⟨v,hv.1⟩ := by
+          refine (tpvv ?_).mpr hv'.2
+          subst h_size
+          simp_all only [ge_iff_le, Finset.one_le_card, ne_eq, tsub_lt_self_iff, Finset.card_pos, Nat.lt_one_iff,
+            pos_of_gt, and_self, Subtype.mk.injEq, not_false_eq_true, F'_closure]

@@ -88,10 +88,10 @@ by
         simp_all only [ne_eq, not_false_eq_true, Finset.mem_singleton]
         apply And.intro
         · dsimp [allPairs]
-          dsimp [Finset.product]
+          --dsimp [Finset.product]
           simp
-          apply Finset.mem_product.mpr
-          simp
+          --apply Finset.mem_product.mpr
+          --simp
           constructor
           · simp_all only [Finset.mem_singleton] --yinground
           · simp_all only [Finset.mem_singleton]
@@ -122,17 +122,18 @@ by
         simp_all only [exists_prop, and_true]
         dsimp [allCompatiblePairs]
         dsimp [allPairs]
-        dsimp [Finset.product]
+        --dsimp [Finset.product]
         simp
         constructor
-        · apply Finset.mem_product.mpr
-          simp
+        · --apply Finset.mem_product.mpr
+          --simp
           constructor
           · simp_all only [Finset.mem_singleton]
           · simp_all only [Finset.mem_singleton]
         · dsimp [isCompatible]
           simp_all only [Finset.mem_singleton, not_false_eq_true, Finset.singleton_subset_iff, implies_true, and_self]
       · simp_all only [not_false_eq_true, true_and, ne_eq, Finset.card_singleton, and_self]
+        simp_all only [Finset.card_singleton, and_self, vpy, vpx, RS]
 
 --vertex orderは、閉集合族Sが最初に与えられた時の、それと両立する順序。
 --vertexorderは、preorder.leanのR_hatと似ている。あちらは、RSから導入しているが、こちらは閉集合族から。統一した方がよいかもしれないが、とりあえず、あとまわし。
@@ -163,13 +164,13 @@ by
       simp
       constructor
       · dsimp [allPairs]
-        dsimp [Finset.product]
+        --dsimp [Finset.product]
         simp
-        apply Finset.mem_product.mpr
+        --apply Finset.mem_product.mpr
         constructor
         simp_all only [implies_true, and_self, true_and, Finset.mem_singleton, Finset.mem_powerset,
           Finset.singleton_subset_iff]
-        simp
+        --simp
         let hxyground := hxy SF.ground SF.has_ground
         simp_all only [implies_true, and_self, true_and, Finset.mem_singleton, hxyground]
 

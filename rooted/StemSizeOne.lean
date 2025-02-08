@@ -876,37 +876,42 @@ by
           A]
         obtain ⟨val, property⟩ := z
         obtain ⟨left, right⟩ := hz
-        simp_all only
+        --simp_all only
         apply And.intro
         · dsimp [allPairs]
           dsimp [rootedsetToClosureSystem]
-          rw [Finset.product]
+          --rw [Finset.product]
           apply Finset.mem_product.mpr
           constructor
           · simp_all only [Finset.mem_powerset, Finset.singleton_subset_iff]
+            simp_all only [Finset.singleton_subset_iff, SF, A, v]
           · simp_all only [Finset.mem_powerset, Finset.singleton_subset_iff]
-        · intro t a a_1
-          have :(rootedsetToClosureSystem RS).sets (Finset.image Subtype.val (Finset.subtype (fun x => x ∈ RS.ground) t)) :=
-          by
-            have : t ⊆ RS.ground := by
-              let rtc := (rootedsetToClosureSystem RS).inc_ground t a
-              exact rtc
-            have : Finset.image Subtype.val (Finset.subtype (fun x => x ∈ RS.ground) t) = t :=
+            simp_all only [v, SF, A]
+        · constructor
+          · simp_all only [not_false_eq_true, v, SF, A]
+          · intro t a a_1
+            have :(rootedsetToClosureSystem RS).sets (Finset.image Subtype.val (Finset.subtype (fun x => x ∈ RS.ground) t)) :=
             by
-              ext a_2 : 1
-              simp_all only [Finset.mem_image, Finset.mem_subtype, Subtype.exists, exists_and_left, exists_prop,
-                exists_eq_right_right, and_iff_left_iff_imp]
-              intro a_3
-              exact this a_3
-            rw [←this]
-            let cst := ClosureSystemTheorem SF t a
-            simp_all only
+              have : t ⊆ RS.ground := by
+                let rtc := (rootedsetToClosureSystem RS).inc_ground t a
+                exact rtc
+              have : Finset.image Subtype.val (Finset.subtype (fun x => x ∈ RS.ground) t) = t :=
+              by
+                ext a_2 : 1
+                simp_all only [Finset.mem_image, Finset.mem_subtype, Subtype.exists, exists_and_left, exists_prop,
+                  exists_eq_right_right, and_iff_left_iff_imp]
+                intro a_3
+                exact this a_3
+              rw [←this]
+              let cst := ClosureSystemTheorem SF t a
+              simp_all only
 
-          let comp2 := comp (t.subtype (fun x => x ∈ RS.ground)) this
-          have : ⟨val, property⟩ ∈ Finset.subtype (fun x => x ∈ RS.ground) t := by
-            simp_all only [Finset.mem_subtype]
-          let comp3 := comp2 this
-          simpa using comp3
+            let comp2 := comp (t.subtype (fun x => x ∈ RS.ground)) this
+            have : ⟨val, property⟩ ∈ Finset.subtype (fun x => x ∈ RS.ground) t := by
+              simp_all only [Finset.mem_subtype]
+              simp_all only [Finset.singleton_subset_iff, v, SF, A]
+            let comp3 := comp2 this
+            simpa using comp3
 
     have zq_sub: {z.val} ⊆ q.stem := by
       simp_all only [implies_true, not_false_eq_true, ne_eq, Finset.card_eq_zero, gt_iff_lt, Finset.mem_image,
@@ -921,7 +926,8 @@ by
     dsimp [rootedcircuits_from_RS] at hq
     rw [Finset.mem_filter] at hq
     have : q.root = v.root := by
-      simp
+      simp_all only [not_false_eq_true, ne_eq, Finset.card_eq_zero, gt_iff_lt, Finset.mem_image, Subtype.exists,
+        exists_and_right, exists_eq_right, exists_const, Finset.mem_subtype, Finset.singleton_subset_iff, SF, A, v]
     let hqq := hq.2 v size1rooted this
 
     contradiction --直接矛盾を導く方がよい。
@@ -1054,10 +1060,13 @@ by
         · intro h
           let rc := rootedcircuits_makes_same_setfamily RS s
           simp_all only [rc]
+          subst eq
+          simp_all only [Finset.univ_eq_attach, Finset.attach_nonempty_iff, Finset.mem_attach, forall_const,
+            Subtype.forall, RC, rc]
         · intro h
           let rc := rootedcircuits_makes_same_setfamily RS s
           subst eq
-          simp_all only [implies_true, Finset.univ_eq_attach, Finset.attach_nonempty_iff, Finset.mem_attach,
+          simp_all only [Finset.univ_eq_attach, Finset.attach_nonempty_iff, Finset.mem_attach,
             forall_const, Subtype.forall, RC, rc]
 
     --補題を適用するための準備。uのstemの大きさが1であることを示す定理で暗黙に使っている。

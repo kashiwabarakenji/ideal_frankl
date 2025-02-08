@@ -15,7 +15,7 @@ package Ideal {
 lean_lib «rooted» where
   --もともとの設定は以下で、src/Idealの下にファイルが置かれていた。
   --roots:= #[`Ideal]
-  --srcDir := "src"
+  --srcDir := "rooted"
 require mathlib from git
   "https://github.com/leanprover-community/mathlib4.git"  @ "v4.16.0" -- "v4.8.0"
 require LeanCopilot from git

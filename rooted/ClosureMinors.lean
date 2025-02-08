@@ -78,7 +78,7 @@ def SetFamily.trace {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α)
   }
 
   --closure systemのtraceがclosure systemであることを示す。DecidablePred F.setsを入れるとエラー。
-instance trace_closure_system (F : ClosureSystem α) (x : α) (hx: x ∈ F.ground) (ground_ge_two: F.ground.card ≥ 2)  : ClosureSystem α :=
+instance  trace_closure_system(F : ClosureSystem α) (x : α) (hx: x ∈ F.ground) (ground_ge_two: F.ground.card ≥ 2)  : ClosureSystem α :=
 {
   ground := F.ground.erase x,
   sets := λ s => (x ∉ s) ∧ (F.sets s ∨ F.sets (s ∪ {x})),
@@ -428,26 +428,26 @@ theorem trace_closure_system_rootedsets (F : ClosureSystem α)[DecidablePred F.s
           dsimp [allCompatiblePairs]
           dsimp [isCompatible]
           dsimp [allPairs]
-          rw [Finset.product]
+          --rw [Finset.product]
           simp
           apply And.intro
-          · apply Finset.mem_product.mpr
+          · --apply Finset.mem_product.mpr
             constructor
-            simp_all only [implies_true, and_self, true_and, Finset.mem_singleton, Finset.mem_powerset,
-              Finset.singleton_subset_iff]
+            --simp_all only [implies_true, and_self, true_and, Finset.mem_singleton, Finset.mem_powerset,
+            --  Finset.singleton_subset_iff]
             rw [Finset.subset_iff] at left
             simp_all only [mem_erase, ne_eq]
             intro y hy
             simp_all only
 
-            simp
+            --simp
             exact right
 
           · apply And.intro
             · show h_left_1 ∉ h_left
               dsimp [allCompatiblePairs] at h_left_2  --h_left_2の分解は上でやってもよい。
               dsimp [allPairs] at h_left_2
-              dsimp [ Finset.product] at h_left_2
+              --dsimp [ Finset.product] at h_left_2
               have ⟨h_mem1, h_mem2⟩ := Finset.mem_filter.mp h_left_2
               dsimp [isCompatible] at h_mem2
               simp_all only [mem_filter, true_and, mem_mk, not_false_eq_true]
@@ -456,7 +456,7 @@ theorem trace_closure_system_rootedsets (F : ClosureSystem α)[DecidablePred F.s
               show h_left_1 ∈ t --tがxを含むかどうかで場合分けの必要があるかも。
               dsimp [allCompatiblePairs] at h_left_2
               dsimp [allPairs] at h_left_2
-              rw [Finset.product] at h_left_2
+              --rw [Finset.product] at h_left_2
               have ⟨h_mem1, h_mem2⟩ := Finset.mem_filter.mp h_left_2
               dsimp [isCompatible] at h_mem2
               by_cases ht: x ∈ t
@@ -487,7 +487,13 @@ theorem trace_closure_system_rootedsets (F : ClosureSystem α)[DecidablePred F.s
                       dsimp [SetFamily.trace] at h_mem1
                       have :h_left ∈ (F.ground.erase x).powerset.val ∧ h_left_1 ∈ F.ground.val.erase x :=
                       by
-                        apply (@Finset.mem_product _ _ (F.ground.erase x).powerset (F.ground.erase x)).mp h_mem1
+                        --apply (@Finset.mem_product _ _ (F.ground.erase x).powerset (F.ground.erase x)).mp h_mem1
+                        simp_all only [mem_filter, mem_product, mem_powerset, mem_erase, ne_eq, not_false_eq_true,
+                          and_self, and_true, mem_val, true_and]
+                        obtain ⟨left, right_1⟩ := h_left_2
+                        obtain ⟨left_2, right_2⟩ := h_mem2
+                        obtain ⟨left, right_3⟩ := left
+                        exact right_3
                       simp at this
                       let t1 := this.1
                       rw [Finset.subset_erase] at t1
@@ -537,12 +543,12 @@ theorem trace_closure_system_rootedsets (F : ClosureSystem α)[DecidablePred F.s
       have :(p.stem, p.root) ∈ allCompatiblePairs (F.trace x hx ground_ge_two) := by
         dsimp [allCompatiblePairs]
         dsimp [allPairs]
-        rw [Finset.product]
+        --rw [Finset.product]
         simp
         obtain ⟨left, right⟩ := h
         obtain ⟨left_1, right⟩ := right
         apply And.intro
-        · apply Finset.mem_product.mpr
+        · --apply Finset.mem_product.mpr
           constructor
           · simp_all only [implies_true, and_self, true_and, Finset.mem_singleton, Finset.mem_powerset,
               Finset.singleton_subset_iff]
@@ -553,7 +559,7 @@ theorem trace_closure_system_rootedsets (F : ClosureSystem α)[DecidablePred F.s
             · obtain ⟨left_2, right_1⟩ := pinc
               exact left_2
             · simp_all only [not_false_eq_true]
-          · simp
+          · --simp
             dsimp [SetFamily.trace]
             rw [Finset.erase_eq]
             simp

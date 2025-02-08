@@ -155,6 +155,7 @@ lemma rootedcircuits_minimality (RS : RootedSets α) (p₁:(ValidPair α)):
     have :{ stem := w.stem, root := w.root, root_not_in_stem := w.root_not_in_stem } ∈ RS.rootedsets := by
       exact left_1
     simp_all only [Finset.mem_powerset, true_and]
+    simp_all only [and_true, and_self, F, Fs, v]
 
   · have tp: t ⊆ p₁.stem:= by
       have : t ∈ F := by
@@ -168,9 +169,11 @@ lemma rootedcircuits_minimality (RS : RootedSets α) (p₁:(ValidPair α)):
       subst left_2
       simp_all only [Finset.mem_powerset]
     apply And.intro
-    · exact tp
+    · simp_all only [Finset.mem_filter, Finset.mem_powerset, and_imp, forall_exists_index, F, Fs, v]
 
     · --∀ q ∈ RS.rootedsets, q.root = p₁.root → ¬q.stem ⊂ t.stem
+      constructor
+      simp_all only [Finset.mem_filter, Finset.mem_powerset, and_imp, forall_exists_index, F, Fs, v]
       intro q a a_1
       intro qt_contra
       have hq_minimal := ht_minimal q.stem (by
@@ -203,6 +206,7 @@ lemma rootedcircuits_minimality (RS : RootedSets α) (p₁:(ValidPair α)):
           simp_all only [Finset.disjoint_singleton_right, not_false_eq_true]--
 
       simp_all only [F]
+      simp_all only [Finset.mem_filter, Finset.mem_powerset, and_imp, forall_exists_index, F, Fs, v]
 
 --rootedcircuits_minimalityとほぼ同じだが、rootedcircuitsの中から取れる形に書き換えた。
 omit [Fintype α] in

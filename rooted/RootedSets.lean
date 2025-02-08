@@ -170,7 +170,7 @@ noncomputable def rootedSetsFromSetFamily (SF : SetFamily α) [DecidableEq α] [
       obtain ⟨left, right⟩ := h2
       subst h
       dsimp [allPairs] at left
-      rw [Finset.product] at left
+      --rw [Finset.product] at left
       set wp :=  (w, w_1)
       let fmp := @Finset.mem_product _ _ SF.ground.powerset SF.ground wp --なぜか直接rwできなかった。
       have :wp.1 ∈ SF.ground.powerset ∧ wp.2 ∈ SF.ground  :=
@@ -220,7 +220,7 @@ by
   have pro2 :∀ (t : Finset α), SF.sets t → fst ⊆ SF.ground → fst ⊆ t  → snd ∈ t :=
   by
     intro t _ _ _
-    dsimp [Finset.product] at property
+    --dsimp [Finset.product] at property
     simp at property
     simp_all only [not_false_eq_true]
 
@@ -402,7 +402,7 @@ by
   simp_all only
   apply And.intro
   · dsimp [allPairs]
-    dsimp [Finset.product]
+    --dsimp [Finset.product]
     have comp1: Finset.image Subtype.val s ∈ SF.ground.powerset.val := by
       simp_all only [Finset.mem_val, Finset.mem_powerset]
       simp [Finset.image_subset_iff]
@@ -501,7 +501,7 @@ by
       · apply And.intro
         ·
           simp [allPairs]
-          apply Finset.mem_product.2
+          --apply Finset.mem_product.2
           simp_all only [Finset.mem_powerset, and_true]
           simp [Finset.image_subset_iff]
         · dsimp [isCompatible]
@@ -591,7 +591,7 @@ by
   simp
   constructor
   · dsimp [allPairs]
-    rw [Finset.product]
+    --rw [Finset.product]
     apply Finset.mem_product.mpr
     constructor
     · simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, Subtype.coe_eta, Finset.coe_mem,
@@ -707,9 +707,10 @@ by
     exact right_1
   · constructor
     · simp_all only [not_false_eq_true, forall_true_left, true_and, subset_refl]
+      simp_all only [subset_refl, v]
     · intro x
       simp_all only [not_false_eq_true, forall_true_left, true_and, Subtype.coe_eta]
-      simp_all only [Finset.coe_mem]
+      --simp_all only [Finset.coe_mem]
       obtain ⟨val, property⟩ := root
       obtain ⟨left_1, right_1⟩ := hroot
       simp_all only

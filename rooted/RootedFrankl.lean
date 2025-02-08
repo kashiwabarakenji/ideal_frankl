@@ -665,7 +665,9 @@ lemma minimal_element_is_rare_lemma (SF: ClosureSystem α) [DecidablePred SF.set
         have :¬SF.sets (Finset.image Subtype.val (Finset.subtype (fun s => s ∈ SF.ground) (Hval \ Finset.image Subtype.val P))) :=
         by
           rw [HPreduce]
-          simp_all only [not_false_eq_true, Subtype.exists,exists_const]--
+          --simp_all only [not_false_eq_true, Subtype.exists,exists_const]--
+          simp_all only [Subtype.coe_eta, ne_eq, Finset.mem_filter, Finset.mem_powerset, and_self, not_false_eq_true, P,
+            S, RS, T]
         have :¬SF.sets (Finset.image Subtype.val (Finset.subtype (fun s => s ∈ SF.ground) Hval \ P)) :=
         by
            convert this
@@ -682,8 +684,9 @@ lemma minimal_element_is_rare_lemma (SF: ClosureSystem α) [DecidablePred SF.set
 
         have :↑x ∉ Finset.image Subtype.val (Finset.subtype (fun s => s ∈ SF.ground) Hval \ P) :=
         by
-          simp_all only [not_false_eq_true, Finset.mem_image, Finset.mem_sdiff,
-            Subtype.exists, exists_and_right,  exists_eq_right, not_true_eq_false,exists_const, and_false]--
+          simp_all only [Subtype.coe_eta, ne_eq, Finset.mem_filter, Finset.mem_powerset, and_self, not_false_eq_true,
+            Finset.mem_image, Finset.mem_sdiff, Finset.mem_subtype, Subtype.exists, exists_and_right, exists_and_left,
+            exists_eq_right, not_true_eq_false, exists_const, and_false, P, S, RS, T]
         let rcti4 := rcti3 this
         simp at rcti4
         dsimp [rootedSetsSF] at rcti4
@@ -699,12 +702,21 @@ lemma minimal_element_is_rare_lemma (SF: ClosureSystem α) [DecidablePred SF.set
           dsimp [rcp]
           dsimp [rootedSetsFromSetFamily]
           simp_all only [Subtype.coe_eta, ne_eq, Finset.mem_filter, Finset.mem_powerset]
+          dsimp [rootedSetsSF]
+          simp_all [P, S, rcp, RS, T, stem_val, root_val]
+          obtain ⟨val, property⟩ := x
+          obtain ⟨left, right_1⟩ := rcti4
+          simp_all only [RS]
+          rw [allCompatiblePairs]
+          simp_all only [Finset.mem_filter, and_self, RS]
+
 
         let hpp := hP rcp this
 
         have: rcp.root = ↑x :=
         by
           simp_all only [Finset.mem_filter, Finset.mem_powerset, and_self, Subtype.coe_eta,not_false_eq_true]
+          simp_all only [Finset.coe_mem, Subtype.coe_eta, not_false_eq_true, P, S, rcp, RS, stem_val, root_val, T]
         let hpp2 := hpp this
 
         have :stem_val ∩ Finset.image Subtype.val (equivalent_vertex SF x) = ∅ := by
