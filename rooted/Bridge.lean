@@ -21,7 +21,7 @@ open Classical
 
 def SetFamily.is_bridge (SF : SetFamily α) (x : α) : Prop := ∀ s, SF.sets s → x ∈ s
 
---xはsubtype。
+--xはsubtype。頂点がブリッジであることと、根付き集合のステムが空であることの関係。
 theorem rooted_sets_bridge (SF : ClosureSystem α)  [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)] (x:SF.ground):
 let RS := rootedSetsFromSetFamily SF.toSetFamily
 SF.is_bridge x ↔ ∃ (r : ValidPair α), r ∈ RS.rootedsets ∧ r.root = x ∧ r.stem = ∅ :=
@@ -55,7 +55,6 @@ by
         · constructor
           · simp_all only [not_false_eq_true, v, RS]
           · intro h
-            --dsimp [SetFamily.is_bridge]
             intro t a
             rename_i h_1
             simp_all only [Finset.empty_subset, v, RS]
@@ -86,8 +85,6 @@ by
     subst h
     subst right
     simp_all only [Finset.empty_subset]
-
-    --そのほかbridgeに関して、traceしたらどうなるかとか、bridgeのない集合族だけを考えればフランクルの予想には十分だとかいろいろ考えられる。
 
 --bridgeをtraceしてもhyperedgeの数は変わらないという定理。
 theorem trace_bridge_keep_hyperedge (SF : ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)] (geq2: SF.ground.card ≥ 2) (x:SF.ground):
@@ -262,8 +259,8 @@ by
   simp_all only [subset_refl, Finset.singleton_subset_iff]
   rfl
 
---bridgeのtraceをしてもdegreeが変化しないこと。
-theorem trace_bridge_keep_degree (SF : ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)] (geq2: SF.ground.card ≥ 2) (x:SF.ground):
+--bridgeのtraceをしてもdegreeが変化しないことの補題
+lemma trace_bridge_keep_degree (SF : ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)] (geq2: SF.ground.card ≥ 2) (x:SF.ground):
   SF.is_bridge x →
   ∀ (y:SF.ground), x≠y →
    SF.degree y = (SF.trace x.val x.property geq2).degree y :=
@@ -355,10 +352,8 @@ by
           rw [@Finset.mem_erase]
           simp_all only [and_imp, ne_eq, not_false_eq_true, and_self, ii, S]
         have: y ∈ a2.erase x.val := by
-          simp_all only [ne_eq, Finset.mem_filter, Finset.mem_powerset, and_self, and_imp,
-            Finset.mem_erase, not_false_eq_true, true_and, S, S', ii, SF']
-        simp_all only [Finset.mem_filter, Finset.mem_powerset, and_imp, Finset.mem_erase, ne_eq, not_false_eq_true,
-          true_and, S, S', SF', ii]
+          simp_all only [ne_eq, Finset.mem_filter,Finset.mem_erase, not_false_eq_true, true_and]
+        simp_all only [Finset.mem_filter, Finset.mem_powerset, and_imp, Finset.mem_erase]
 
     · intro hh
       by_cases y = x.val
@@ -368,15 +363,14 @@ by
         have : y ∈ a1 := by
           rename_i h_1
           subst h_1
-          simp_all only [Finset.mem_filter, Finset.mem_powerset, and_imp, S, S', SF', ii]
+          simp_all only [Finset.mem_filter, Finset.mem_powerset, and_imp]
         exact this
       case neg =>
         have: y ∈ a2.erase x.val := by
           rw [@Finset.mem_erase]
           simp_all only [and_imp, ne_eq, not_false_eq_true, and_self, ii, S]
         have: y ∈ a1.erase x.val := by
-          simp_all only [Finset.mem_filter, Finset.mem_powerset, and_imp, Finset.mem_erase, ne_eq, not_false_eq_true,
-            true_and, and_self, S, S', SF', ii]
+          simp_all only [and_imp, Finset.mem_erase, ne_eq, not_false_eq_true,true_and, and_self]
         exact Finset.mem_of_mem_erase this
 
   have surj: ∀ b ∈ S', ∃ a, ∃ (ha : a ∈ S), ii a ha = b :=
@@ -400,7 +394,6 @@ by
         ·
           simp_all only [ne_eq, Finset.mem_filter, Finset.mem_powerset, and_self, implies_true, and_imp, subset_refl]
           obtain ⟨val, property⟩ := x
-          obtain ⟨val_1, property_1⟩ := y
           obtain ⟨left, right⟩ := hb2
           simp_all only [subset_refl, Subtype.mk.injEq, Finset.singleton_subset_iff]
           cases right with
@@ -413,7 +406,6 @@ by
         simp_all only [Finset.mem_filter, Finset.mem_powerset, and_self, and_imp, subset_refl,
           Finset.singleton_subset_iff, Finset.coe_mem]
         obtain ⟨val, property⟩ := x
-        simp_all only [subset_refl, Finset.singleton_subset_iff]
         have : ¬ SF.sets b :=
         by
           simp_all only [subset_refl, implies_true, ne_eq, Finset.singleton_subset_iff]
@@ -443,8 +435,7 @@ by
             | inr h_1 => simp_all only [subset_refl, Finset.singleton_subset_iff, true_or]
         simp_all only [subset_refl, implies_true, ne_eq, Finset.singleton_subset_iff, false_or]
 
-    simp_all only [Finset.mem_filter, Finset.mem_powerset, and_self, and_imp, subset_refl, Finset.singleton_subset_iff,
-      Finset.coe_mem, Nat.cast_inj, S, S', SF', ii]
+    simp_all only [Finset.mem_filter,  Finset.coe_mem, Nat.cast_inj,  ii]
     simp_all only [ne_eq, subset_refl, implies_true, Finset.singleton_subset_iff, Finset.coe_mem,
       Finset.erase_insert_eq_erase, not_false_eq_true, Finset.erase_eq_of_not_mem,
       Finset.mem_insert, or_true, and_self, exists_const]
@@ -457,14 +448,13 @@ by
   dsimp [S,S'] at card_eq
   convert card_eq
 
-  --bridgeは、rare vertexではない。
+  --bridgeの次数は、すべてのhyperedgeの数と等しいという補題。あとで、bridgeがrareにならないという補題bridge_is_not_rareで使う。
   lemma bridge_degree (SF : ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)] (x:SF.ground):
     SF.is_bridge x →
     SF.degree x = SF.number_of_hyperedges :=
   by
     intro h_br
     simp_all only [SetFamily.degree, SetFamily.number_of_hyperedges, SetFamily.trace]
-    simp_all only [ge_iff_le, Int.ofNat_eq_coe, Nat.cast_inj]
     obtain ⟨val, property⟩ := x
     simp_all only
     congr
@@ -473,33 +463,32 @@ by
     intro a
     exact h_br _ a
 
-  --bridgeのvertexは、rare vertexではないという定理
-  lemma bridge_notrare (SF : ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)] (x:SF.ground):
-    SF.is_bridge x → ¬ SF.is_rare x :=
+--bridgeの頂点はrareにはならない補題。bridge_degreeというdegreeとnumber_of_hyperedgesが等しいという補題を使っている。この補題自体は使われていない。
+lemma bridge_is_not_rare (SF: ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)] (x:SF.ground):
+  SF.is_bridge x → ¬ SF.is_rare x :=
+by
+  intro h
+  intro h_rare
+  have h_deg := bridge_degree SF  x h
+  dsimp [SetFamily.is_rare] at h_rare
+  simp_all
+  rw [←h_deg] at h_rare
+  ring_nf at h_rare
+  have: SF.degree x > 0 :=
   by
-    intro h_br
-    intro h_rare
-    have h_deg := bridge_degree SF  x h_br
-    dsimp [SetFamily.is_rare] at h_rare
-    simp_all
-    rw [←h_deg] at h_rare
-    ring_nf at h_rare
-    have: SF.degree x > 0 :=
-    by
-      dsimp [SetFamily.degree]
-      simp
-      use SF.ground
-      rw [Finset.mem_filter]
-      constructor
-      simp_all only [Finset.mem_powerset, subset_refl]
-      constructor
-      ·
-        exact SF.has_ground
-      ·
-        exact Finset.coe_mem x
-    simp_all only [gt_iff_lt, mul_le_iff_le_one_right, Nat.not_ofNat_le_one]
+    dsimp [SetFamily.degree]
+    simp
+    use SF.ground
+    rw [Finset.mem_filter]
+    constructor
+    · simp
+    · constructor
+      · exact SF.has_ground
+      · exact Finset.coe_mem x
 
-  --bridgeをtraceしても、rare vertexが存在するかは変わらないという補題。
+  simp_all only [gt_iff_lt, mul_le_iff_le_one_right, Nat.not_ofNat_le_one]
+
+  --bridgeをtraceしても、x以外の頂点yがrare vertexかどうかは、変わらないという補題。
   lemma trace_bridge_rare (SF : ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)] (geq2: SF.ground.card ≥ 2) (x:SF.ground):
     SF.is_bridge x →
     ∀ (y:SF.ground), x≠y →
@@ -561,11 +550,11 @@ by
       exact SF.inc_ground s hs
     exact h.2 s this hs
 
---全体集合しかない閉集合族.すべての点がbridgeといってもいい。
+--全体集合しかない閉集合族.すべての点がbridgeといってもいい。一般的なフランクルの予想の前提として考えられる。のちに空集合を仮定するだけで十分であることが示される。
 def is_trivial (SF : ClosureSystem α) [DecidablePred SF.sets]  : Prop :=
   SF.number_of_hyperedges = 1
 
---trivialでないときは、全体集合以外にもhyperedgeがある。必要十分条件。
+--trivialでないときは、全体集合以外にもhyperedgeがある。必要十分条件。数学的には自明なのでテクニカルな補題と言える。
 lemma trivial_lemma (SF : ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)]:
   ¬is_trivial SF ↔ ∃ s, SF.sets s ∧ s ≠ SF.ground :=
 by
@@ -629,7 +618,6 @@ by
       exact eq2.symm
     simp_all only [ne_eq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem,
       Finset.card_singleton, Nat.reduceAdd, ge_iff_le, Nat.cast_eq_one]
-    obtain ⟨left, right⟩ := hs
     apply Aesop.BuiltinRules.not_intro
     intro a
     simp_all only [Nat.not_ofNat_le_one]
@@ -641,9 +629,7 @@ by
   apply Iff.intro
   · intro h
     dsimp [minimal_set]
-    --rw [mem_finsetIntersection_iff_of_nonempty (Finset.filter (fun s => SF.sets s) SF.ground.powerset)]
     by_contra h_contra
-    --simp at h_contra
     apply Finset.nonempty_iff_ne_empty.mpr at h_contra
     obtain ⟨v, hv⟩ := h_contra
     dsimp [ClosureSystem.has_empty] at h
@@ -718,7 +704,7 @@ by
     specialize fx this
     exact hs.2 (fx hs.1)
 
---上の補題を対偶の形にしたもの。
+--上の補題を対偶の形にしたもの。このほうが使いやすい。
 lemma has_empty_theorem2 (SF: ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)]:
   ¬ SF.has_empty ↔ ∃ v, v ∈ SF.ground ∧ SF.is_bridge v :=
 by
@@ -732,7 +718,7 @@ by
     apply (has_empty_theorem SF).mp
     exact h
 
---補題：集合族が空集合を持つならば、nontrivialである。
+--補題：閉集合族が空集合を持つならば、nontrivialである。
 lemma has_empty_is_nontrivial (SF: ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)]:
   SF.has_empty → ¬ is_trivial SF :=
 by
@@ -788,30 +774,7 @@ by
   simp_all only [Nat.cast_eq_one, Finset.mem_filter, Finset.mem_powerset, Finset.empty_subset, and_self, subset_refl,
     true_and, ne_eq, ge_iff_le, Nat.not_ofNat_le_one]
 
---bridgeの頂点はrareにはならない。
-lemma bridge_is_not_rare (SF: ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)] (x:SF.ground):
-  SF.is_bridge x → ¬ SF.is_rare x :=
-by
-  intro h
-  intro h_rare
-  have h_deg := bridge_degree SF  x h
-  dsimp [SetFamily.is_rare] at h_rare
-  simp_all
-  rw [←h_deg] at h_rare
-  ring_nf at h_rare
-  have: SF.degree x > 0 :=
-  by
-    dsimp [SetFamily.degree]
-    simp
-    use SF.ground
-    rw [Finset.mem_filter]
-    constructor
-    · simp
-    · constructor
-      · exact SF.has_ground
-      · exact Finset.coe_mem x
 
-  simp_all only [gt_iff_lt, mul_le_iff_le_one_right, Nat.not_ofNat_le_one]
 
 --nontrivialな閉集合族のbridgeをtraceした後のnontrivialityを示す。
 lemma bridge_trace_nontrivial (SF : ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)] (geq2: SF.ground.card ≥ 2) (x:SF.ground):
@@ -1123,48 +1086,31 @@ by
           rw [h_closure_ground]
           let fc := Finset.card_erase_of_mem hv.1
           have :F.ground \ {v} = F.ground.erase v := by
-            ext a : 1
-            simp_all only [Finset.mem_erase, ne_eq, Finset.mem_sdiff, Finset.mem_singleton]
-            subst h_size
-            simp_all only [ge_iff_le, Finset.one_le_card, F'_closure]
-            obtain ⟨left, right⟩ := hv
-            apply Iff.intro
-            · intro a_1
-              simp_all only [not_false_eq_true, and_self]
-            · intro a_1
-              simp_all only [not_false_eq_true, and_self]
-          rw [←this] at fc
-          subst h_size
+            rw [Finset.erase_eq]
           simp_all only [ge_iff_le, Finset.one_le_card, Finset.card_erase_of_mem, F'_closure]
 
-
-        -- F' が rare vertex を持つことを示す。
+        -- [方針] F' が rare vertex を持つことを示す。
         --まず、ihを使って、帰納法の仮定によりtraceした集合族にrareな頂点が存在していることを示す。
         --そのあとに、trace_bridge_rareを使って、bridgeをtraceする前でもその頂点はrareであることを示す。
         have h_trivial'  :¬is_trivial F'_closure := by
           intro h_trivial'
-          --bridgeをtraceしたものも全体集合以外にもう1つ要素があることをいわないといけない。
-          --これは補題にしたほうがいいかも。
+          --bridgeをtraceしたものも全体集合以外にもう1つ要素があることをいう補題を使う。
           let btn := bridge_trace_nontrivial F g_card ⟨v,hv.1⟩ hv.2 h_trivial
           subst h_size
           simp_all only [ge_iff_le, Finset.one_le_card, F'_closure, btn]
 
         have : n-1 < n := by
           subst h_size
-          simp_all only [ge_iff_le, Finset.one_le_card, tsub_lt_self_iff, Finset.card_pos, Nat.lt_one_iff, pos_of_gt,
-            and_self, F'_closure]
-        let iht := ih (n-1) this F'_closure h_ground_card' h_trivial' -- FでなくF'のnontrivialが必要。
+          simp_all only [Finset.one_le_card, tsub_lt_self_iff, Finset.card_pos, Nat.lt_one_iff, and_self]--
+        --帰納法の仮定でひとつ小さいものに対して、言明が成り立つことを使う。
+        let iht := ih (n-1) this F'_closure h_ground_card' h_trivial'
         let tpv := trace_bridge_rare F g_card ⟨v,hv.1⟩ hv.2
-        --hを使ってrare vertexが存在することを示すのか。どの集合族に対して使うかが問題。traceしたものが空集合を持つとは限らない。
-        --specialize h (n-1) F'_closure h_ground_card'
-        --hは空集合を持つものだが、hを使うのではなくて、casesを使って帰納法の仮定でひとつ小さいものに対して、言明が成り立つことを使うのでは。
-        --もういちど、chatGPTの回答を復習してみる。
+        --v'がひとつ小さい集合でのrare vertex。
         obtain ⟨v', hv'⟩ := iht
         use v'
         have hv'': v' ∈ F.ground := by
             subst h_size
-            simp_all only [ge_iff_le, Finset.one_le_card, tsub_lt_self_iff, Finset.card_pos, Nat.lt_one_iff,
-              pos_of_gt, and_self, F'_closure]
+            simp_all only [ge_iff_le, Finset.one_le_card, tsub_lt_self_iff, pos_of_gt, and_self, F'_closure]
             rw [h_closure_ground] at hv'
             simp_all only [Finset.mem_sdiff, Finset.mem_singleton, F'_closure]
         constructor
@@ -1184,8 +1130,6 @@ by
             rw [h_closure_ground] at hv'
             simp_all only [Finset.mem_sdiff, Finset.mem_singleton, F'_closure]
             simp_all only [not_true_eq_false, and_false, false_and, F'_closure]
-          --have vneq': ⟨v',hv''⟩ ≠ ⟨v,hv.1⟩ := by
           refine (tpvv ?_).mpr hv'.2
           subst h_size
-          simp_all only [ge_iff_le, Finset.one_le_card, ne_eq, tsub_lt_self_iff, Finset.card_pos, Nat.lt_one_iff,
-            pos_of_gt, and_self, Subtype.mk.injEq, not_false_eq_true, F'_closure]
+          simp_all only [ne_eq, tsub_lt_self_iff, Nat.lt_one_iff,pos_of_gt,  Subtype.mk.injEq, not_false_eq_true]
