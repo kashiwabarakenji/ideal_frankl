@@ -12,10 +12,9 @@ package Ideal {
   ]
 }
 @[default_target]
-lean_lib «rooted» where
-  --もともとの設定は以下で、src/Idealの下にファイルが置かれていた。
-  --roots:= #[`Ideal]
-  --srcDir := "rooted"
+lean_lib «rooted» where --この名前はそれほど重要でなく、プロジェクト名に合わせる必要もない。
+  --roots:= #[`rooted.StemSizeOne] --この名前は、lake buildされるターゲットになる。importと同じ名前になる。
+  srcDir := "." -- ピリオドにすると、プロジェクトフォルダのトップからになる。
 require mathlib from git
   "https://github.com/leanprover-community/mathlib4.git"  @ "v4.16.0" -- "v4.8.0"
 require LeanCopilot from git
@@ -30,5 +29,4 @@ require LeanCopilot from git
 -- lean --versionで確認。これは、toolchanのものが表示されるみたい。なければここでダウンロードされる。
 -- require mathlib from git "のバージョンを合わせる。
 -- lake clean;lake update;lake build
---v4.9.1には対応するものがない。ただしlake updateがとおる。
---v4.9.0にはv1.4.0が対応。ただし、lake updateが通らない。
+-- elan override set leanprover/lean4:4.16.0
