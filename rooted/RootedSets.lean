@@ -379,6 +379,18 @@ by
     obtain ⟨w_1, h⟩ := left_3
     simp_all only [not_true_eq_false]
 
+--rooted_setfamilyの対偶の形
+lemma rootedset_setfamily2 (RS : RootedSets α) (SF:ClosureSystem α)
+  --(eq:  ∀ (s : Finset α),(rootedsetToClosureSystem RS).sets s ↔ (SF.sets s)) :
+ (eq:  rootedsetToClosureSystem RS = SF) :
+  ∀ (s : Finset α), s ⊆ SF.ground → (SF.sets s ↔ ¬∃ (p : ValidPair α), p ∈ RS.rootedsets ∧ p.stem ⊆ s ∧ p.root  ∈ (closureOperator SF (s.subtype (λ x => x ∈ SF.ground))).image Subtype.val ∧ p.root ∉ s) :=
+by
+  intro s hs
+  rw [←not_iff_not]
+  simp
+  convert rootedset_setfamily RS SF eq s hs
+  simp
+
 lemma Finset.exists_mem_of_ne_empty {α : Type} [DecidableEq α] (s : Finset α) (h : s ≠ ∅) :
   ∃ x, x ∈ s :=
 by

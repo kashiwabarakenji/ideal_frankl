@@ -4,12 +4,14 @@ import Mathlib.Data.Finset.Powerset
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Logic.Function.Defs
 import rooted.RootedCircuits
+import rooted.RootedSets
+import rooted.Bridge
 import LeanCopilot
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 
 --根付き集合のimplicationの関係。pとqからrが推論される。
-lemma closuresystem_rootedcircuits_implication (SF:ClosureSystem α)[DecidablePred SF.sets]:-- [∀ s, Decidable (SF.sets s)]:
+lemma closuresystem_rootedsets_implication (SF:ClosureSystem α)[DecidablePred SF.sets]:-- [∀ s, Decidable (SF.sets s)]:
   let RS := rootedSetsFromSetFamily SF.toSetFamily
   ∀ p ∈ RS.rootedsets, ∀ q ∈ RS.rootedsets, q.root ∈ p.stem → p.root ∉ q.stem
   → ∃ r ∈ RS.rootedsets, r.root = p.root ∧ r.stem ⊆ p.stem ∪ q.stem \ {q.root}  :=
@@ -318,3 +320,142 @@ by
     simp_all only
   · intro a
     simp_all only
+
+--lemma rootedset_setfamily2 (RS : RootedSets α) (SF:ClosureSystem α)
+-- (eq:  rootedsetToClosureSystem RS = SF) :
+--  ∀ (s : Finset α), s ⊆ SF.ground → (SF.sets s ↔ ¬∃ (p : ValidPair α), p ∈ RS.rootedsets ∧ p.stem ⊆ s ∧ p.root  ∈ (closureOperator SF (s.subtype (λ x => x ∈ SF.ground))).image Subtype.val ∧ p.root ∉ s) :=
+--をsingletonに絞って考えたもの。
+lemma singleton_hyperedge_lemma (SF:ClosureSystem α) [DecidablePred SF.sets]:
+  ∀ (x:SF.ground), SF.sets ({x.val}:Finset α) ↔
+  ¬∃ r : ValidPair α, (r ∈ (rootedSetsFromSetFamily SF.toSetFamily).rootedsets ∧ r.stem.card = 1 ∧
+  r.stem = ({x.val}:Finset α)) := --このままだと左から右の言明に反例あり。r.stem = empty,r.root ={x.val}
+by
+  intro x
+  let RS := rootedSetsFromSetFamily SF.toSetFamily
+  have eq: rootedsetToClosureSystem RS = SF :=
+  by
+    exact closuresystem_rootedsets_eq SF
+  let s:= ({x.val}:Finset α)
+  have incsg: s ⊆ SF.ground :=
+    by
+      simp_all only [Finset.singleton_subset_iff, Finset.coe_mem, RS, s]
+
+  apply Iff.intro
+  · intro ssx
+    by_contra h_contra
+    obtain ⟨r, hr1,hr2 ⟩ := h_contra
+
+
+    let rss:= (rootedset_setfamily2 RS SF eq s incsg).mp
+    have: SF.sets s :=
+    by
+      dsimp [s]
+      simp_all [s, RS]
+    specialize rss this
+    rw  [not_exists] at rss
+    specialize rss r
+    simp at rss
+    dsimp [RS] at rss
+    specialize rss hr1
+    dsimp [s] at rss
+    have :r.stem ⊆ {x.val} :=
+    by
+      simp_all only [Finset.singleton_subset_iff, Finset.coe_mem, subset_refl, Finset.mem_singleton, forall_const, s,
+        RS]
+    specialize rss this
+    have : r.root ∈ SF.ground :=
+    by
+      exact (RS.inc_ground r hr1).2
+    specialize rss this
+    have : r.root ∈ ({x.val}:Finset α) :=
+    by
+      apply rss
+      --⟨r.root, ⋯⟩ ∈ closureOperator SF (Finset.subtype (fun x => x ∈ SF.ground) {↑x})
+      --ステムのclosureをとるとrootを含むという補題を使う必要がある。
+      let rsc := root_stem_closure SF r hr1
+      simp at rsc
+      dsimp [rootedpair_to_subtype] at rsc
+      convert rsc
+      simp_all only [Finset.singleton_subset_iff, Finset.coe_mem, subset_refl, Finset.mem_singleton, RS, s]
+    let rr := r.root_not_in_stem
+    simp [hr2] at rr
+    simp_all only [Finset.singleton_subset_iff, Finset.coe_mem, subset_refl, implies_true,Finset.mem_singleton, s, RS]
+  · --push_neg
+    intro hr --証明の方針としては、hrは、rootedset_setfamily2が成り立つ前提の特殊ケースなのでhrから前提が成り立つよねってことを示す。
+    let s:= ({x.val}:Finset α)
+    let rss:= (rootedset_setfamily2 RS SF eq s incsg).mpr
+    dsimp [RS] at rss
+    dsimp [s] at rss
+    apply rss
+    push_neg
+    intro p hp
+    intro px
+    intro pr
+    push_neg at hr
+    let hrp :=hr p hp --hrの前提として、ステムが{x}に含まれるpを採用。
+    --px : p.stem ⊆ {↑x}より、p.stem = emptyかp.stem = {x.val}で場合分け。
+    by_cases p.stem = ∅
+    case pos =>
+      have :p.stem.card = 0:=
+      by
+        rename_i s_1 h
+        simp_all only [Finset.subset_singleton_iff, true_or, Finset.mem_image, Subtype.exists, exists_and_right,
+          exists_eq_right, Finset.card_empty, RS, s_1, s]
+      sorry --またおかしいかもしれない。
+    case neg =>
+      sorry
+
+
+    --完全表現の根付き集合は、根を固定するとフィルターになっている補題を作った方ががよい。
+    --証明の方向が間違っているか確認する。
+    --xは、stemだったのにp.root=xを証明するのは少々奇妙だが、あっているのかも。
+    --使うのは、hrとprとhxみたい。hrpも使えるかも。pxとhrpからp.stemがemptyであることがいえるかも。
+
+    have : p.stem = ∅ :=
+    by
+      rename_i s_1
+      simp_all only [Finset.subset_singleton_iff, or_false, Finset.mem_image, Subtype.exists, exists_and_right,
+        exists_eq_right, s_1, RS, s]
+    search_proof
+    --p.stemが空集合から矛盾をいいたい。
+    --ということは、p.rootはbridgeなので結論がいえると思ったが、この方針は、間違っているかも。{x}がhyperedgeは仮定ではなく結論なので。
+    -- prを使って示すのが正しそう。
+    simp at pr
+    obtain ⟨h_1,pr⟩ := pr
+    --extensiveも違う気がする。
+    --let efs := extensive_from_SF_finset SF {x}
+    --そもそもpを適当に取ったのに、pのrootが{x}に入っているというのがおかしい気がする。
+    --RSの定義をひたすら展開すると、矛盾が出るのかも。
+    dsimp [rootedSetsFromSetFamily] at hp
+    dsimp [rootedSetsSF] at hp
+    dsimp [allCompatiblePairs] at hp
+    dsimp [isCompatible] at hp
+    simp at hp
+    obtain ⟨pstem,proot,hp3⟩ := hp
+    obtain ⟨hp31,hp32⟩ := hp3
+    have hproot:proot = p.root :=
+    by
+      rename_i s_1
+      subst hp32 this
+      simp_all only [Finset.subset_singleton_iff, or_false, hrp, s_1, RS, s]
+    have hpstem: pstem = p.stem :=
+    by
+      rename_i s_1
+      subst hp32 this
+      simp
+    let hp31x := hp31.2.2 s
+    simp at hp31x
+    dsimp [s] at hp31x
+    rw [←hproot]
+    apply hp31x
+    --これも方針が違うような気がしてきた。
+
+    /-  間違った方針かも。
+    have :p.root ∈ SF.ground:=
+    by
+      simp_all only [Finset.subset_singleton_iff, true_or, Finset.mem_image, Subtype.exists, exists_and_right,
+        exists_eq_right, RS, s]
+      obtain ⟨w, h⟩ := pr
+      simp_all only [RS]
+    let rsb := (rooted_sets_bridge SF ⟨p.root,this⟩).mpr
+    -/
