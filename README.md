@@ -56,6 +56,7 @@ StemSizeOneのファイルにおいて、Preorderだけで考えた世界は、�
 ### 根付き集合のimplication (RootedImplication.lean)
 
 RootedSetsのimplicationの関係について扱っている。この根付き集合と、この根付き集合があれば、この根付き集合があるなど。また、現状では、ステムサイズが1の根付き集合によって、頂点間にPreorderが生成されることについての証明も入っている。現状では、2項関係の記号など、StemSizeOne.lean との記述が統一されていない部分もある。
+singleton hyperedgeと、ステムサイズ1の根つき集合の関係の証明もここで行なっている。
 
 ### 閉集合族のマイナーであるtrace (ClosureMinors.lean)
 

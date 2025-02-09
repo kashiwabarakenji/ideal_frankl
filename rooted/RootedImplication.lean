@@ -321,13 +321,11 @@ by
   · intro a
     simp_all only
 
---lemma rootedset_setfamily2 (RS : RootedSets α) (SF:ClosureSystem α)
--- (eq:  rootedsetToClosureSystem RS = SF) :
---  ∀ (s : Finset α), s ⊆ SF.ground → (SF.sets s ↔ ¬∃ (p : ValidPair α), p ∈ RS.rootedsets ∧ p.stem ⊆ s ∧ p.root  ∈ (closureOperator SF (s.subtype (λ x => x ∈ SF.ground))).image Subtype.val ∧ p.root ∉ s) :=
---をsingletonに絞って考えたもの。
+--singleton hyperedgeであることと、ステムサイズが1の根つき集合が存在しないことが同値であるという命題。
+--rootedset_setfamily2 やstem_is_upward_closedを使って証明
 lemma singleton_hyperedge_lemma (SF:ClosureSystem α) [DecidablePred SF.sets]:
   ∀ (x:SF.ground), SF.sets ({x.val}:Finset α) ↔
-  ¬∃ r : ValidPair α, (r ∈ (rootedSetsFromSetFamily SF.toSetFamily).rootedsets ∧ r.stem.card = 1 ∧
+  ¬∃ r : ValidPair α, (r ∈ (rootedSetsFromSetFamily SF.toSetFamily).rootedsets ∧ r.root ≠ x.val ∧
   r.stem = ({x.val}:Finset α)) := --このままだと左から右の言明に反例あり。r.stem = empty,r.root ={x.val}
 by
   intro x
@@ -344,7 +342,6 @@ by
   · intro ssx
     by_contra h_contra
     obtain ⟨r, hr1,hr2 ⟩ := h_contra
-
 
     let rss:= (rootedset_setfamily2 RS SF eq s incsg).mp
     have: SF.sets s :=
@@ -392,70 +389,41 @@ by
     intro px
     intro pr
     push_neg at hr
-    let hrp :=hr p hp --hrの前提として、ステムが{x}に含まれるpを採用。
-    --px : p.stem ⊆ {↑x}より、p.stem = emptyかp.stem = {x.val}で場合分け。
-    by_cases p.stem = ∅
-    case pos =>
-      have :p.stem.card = 0:=
-      by
-        rename_i s_1 h
-        simp_all only [Finset.subset_singleton_iff, true_or, Finset.mem_image, Subtype.exists, exists_and_right,
-          exists_eq_right, Finset.card_empty, RS, s_1, s]
-      sorry --またおかしいかもしれない。
-    case neg =>
-      sorry
-
-
-    --完全表現の根付き集合は、根を固定するとフィルターになっている補題を作った方ががよい。
-    --証明の方向が間違っているか確認する。
-    --xは、stemだったのにp.root=xを証明するのは少々奇妙だが、あっているのかも。
-    --使うのは、hrとprとhxみたい。hrpも使えるかも。pxとhrpからp.stemがemptyであることがいえるかも。
-
-    have : p.stem = ∅ :=
+    by_contra h_contra
+    simp at h_contra
+    let hrp :=hr p hp h_contra --hrの前提として、ステムが{x}に含まれるpを採用。
+    have emp: p.stem = ∅ :=
     by
       rename_i s_1
       simp_all only [Finset.subset_singleton_iff, or_false, Finset.mem_image, Subtype.exists, exists_and_right,
         exists_eq_right, s_1, RS, s]
-    search_proof
-    --p.stemが空集合から矛盾をいいたい。
-    --ということは、p.rootはbridgeなので結論がいえると思ったが、この方針は、間違っているかも。{x}がhyperedgeは仮定ではなく結論なので。
-    -- prを使って示すのが正しそう。
-    simp at pr
-    obtain ⟨h_1,pr⟩ := pr
-    --extensiveも違う気がする。
-    --let efs := extensive_from_SF_finset SF {x}
-    --そもそもpを適当に取ったのに、pのrootが{x}に入っているというのがおかしい気がする。
-    --RSの定義をひたすら展開すると、矛盾が出るのかも。
-    dsimp [rootedSetsFromSetFamily] at hp
-    dsimp [rootedSetsSF] at hp
-    dsimp [allCompatiblePairs] at hp
-    dsimp [isCompatible] at hp
-    simp at hp
-    obtain ⟨pstem,proot,hp3⟩ := hp
-    obtain ⟨hp31,hp32⟩ := hp3
-    have hproot:proot = p.root :=
+    have :p.root ∉ s :=
     by
       rename_i s_1
-      subst hp32 this
-      simp_all only [Finset.subset_singleton_iff, or_false, hrp, s_1, RS, s]
-    have hpstem: pstem = p.stem :=
-    by
-      rename_i s_1
-      subst hp32 this
-      simp
-    let hp31x := hp31.2.2 s
-    simp at hp31x
-    dsimp [s] at hp31x
-    rw [←hproot]
-    apply hp31x
-    --これも方針が違うような気がしてきた。
+      simp_all only [Finset.subset_singleton_iff, true_or, Finset.mem_image, Subtype.exists, exists_and_right,
+        exists_eq_right, Finset.mem_singleton, not_false_eq_true, RS, s_1, s]
 
-    /-  間違った方針かも。
-    have :p.root ∈ SF.ground:=
+    let p' := ValidPair.mk s p.root this
+    let siu := stem_is_upward_closed SF p p' hp
+    have pp: p.root = p'.root :=
     by
       simp_all only [Finset.subset_singleton_iff, true_or, Finset.mem_image, Subtype.exists, exists_and_right,
-        exists_eq_right, RS, s]
-      obtain ⟨w, h⟩ := pr
-      simp_all only [RS]
-    let rsb := (rooted_sets_bridge SF ⟨p.root,this⟩).mpr
-    -/
+        exists_eq_right, RS, s, p']
+    specialize siu pp
+    have : p.stem ⊆ p'.stem :=
+    by
+      rw [emp]
+      simp
+    specialize siu this
+    have : p'.stem ⊆ SF.ground :=
+    by
+      dsimp [p']
+      exact incsg
+    specialize siu this
+    let hrp :=hr p' siu
+    have :p'.root ≠ x.val:=
+    by
+      rw [pp]
+      exact h_contra
+    specialize hrp this
+    contradiction

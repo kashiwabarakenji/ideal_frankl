@@ -265,6 +265,70 @@ by
         · simp_all only
         · exact rts
 
+lemma stem_is_upward_closed (SF: ClosureSystem α) :
+let RS := rootedSetsFromSetFamily SF.toSetFamily
+∀ (r r':ValidPair α) , r ∈ RS.rootedsets → r.root =r'.root → r.stem ⊆ r'.stem → r'.stem ⊆ SF.ground → r'∈ RS.rootedsets :=
+by
+  intro RS r r' hr hroot hstem sfg
+  dsimp [RS]
+  dsimp [rootedSetsFromSetFamily]
+  dsimp [rootedSetsSF]
+  dsimp [allCompatiblePairs]
+  simp
+  have : (r'.stem, r'.root) ∈ allPairs SF.toSetFamily :=
+  by
+    dsimp [allPairs]
+    simp
+    constructor
+    · exact sfg
+    · rw [←hroot]
+      exact (RS.inc_ground r hr).2
+
+  use r'.stem
+  use r'.root
+  constructor
+  swap
+
+  · constructor
+    · simp_all only [RS]
+
+    · dsimp [isCompatible]
+      constructor
+      ·  exact r'.root_not_in_stem
+
+      · intro t
+        intro sft
+        intro steminc
+        dsimp [RS] at hr
+        dsimp [rootedSetsFromSetFamily] at hr
+        dsimp [rootedSetsSF] at hr
+        dsimp [allCompatiblePairs] at hr
+        dsimp [isCompatible] at hr
+        simp at hr
+        obtain ⟨a,b,h,hr⟩ := hr
+        let h2 := h.2.2 t sft
+        have : a ⊆ t :=
+        by
+          subst hr
+          subst hroot
+          simp_all only [RS]
+          obtain ⟨left, right⟩ := h
+          obtain ⟨left_1, right⟩ := right
+          intro x hx
+          apply steminc
+          exact hstem hx
+        specialize h2 this
+        have : b = r'.root :=
+        by
+          subst hr
+          subst hroot
+          simp_all only [RS]
+        rw [this] at h2
+        exact h2
+
+  · cases r'
+    simp_all only [RS]
+
 ------------------------------
 ----ここからは、根付き集合族の存在定理
 ----別ファイルに独立させてもよい。
