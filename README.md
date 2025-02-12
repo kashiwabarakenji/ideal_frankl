@@ -75,7 +75,7 @@ rareな頂点の存在定理など、フランクルの予想に関係がある�
 ### StemSizeOne.lean
 
 ステムサイズがすべて1の根付き集合から生成される集合族の完全根付きサーキット表現は、すべてステムサイズが1であることが、主定理。その証明のために必要な補題もいくつか示す。
-ステムサイズがすべて1の根付きサーキットには、rareな頂点が存在することの証明も主定理の一つ。
+ステムサイズがすべて1の根付きサーキットには、rareな頂点が存在することの証明も行なっている。順序集合のidealの全体は、distributive latticeになるので、既知の結果であるdistributive latticeにrare vertexが存在するということに対応している。
 
 ### Bridge.lean
 
@@ -84,7 +84,9 @@ Hyperedgeがすべて通る点をbridgeと呼ぶ。ブリッジをtraceしても
 ## 安部の定理の形式化
 
 T. Abe Strongly semimodular lattice and Frankl's conjectureでは、束上でのrare vertexの存在の十分条件を与えた。それと同値な定理を閉集合族の世界に翻訳して、Lean 4で証明した。
-十分条件として満たすべき条件が2つある。1つ目は、Dash条件と呼んでいる。サイズ1の根つき集合の根となりうる点の全体のclosureをXのに属さない点が存在する。Dash作用素は、hyperedge Xを、Xに含まれるサイズ1の根つき集合の根となりうる点全体のclosureに移す作用素とすると、Dash条件は、全体集合はDash作用素によって全体集合に移らないと言い換えることができる。
+十分条件として満たすべき条件が2つある。
+1つ目は、Dash条件と呼んでいる、サイズ1の根つき集合の根となりうる点の全体のclosureをXのに属さない点が存在するという条件。
+Dash作用素を、hyperedge Xを、Xに含まれるサイズ1の根つき集合の根となりうる点全体のclosureに移す作用素とする。Dash条件は、全体集合はDash作用素によって全体集合に移らないと言い換えることができる。
 2つ目は、Plus条件と呼んでいて、任意のhyperedge Xに対して、Xに包含関係でカバーされるような極大な集合の共通部分となるhyperedgeが、Dash Xの部分集合になるという条件である。この条件を満たす時にDash条件により、全体集合のDashによる移り先にならなかった点がrareになるというのが、Abeの定理である。
 
 Abe.leanのファイルの以下の定理がLean 4で形式化した言明になる。
@@ -93,17 +95,26 @@ Abe.leanのファイルの以下の定理がLean 4で形式化した言明にな
 theorem abetype_theorem (SF:ClosureSystem α)  [DecidablePred SF.sets]:
    plus_condition SF → ∀ v : α, v ∈ SF.ground \ ((dash SF SF.ground.attach).image Subtype.val) → SF.is_rare v
 ```
+## 安部の定理の一般形
 
-先に証明した、すべての根つきサーキットのサイズが1の集合族は、rare vertexを持つ閉集合族は、この十分条件を満たす。
+「すべての根つきサーキットのサイズが1の集合族は、rare vertexを持つ」という言明を前に証明したが、この閉集合族は、Dash作用素とPlus作用素が常に一致するので、Plus条件を満たす。パラレルな頂点が存在しないと仮定すると、Dash条件も満たす。安部の定理は、一般的な言明を特殊な状況であるstrongly submodular lattice(Plus作用素とDash作用素が一致する)に当てはめるための言明なので、かなり状況が制限されている。
+
+abeの定理のタイプの一般的な形を考える。安部の論文ではDashの作用素がステムサイズが1の根だけを考えていたが、ステムサイズがk以下の根に拡張してもDash作用素の包含関係に関する単調性が成り立つので、根の集合のclosureに属さない点があれば、rareになることが証明できる。作用素が包含関係で単調で、全体集合の作用素の像が全体集合にならなければよい。もっとも一般的には、どのhyperedge XのX+に含まれない頂点があれば、rareになる。この言明をLean 4で証明した(abetyoe_theorem_general)。
+
+```lean
+theorem abetype_theorem_general (SF:ClosureSystem α)  [DecidablePred SF.sets](v: SF.ground):
+   (∀ X:Finset SF.ground, v ∉ (coveringIntersection_sub SF X)) → SF.is_rare v 
+```
+
+頂点を含むhyperedgeの全体から、含まないhyperedgeへの単射の構成により、rareであることを示すタイプの定理は大抵この形になっている。以下は全部、この形である。
+- lower semi-modular lattice。
+- 頂点上の半順序 (distributive latticeなので、lower semi-modularの特殊ケースともいえる。)
+- 根が存在しない頂点。
+- イデアル集合族
+
+これは、任意のhyperedge Xに制限しても、xを含む部分が「最初にとれる」という条件である。
 
 ## これからの拡張予定
 
-- abeの定理の拡張版を証明する。安部の論文ではDashの作用素がステムサイズが1の根だけを考えていたが、ステムサイズがk以下の根に拡張してもDash作用素の包含関係に関する単調性が成り立つので、根の集合のclosureに属さない点があれば、rareになることが証明できる。まだ、Lean 4で証明してないが、これから行う。
-
-根を持たない頂点を持つような閉集合族は、rare vertexを持つということを前に示したが、この安部の定理の拡張版の十分条件を満たす。
-
-ここまで行って、論文の作成に取り掛かる。
-
 この分野の将来的な目標としては、ステムサイズが2以下で生成されるような閉集合族に関して、rareな頂点が存在することを示したい。
 Leanによらない証明もわかっていない。
-  

@@ -481,3 +481,150 @@ by
   rw [S_eq,T_eq] at this
 
   exact (rare_and_card SF.toSetFamily v).mpr this
+
+--もっとも一般的な形の言明。ある頂点がどのhyperedgeに対しても「最初に」とれる場合に、rareになる。
+--証明は上の言明とダブっているが、この一般的なほうを補題として利用して、上の場合を証明するのがよいと思われる形。
+theorem abetype_theorem_general (SF:ClosureSystem α)  [DecidablePred SF.sets](v: SF.ground):
+   (∀ X:Finset SF.ground, --SF.sets (X.image Subtype.val) →
+  v ∉ (coveringIntersection_sub SF X)) → SF.is_rare v :=
+by
+  intro pc
+  let S:= SF.ground.powerset.filter (fun s => SF.sets s ∧ v.val ∈ s)
+  let T:= SF.ground.powerset.filter (fun s => SF.sets s ∧ v.val ∉ s)
+
+  --SからTへの単射を作りたい。単射を作るより前に満たすべき性質を定義して、それを満たすtが非空であることをまず証明する方針。満たすべき性質とは、sの要素とtの要素は、coverの関係にあるというもの。
+  have nonemp: ∀ s :S, ∃ t:T, cover SF t s :=
+  by
+    intro s
+    dsimp [S] at s
+    obtain ⟨val,property⟩ := s
+    rw [Finset.mem_filter] at property
+
+    have :v.val ∈ val \ coveringIntersection SF val :=
+    by
+      rw [Finset.mem_sdiff]
+      constructor
+      · simp_all only [Finset.mem_filter, and_self, Finset.mem_powerset, S]
+      · let pcv := pc (val.subtype (fun x => x ∈ SF.ground))
+        dsimp [coveringIntersection_sub] at pcv
+        simp at pcv
+        convert pcv
+        simp_all only [Finset.mem_filter, and_self, Finset.mem_powerset, S]
+        obtain ⟨val_1, property⟩ := v
+        obtain ⟨left, right⟩ := property
+        ext a : 1
+        simp_all only [Finset.mem_image, Finset.mem_subtype, Subtype.exists, exists_and_left, exists_prop,
+          exists_eq_right_right, iff_self_and]
+        intro a_1
+        exact left a_1
+
+    --tとしては、sとcover関係があるhyperedgeを持ってくる必要がある。
+    let ⟨t, hY⟩ := maximal_hyperedge_subtype SF val v property.2.1 this
+    obtain ⟨hY1,hY2,hY3⟩ := hY
+    have :SF.sets t ∧ v.val ∉ t :=
+    by
+      simp_all only [Finset.mem_sdiff, Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right,not_exists, true_and, exists_true_left, not_false_eq_true, and_self]
+
+    have hY : t ∈ T :=
+    by
+      dsimp [T]
+      rw [Finset.mem_filter]
+      constructor
+      · rw [Finset.mem_powerset]
+        exact SF.inc_ground t hY1
+      · exact this
+
+    use ⟨t,hY⟩
+
+  let ii:S → T:= fun s => Classical.choose (nonemp s)
+
+  have i_prop: ∀ s:S, cover SF (ii s) s := by
+    intro s
+    exact Classical.choose_spec (nonemp s)
+
+  --単射性をいうために、
+  --lemma injective_cover (SF : ClosureSystem α) [DecidablePred SF.sets]
+  -- (X1 X2 Y : Finset α)
+  --  (c1 : cover SF Y X1) (c2 : cover SF Y X2)
+  --  (h_nonempty : ((X1 \ Y1) ∩ (X2 \ Y2)).Nonempty) : X1 = X2 := by
+  -- を使う。
+
+  have inj: ∀ x1 x2 :S, ii x1 = ii x2 → x1 = x2 :=
+  by
+    intro x1 x2
+    have c1: cover SF (ii x1) x1 :=
+    by
+      simp_all [T, S, ii]
+      obtain ⟨val, property⟩ := x1
+      simp_all only [Finset.mem_filter, Finset.mem_powerset, forall_true_left, T, S]
+      apply i_prop
+      simp_all only [Finset.mem_filter, Finset.mem_powerset, and_self, T, S]
+    have c2: cover SF (ii x2) x2 :=
+    by
+      simp_all [T, ii, S]
+      obtain ⟨val_1, property_1⟩ := x2
+      simp_all only [forall_true_left, T, ii, S]
+      apply i_prop
+      simp_all only [Finset.mem_filter, Finset.mem_powerset, and_self, T, ii, S]
+    intro h12
+    rw [←h12] at c2
+    let ic := injective_cover SF x1 x2 (ii x1) c1 c2
+
+    have nonemp:(x1.val \ (ii x1).val ∩ (x2.val \ (ii x1).val)).Nonempty:=
+    by
+      let x1p := x1.property
+      dsimp [S] at x1p
+      rw [Finset.mem_filter] at x1p
+      let x2p := x2.property
+      dsimp [S] at x2p
+      rw [Finset.mem_filter] at x2p
+      let ht1 := (ii x1).property
+      dsimp [T] at ht1
+      rw [Finset.mem_filter] at ht1
+      let ht2 := (ii x2).property
+      dsimp [T] at ht2
+      rw [Finset.mem_filter] at ht2
+
+      use v
+      rw [@Finset.mem_inter]
+      constructor
+      · rw [@Finset.mem_sdiff]
+        constructor
+        · exact x1p.2.2
+        · exact ht1.2.2
+      · rw[@Finset.mem_sdiff]
+        constructor
+        · exact x2p.2.2
+        · rw [h12]
+          exact ht2.2.2
+    simp_all [T, ii, S]
+    obtain ⟨val, property⟩ := x1
+    obtain ⟨val_1, property_1⟩ := x2
+    simp_all only [Subtype.mk.injEq, ii, S, T]
+    obtain ⟨val_2, property⟩ := v
+    simp_all only
+    apply ic
+    simp_all only [T, ii, S]
+
+  --最後にiiの単射性を使って、vがrareであることを示す。補題を利用。
+  --lemma rare_and_card (SF: SetFamily α) [DecidablePred SF.sets] (v: α):
+  --SF.is_rare v ↔ (including_hyperedges SF v).card <= (deleting_hyperedges SF v).card :=
+
+  have S_eq: S = including_hyperedges SF.toSetFamily v :=
+  by
+    dsimp [S]
+    dsimp [including_hyperedges]
+    exact Finset.filter_congr (by simp [and_comm])
+  have T_eq: T = deleting_hyperedges SF.toSetFamily v :=
+  by
+    dsimp [T]
+    dsimp [deleting_hyperedges]
+    exact Finset.filter_congr (by simp [and_comm])
+
+  have: S.card <= T.card:=
+  by
+    exact Finset.card_le_card_of_injective inj
+
+  rw [S_eq,T_eq] at this
+
+  exact (rare_and_card SF.toSetFamily v).mpr this
