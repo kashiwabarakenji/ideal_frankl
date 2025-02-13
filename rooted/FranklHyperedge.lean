@@ -178,6 +178,7 @@ by
 lemma two_superior_implies_nds_positive (SF: ClosureSystem α) [DecidablePred SF.sets] (x y :SF.ground) (neq: x ≠ y):
   superior SF ({x.val,y.val}:Finset α) → normalized_degree_sum SF ({x.val,y.val}:Finset α) > 0 :=
 by
+
   dsimp [superior]
   dsimp [normalized_degree_sum]
   intro h
@@ -224,7 +225,7 @@ by
     norm_cast
     norm_cast at sf
 
-  have notone2: ∑ s ∈ (SF.ground.powerset.filter (fun s => (P s ∧ ¬ (Q s)))), ({x.val, y.val} ∩ s).card = ∑ s ∈ (SF.ground.powerset.filter (fun s => SF.sets s ∧ {x.val, y.val} ⊆ s)), ({x.val, y.val} ∩ s).card + ∑ s ∈  (SF.ground.powerset.filter (fun s => SF.sets s ∧ {x.val, y.val} ∩ s = ∅)), ({x.val, y.val} ∩ s).card :=
+  have notone2: ∑ ss ∈ (SF.ground.powerset.filter (fun s => (P s ∧ ¬ (Q s)))), ({x.val, y.val} ∩ ss).card = ∑ ss ∈ (SF.ground.powerset.filter (fun s => SF.sets s ∧ {x.val, y.val} ⊆ s)), ({x.val, y.val} ∩ ss).card + ∑ ss ∈  (SF.ground.powerset.filter (fun s => SF.sets s ∧ {x.val, y.val} ∩ s = ∅)), ({x.val, y.val} ∩ ss).card :=
   by
     have pq_rule: ∀ s : Finset α, (P s ∧ ¬ (Q s)) ↔  SF.sets s ∧ ({x.val, y.val} ⊆ s ∨ {x.val, y.val} ∩ s = ∅) :=
     by
@@ -305,7 +306,7 @@ by
 
     -- pq_rule : ∀ (s : Finset α), P s ∧ ¬Q s ↔ SF.sets s ∧ ({↑x, ↑y} ⊆ s ∨ {↑x, ↑y} ∩ s = ∅)
     --pq_ruleを使って、ゴールのfilterの中身を書き換えたいけど、いまいちfilter_congrがうまくいかない。
-    have :Finset.filter (fun s => P s ∧ ¬Q s) SF.ground.powerset = Finset.filter (fun s => SF.sets s ∧ ({↑x, ↑y} ⊆ s ∨ {↑x, ↑y} ∩ s = ∅)) SF.ground.powerset :=
+    have pq_rule2:Finset.filter (fun s => P s ∧ ¬Q s) SF.ground.powerset = Finset.filter (fun s => SF.sets s ∧ ({↑x, ↑y} ⊆ s ∨ {↑x, ↑y} ∩ s = ∅)) SF.ground.powerset :=
     by
       --haveI : DecidablePred (λ s => P s ∧ ¬ Q s) := inferInstance
       ext x
@@ -323,7 +324,7 @@ by
         intro a
         simp_all only [ne_eq, gt_iff_lt, and_congr_right_iff, Finset.mem_filter, Finset.mem_powerset, and_self, Q, P]
 
-    have : Finset.filter (fun s => SF.sets s ∧ ({↑x, ↑y} ⊆ s ∨ {↑x, ↑y} ∩ s = ∅)) SF.ground.powerset = Finset.filter (fun s => SF.sets s ∧ {↑x, ↑y} ⊆ s) SF.ground.powerset ∪ Finset.filter (fun s => SF.sets s ∧ {↑x, ↑y} ∩ s = ∅) SF.ground.powerset :=
+    have pq_rule3: Finset.filter (fun s => SF.sets s ∧ ({↑x, ↑y} ⊆ s ∨ {↑x, ↑y} ∩ s = ∅)) SF.ground.powerset = Finset.filter (fun s => SF.sets s ∧ {↑x, ↑y} ⊆ s) SF.ground.powerset ∪ Finset.filter (fun s => SF.sets s ∧ {↑x, ↑y} ∩ s = ∅) SF.ground.powerset :=
     by
       ext x
       apply Iff.intro
@@ -335,7 +336,7 @@ by
         rename_i x_1 this_1 this_2
         intro a
         simp_all [Q, P]
-        obtain ⟨val, property⟩ := x_1
+        obtain ⟨val, property⟩ := this_1
         obtain ⟨val_1, property_1⟩ := y
         simp_all only [Subtype.mk.injEq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem,
           Finset.card_singleton, Nat.reduceAdd, P]
@@ -343,26 +344,35 @@ by
         | inl h_1 => simp_all only [true_or, and_self, P]
         | inr h_2 => simp_all only [or_true, and_self, P]
 
-    let R2: Finset α → Prop:= (fun s => ({x.val, y.val} ⊆ s))
-    let R0: Finset α → Prop:= (fun s => ({x.val, y.val} ∩ s = ∅))
+    let R2: Finset α → Prop:= (fun s => (({x.val, y.val}:Finset α) ⊆ s))
+    let R0: Finset α → Prop:= (fun s => (({x.val, y.val}:Finset α) ∩ s = ∅))
+    let f: Finset α → Nat := fun s => (({x.val, y.val}:Finset α) ∩ s).card
+    --set hand := (∑ ss ∈ Finset.filter (fun ss => SF.sets ss ∧ ((R2 ss) ∨ (R0 ss))) SF.ground.powerset, f ss) with hand_def
 
-    have :∑ s ∈ Finset.filter (fun s => SF.sets s ∧ ({x.val, y.val} ⊆ s ∨ {x.val, y.val} ∩ s = ∅)) SF.ground.powerset, ({x.val, y.val} ∩ s).card =
-       ∑ s ∈ (Finset.filter (fun s => SF.sets s ∧ {x.val, y.val} ⊆ s) SF.ground.powerset ∪ Finset.filter (fun s => SF.sets s ∧ {↑x, ↑y} ∩ s = ∅) SF.ground.powerset), ({↑x, ↑y} ∩ s).card :=
+    have hand_this:(∑ s ∈ Finset.filter (fun s => SF.sets s ∧ ((R2 s) ∨ (R0 s))) SF.ground.powerset, f s) =
+       ∑ s ∈ (Finset.filter (fun s => SF.sets s ∧ (R2 s)) SF.ground.powerset ∪ (Finset.filter (fun s => SF.sets s ∧ (R0 s)) SF.ground.powerset)), f s:=
 
     by
-      rw [this]
+      --rw [←hand]
+      --rw [hand]
+      --dsimp [hand]
+      rw [pq_rule3]
 
     /-
     have : ∑ s ∈ Finset.filter (fun s => SF.sets s ∧ ({↑x, ↑y} ⊆ s ∨ {↑x, ↑y} ∩ s = ∅)) SF.ground.powerset, ({↑x, ↑y} ∩ s).card =
       ∑ s ∈ Finset.filter (fun s => SF.sets s ∧ ({↑x, ↑y} ⊆ s ∨ {↑x, ↑y} ∩ s = ∅)) SF.ground.powerset, ({↑x, ↑y} ∩ s).card  :=
       rfl
     -/
-
-    have : ∑ s ∈ Finset.filter (fun s => SF.sets s ∧ ({x.val, y.val} ⊆ s ∨ {x.val, y.val} ∩ s = ∅)) SF.ground.powerset, ({x.val, y.val} ∩ s).card =
-      ∑ s ∈ Finset.filter (fun s => SF.sets s ∧ {↑x, ↑y} ⊆ s) SF.ground.powerset, ({↑x, ↑y} ∩ s).card +
-      ∑ s ∈ Finset.filter (fun s => SF.sets s ∧ {↑x, ↑y} ∩ s = ∅) SF.ground.powerset, ({↑x, ↑y} ∩ s).card :=
+    have tt: (∑ s ∈ Finset.filter (fun s => SF.sets s ∧ ((R2 s) ∨ (R0 s))) SF.ground.powerset, f s) =
+        (∑ s ∈ Finset.filter (fun s => SF.sets s ∧ (R2 s)) SF.ground.powerset, f s) +
+       (∑ s ∈ Finset.filter (fun s => SF.sets s ∧ (R0 s)) SF.ground.powerset, f s) :=
     by
-      rw [this]
+
+      suffices ∑ s ∈ (Finset.filter (fun s => SF.sets s ∧ (R2 s)) SF.ground.powerset ∪ (Finset.filter (fun s => SF.sets s ∧ (R0 s)) SF.ground.powerset)), f s = (∑ s ∈ Finset.filter (fun s => SF.sets s ∧ (R2 s)) SF.ground.powerset, f s) +
+       (∑ s ∈ Finset.filter (fun s => SF.sets s ∧ (R0 s)) SF.ground.powerset, f s) from
+        by
+          simp_all only [ne_eq, gt_iff_lt, and_congr_right_iff, Q, P, R2, R0, f]
+
       rw [Finset.sum_union]
       dsimp [Disjoint]
       intro s hs hhs
@@ -370,7 +380,75 @@ by
       simp at h_contra
       rw [← @Finset.not_nonempty_iff_eq_empty] at h_contra
       rw [Mathlib.Tactic.PushNeg.not_not_eq] at h_contra
-      obtain ⟨x,hx⟩ = h_contra
+      obtain ⟨xx,hx⟩ := h_contra
+      let hs := hs hx
+      let hhs := hhs hx
+      rw [Finset.mem_filter] at hs
+      rw [Finset.mem_filter] at hhs
+      rw [@and_rotate] at hs
+      rw [@and_rotate] at hhs
+      dsimp [R2] at hs
+      dsimp [R0] at hhs
+      let hs0 := hs.2.1
+      let hhs0 := hhs.2.1
+      rw [Finset.subset_iff] at hs0
+      rw [←Finset.disjoint_iff_inter_eq_empty] at hhs0
+      simp_all only [ne_eq, gt_iff_lt, and_congr_right_iff, and_true, true_and, Finset.mem_insert, Finset.mem_singleton,
+        true_or, Finset.insert_inter_of_mem, or_true, Finset.singleton_inter_of_mem, Finset.insert_ne_empty,
+        Finset.mem_powerset, false_and, and_false, Q, f, R0, R2, P]
+
+    show ∑ ss ∈ @Finset.filter (Finset α) (fun s => P s ∧ ¬Q s) (fun a => instDecidableAnd) SF.ground.powerset, ({↑x, ↑y} ∩ ss).card =
+      ∑ ss ∈ Finset.filter (fun s => SF.sets s ∧ {↑x, ↑y} ⊆ s) SF.ground.powerset, ({↑x, ↑y} ∩ ss).card +
+      ∑ ss ∈ Finset.filter (fun s => SF.sets s ∧ {↑x, ↑y} ∩ s = ∅) SF.ground.powerset, ({↑x, ↑y} ∩ ss).card
+    rw [Finset.filter_congr_decidable]
+    simp [pq_rule2]
+    simp_all only [ne_eq, gt_iff_lt, and_congr_right_iff, Q, f, R0, R2, P]
+
+  show SF.number_of_hyperedges < ∑ x_1 ∈ Finset.filter SF.sets SF.ground.powerset, (({x.val, y.val} ∩ x_1).card : ℤ)
+
+  -- cardが1の部分とcardが0 or 2の部分で分けて考える。
+  --1の部分は、常に0になる。
+  --0 or 2の部分は正になる。
+  --それぞれ補題にする。
+
+  dsimp [SetFamily.number_of_hyperedges]
+
+  --イコール1の部分は等号がなりたつ。
+  have :∑ x_1 ∈ Finset.filter (fun s => SF.sets s ∧ ({x.val, y.val} ∩ s).card = 1) SF.ground.powerset, ↑({x.val, y.val} ∩ x_1).card = (Finset.filter (fun s => SF.sets s ∧ ({x.val, y.val} ∩ s).card = 1) SF.ground.powerset).card :=
+  by
+    let f :Finset α → ℕ := fun s => ({x.val, y.val} ∩ s).card
+    let S := Finset.filter (fun s => SF.sets s ∧ ({x.val, y.val} ∩ s).card = 1) SF.ground.powerset
+    --let fs := Finset.sum (Finset.filter (fun s => SF.sets s ∧ ({x.val, y.val} ∩ s).card = 1) SF.ground.powerset) (λ _ => 1)
+    calc
+      ∑ x_1 ∈ Finset.filter (fun s => SF.sets s ∧ ({x.val, y.val} ∩ s).card = 1) SF.ground.powerset, ↑({x.val, y.val} ∩ x_1).card
+      = ∑ x_1 ∈ S, f x_1 :=
+      by
+        simp_all only [ne_eq, gt_iff_lt, Q, P, S, f]
+    _ = ∑ x ∈ S, 1 := by
+        apply Finset.sum_congr rfl
+        intros x hx
+        simp_all only [ne_eq, gt_iff_lt, Finset.mem_filter, Finset.mem_powerset, Q, P, S, f]
+    _ = S.card := by simp_all only [ne_eq, gt_iff_lt, Finset.sum_const, smul_eq_mul, mul_one, f, Q, P, S]
+    _ = (Finset.filter (fun s => SF.sets s ∧ ({x.val, y.val} ∩ s).card = 1) SF.ground.powerset).card := by simp_all only [ne_eq, gt_iff_lt, f, Q, P, S]
+
+  --以下の式から成り立つ。
+  have : ↑(Finset.filter (fun s => SF.sets s ∧ ({x.val, y.val} ∩ s).card ≠ 1) SF.ground.powerset).card <
+  ∑ x_1 ∈ Finset.filter (fun s => SF.sets s ∧ ({x.val, y.val} ∩ s).card ≠ 1) SF.ground.powerset, ↑({x.val, y.val} ∩ x_1).card :=
+  by
+    --イコール0の部分とイコール2の部分に分解する必要がある。
+    sorry
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
