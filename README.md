@@ -118,3 +118,7 @@ theorem abetype_theorem_general (SF:ClosureSystem α)  [DecidablePred SF.sets](v
 
 この分野の将来的な目標としては、ステムサイズが2以下で生成されるような閉集合族に関して、rareな頂点が存在することを示したい。
 Leanによらない証明もわかっていない。
+
+これから示すべき、細かい定理としては、
+-- n-1の大きさのhyperedgeを持てば、フランクルの予想の反例にならない。
+-- フランクルの予想の反例は2点優位となる。任意の2点x,yに関して、x,yを共に含むhyperedgeの数は、x,yを共に含まないhyperedgeの数より多くなる。

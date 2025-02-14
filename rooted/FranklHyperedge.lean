@@ -175,67 +175,139 @@ by
   simp
   rw [Finset.filter_filter]
 
-lemma two_superior_implies_nds_positive (SF: ClosureSystem α) [DecidablePred SF.sets] (x y :SF.ground) (neq: x ≠ y):
-  superior SF ({x.val,y.val}:Finset α) → normalized_degree_sum SF ({x.val,y.val}:Finset α) > 0 :=
+--two_superior_implies_nds_positiveの証明が長いので、一部を補題として分離。
+lemma two_superior_implies_notone_positive (SF: ClosureSystem α) [DecidablePred SF.sets] (x y :SF.ground) (neq: x ≠ y):
+  superior SF ({x.val,y.val}:Finset α) →
+  (Finset.filter (fun s => SF.sets s ∧ ({x.val, y.val} ∩ s).card ≠ 1) SF.ground.powerset).card <
+  ∑ x_1 ∈ Finset.filter (fun s => SF.sets s ∧ ({x.val, y.val} ∩ s).card ≠ 1) SF.ground.powerset, (({x.val, y.val} ∩ x_1).card:Int)  :=
 by
-
-  dsimp [superior]
-  dsimp [normalized_degree_sum]
-  intro h
-  have :({x.val, y.val}:Finset α).card = 2:=
-  by
-    simp_all only [ne_eq, gt_iff_lt]
-    obtain ⟨val, property⟩ := x
-    obtain ⟨val_1, property_1⟩ := y
-    simp_all only [Subtype.mk.injEq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem,
-      Finset.card_singleton, Nat.reduceAdd]
-
-  rw [this]
-  simp
-  --2を和の外に出して、2で割るだけでこんなに変形するのはおかしいかも。
-  suffices SF.number_of_hyperedges < ∑ x_1 ∈ Finset.filter SF.sets SF.ground.powerset, (({x.val, y.val} ∩ x_1).card : ℤ) from
-  by
-    have : 2* ∑ x_1 ∈ Finset.filter SF.sets SF.ground.powerset, ↑({x.val, y.val} ∩ x_1).card =
-    ∑ x_1 ∈ Finset.filter SF.sets SF.ground.powerset, 2 * ↑({x.val, y.val} ∩ x_1).card :=
-    by
-      simp_all only [ne_eq, gt_iff_lt]
-      obtain ⟨val, property⟩ := x
-      obtain ⟨val_1, property_1⟩ := y
-      simp_all only [Subtype.mk.injEq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem,Finset.card_singleton, Nat.reduceAdd]
-      symm
-      simp_rw [Finset.mul_sum]
-    simp_all only [ne_eq, gt_iff_lt]
-    have :2 * SF.number_of_hyperedges < 2 * ∑ x_1 ∈ Finset.filter SF.sets SF.ground.powerset, ({↑x, ↑y} ∩ x_1).card :=
-    by
-      simp_all only [Nat.cast_sum, Nat.ofNat_pos, mul_lt_mul_left]
-    simp_all only [Nat.cast_sum, Nat.ofNat_pos, mul_lt_mul_left, gt_iff_lt]
-    --obtain ⟨val, property⟩ := x
-    obtain ⟨val_1, property_1⟩ := y
-    simp_all only [Subtype.mk.injEq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem, Finset.card_singleton, Nat.reduceAdd]
-    linarith
-
-  --sが{x,y}とちょうど1交わるか、そうでないかで、ゴールの条件を分割。
   let P : Finset α → Prop := (fun s => SF.sets s)
   let Q : Finset α → Prop := (fun s => ({x.val,y.val}∩s).card = 1)
 
-  have notone: ∑ s ∈ SF.ground.powerset.filter (fun s => P s), ↑({x.val, y.val} ∩ s).card = ∑ s ∈ (SF.ground.powerset.filter (fun s => (P s) ∧ (Q s))), ↑({x.val, y.val} ∩ s).card + ∑ s ∈ (SF.ground.powerset.filter (fun s => (P s ∧ ¬ (Q s)))), ↑({x.val, y.val} ∩ s).card :=
+  --次の補題hand_thisのための補題
+  have pq_rule3: Finset.filter (fun s => SF.sets s ∧ ({↑x, ↑y} ⊆ s ∨ {↑x, ↑y} ∩ s = ∅)) SF.ground.powerset = Finset.filter (fun s => SF.sets s ∧ {↑x, ↑y} ⊆ s) SF.ground.powerset ∪ Finset.filter (fun s => SF.sets s ∧ {↑x, ↑y} ∩ s = ∅) SF.ground.powerset :=
   by
-    let sf := sum_filter_add_sum_filter_compl SF.ground.powerset P Q (fun s => ({x.val,y.val}∩ s).card)
-    simp at sf
-    norm_cast
-    norm_cast at sf
+    ext x
+    apply Iff.intro
+    ·
+      intro a
+      simp_all only [ne_eq, gt_iff_lt, and_congr_right_iff, Finset.mem_filter, Finset.mem_powerset, Finset.mem_union,
+        true_and, Q, P]
+    ·
+      rename_i x_1 this_1 this_2
+      intro a
+      simp_all [Q, P]
+      obtain ⟨val_1, property_1⟩ := y
+      simp_all only [Subtype.mk.injEq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem,
+        Finset.card_singleton, Nat.reduceAdd, P]
+      cases a with
+      | inl h_1 => simp_all only [true_or, and_self, P]
+      | inr h_2 => simp_all only [or_true, and_self, P]
 
-  have notone2: ∑ ss ∈ (SF.ground.powerset.filter (fun s => (P s ∧ ¬ (Q s)))), ({x.val, y.val} ∩ ss).card = ∑ ss ∈ (SF.ground.powerset.filter (fun s => SF.sets s ∧ {x.val, y.val} ⊆ s)), ({x.val, y.val} ∩ ss).card + ∑ ss ∈  (SF.ground.powerset.filter (fun s => SF.sets s ∧ {x.val, y.val} ∩ s = ∅)), ({x.val, y.val} ∩ ss).card :=
+  let R2: Finset α → Prop:= (fun s => (({x.val, y.val}:Finset α) ⊆ s))
+  let R0: Finset α → Prop:= (fun s => (({x.val, y.val}:Finset α) ∩ s = ∅))
+  let f: Finset α → Int := fun s => ((({x.val, y.val}:Finset α) ∩ s).card:Int)
+
+  --証明はpq_ruleの中に片側がある。
+  have eq2: ({x.val, y.val}:Finset α).card = 2 :=
+      by
+        simp_all only [ne_eq, Q, P]
+        obtain ⟨val, property⟩ := x
+        obtain ⟨val_1, property_1⟩ := y
+        simp_all only [Subtype.mk.injEq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem,
+          Finset.card_singleton, Nat.reduceAdd, P]
+
+  have sub_eq_2:∀ s:Finset α, {x.val,y.val} ⊆ s ↔ ({x.val, y.val} ∩ s).card = 2 :=
   by
-    have pq_rule: ∀ s : Finset α, (P s ∧ ¬ (Q s)) ↔  SF.sets s ∧ ({x.val, y.val} ⊆ s ∨ {x.val, y.val} ∩ s = ∅) :=
+    intro s
+    apply Iff.intro
+    · intro h
+      have : {↑x, ↑y} ∩ s = {↑x, ↑y} :=
+      by
+        simp_all only [ne_eq, Finset.inter_eq_left]
+      have geq2: ({↑x, ↑y} ∩ s).card >= 2 :=
+      by
+        rw [this]
+        simp_all only [ne_eq, Finset.inter_eq_left, ge_iff_le, le_refl]
+
+      have : ( {↑x, ↑y} ∩ s ).card ≤ ({x.val, y.val}:Finset α).card :=
+      by
+        have : ( ({x.val, y.val}:Finset α) ∩ s ) ⊆ ({x.val, y.val}:Finset α) :=
+        by
+          simp_all only [ne_eq, Finset.inter_eq_left, ge_iff_le, Finset.inter_subset_left]
+        apply Finset.card_le_card this
+
+      rw [eq2] at this
+
+      simp_all only [ne_eq, Finset.inter_eq_left, ge_iff_le]
+      obtain ⟨val, property⟩ := x
+      obtain ⟨val_1, property_1⟩ := y
+      simp_all only [Subtype.mk.injEq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem,
+        Finset.card_singleton, Nat.reduceAdd]
+      omega
+
+    · intro h
+      have :({x.val, y.val}:Finset α) ∩ s = {x.val, y.val} :=
+      by
+        have h_subset : {x.val, y.val} ∩ s ⊆ {x.val, y.val} :=
+        by
+          simp_all only [ne_eq, Finset.inter_subset_left]
+        have h_card : ({↑x, ↑y}:Finset α).card = ({↑x, ↑y} ∩ s).card :=
+        by
+          simp_all only [ne_eq, Finset.inter_subset_left]
+        exact Finset.eq_of_subset_of_card_le h_subset (le_of_eq h_card)
+      simp_all only [ne_eq, Finset.inter_eq_left]
+
+  --notone_cardの証明に使っている。
+  have hand_this:(∑ s ∈ Finset.filter (fun s => SF.sets s ∧ ((R2 s) ∨ (R0 s))) SF.ground.powerset, f s) =
+       ∑ s ∈ (Finset.filter (fun s => SF.sets s ∧ (R2 s)) SF.ground.powerset ∪ (Finset.filter (fun s => SF.sets s ∧ (R0 s)) SF.ground.powerset)), f s:=
+    by
+      rw [pq_rule3]
+
+  --set hand := (∑ ss ∈ Finset.filter (fun ss => SF.sets ss ∧ ((R2 ss) ∨ (R0 ss))) SF.ground.powerset, f ss) with hand_def
+  --1でない場合の和のほうの分解。コメントアウトすると、なぜかnotone_cardの証明でエラー。
+  have notone_sum: (∑ s ∈ Finset.filter (fun s => SF.sets s ∧ ((R2 s) ∨ (R0 s))) SF.ground.powerset, f s) =
+      (∑ s ∈ Finset.filter (fun s => SF.sets s ∧ (R2 s)) SF.ground.powerset, f s) +
+      (∑ s ∈ Finset.filter (fun s => SF.sets s ∧ (R0 s)) SF.ground.powerset, f s) :=
+  by
+
+    suffices ∑ s ∈ (Finset.filter (fun s => SF.sets s ∧ (R2 s)) SF.ground.powerset ∪ (Finset.filter (fun s => SF.sets s ∧ (R0 s)) SF.ground.powerset)), f s = (∑ s ∈ Finset.filter (fun s => SF.sets s ∧ (R2 s)) SF.ground.powerset, f s) +
+      (∑ s ∈ Finset.filter (fun s => SF.sets s ∧ (R0 s)) SF.ground.powerset, f s) from
+      by
+        simp_all only [ne_eq, gt_iff_lt, and_congr_right_iff, Q, P, R2, R0, f]
+
+    rw [Finset.sum_union]
+    dsimp [Disjoint]
+    intro s hs hhs
+    by_contra h_contra
+    simp at h_contra
+    rw [← @Finset.not_nonempty_iff_eq_empty] at h_contra
+    rw [Mathlib.Tactic.PushNeg.not_not_eq] at h_contra
+    obtain ⟨xx,hx⟩ := h_contra
+    let hs := hs hx
+    let hhs := hhs hx
+    rw [Finset.mem_filter] at hs
+    rw [Finset.mem_filter] at hhs
+    rw [@and_rotate] at hs
+    rw [@and_rotate] at hhs
+    --このあたりは、sumとcardで共通なので、補題にしてもよい。
+    dsimp [R2] at hs
+    dsimp [R0] at hhs
+    let hs0 := hs.2.1
+    let hhs0 := hhs.2.1
+    rw [Finset.subset_iff] at hs0
+    rw [←Finset.disjoint_iff_inter_eq_empty] at hhs0
+    simp_all only [ne_eq, gt_iff_lt, and_congr_right_iff, and_true, true_and, Finset.mem_insert, Finset.mem_singleton,
+      true_or, Finset.insert_inter_of_mem, or_true, Finset.singleton_inter_of_mem, Finset.insert_ne_empty,
+      Finset.mem_powerset, false_and, and_false, Q, f, R0, R2, P]
+
+  --コメントアウトすると、not1_into_0or2の証明やnotone_cardの証明でエラー。
+  have pq_rule: ∀ s : Finset α, (P s ∧ ¬ (Q s)) ↔  SF.sets s ∧ (R2 s ∨ R0 s) :=
     by
       dsimp [P]
       dsimp [Q]
+      dsimp [R0,R2]
       intro s
-
-      have eq2: ({x.val, y.val}:Finset α).card = 2 :=
-      by
-        simp_all only [ge_iff_le, Q, P]
 
       apply Iff.intro
       · intro hh
@@ -273,7 +345,6 @@ by
 
           have h := Nat.eq_iff_le_and_ge.mpr ⟨this, geq2⟩
 
-          --#check @Finset.inter_subset_right _ _ ({x.val, y.val}:Finset α) s
           let fe := (Finset.eq_of_subset_of_card_le (@Finset.inter_subset_left _ _ ({x.val, y.val}:Finset α) s))
 
           have : ({x.val, y.val}:Finset α).card ≤ ({x.val, y.val} ∩ s).card :=
@@ -301,188 +372,763 @@ by
           | inr h_3 =>
             rw [h_3]
             simp_all only [ne_eq, gt_iff_lt, or_true, and_true, Finset.card_empty, zero_ne_one, not_false_eq_true, Q, P]
-    haveI : DecidablePred (λ s => P s ∧ ¬ Q s) := inferInstance
-    --rw [Finset.sum_congr rfl]
 
-    -- pq_rule : ∀ (s : Finset α), P s ∧ ¬Q s ↔ SF.sets s ∧ ({↑x, ↑y} ⊆ s ∨ {↑x, ↑y} ∩ s = ∅)
-    --pq_ruleを使って、ゴールのfilterの中身を書き換えたいけど、いまいちfilter_congrがうまくいかない。
-    have pq_rule2:Finset.filter (fun s => P s ∧ ¬Q s) SF.ground.powerset = Finset.filter (fun s => SF.sets s ∧ ({↑x, ↑y} ⊆ s ∨ {↑x, ↑y} ∩ s = ∅)) SF.ground.powerset :=
+    --pq_ruleの証明がおわり
+
+  --notoneのsumのほうの分解。notone_sumを利用している。
+  have notone_sum2: ∑ ss ∈ (SF.ground.powerset.filter (fun s => (P s ∧ ¬ (Q s)))), f ss =
+  ∑ ss ∈ (SF.ground.powerset.filter (fun s => P s ∧ R2 s)), f ss + ∑ ss ∈ (SF.ground.powerset.filter (fun s => P s ∧ R0 s)), f ss :=
+  by
+    haveI : DecidablePred (λ s => P s ∧ ¬ Q s) := inferInstance  --ないとエラー。
+
+    rw [Finset.filter_congr_decidable]
+
+    simp_all only [R2, Q, f, P, R0]
+
+
+  --/- 今の構成では利用してないよう。使う時に復活させる。
+  have not1_into_0or2: Finset.filter (fun s => P s ∧ ¬Q s) SF.ground.powerset = Finset.filter (fun s => SF.sets s ∧ (R2 s ∨ R0 s)) SF.ground.powerset :=
     by
       --haveI : DecidablePred (λ s => P s ∧ ¬ Q s) := inferInstance
       ext x
       apply Iff.intro
-      · rename_i x_1 this_1 this_2
+      ·
         intro a
         simp_all [Q, P]
-        --obtain ⟨val, property⟩ := x_1
         obtain ⟨val_1, property_1⟩ := y
         obtain ⟨left, right⟩ := a
         obtain ⟨left_1, right⟩ := right
         simp_all only [Subtype.mk.injEq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem,
           Finset.card_singleton, Nat.reduceAdd, P]
-      ·
-        intro a
+      · intro a
+        dsimp [R0,R2]
         simp_all only [ne_eq, gt_iff_lt, and_congr_right_iff, Finset.mem_filter, Finset.mem_powerset, and_self, Q, P]
 
-    have pq_rule3: Finset.filter (fun s => SF.sets s ∧ ({↑x, ↑y} ⊆ s ∨ {↑x, ↑y} ∩ s = ∅)) SF.ground.powerset = Finset.filter (fun s => SF.sets s ∧ {↑x, ↑y} ⊆ s) SF.ground.powerset ∪ Finset.filter (fun s => SF.sets s ∧ {↑x, ↑y} ∩ s = ∅) SF.ground.powerset :=
+  have disjoint_0and2: Finset.filter (fun s => P s ∧ R2 s) SF.ground.powerset ∩ (Finset.filter (fun s => P s ∧ R0 s)) SF.ground.powerset = ∅ :=
+  by
+    have :∀ s :Finset α, ¬ (R0 s ∧ R2 s ) :=
+      by
+        intro h hh
+        dsimp [R2,R0] at hh
+        rw [Finset.subset_iff] at hh
+        rw [←Finset.disjoint_iff_inter_eq_empty] at hh
+        simp_all only [ne_eq, and_congr_right_iff, Finset.disjoint_insert_left, Finset.disjoint_singleton_left,
+          Finset.mem_insert, Finset.mem_singleton, forall_eq_or_imp, forall_eq, R2, Q, f, P, R0]
+        obtain ⟨left, right⟩ := hh
+        simp_all only [Subtype.mk.injEq, not_true_eq_false, P]
+
+    ext s
+    simp only [Finset.mem_inter, Finset.mem_filter]
+    constructor
+    · intro h
+      simp_all only [ne_eq, and_congr_right_iff, not_and, Finset.mem_powerset, Finset.not_mem_empty, R2, Q, f, P, R0]
+      obtain ⟨left, right⟩ := h
+      simp_all only [Subtype.mk.injEq, P]
+      simp_all only [not_true_eq_false, imp_false, Finset.card_empty, OfNat.zero_ne_ofNat, and_false, f, P, R2, Q, R0]
+    · intro h
+      simp_all only [ne_eq, and_congr_right_iff, not_and, Finset.not_mem_empty, R2, Q, f, P, R0]
+
+  have notone_card: (SF.ground.powerset.filter (fun s => (P s ∧ ¬ (Q s)))).card =
+  (SF.ground.powerset.filter (fun s => P s ∧ R2 s)).card + (SF.ground.powerset.filter (fun s => P s ∧ R0 s)).card :=
+  by
+    rw [not1_into_0or2]
+    rw [pq_rule3]
+    rw [Finset.card_union]
+    simp_all only [ne_eq, and_congr_right_iff, Finset.card_empty, tsub_zero, R2, Q, f, P, R0]
+
+  intro sp
+  show (Finset.filter (fun s => SF.sets s ∧ ({↑x, ↑y} ∩ s).card ≠ 1) SF.ground.powerset).card <
+  ∑ x_1 ∈ Finset.filter (fun s => SF.sets s ∧ ({↑x, ↑y} ∩ s).card ≠ 1) SF.ground.powerset, f x_1
+
+  suffices (Finset.filter (fun s => P s ∧ ¬Q s) SF.ground.powerset).card <
+  ∑ x_1 ∈(Finset.filter (fun s => P s ∧ ¬Q s) SF.ground.powerset), f x_1 from
+  by
+    dsimp [P] at this
+    dsimp [Q] at this
+    dsimp [f] at this
+    --convert this
+    simp_all only [ne_eq, and_congr_right_iff, Nat.cast_add, f, P, R2, Q, R0]
+
+  rw [notone_card]
+  rw [notone_sum2]
+  show (Finset.filter (fun s => P s ∧ R2 s) SF.ground.powerset).card +
+    (Finset.filter (fun s => P s ∧ R0 s) SF.ground.powerset).card <
+  ∑ ss ∈ Finset.filter (fun s => P s ∧ R2 s) SF.ground.powerset, f ss +
+    ∑ ss ∈ Finset.filter (fun s => P s ∧ R0 s) SF.ground.powerset, f ss
+
+  dsimp [superior] at sp
+  have sp2:(Finset.filter (fun s => P s ∧ R2 s) SF.ground.powerset).card >
+  (Finset.filter (fun s => P s ∧ R0 s) SF.ground.powerset).card :=
+  by
+    simp_all only [ne_eq, and_congr_right_iff, gt_iff_lt, R2, Q, f, P, R0]
+
+  --うまくいかないので、f-1を持ち出すのは良い方針ではないのかも。
+  --suffices  ∑ ss ∈ Finset.filter (fun s => P s ∧ R2 s) SF.ground.powerset, (f - 1) ss +
+  --  ∑ ss ∈ Finset.filter (fun s => P s ∧ R0 s) SF.ground.powerset, (f - 1) ss > 0 from
+
+  have F2lem : ∑ ss ∈ Finset.filter (fun s => P s ∧ R2 s) SF.ground.powerset, f ss = ∑ ss ∈ (Finset.filter (fun s => P s ∧ ({x.val,y.val} ∩ s).card = 2) SF.ground.powerset), f ss :=
+  by
+    simp_all only [ne_eq, and_congr_right_iff, gt_iff_lt, f, P, R2, Q, R0]
+
+  have F2lem2 : (Finset.filter (fun s => P s ∧ R2 s) SF.ground.powerset).card = (Finset.filter (fun s => P s ∧ ({x.val,y.val} ∩ s).card = 2) SF.ground.powerset).card :=
+  by
+    simp_all only [ne_eq, and_congr_right_iff, gt_iff_lt, f, P, R2, Q, R0]
+
+  have F2: ∑ ss ∈ Finset.filter (fun s => P s ∧ R2 s) SF.ground.powerset, f ss = 2*(Finset.filter (fun s => P s ∧ R2 s) SF.ground.powerset).card :=
+  by
+    dsimp [R2]
+    dsimp [f]
+    rw [F2lem]
+    dsimp [f]
+    rw [F2lem2]
+    rw [Finset.card_eq_sum_ones]
+    let filtered_sets := Finset.filter (fun s => P s ∧ ({↑x, ↑y} ∩ s).card = 2) SF.ground.powerset
+    have h1 : ∀ s ∈ filtered_sets, ({↑x, ↑y} ∩ s).card = 2 :=
     by
-      ext x
-      apply Iff.intro
-      ·
-        intro a
-        simp_all only [ne_eq, gt_iff_lt, and_congr_right_iff, Finset.mem_filter, Finset.mem_powerset, Finset.mem_union,
-          true_and, Q, P]
-      ·
-        rename_i x_1 this_1 this_2
-        intro a
-        simp_all [Q, P]
-        obtain ⟨val, property⟩ := this_1
-        obtain ⟨val_1, property_1⟩ := y
-        simp_all only [Subtype.mk.injEq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem,
-          Finset.card_singleton, Nat.reduceAdd, P]
-        cases a with
-        | inl h_1 => simp_all only [true_or, and_self, P]
-        | inr h_2 => simp_all only [or_true, and_self, P]
-
-    let R2: Finset α → Prop:= (fun s => (({x.val, y.val}:Finset α) ⊆ s))
-    let R0: Finset α → Prop:= (fun s => (({x.val, y.val}:Finset α) ∩ s = ∅))
-    let f: Finset α → Nat := fun s => (({x.val, y.val}:Finset α) ∩ s).card
-    --set hand := (∑ ss ∈ Finset.filter (fun ss => SF.sets ss ∧ ((R2 ss) ∨ (R0 ss))) SF.ground.powerset, f ss) with hand_def
-
-    have hand_this:(∑ s ∈ Finset.filter (fun s => SF.sets s ∧ ((R2 s) ∨ (R0 s))) SF.ground.powerset, f s) =
-       ∑ s ∈ (Finset.filter (fun s => SF.sets s ∧ (R2 s)) SF.ground.powerset ∪ (Finset.filter (fun s => SF.sets s ∧ (R0 s)) SF.ground.powerset)), f s:=
-
-    by
-      --rw [←hand]
-      --rw [hand]
-      --dsimp [hand]
-      rw [pq_rule3]
-
-    /-
-    have : ∑ s ∈ Finset.filter (fun s => SF.sets s ∧ ({↑x, ↑y} ⊆ s ∨ {↑x, ↑y} ∩ s = ∅)) SF.ground.powerset, ({↑x, ↑y} ∩ s).card =
-      ∑ s ∈ Finset.filter (fun s => SF.sets s ∧ ({↑x, ↑y} ⊆ s ∨ {↑x, ↑y} ∩ s = ∅)) SF.ground.powerset, ({↑x, ↑y} ∩ s).card  :=
-      rfl
-    -/
-    have tt: (∑ s ∈ Finset.filter (fun s => SF.sets s ∧ ((R2 s) ∨ (R0 s))) SF.ground.powerset, f s) =
-        (∑ s ∈ Finset.filter (fun s => SF.sets s ∧ (R2 s)) SF.ground.powerset, f s) +
-       (∑ s ∈ Finset.filter (fun s => SF.sets s ∧ (R0 s)) SF.ground.powerset, f s) :=
-    by
-
-      suffices ∑ s ∈ (Finset.filter (fun s => SF.sets s ∧ (R2 s)) SF.ground.powerset ∪ (Finset.filter (fun s => SF.sets s ∧ (R0 s)) SF.ground.powerset)), f s = (∑ s ∈ Finset.filter (fun s => SF.sets s ∧ (R2 s)) SF.ground.powerset, f s) +
-       (∑ s ∈ Finset.filter (fun s => SF.sets s ∧ (R0 s)) SF.ground.powerset, f s) from
-        by
-          simp_all only [ne_eq, gt_iff_lt, and_congr_right_iff, Q, P, R2, R0, f]
-
-      rw [Finset.sum_union]
-      dsimp [Disjoint]
-      intro s hs hhs
-      by_contra h_contra
-      simp at h_contra
-      rw [← @Finset.not_nonempty_iff_eq_empty] at h_contra
-      rw [Mathlib.Tactic.PushNeg.not_not_eq] at h_contra
-      obtain ⟨xx,hx⟩ := h_contra
-      let hs := hs hx
-      let hhs := hhs hx
+      intro s hs
+      simp at hs
+      dsimp [filtered_sets] at hs
       rw [Finset.mem_filter] at hs
-      rw [Finset.mem_filter] at hhs
-      rw [@and_rotate] at hs
-      rw [@and_rotate] at hhs
-      dsimp [R2] at hs
-      dsimp [R0] at hhs
-      let hs0 := hs.2.1
-      let hhs0 := hhs.2.1
-      rw [Finset.subset_iff] at hs0
-      rw [←Finset.disjoint_iff_inter_eq_empty] at hhs0
-      simp_all only [ne_eq, gt_iff_lt, and_congr_right_iff, and_true, true_and, Finset.mem_insert, Finset.mem_singleton,
-        true_or, Finset.insert_inter_of_mem, or_true, Finset.singleton_inter_of_mem, Finset.insert_ne_empty,
-        Finset.mem_powerset, false_and, and_false, Q, f, R0, R2, P]
+      exact hs.2.2
 
-    show ∑ ss ∈ @Finset.filter (Finset α) (fun s => P s ∧ ¬Q s) (fun a => instDecidableAnd) SF.ground.powerset, ({↑x, ↑y} ∩ ss).card =
-      ∑ ss ∈ Finset.filter (fun s => SF.sets s ∧ {↑x, ↑y} ⊆ s) SF.ground.powerset, ({↑x, ↑y} ∩ ss).card +
-      ∑ ss ∈ Finset.filter (fun s => SF.sets s ∧ {↑x, ↑y} ∩ s = ∅) SF.ground.powerset, ({↑x, ↑y} ∩ ss).card
-    rw [Finset.filter_congr_decidable]
-    simp [pq_rule2]
-    simp_all only [ne_eq, gt_iff_lt, and_congr_right_iff, Q, f, R0, R2, P]
+    have h2 : ∑ ss ∈ filtered_sets, ↑(({x.val, y.val}:Finset α) ∩ ss).card = ∑ ss ∈ filtered_sets, 2 :=
+    by
+      apply Finset.sum_congr rfl
+      intro s hs
+      rw [h1 s hs]
+
+    rw [Finset.sum_const]
+
+    have h3 : filtered_sets.card = ∑ x ∈ filtered_sets, 1 :=
+    by
+      rw [Finset.card_eq_sum_ones]
+
+    rw [h3]
+    simp
+    ring_nf
+    dsimp [filtered_sets] at h2
+    norm_cast
+    rw [h2]
+
+    dsimp [filtered_sets]
+    rw [Finset.sum_const]
+    rfl
+
+  have F0: ∑ ss ∈ Finset.filter (fun s => P s ∧ R0 s) SF.ground.powerset, f ss = 0 :=
+  by
+    dsimp [R0]
+    dsimp [f]
+    apply Finset.sum_eq_zero
+    intros ss hss
+    rw [Finset.mem_filter] at hss
+    simp_all only [ne_eq, and_congr_right_iff, gt_iff_lt, Finset.mem_powerset, Finset.card_empty, CharP.cast_eq_zero, f,
+      P, R2, Q, R0]
+
+  simp
+
+  suffices (Finset.filter (fun s => P s ∧ R2 s) SF.ground.powerset).card > ((Finset.filter (fun s => P s ∧ R0 s) SF.ground.powerset).card:ℤ) from
+  by
+    linarith
+
+  suffices (Finset.filter (fun s => P s ∧ R2 s) SF.ground.powerset).card >
+    (Finset.filter (fun s => P s ∧ R0 s) SF.ground.powerset).card from
+  by
+    norm_cast
+
+  simp_all only [ne_eq, and_congr_right_iff, gt_iff_lt, Pi.sub_apply, Pi.one_apply, Nat.cast_sum, R2, Q, f, P, R0]
+
+--イコール1の部分は等号がなりたつ。
+lemma equal_one_implies_zero (SF: ClosureSystem α) [DecidablePred SF.sets] (x y :SF.ground) :
+
+  ∑ x_1 ∈ Finset.filter (fun s => SF.sets s ∧ ({x.val, y.val} ∩ s).card = 1) SF.ground.powerset, ↑({x.val, y.val} ∩ x_1).card = (Finset.filter (fun s => SF.sets s ∧ ({x.val, y.val} ∩ s).card = 1) SF.ground.powerset).card :=
+by
+  let f :Finset α → ℕ := fun s => ({x.val, y.val} ∩ s).card
+  let S := Finset.filter (fun s => SF.sets s ∧ ({x.val, y.val} ∩ s).card = 1) SF.ground.powerset
+  --let fs := Finset.sum (Finset.filter (fun s => SF.sets s ∧ ({x.val, y.val} ∩ s).card = 1) SF.ground.powerset) (λ _ => 1)
+  calc
+    ∑ x_1 ∈ Finset.filter (fun s => SF.sets s ∧ ({x.val, y.val} ∩ s).card = 1) SF.ground.powerset, ↑({x.val, y.val} ∩ x_1).card
+    = ∑ x_1 ∈ S, f x_1 :=
+    by
+      simp_all only [ne_eq, gt_iff_lt, S, f]
+  _ = ∑ x ∈ S, 1 := by
+      apply Finset.sum_congr rfl
+      intros x hx
+      simp_all only [ne_eq, gt_iff_lt, Finset.mem_filter, Finset.mem_powerset,  S, f]
+  _ = S.card := by simp_all only [ne_eq, gt_iff_lt, Finset.sum_const, smul_eq_mul, mul_one, f, S]
+  _ = (Finset.filter (fun s => SF.sets s ∧ ({x.val, y.val} ∩ s).card = 1) SF.ground.powerset).card := by simp_all only [ne_eq, gt_iff_lt, f, S]
+
+--2点優位であれば、2点平均abundnatという定理。
+theorem two_superior_implies_nds_positive (SF: ClosureSystem α) [DecidablePred SF.sets] (x y :SF.ground) (neq: x ≠ y):
+  superior SF ({x.val,y.val}:Finset α) → normalized_degree_sum SF ({x.val,y.val}:Finset α) > 0 :=
+by
+
+  dsimp [superior]
+  dsimp [normalized_degree_sum]
+  intro sp
+  have :({x.val, y.val}:Finset α).card = 2:=
+  by
+    simp_all only [ne_eq, gt_iff_lt]
+    obtain ⟨val, property⟩ := x
+    obtain ⟨val_1, property_1⟩ := y
+    simp_all only [Subtype.mk.injEq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem,
+      Finset.card_singleton, Nat.reduceAdd]
+
+  rw [this]
+  simp
+
+  suffices SF.number_of_hyperedges < ∑ x_1 ∈ Finset.filter SF.sets SF.ground.powerset, (({x.val, y.val} ∩ x_1).card : ℤ) from
+  by
+    have : 2* ∑ x_1 ∈ Finset.filter SF.sets SF.ground.powerset, ↑({x.val, y.val} ∩ x_1).card =
+    ∑ x_1 ∈ Finset.filter SF.sets SF.ground.powerset, 2 * ↑({x.val, y.val} ∩ x_1).card :=
+    by
+      simp_rw [Finset.mul_sum]
+    have :2 * SF.number_of_hyperedges < 2 * ∑ x_1 ∈ Finset.filter SF.sets SF.ground.powerset, ({↑x, ↑y} ∩ x_1).card :=
+    by
+      simp_all only [Nat.cast_sum, Nat.ofNat_pos, mul_lt_mul_left]
+    obtain ⟨val_1, property_1⟩ := y
+    linarith
+
+  --sが{x,y}とちょうど1交わるか、そうでないかで、ゴールの条件を分割。
+  let P : Finset α → Prop := (fun s => SF.sets s)
+  let Q : Finset α → Prop := (fun s => ({x.val,y.val}∩s).card = 1)
+
+  have notone_sum: ∑ s ∈ SF.ground.powerset.filter (fun s => P s), ↑({x.val, y.val} ∩ s).card = ∑ s ∈ (SF.ground.powerset.filter (fun s => (P s) ∧ (Q s))), ↑({x.val, y.val} ∩ s).card + ∑ s ∈ (SF.ground.powerset.filter (fun s => (P s ∧ ¬ (Q s)))), ↑({x.val, y.val} ∩ s).card :=
+  by
+    let sf := sum_filter_add_sum_filter_compl SF.ground.powerset P Q (fun s => ({x.val,y.val}∩ s).card)
+    simp at sf
+    --norm_cast
+    norm_cast at sf
+
+    --イコール0の部分とイコール2の部分に分解する必要がある。
+  have separate_card: SF.number_of_hyperedges = (Finset.filter (fun s => (P s ∧ Q s)) SF.ground.powerset).card + (Finset.filter (fun s => (P s ∧ ¬Q s)) SF.ground.powerset).card :=
+  by
+    dsimp [SetFamily.number_of_hyperedges]
+    dsimp [P]
+
+    have disj: Disjoint (Finset.filter (λ s => SF.sets s ∧ Q s) SF.ground.powerset)  (Finset.filter (λ s => SF.sets s ∧ ¬Q s) SF.ground.powerset) :=
+    by
+      rw [Finset.disjoint_filter]
+      intro x_1 a a_1
+      simp_all only [ne_eq, gt_iff_lt, Finset.mem_powerset, not_true_eq_false, and_false, not_false_eq_true, P, Q]
+
+    have unon: (Finset.filter (λ s => SF.sets s) SF.ground.powerset) = (Finset.filter (fun s => (SF.sets s ∧ Q s)) SF.ground.powerset) ∪ (Finset.filter (fun s => (SF.sets s ∧ ¬Q s)) SF.ground.powerset) :=
+    by
+      simp_all only [ne_eq, gt_iff_lt, P, Q]
+      obtain ⟨val, property⟩ := x
+      obtain ⟨val_1, property_1⟩ := y
+      simp_all only [Subtype.mk.injEq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem,
+        Finset.card_singleton, Nat.reduceAdd, P]
+      ext a : 1
+      simp_all only [Finset.mem_filter, Finset.mem_powerset, Finset.mem_union, P]
+      apply Iff.intro
+      · intro a_1
+        simp_all only [true_and, P]
+        obtain ⟨left, right⟩ := a_1
+        tauto
+      · intro a_1
+        cases a_1 with
+        | inl h_1 => simp_all only [and_self, P]
+        | inr h_2 => simp_all only [and_self, P]
+
+    have h_nat : (Finset.filter (λ s => SF.sets s) SF.ground.powerset).card
+             = (Finset.filter (λ s => SF.sets s ∧ Q s) SF.ground.powerset).card
+               + (Finset.filter (λ s => SF.sets s ∧ ¬ Q s) SF.ground.powerset).card :=
+    by
+      simp_all only [ne_eq, gt_iff_lt, Finset.card_union_of_disjoint, P, Q]
+
+    simp_all only [ne_eq, gt_iff_lt, Finset.card_union_of_disjoint, Nat.cast_add, P, Q]
 
   show SF.number_of_hyperedges < ∑ x_1 ∈ Finset.filter SF.sets SF.ground.powerset, (({x.val, y.val} ∩ x_1).card : ℤ)
 
-  -- cardが1の部分とcardが0 or 2の部分で分けて考える。
-  --1の部分は、常に0になる。
-  --0 or 2の部分は正になる。
-  --それぞれ補題にする。
-
   dsimp [SetFamily.number_of_hyperedges]
 
-  --イコール1の部分は等号がなりたつ。
-  have :∑ x_1 ∈ Finset.filter (fun s => SF.sets s ∧ ({x.val, y.val} ∩ s).card = 1) SF.ground.powerset, ↑({x.val, y.val} ∩ x_1).card = (Finset.filter (fun s => SF.sets s ∧ ({x.val, y.val} ∩ s).card = 1) SF.ground.powerset).card :=
+  --linarithに使うもの
+  --補題 lemma equal_one_implies_zero (SF: ClosureSystem α) [DecidablePred SF.sets] (x y :SF.ground)
+  --補題 lemma two_superior_implies_notone_positive (SF: ClosureSystem α) [DecidablePred SF.sets] (x y :SF.ground) (neq: x ≠ y):
+  --superior SF ({x.val,y.val}:Finset α) →
+  --(Finset.filter (fun s => SF.sets s ∧ ({x.val, y.val} ∩ s).card ≠ 1) SF.ground.powerset).card <
+  --∑ x_1 ∈ Finset.filter (fun s => SF.sets s ∧ ({x.val, y.val} ∩ s).card ≠ 1) SF.ground.powerset, (({x.val, y.val} ∩ x_1).card:Int)
+
+  suffices  (Finset.filter (fun s => (P s ∧ Q s)) SF.ground.powerset).card + (Finset.filter (fun s => (P s ∧ ¬Q s)) SF.ground.powerset).card < ∑ x_1 ∈ Finset.filter SF.sets SF.ground.powerset, (({x.val, y.val} ∩ x_1).card : ℤ) from
   by
-    let f :Finset α → ℕ := fun s => ({x.val, y.val} ∩ s).card
-    let S := Finset.filter (fun s => SF.sets s ∧ ({x.val, y.val} ∩ s).card = 1) SF.ground.powerset
-    --let fs := Finset.sum (Finset.filter (fun s => SF.sets s ∧ ({x.val, y.val} ∩ s).card = 1) SF.ground.powerset) (λ _ => 1)
-    calc
-      ∑ x_1 ∈ Finset.filter (fun s => SF.sets s ∧ ({x.val, y.val} ∩ s).card = 1) SF.ground.powerset, ↑({x.val, y.val} ∩ x_1).card
-      = ∑ x_1 ∈ S, f x_1 :=
-      by
-        simp_all only [ne_eq, gt_iff_lt, Q, P, S, f]
-    _ = ∑ x ∈ S, 1 := by
-        apply Finset.sum_congr rfl
-        intros x hx
-        simp_all only [ne_eq, gt_iff_lt, Finset.mem_filter, Finset.mem_powerset, Q, P, S, f]
-    _ = S.card := by simp_all only [ne_eq, gt_iff_lt, Finset.sum_const, smul_eq_mul, mul_one, f, Q, P, S]
-    _ = (Finset.filter (fun s => SF.sets s ∧ ({x.val, y.val} ∩ s).card = 1) SF.ground.powerset).card := by simp_all only [ne_eq, gt_iff_lt, f, Q, P, S]
+    rw [←separate_card] at this
+    convert this
 
-  --以下の式から成り立つ。
-  have : ↑(Finset.filter (fun s => SF.sets s ∧ ({x.val, y.val} ∩ s).card ≠ 1) SF.ground.powerset).card <
-  ∑ x_1 ∈ Finset.filter (fun s => SF.sets s ∧ ({x.val, y.val} ∩ s).card ≠ 1) SF.ground.powerset, ↑({x.val, y.val} ∩ x_1).card :=
+  suffices (Finset.filter (fun s => (P s ∧ Q s)) SF.ground.powerset).card + (Finset.filter (fun s => (P s ∧ ¬Q s)) SF.ground.powerset).card < ∑ s ∈ (SF.ground.powerset.filter (fun s => (P s) ∧ (Q s))), ↑({x.val, y.val} ∩ s).card + ∑ s ∈ (SF.ground.powerset.filter (fun s => (P s ∧ ¬ (Q s)))), ↑({x.val, y.val} ∩ s).card from
   by
-    --イコール0の部分とイコール2の部分に分解する必要がある。
-    sorry
+    rw [←notone_sum] at this
+    norm_cast
 
+  -- not Qのほうの補題
+  let tsin := two_superior_implies_notone_positive SF x y neq sp
 
+  -- Qが成立するほうの補題
+  let eoiz := equal_one_implies_zero SF x y
 
+  norm_cast at tsin
+  --norm_cast at eoiz
+  simp_all only [P,Q]
+  linarith
 
+theorem hyperedge_minusone  (SF: ClosureSystem α) [DecidablePred SF.sets] (x :SF.ground):
+  SF.sets (SF.ground \ {x.val}) → SF.is_rare x:=
+by
+  intro SFS
+  let M := SF.ground \ {x.val}
+  have setM : SF.sets M :=
+  by
+    exact SFS
+  let S := SF.ground.powerset.filter (fun s => SF.sets s ∧ x.val ∈ s)
+  let T := SF.ground.powerset.filter (fun s => SF.sets s ∧ x.val ∉ s)
+  let ii: S → T := fun s => ⟨s.val.erase x.val, by
+    dsimp [T]
+    rw [Finset.mem_filter]
+    obtain ⟨sval, sproperty⟩ := s
+    constructor
+    ·
 
+      simp_all only
+      simp_all only [Finset.mem_filter, Finset.mem_powerset, S]
+      obtain ⟨left, right⟩ := sproperty
+      intro x hx
+      simp_all only [Finset.mem_erase, ne_eq]
+      obtain ⟨left_2, right_1⟩ := hx
+      exact left right_1
+    · constructor
+      ·
+        simp_all only [T, S]
+        obtain ⟨val, property⟩ := x
+        simp_all only
+        simp_all only [Finset.mem_filter, Finset.mem_powerset, S]
+        obtain ⟨left, right⟩ := sproperty
+        obtain ⟨left_1, right⟩ := right
+        have :sval.erase val = M ∩ sval :=
+        by
+          simp_all only [S, M]
+          ext a : 1
+          simp_all only [Finset.mem_erase, ne_eq, Finset.mem_inter, Finset.mem_sdiff, Finset.mem_singleton,
+            and_congr_left_iff, iff_and_self, S]
+          intro a_1 a_2
+          exact left a_1
+        let sic := SF.intersection_closed sval M left_1 setM
+        rw [this]
+        rw [Finset.inter_comm]
+        exact sic
+      · apply Finset.not_mem_erase x.val
+  ⟩
+  have inj: ∀ s1 s2:S, ii s1 = ii s2 → s1 = s2 :=
+  by
+    dsimp [ii]
+    intro s1 s2
+    intro h
+    ext y
+    apply Iff.intro
+    · intro hy
+      by_cases hh:y = x
+      case pos
+        =>
+        simp_all only [Subtype.mk.injEq, T, S]
+        obtain ⟨val_2, property_2⟩ := s2
+        simp_all only
+        simp_all only [Finset.mem_filter, Finset.mem_powerset, S, T]
+      case neg
+        =>
+        have : y ∈ s1.val.erase x :=
+        by
+          rw [@Finset.mem_erase]
+          simp_all only [Subtype.mk.injEq, ne_eq, not_false_eq_true, and_self, T, S, ii]
+        have : y ∈ s2.val.erase x :=
+        by
+          simp_all only [Subtype.mk.injEq, Finset.mem_erase, ne_eq, not_false_eq_true, true_and,and_self]
+        simp_all only [Subtype.mk.injEq, Finset.mem_erase, ne_eq, not_false_eq_true, true_and]
+    · intro hy
+      by_cases hh:y = x
+      case pos
+      =>
+        simp_all only [Subtype.mk.injEq, T, S]
+        obtain ⟨val_1, property_1⟩ := s1
+        simp_all only
+        simp_all only [Finset.mem_filter, Finset.mem_powerset, and_true, S]
+      case neg
+      =>
+        have : y ∈ s1.val.erase x :=
+        by
+          simp_all only [Subtype.mk.injEq, Finset.mem_erase, ne_eq, not_false_eq_true, and_self, T, S, ii]
+        --have : y ∈ s2.val.erase x :=
+        --by
+        --  simp_all only [Subtype.mk.injEq, Finset.mem_erase, ne_eq, not_false_eq_true, and_self, T, S, ii]
+        rw [@Finset.mem_erase] at this
+        exact this.2
 
+  have :S.card <= T.card :=
+  by
+    let fcl := @Finset.card_le_card_of_injOn S T S.attach T.attach (fun s => ii s) (fun s hs => Finset.mem_attach _ _)
+    have :Set.InjOn (fun s => ii s) ↑S.attach :=
+    by
+      simp_all only [Subtype.mk.injEq, Subtype.forall, Finset.mem_filter, Finset.mem_powerset, and_imp, S, T, ii]
+      obtain ⟨val, property⟩ := x
+      simp_all only
+      intro s hs
+      intro x₂ a a_1
+      simp_all only [Finset.mem_coe, Finset.mem_attach, Subtype.mk.injEq]
+      obtain ⟨val_1, property_1⟩ := s
+      obtain ⟨val_2, property_2⟩ := x₂
+      simp_all only [Subtype.mk.injEq]
+      simp_all only [subset_refl, Finset.mem_filter, Finset.mem_powerset]
+      obtain ⟨left, right⟩ := property_1
+      obtain ⟨left_1, right_1⟩ := property_2
+      obtain ⟨left_2, right⟩ := right
+      obtain ⟨left_3, right_1⟩ := right_1
+      apply inj
+      · simp_all only [subset_refl]
+      · simp_all only [subset_refl]
+      · simp_all only [subset_refl]
+      · simp_all only [subset_refl]
+      · simp_all only [subset_refl]
+      · simp_all only [subset_refl]
+      · simp_all only [subset_refl]
+    convert fcl this
+    simp_all only [Subtype.mk.injEq, Subtype.forall, Finset.mem_filter, Finset.mem_powerset, and_imp, subset_refl,
+      Finset.card_attach, S, T, ii]
+    simp_all only [Subtype.mk.injEq, Subtype.forall, Finset.mem_filter, Finset.mem_powerset, and_imp, subset_refl,
+      Finset.card_attach, S, T, ii]
 
+  --convert (rare_and_card SF.toSetFamily x).mpr
+  apply (rare_and_card SF.toSetFamily x).mpr
+  dsimp [including_hyperedges]
+  dsimp [deleting_hyperedges]
+  dsimp [S,T] at this
+  have Lin:Finset.filter (fun s => ↑x ∈ s ∧ SF.sets s) SF.ground.powerset = Finset.filter (fun s => SF.sets s ∧ ↑x ∈ s) SF.ground.powerset :=
+  by
+    simp_all only [Subtype.mk.injEq, Subtype.forall, Finset.mem_filter, Finset.mem_powerset, and_imp, subset_refl, S,
+      T, ii]
+    obtain ⟨val, property⟩ := x
+    simp_all only [subset_refl]
+    ext a : 1
+    simp_all only [subset_refl, Finset.mem_filter, Finset.mem_powerset, and_congr_right_iff]
+    intro a_1
+    apply Iff.intro
+    · intro a_2
+      simp_all only [subset_refl, and_self]
+    · intro a_2
+      simp_all only [subset_refl, and_self]
 
+  have Lnot:Finset.filter (fun s => ↑x ∉ s ∧ SF.sets s) SF.ground.powerset = Finset.filter (fun s => SF.sets s ∧ ↑x ∉ s) SF.ground.powerset :=
+  by
+    simp_all only [Subtype.mk.injEq, Subtype.forall, Finset.mem_filter, Finset.mem_powerset, and_imp, subset_refl, S, T,
+      ii]
+    obtain ⟨val, property⟩ := x
+    simp_all only [subset_refl]
+    ext a : 1
+    simp_all only [subset_refl, Finset.mem_filter, Finset.mem_powerset, and_congr_right_iff]
+    intro a_1
+    apply Iff.intro
+    · intro a_2
+      simp_all only [subset_refl, not_false_eq_true, and_self]
+    · intro a_2
+      simp_all only [subset_refl, not_false_eq_true, and_self]
+  /-これはうまくfilter_congrで書き換えれなかった。
+  have equiv:∀ s :Finset α, SF.sets s ∧ ↑x ∉ s ↔  ↑x ∉ s ∧ SF.sets s :=
+  by
+    intro s
+    simp_all only [Subtype.mk.injEq, Subtype.forall, Finset.mem_filter, Finset.mem_powerset, and_imp, subset_refl, S,
+      T, ii]
+    obtain ⟨val, property⟩ := x
+    simp_all only [subset_refl]
+    apply Iff.intro
+    · intro a
+      simp_all only [subset_refl, not_false_eq_true, and_self]
+    · intro a
+      simp_all only [subset_refl, not_false_eq_true, and_self]
+  -/
+  norm_cast at this
+  norm_cast at Lin
+  norm_cast at Lnot
+  rw [Lin]
+  rw [Lnot]
 
+  linarith
 
+--Ground - {x,y}というhyperedgeがあるとフランクルの予想の反例にならないということ。
+--Ground - {x,y}がhyperedgeの時に{x,y}は優位でないということは、どちらかはrare vertex
+lemma hyperedge_minustwo (SF: ClosureSystem α) [DecidablePred SF.sets] (x y :SF.ground) (neq: x ≠ y):
+   SF.sets (SF.ground \ {x.val,y.val}) → ¬ superior SF {x.val,y.val}:=
+by
+  intro sfs
+  let M:= SF.ground \ {x.val,y.val}
+  have hM: SF.sets M :=
+  by
+    simp_all only [ne_eq, M]
+  let S := SF.ground.powerset.filter (fun s => SF.sets s ∧ x.val ∈ s ∧ y.val ∈ s)
+  let T := SF.ground.powerset.filter (fun s => SF.sets s ∧ x.val ∉ s ∧ y.val ∉ s)
+  let ii: S → T := fun s => ⟨(s.val.erase x.val).erase y.val, by
+    dsimp [T]
+    rw [Finset.mem_filter]
+    obtain ⟨sval, sproperty⟩ := s
+    constructor
+    ·
+      simp_all [M, T]
+      simp_all only [Finset.mem_filter, Finset.mem_powerset, S, M, T]
+      obtain ⟨val, property⟩ := x
+      obtain ⟨left, right⟩ := sproperty
+      simp_all only [Subtype.mk.injEq]
+      intro x hx
+      simp_all only [Finset.mem_erase, ne_eq]
+      obtain ⟨left_3, right_1⟩ := hx
+      obtain ⟨left_4, right_1⟩ := right_1
+      exact left right_1
+    · constructor
+      ·
+        simp_all [M, S, T]
+        simp_all only [Finset.mem_filter, Finset.mem_powerset, S, M, T]
+        obtain ⟨val, property⟩ := x
+        obtain ⟨val_1, property_1⟩ := y
+        obtain ⟨left, right⟩ := sproperty
+        obtain ⟨left_1, right⟩ := right
+        obtain ⟨left_2, right⟩ := right
+        simp_all only [Subtype.mk.injEq]
+        have :(sval.erase val).erase val_1 = M ∩ sval :=
+        by
+          simp_all only [S, M]
+          ext a : 1
+          simp_all only [Finset.mem_erase, ne_eq, Finset.mem_inter, Finset.mem_sdiff, Finset.mem_singleton,
+            and_congr_left_iff, iff_and_self, S]
+          simp_all only [Finset.mem_insert, Finset.mem_singleton, not_or, M]
+          apply Iff.intro
+          · intro a_1
+            simp_all only [not_false_eq_true, and_self, and_true, M]
+            obtain ⟨left_3, right_1⟩ := a_1
+            obtain ⟨left_4, right_1⟩ := right_1
+            exact left right_1
+          · intro a_1
+            simp_all only [not_false_eq_true, and_self, M]
+        let sic := SF.intersection_closed sval M left_1 hM
+        rw [this]
+        rw [Finset.inter_comm]
+        exact sic
+      · simp_all only [ne_eq, Finset.mem_erase, not_true_eq_false, false_and, and_false, not_false_eq_true, and_self,
+        M, S, T]
+  ⟩
+  have inj: ∀ s1 s2:S, ii s1 = ii s2 → s1 = s2 :=
+  by
+    dsimp [ii]
+    intro s1 s2
+    intro h
+    ext z
+    apply Iff.intro
+    · intro hz
+      by_cases hh:z = x ∨ z = y
+      case pos =>
+        simp_all [ii, M, S, T]
+        obtain ⟨xval, xproperty⟩ := x
+        obtain ⟨yval, yproperty⟩ := y
+        obtain ⟨s2val, s2property⟩ := s2
+        simp_all only
+        simp_all only [Finset.mem_filter, Finset.mem_powerset, S]
+        cases hh with
+        | inl h_1 =>
+          subst h_1
+          simp_all only
+        | inr h_2 =>
+          subst h_2
+          simp_all only
+      case neg =>
+        simp_all [ii, M, S, T]
+        obtain ⟨xval, xproperty⟩ := x
+        obtain ⟨yval, yproperty⟩ := y
+        obtain ⟨s1val, property_1⟩ := s1
+        obtain ⟨s2val, property_2⟩ := s2
+        simp at hh
+        simp_all only
+        simp_all only [Finset.mem_filter, Finset.mem_powerset, S]
+        have : z ∈ s1val \ {xval,yval} :=
+        by
+          simp_all only [Finset.mem_sdiff, Finset.mem_insert, Finset.mem_singleton, or_self, not_false_eq_true,
+            and_self, S]
+        have : z ∈ s2val \ {xval,yval} :=
+        by
+          have :s1val \ {xval,yval} = (s1val.erase xval).erase yval :=
+          by
+            ext u
+            apply Iff.intro
+            · intro hu
+              rw [Finset.mem_erase]
+              rw [Finset.mem_erase]
+              simp_all only [Finset.mem_sdiff, Finset.mem_insert, Finset.mem_singleton, or_self, not_false_eq_true,
+                and_self, not_or, ne_eq, S]
+            · intro hu
+              rw [Finset.mem_erase] at hu
+              rw [Finset.mem_erase] at hu
+              simp_all only [Finset.mem_sdiff, Finset.mem_insert, Finset.mem_singleton, or_self, not_false_eq_true,
+                and_self, ne_eq, S]
 
+          simp_all only [Finset.mem_erase, ne_eq, not_false_eq_true, true_and, Finset.mem_sdiff, Finset.mem_insert,
+            Finset.mem_singleton, or_self, and_self, S]
+        simp_all only [Finset.mem_sdiff, Finset.mem_insert, Finset.mem_singleton, or_self, not_false_eq_true, and_self,
+          and_true, S]
+    · intro hz
+      by_cases hh:z = x ∨ z = y
+      case pos =>
+        simp_all [ii, M, S, T]
+        obtain ⟨xval, xproperty⟩ := x
+        obtain ⟨yval, yproperty⟩ := y
+        obtain ⟨s1val, s1property⟩ := s1
+        simp_all only
+        simp_all only [Finset.mem_filter, Finset.mem_powerset, S]
+        cases hh with
+        | inl h_1 =>
+          subst h_1
+          simp_all only
+        | inr h_2 =>
+          subst h_2
+          simp_all only
+      case neg =>
+        simp_all [ii, M, S, T]
+        obtain ⟨xval, xproperty⟩ := x
+        obtain ⟨yval, yproperty⟩ := y
+        obtain ⟨s1val, property_1⟩ := s1
+        obtain ⟨s2val, property_2⟩ := s2
+        simp at hh
+        simp_all only
+        simp_all only [Finset.mem_filter, Finset.mem_powerset, S]
+        have hz2: z ∈ s2val \ {xval,yval} :=
+        by
+          simp_all only [Finset.mem_sdiff, Finset.mem_insert, Finset.mem_singleton, or_self, not_false_eq_true,
+            and_self, S]
+        have : z ∈ s1val \ {xval,yval} :=
+        by
+          have :s2val \ {xval,yval} = (s2val.erase xval).erase yval :=
+          by
+            ext u
+            apply Iff.intro
+            · intro hu
+              rw [Finset.mem_erase]
+              rw [Finset.mem_erase]
+              simp_all only [Finset.mem_sdiff, Finset.mem_insert, Finset.mem_singleton, or_self, not_false_eq_true,
+                and_self, not_or, ne_eq, S]
+            · intro hu
+              rw [Finset.mem_erase] at hu
+              rw [Finset.mem_erase] at hu
+              simp_all only [Finset.mem_sdiff, Finset.mem_insert, Finset.mem_singleton, or_self, not_false_eq_true,
+                and_self, ne_eq, S]
 
+          --
+          rw [this] at hz2
+          rw [←h] at hz2
+          rw [Finset.mem_erase] at hz2
+          rw [Finset.mem_erase] at hz2
+          simp_all only [not_false_eq_true, and_self, ne_eq, Finset.mem_sdiff, Finset.mem_insert, Finset.mem_singleton,
+            or_self, S]
 
+        simp_all only [Finset.mem_sdiff, Finset.mem_insert, Finset.mem_singleton, or_self, not_false_eq_true, and_self,
+          and_true, S]
 
+  have st_eq:S.card <= T.card :=
+  by
+    let fcl := @Finset.card_le_card_of_injOn S T S.attach T.attach (fun s => ii s) (fun s hs => Finset.mem_attach _ _)
+    have :Set.InjOn (fun s => ii s) ↑S.attach :=
+    by
+      dsimp [Set.InjOn]
+      intro x1 hx1 x2 hx2
+      dsimp [ii]
+      apply inj
+    let fcl := fcl this
+    convert fcl
+    simp_all only [Subtype.mk.injEq, Subtype.forall, Finset.mem_filter, Finset.mem_powerset, and_imp, subset_refl,
+      Finset.card_attach, ii, M, S, T]
+    simp_all only [Subtype.mk.injEq, Subtype.forall, Finset.mem_filter, Finset.mem_powerset, and_imp, subset_refl,
+      Finset.card_attach, ii, M, S, T]
 
+  dsimp [superior]
+  dsimp [S,T] at st_eq
+  have : (Finset.filter (fun s => SF.sets s ∧ x.val ∈ s ∧ y.val ∈ s) SF.ground.powerset) = (Finset.filter (fun s => SF.sets s ∧ {x.val, y.val} ⊆ s) SF.ground.powerset) :=
+  by
+    ext z
+    apply Iff.intro
+    · intro h
+      rw [Finset.mem_filter]
+      constructor
+      simp_all only [Subtype.mk.injEq, Subtype.forall, Finset.mem_filter, Finset.mem_powerset, and_imp, subset_refl, ii,
+        M, S, T]
+      constructor
+      simp_all only [Subtype.mk.injEq, Subtype.forall, Finset.mem_filter, Finset.mem_powerset, and_imp, subset_refl, ii,
+        M, S, T]
+      rw [Finset.mem_filter] at h
+      intro xx
+      intro a
+      simp_all [ii, M, S, T]
+      obtain ⟨val, property⟩ := x
+      obtain ⟨val_1, property_1⟩ := y
+      cases a with
+      | inl h =>
+        subst h
+        simp_all only [subset_refl, Finset.singleton_subset_iff, Finset.sdiff_subset]
+      | inr h_1 =>
+        subst h_1
+        simp_all only [subset_refl, Finset.singleton_subset_iff, Finset.sdiff_subset]
+    · intro h
+      rw [Finset.mem_filter]
+      rw [Finset.mem_filter] at h
+      constructor
+      · exact h.1
+      · constructor
+        · exact h.2.1
+        · constructor
+          · let h22 := h.2.2
+            rw [@Finset.insert_subset_iff] at h22
+            rw [@Finset.singleton_subset_iff] at h22
+            simp_all only [Subtype.mk.injEq, Subtype.forall, Finset.mem_filter, Finset.mem_powerset, and_imp, subset_refl,
+            Finset.singleton_subset_iff, Finset.coe_mem, ii, M, S, T]
 
+          · let h22 := h.2.2
+            rw [@Finset.insert_subset_iff] at h22
+            rw [@Finset.singleton_subset_iff] at h22
+            simp_all only [Subtype.mk.injEq, Subtype.forall, Finset.mem_filter, Finset.mem_powerset, and_imp, subset_refl,
+            Finset.singleton_subset_iff, Finset.coe_mem, ii, M, S, T]
 
+  rw [this] at st_eq
 
+  have :(Finset.filter (fun s => SF.sets s ∧ ↑x ∉ s ∧ ↑y ∉ s) SF.ground.powerset) = (Finset.filter (fun s => SF.sets s ∧ {x.val, y.val} ∩ s = ∅) SF.ground.powerset) :=
+  by
+    ext z
+    apply Iff.intro
+    · intro h
+      rw [Finset.mem_filter]
+      rw [Finset.mem_filter] at h
+      refine ⟨h.1,h.2.1,?_⟩
+      simp_all only [Subtype.mk.injEq, Subtype.forall, Finset.mem_filter, Finset.mem_powerset, and_imp,
+        Finset.singleton_subset_iff, Finset.coe_mem, subset_refl, not_false_eq_true, Finset.insert_inter_of_not_mem,
+        Finset.singleton_inter_of_not_mem, Finset.empty_subset, ii, M, S, T]
+    · intro h
+      rw [Finset.mem_filter]
+      rw [Finset.mem_filter] at h
+      refine ⟨h.1,h.2.1,?_⟩
+      let h22 := h.2.2
+      simp at h22
+      constructor
+      · by_contra h_contra
+        have : x.val ∈ {x.val, y.val} ∩ z :=
+        by
+          rw [@Finset.mem_inter]
+          simp_all only [Subtype.mk.injEq, Subtype.forall, Finset.mem_filter, Finset.mem_powerset, and_imp,
+            Finset.singleton_subset_iff, Finset.coe_mem, subset_refl, Finset.mem_insert, Finset.mem_singleton,
+            true_or, and_self, ii, M, S, T]
+        rw [← @Finset.not_nonempty_iff_eq_empty] at h22
+        have :∃ u, u ∈ {↑x, ↑y} ∩ z :=
+        by
+           simp_all only [Subtype.mk.injEq, Subtype.forall, Finset.mem_filter, Finset.mem_powerset, and_imp,
+             Finset.singleton_subset_iff, Finset.coe_mem, subset_refl, Finset.insert_inter_of_mem,
+             Finset.empty_subset, Finset.insert_ne_empty, and_false, ii, M, S, T]
+        exact h22 this
+      · by_contra h_contra
+        have : {↑x, ↑y} ∩ z ≠ ∅ :=
+        by
+          rw [← @Finset.nonempty_iff_ne_empty]
+          use y.val
+          rw [@Finset.mem_inter]
+          simp_all [ii, M, S, T]
+        contradiction
 
+  rw [this] at st_eq
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
---sum_filter_add_sum_filter_complを使って分解。
-
-  --補題の設定
-  -- sと{x,y}の関係は、
-  --{x,y}を含むか、disjointか、片方のみと交わるか。
-  --片方のみと交わる場合は、
+  linarith
