@@ -961,22 +961,36 @@ by
   let pr := this.2 r rrs (by trivial)
   exact r.root_not_in_stem pr
 
---rootedset_setfamilyのrootの条件をゆるくした。
+--rootedset_setfamilyのrootの条件をゆるくした。逆方向も示したい。
 lemma rootedset_setfamily_cor (SF:ClosureSystem α):
   let RS := rootedSetsFromSetFamily SF.toSetFamily
  --(eq:  rootedsetToClosureSystem RS = SF) :
-  ∀ (s : Finset α), s ⊆ SF.ground → (¬ SF.sets s → ∃ (p : ValidPair α), p ∈ RS.rootedsets ∧ p.stem ⊆ s ∧ p.root  ∈ SF.ground ∧ p.root ∉ s) :=
+  ∀ (s : Finset α), s ⊆ SF.ground → (¬ SF.sets s ↔ ∃ (p : ValidPair α), p ∈ RS.rootedsets ∧ p.stem ⊆ s ∧ p.root  ∈ SF.ground ∧ p.root ∉ s) :=
 by
   intro RS
   intro s hs
-  intro nsfs
-  have eq: rootedsetToClosureSystem RS = SF :=
-  by
-    exact closuresystem_rootedsets_eq SF
-  let rsf := (rootedset_setfamily RS SF eq s hs).mp nsfs
-  obtain ⟨p,hp1,hp2,hp3,hp4⟩ := rsf
-  use p
-  refine ⟨hp1,hp2,?_,hp4⟩
-  simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, RS]
-  obtain ⟨w, h⟩ := hp3
-  simp_all only
+  apply Iff.intro
+  · intro nsfs
+    have eq: rootedsetToClosureSystem RS = SF :=
+    by
+      exact closuresystem_rootedsets_eq SF
+    let rsf := (rootedset_setfamily RS SF eq s hs).mp nsfs
+    obtain ⟨p,hp1,hp2,hp3,hp4⟩ := rsf
+    use p
+    refine ⟨hp1,hp2,?_,hp4⟩
+    simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, RS]
+    obtain ⟨w, h⟩ := hp3
+    simp_all only
+  · intro a
+    obtain ⟨p,hp1,hp2,hp3,hp4⟩ := a
+    have eq: rootedsetToClosureSystem RS = SF :=
+    by
+      exact closuresystem_rootedsets_eq SF
+    let rsf := (rootedset_setfamily RS SF eq s hs).mpr
+
+    refine rsf ⟨p,hp1,hp2,?_,hp4⟩
+    let rsc := root_stem_closure SF p hp1
+    simp
+    use hp3
+    simp at rsc
+    convert rsc
