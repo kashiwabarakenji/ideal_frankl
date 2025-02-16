@@ -718,6 +718,31 @@ by
     apply (has_empty_theorem SF).mp
     exact h
 
+ -- emptyを持たないことと、ステムが空であることが同値。has_empty_theorem2とrooted_sets_bridgeを組み合わせて証明。
+lemma has_empty_theorem3 (SF: ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)]:
+let RS := rootedSetsFromSetFamily SF.toSetFamily
+¬ SF.has_empty ↔ ∃ x :SF.ground, ∃ (r : ValidPair α), r ∈ RS.rootedsets ∧ r.root = x ∧ r.stem = ∅ :=
+by
+  apply Iff.intro
+  · intro nsfe
+    obtain ⟨v,hv⟩ := (has_empty_theorem2 SF).mp nsfe
+  --  theorem rooted_sets_bridge (SF : ClosureSystem α)  [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)] (x:SF.ground):
+  --  let RS := rootedSetsFromSetFamily SF.toSetFamily
+  --  SF.is_bridge x ↔ ∃ (r : ValidPair α), r ∈ RS.rootedsets ∧ r.root = x ∧ r.stem = ∅ :=
+    let rsb := (rooted_sets_bridge SF ⟨v,hv.1⟩).mp hv.2
+    use ⟨v,hv.1⟩
+  · intro ee
+    obtain ⟨x,r, hr, hroot,hstem⟩ := ee
+    let rsb := (rooted_sets_bridge SF x).mpr
+    have :(∃ r ∈ (rootedSetsFromSetFamily SF.toSetFamily).rootedsets, r.root = ↑x ∧ r.stem = ∅) :=
+    by
+      use r
+    apply (has_empty_theorem2 SF).mpr
+    use x
+    constructor
+    · simp_all only [Finset.coe_mem]
+    · simp_all only [rsb]
+
 --補題：閉集合族が空集合を持つならば、nontrivialである。
 lemma has_empty_is_nontrivial (SF: ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)]:
   SF.has_empty → ¬ is_trivial SF :=

@@ -15,6 +15,7 @@ import rooted.ClosureOperator
 import rooted.RootedFrankl
 import rooted.RootedSets
 import rooted.Superior
+import rooted.Bridge
 
 variable {α : Type}  [DecidableEq α] [Fintype α]
 
@@ -304,23 +305,35 @@ by
 
 --hyperedge_minusone_rootedsetを使いやすくしたもの。最初からこの形でよかった？
 lemma hyperedge_minusone_rootedset' (SF : ClosureSystem α) [DecidablePred SF.sets] (x : SF.ground) :
-  ¬ SF.sets (SF.ground.erase x.val) →
+  ¬ SF.sets (SF.ground.erase x.val) ↔
   ∃ vp : ValidPair α, vp.root = x.val ∧ vp.stem = SF.ground.erase x.val ∧ vp ∈ (rootedSetsFromSetFamily SF.toSetFamily).rootedsets :=
 by
-  intro sfs
-  let vp := (hyperedge_minusone_rootedset SF x).mp sfs
-  apply Exists.intro
-  · apply And.intro
-    on_goal 2 => apply And.intro
-    on_goal 3 => {exact vp
-    }
-    · simp_all only
-    · simp_all only
+  apply Iff.intro
+  · intro sfs
+    let vp := (hyperedge_minusone_rootedset SF x).mp sfs
+    apply Exists.intro
+    · apply And.intro
+      on_goal 2 => apply And.intro
+      on_goal 3 => {exact vp
+      }
+      · simp_all only
+      · simp_all only
+  · intro h
+    obtain ⟨vp, hvp1, hvp2, hvp3⟩ := h
+    let v := (hyperedge_minusone_rootedset SF x).mpr
+    simp at v
+    by_contra h_contra
+    have : vp.stem ⊆ SF.ground.erase ↑x :=
+    by
+      simp_all only [subset_refl]
+    let csl := ClosureSystemLemma SF (SF.ground.erase x.val) h_contra hvp3 this
+    obtain ⟨val, property⟩ := x
+    subst hvp1
+    simp_all only
+    simp [hvp2] at csl
 
-
-
-lemma hyperedge_minustwo_rootedset (SF: ClosureSystem α) [DecidablePred SF.sets] (x :SF.ground):
-   (∀ s :Finset α, SF.sets s → s.card < SF.ground.card - 2) ↔
+lemma hyperedge_minustwo_rootedset (SF: ClosureSystem α) [DecidablePred SF.sets] (hasempty:SF.has_empty):
+   (∀ s :Finset α, SF.sets s → s.card < SF.ground.card - 2 ∨ s = SF.ground ) ↔
    (∀ x y:SF.ground , ∃ r:ValidPair α, r ∈ (rootedSetsFromSetFamily SF.toSetFamily).rootedsets ∧ x.val = r.root ∧  y.val ∉ r.stem ) :=
 by
   apply Iff.intro
@@ -328,6 +341,9 @@ by
     --* 証明：サイズn-2のhyperedgeを持たないとする。n-1も持たないとする。
     --* 仮定より、任意の2点x,yを取った時に、U-x,yがhyperedgeでないことがわかる。
     intro x y
+    have :SF.ground.erase x.val ≠ SF.ground:=
+    by
+      simp_all only [ne_eq, Finset.erase_eq_self, Finset.coe_mem, not_true_eq_false, not_false_eq_true]
     have sfsx: ¬ SF.sets (SF.ground.erase x.val):=
       by
         by_contra h_contra
@@ -339,8 +355,13 @@ by
         norm_cast at htmp
         norm_cast at this
         rw [this] at htmp
+        simp at htmp
         omega
-    obtain ⟨r, hr1, hr2, hr3⟩ := hyperedge_minusone_rootedset' SF x sfsx
+    have neqg:SF.ground \ {x.val,y.val} ≠ SF.ground:=
+    by
+      simp_all only [ne_eq, Finset.erase_eq_self, Finset.coe_mem, not_true_eq_false, not_false_eq_true, sdiff_eq_left,
+        Finset.disjoint_insert_right, Finset.disjoint_singleton_right, and_self]
+    obtain ⟨r, hr1, hr2, hr3⟩ := (hyperedge_minusone_rootedset' SF x).mp sfsx
 
     by_cases x = y
     case pos =>
@@ -364,7 +385,6 @@ by
         ·
           rename_i x_1
           simp_all only [ge_iff_le, tsub_le_iff_right]
-          obtain ⟨val, property⟩ := x_1
           obtain ⟨val_1, property_1⟩ := x
           obtain ⟨val_2, property_2⟩ := y
           simp_all only
@@ -377,6 +397,7 @@ by
         by_contra h_contra
         specialize h (SF.ground \ {↑x, ↑y})
         let h := h h_contra
+        simp at h
         linarith
 
       --lemma rootedset_setfamily (RS : RootedSets α) (SF:ClosureSystem α)
@@ -447,6 +468,8 @@ by
             Finset.coe_mem, implies_true]
         specialize cri this
 
+        --根付き集合と根にyを持つものと推論を考えると、xを根に持ち、yをステムに含まない根付き集合の存在がいえる。yを根に持つ根付きサーキットはxを含まないことに注意。推論の補題closuresystem_rootedsets_implicationを利用。こちら向きの証明完了。
+
         obtain ⟨rr,hrr1,hrr2,hrr3⟩ := cri
 
         use rr
@@ -459,38 +482,218 @@ by
           · rw [hh] at hrr3
             by_contra h_contra
             --hrr3 : rr.stem ⊆ r.stem ∪ p.stem \ {↑y}
+            rw [@Finset.subset_sdiff] at hrr3
+            simp_all only [ge_iff_le, tsub_le_iff_right, Finset.sdiff_subset, not_false_eq_true,
+              forall_const, Finset.coe_mem, implies_true, Finset.mem_erase, ne_eq, and_true,
+              Finset.disjoint_singleton_right, not_true_eq_false, and_false]
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  /-
-
-  * ステムの包含関係で最小なものが存在。根付きサーキット。そのようなものが存在するという補題rootedcircuits_minimality を利用。
-  * xを根とする根付きサーキットは背理法の仮定より、ステムにyを必ず含むことになる。
-  * この根付きサーキットと根にyを持つものと推論を考えると、xを根に持ち、yをステムに含まない根付きサーキットの存在がいえる。yを根に持つ根付きサーキットはxを含まないことに注意。推論の補題closuresystem_rootedsets_implicationを利用。こちら向きの証明完了。
-  -/
   · intro h
-    -- * 逆を示す。U-{x,y}を持つとすると、xを根にしてyを含まない根付きサーキットを考えると矛盾。
-    sorry
+    -- * 逆を示す。U-{x,y}を持つとすると、xを根にしてyを含まない根付きサーキットを考えると矛盾。台集合が1点のときを分離した方がいいか。
+    by_cases hc:SF.ground.card = 1
+    case pos =>  --台集合が1点のときは、特殊なので別扱い。証明が無駄に長くなった。
+      --台集合の大きさが1だと、根付き集合のステムが空集合になる。すると、空集合がhyperedgeでなくなるので、仮定に矛盾する。
+      obtain ⟨x,hx⟩ := Finset.card_eq_one.1 hc
+      have xg: x ∈ SF.ground:=
+      by
+        simp_all only [Subtype.forall, Finset.mem_singleton, forall_eq, Finset.card_singleton]
+      let hxx := h ⟨x,xg⟩ ⟨x,xg⟩
+      obtain ⟨r,hr⟩ := hxx
+      have : r.stem = ∅:=
+      by
+        by_contra h_contra
+        rw [← @Finset.not_nonempty_iff_eq_empty] at h_contra
+        rw [not_not] at h_contra
+        obtain ⟨y,hy⟩ := h_contra
+        have : x ≠ y:=
+        by
+          simp_all only [Subtype.forall, Finset.mem_singleton, forall_eq, Finset.card_singleton, ne_eq]
+          simp_all only [Finset.mem_singleton]
+          obtain ⟨w, h⟩ := h
+          obtain ⟨left, right⟩ := hr
+          obtain ⟨left_1, right_1⟩ := h
+          obtain ⟨left_2, right⟩ := right
+          obtain ⟨left_3, right_1⟩ := right_1
+          subst left_2
+          simp_all only
+          apply Aesop.BuiltinRules.not_intro
+          intro a
+          subst a
+          simp_all only [not_true_eq_false]
+        have : y ∈ SF.ground:=
+        by
+          let rsf := ((rootedSetsFromSetFamily SF.toSetFamily).inc_ground r hr.1).1
+          have :(rootedSetsFromSetFamily SF.toSetFamily).ground = SF.ground:=
+          by
+            simp_all only [Subtype.forall, Finset.mem_singleton, forall_eq, Finset.card_singleton, ne_eq]
+            obtain ⟨left, right⟩ := hr
+            obtain ⟨w, h⟩ := h
+            obtain ⟨left_1, right⟩ := right
+            exact hx
+          rw [this] at rsf
+          rw [hx]
+          simp_all only [Subtype.forall, Finset.mem_singleton, forall_eq, Finset.card_singleton, ne_eq,
+            Finset.subset_singleton_iff]
+          simp_all only [Finset.mem_singleton]
+          cases rsf with
+          | inl h => simp_all only [Finset.not_mem_empty]
+          | inr h_1 => simp_all only [Finset.mem_singleton, not_true_eq_false]
+        simp_all only [Subtype.forall, Finset.mem_singleton, forall_eq, Finset.card_singleton, ne_eq, not_true_eq_false]
+
+      --ステムが空だと空集合がhyperedgeでなくなる。空集合がhyperedgeであるという仮定に反する。
+      let het := (has_empty_theorem3 SF).mpr
+      have :(∃(x : { x // x ∈ SF.ground }), ∃ r ∈ (rootedSetsFromSetFamily SF.toSetFamily).rootedsets, r.root = ↑x ∧ r.stem = ∅) :=
+      by
+        use ⟨x,xg⟩
+        use r
+        use hr.1
+        constructor
+        simp_all only [Subtype.forall, Finset.mem_singleton, forall_eq, Finset.card_singleton, Finset.not_mem_empty,
+          not_false_eq_true, and_true]
+        exact this
+      specialize het this
+      contradiction
+
+    case neg =>
+      by_contra h_contra
+      push_neg at h_contra
+      obtain ⟨s, hs1, hs2⟩ := h_contra
+      have sinc: s ⊆ SF.ground :=
+      by
+        exact SF.inc_ground s hs1
+      have geq1: SF.ground.card ≥ 1:=
+      by
+        simp_all only [Subtype.forall, tsub_le_iff_right, ne_eq, ge_iff_le, Finset.one_le_card]
+        obtain ⟨left, right⟩ := hs2
+        contrapose! right
+        simp_all only [Finset.not_nonempty_iff_eq_empty, Finset.not_mem_empty, forall_const, IsEmpty.forall_iff,
+          implies_true, Finset.subset_empty, Finset.card_empty, zero_add, zero_le]
+      by_cases cdg : s = SF.ground
+      case pos =>
+        exact hs2.2 cdg
+      case neg =>
+
+      by_cases cd: s.card = SF.ground.card - 1
+      case pos =>
+        have hdiff : SF.ground.card - s.card = 1 :=
+        by
+          norm_cast at cd
+          rw [cd]
+          rw [Nat.sub_sub_self geq1]
+
+        have :∃ x :SF.ground, s = SF.ground \ {x.val} :=
+        by
+          have hdiff_set : (SF.ground \ s).card = 1 :=
+          by
+            simp_all only [Subtype.forall, tsub_le_iff_right, ne_eq, ge_iff_le, Finset.one_le_card]
+            obtain ⟨left, right⟩ := hs2
+            rw [Finset.card_sdiff]
+            · simp_all only
+            · simp_all only
+          obtain ⟨x,hx⟩ := Finset.card_eq_one.mp hdiff_set
+          have : x ∈ SF.ground :=
+          by
+            rw [@Finset.Subset.antisymm_iff] at hx
+            simp_all only [Subtype.forall, tsub_le_iff_right, ne_eq, ge_iff_le, Finset.one_le_card,
+              Finset.subset_singleton_iff, Finset.sdiff_eq_empty_iff_subset, Finset.singleton_subset_iff,
+              Finset.mem_sdiff]
+          use ⟨x,this⟩
+          simp
+          exact Eq.symm (sdiff_eq_symm sinc hx)
+        obtain ⟨x,hx⟩ := this
+        let hmr := (hyperedge_minusone_rootedset' SF x).mpr
+
+        have :(∃ vp, vp.root = ↑x ∧ vp.stem = SF.ground.erase ↑x ∧ vp ∈ (rootedSetsFromSetFamily SF.toSetFamily).rootedsets):=
+        by
+          have:(SF.ground.erase x.val).Nonempty :=
+          by
+            --(SF.ground.erase x.val).Nonemptyは、hc : ¬SF.ground.card = 1とSF.ground.Nonemptyより。自明なのに証明が長い。
+            have : SF.ground.card ≥ 2:=
+            by
+              subst hx
+              simp_all only [Subtype.forall, ge_iff_le, Finset.one_le_card, tsub_le_iff_right, ne_eq, sdiff_eq_left,
+                Finset.disjoint_singleton_right, Finset.coe_mem, not_true_eq_false, not_false_eq_true, and_true,
+                Finset.sdiff_subset]
+              obtain ⟨val, property⟩ := x
+              simp_all only
+              omega
+            have h_card : (SF.ground.erase x.val).card = SF.ground.card - 1 :=  Finset.card_erase_of_mem x.property
+            have h_pos : (SF.ground.card - 1) ≥ 1 := by omega
+            have :(SF.ground.erase x.val).card ≥ 1:=
+            by
+              subst hx
+              simp_all only [Subtype.forall, ge_iff_le, Finset.one_le_card, Finset.coe_mem, Finset.card_erase_of_mem,
+                tsub_le_iff_right, ne_eq, sdiff_eq_left, Finset.disjoint_singleton_right, not_true_eq_false,
+                not_false_eq_true, and_true, Finset.sdiff_subset]
+            apply Finset.card_pos.mp
+            rename_i this_1
+            simp_all only [Subtype.forall, tsub_le_iff_right, ne_eq, sdiff_eq_left,
+              Finset.disjoint_singleton_right, Finset.coe_mem, not_true_eq_false, not_false_eq_true,
+              and_true, Finset.sdiff_subset, ge_iff_le, Finset.one_le_card,
+              Finset.card_erase_of_mem, tsub_pos_iff_lt]
+            exact this_1
+          obtain ⟨y, hy⟩ := this
+          have : y ∈ SF.ground :=
+          by
+            subst hx
+            simp_all only [Subtype.forall, ge_iff_le, Finset.one_le_card, Finset.mem_erase, ne_eq, tsub_le_iff_right,
+              sdiff_eq_left, Finset.disjoint_singleton_right, Finset.coe_mem, not_true_eq_false, not_false_eq_true,
+              and_true, Finset.sdiff_subset]
+          let hh := h x ⟨y, this⟩
+          obtain ⟨vp, hvp1, hvp2,hvp3⟩ := hh
+          use vp --そもそもはここが間違い。
+          constructor
+          ·
+            subst hx
+            simp_all only [Subtype.forall, ge_iff_le, Finset.one_le_card, Finset.mem_erase, ne_eq, and_true,
+              tsub_le_iff_right, sdiff_eq_left, Finset.disjoint_singleton_right, Decidable.not_not, Finset.sdiff_subset]
+          · constructor
+            · show vp.stem = SF.ground.erase ↑x
+              sorry --これは成り立たない。vp.stemのほうは、定理の仮定hによって存在が保証された根付き集合なので、stemがn-1とは限らない。
+              --何らかの定理を利用する必要がある。根付き集合のフィルター性とか。
+            ·
+              subst hx
+              simp_all only [Subtype.forall, ge_iff_le, Finset.one_le_card, Finset.mem_erase, ne_eq, and_true,
+                tsub_le_iff_right, sdiff_eq_left, Finset.disjoint_singleton_right, Decidable.not_not,
+                Finset.sdiff_subset]
+
+        rw [hx] at hs1
+        rw [@Finset.sdiff_singleton_eq_erase] at hs1
+        exact (hmr this) hs1
+
+      --仮定hから、xをrootで、U-x内にステムがあるものが存在するので、補題より矛盾。
+      case neg =>--cd: s.card = SF.ground.card - 1の否定
+        have : s.card = SF.ground.card - 2:=
+        by
+          --hs2.1: SF.ground.card - 2 ≤ s.card
+          --sinc : s ⊆ SF.ground
+          --cd : ¬s.card = SF.ground.card - 1
+          --cdg : ¬s = SF.ground
+          have s_le: s.card ≤ SF.ground.card :=
+          by
+            apply Finset.card_le_card
+            exact sinc
+          have neqs: s.card ≠ SF.ground.card :=
+          by
+            by_contra h_contra
+            have :SF.ground.card ≤ s.card :=
+            by
+              linarith
+
+            let fe := Finset.eq_of_subset_of_card_le sinc this
+            simp_all only [Subtype.forall, tsub_le_iff_right, le_add_iff_nonneg_right, zero_le, ne_eq,
+              not_true_eq_false, and_false, fe]
+          simp_all only [Subtype.forall, tsub_le_iff_right, ne_eq, not_false_eq_true, and_true, ge_iff_le,
+            Finset.one_le_card]
+          omega
+
+        have :∃ x y :SF.ground, SF.ground \ {x.val, y.val} = s :=
+        by
+          search_proof
+
+
+
+
+
 
 
 --Ground - {x,y}というhyperedgeがあるとフランクルの予想の反例にならないということ。

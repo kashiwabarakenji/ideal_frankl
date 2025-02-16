@@ -194,7 +194,7 @@ by
   dsimp [filteredFamily] at hs
   simp_all only [not_and, Decidable.not_not, Finset.mem_filter, Finset.mem_powerset]
 
---sがhyperedgeであるときには、sにステムが含まれて、sの外にrootがあるような根付きサーキットはない。
+--sがhyperedgeであるときには、sにステムが含まれて、sの外にrootがあるような根付き集合はない。
 --rootedpair_compatibleと似ているがこちらは、閉包システムからスタートしている。
 lemma ClosureSystemLemma  (SF : ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)]:
   ∀ s : Finset α, SF.sets s → rc ∈(rootedSetsFromSetFamily SF.toSetFamily).rootedsets
