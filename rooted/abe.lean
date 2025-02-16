@@ -4,18 +4,17 @@ import Mathlib.Data.Set.Basic
 import Mathlib.Data.Finset.Powerset
 import Mathlib.Data.Finset.Defs
 import Mathlib.Data.Fintype.Basic
-import rooted.CommonDefinition
 import Mathlib.Data.Finset.Card
 import Mathlib.Logic.Function.Defs
 import Mathlib.Data.Finset.Union
 import Mathlib.Tactic
 import rooted.CommonDefinition
+import rooted.ClosureOperator
+import rooted.Preorder
+import rooted.RootedSets
 import rooted.RootedCircuits
 import rooted.RootedImplication
-import rooted.ClosureOperator
 import rooted.RootedFrankl
-import rooted.RootedSets
-import rooted.Preorder
 
 variable {α : Type}  [DecidableEq α] [Fintype α]
 

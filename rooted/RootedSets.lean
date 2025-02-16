@@ -928,6 +928,24 @@ by
   obtain ⟨left, right⟩ := tmp3 --このあたりの挙動はよくわからない。
   exact right
 
+--root_stem_closureのval版。
+lemma root_stem_closure_val (SF : ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)]:
+  let RS := rootedSetsFromSetFamily SF.toSetFamily
+   ∀ r:ValidPair α, (hr:r ∈ RS.rootedsets)→
+  let r_sub := rootedpair_to_subtype RS r hr
+  r.root ∈ (closureOperator SF r_sub.stem).image Subtype.val :=
+
+by
+  intro RS
+  intro r hr vp
+  let rsc:= root_stem_closure SF r hr
+  simp at rsc
+  dsimp [rootedpair_to_subtype] at rsc
+  simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, RS, vp]
+  apply Exists.intro
+  · exact rsc
+  · exact vp.2.2
+
 --どの根付き集合に対しても、ステムは、hyperedgeではない。closuresystem_rootedsets_eqを使って証明。
 lemma stem_is_not_hyperedge(SF:ClosureSystem α) :
  r ∈ rootedSetsSF SF.toSetFamily →  ¬ SF.sets r.stem:=
@@ -961,7 +979,7 @@ by
   let pr := this.2 r rrs (by trivial)
   exact r.root_not_in_stem pr
 
---rootedset_setfamilyのrootの条件をゆるくした。逆方向も示したい。
+--rootedset_setfamilyのrootの条件をゆるくした。逆方向も示した。
 lemma rootedset_setfamily_cor (SF:ClosureSystem α):
   let RS := rootedSetsFromSetFamily SF.toSetFamily
  --(eq:  rootedsetToClosureSystem RS = SF) :
@@ -989,8 +1007,32 @@ by
     let rsf := (rootedset_setfamily RS SF eq s hs).mpr
 
     refine rsf ⟨p,hp1,hp2,?_,hp4⟩
-    let rsc := root_stem_closure SF p hp1
+    let rsc := root_stem_closure_val SF p hp1
     simp
     use hp3
     simp at rsc
-    convert rsc
+    obtain ⟨rscv,rsc⟩ := rsc
+    dsimp [rootedpair_to_subtype] at rsc
+    have : (Finset.subtype (fun x => x ∈ (rootedSetsFromSetFamily SF.toSetFamily).ground) p.stem) ⊆ (Finset.subtype (fun x => x ∈ SF.ground) s):=
+    by
+      simp_all only [RS]
+      exact Finset.subtype_mono hp2
+    let mn := monotone_from_SF_finset SF (Finset.subtype (fun x => x ∈ (rootedSetsFromSetFamily SF.toSetFamily).ground) p.stem) (Finset.subtype (fun x => x ∈ SF.ground) s) this
+    exact mn rsc
+
+--rootedset_setfamiy_corの対偶の形。
+lemma rootedset_setfamily_cor_cont (SF:ClosureSystem α):
+  let RS := rootedSetsFromSetFamily SF.toSetFamily
+ --(eq:  rootedsetToClosureSystem RS = SF) :
+  ∀ (s : Finset α), s ⊆ SF.ground → (SF.sets s ↔ ¬ ∃ (p : ValidPair α), p ∈ RS.rootedsets ∧ p.stem ⊆ s ∧ p.root  ∈ SF.ground ∧ p.root ∉ s) :=
+by
+  intro RS
+  intro s hs
+  apply Iff.intro
+  · intro nfs
+    by_contra h_contra
+    exact  ((rootedset_setfamily_cor SF s hs).mpr h_contra) nfs
+  · intro a
+    by_contra h_contra
+    let rsc := (rootedset_setfamily_cor SF s hs).mp h_contra
+    simp_all only [not_true_eq_false, RS, rsc]

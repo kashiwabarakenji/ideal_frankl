@@ -10,15 +10,16 @@ import Mathlib.Data.Finset.Union
 import Mathlib.Tactic
 import rooted.GeneralLemma
 import rooted.CommonDefinition
+import rooted.ClosureOperator
+import rooted.RootedSets
 import rooted.RootedCircuits
 import rooted.RootedImplication
-import rooted.ClosureOperator
 import rooted.RootedFrankl
-import rooted.RootedSets
 import rooted.Superior
 import rooted.Bridge
 
 variable {α : Type}  [DecidableEq α] [Fintype α]
+set_option maxHeartbeats 5000000 --増やさないとエラー
 
 open Classical
 
@@ -333,6 +334,7 @@ by
     simp_all only
     simp [hvp2] at csl
 
+--このファイルのメイン定理。n-1とn-2のhyperedgeがないときに、rooted setsはどうなるのか。
 lemma hyperedge_minustwo_rootedset (SF: ClosureSystem α) [DecidablePred SF.sets] (hasempty:SF.has_empty):
    (∀ s :Finset α, SF.sets s → s.card < SF.ground.card - 2 ∨ s = SF.ground ) ↔
    (∀ x y:SF.ground , ∃ r:ValidPair α, r ∈ (rootedSetsFromSetFamily SF.toSetFamily).rootedsets ∧ x.val = r.root ∧  y.val ∉ r.stem ) :=
@@ -360,7 +362,7 @@ by
         omega
     have neqg:SF.ground \ {x.val,y.val} ≠ SF.ground:=
     by
-      simp_all only [ne_eq, Finset.erase_eq_self, Finset.coe_mem, not_true_eq_false, not_false_eq_true, sdiff_eq_left,
+      simp_all only [ne_eq, Finset.coe_mem, not_true_eq_false, not_false_eq_true, sdiff_eq_left,
         Finset.disjoint_insert_right, Finset.disjoint_singleton_right, and_self]
     obtain ⟨r, hr1, hr2, hr3⟩ := (hyperedge_minusone_rootedset' SF x).mp sfsx
 
@@ -401,22 +403,14 @@ by
         simp at h
         linarith
 
-      --lemma rootedset_setfamily (RS : RootedSets α) (SF:ClosureSystem α)
-      --(eq:  rootedsetToClosureSystem RS = SF) :
-      --∀ (s : Finset α), s ⊆ SF.ground → (¬ SF.sets s ↔ ∃ (p : ValidPair α), p ∈ RS.rootedsets ∧ p.stem ⊆ s ∧ p.root  ∈ (closureOperator SF (s.subtype (λ x => x ∈ SF.ground))).image Subtype.val ∧ p.root ∉ s) :=
-      --let RS := rootedSetsFromSetFamily SF.toSetFamily
-      --have eq: rootedsetToClosureSystem RS = SF :=
-      --by
-      --  exact closuresystem_rootedsets_eq SF
       let rsf := (rootedset_setfamily_cor SF (SF.ground \ ({x.val,y.val}:Finset α)))
       have :SF.ground \ {↑x, ↑y} ⊆ SF.ground :=
       by
         simp_all only [ge_iff_le, tsub_le_iff_right, Finset.sdiff_subset, Finset.mem_image, Subtype.exists,
-          exists_and_right, exists_eq_right, Finset.mem_sdiff, Finset.mem_insert, Finset.mem_singleton, not_or, not_and,
-          Decidable.not_not, rsf]
+          exists_and_right, exists_eq_right, Finset.mem_sdiff, Finset.mem_insert,  not_or, not_and]
       specialize rsf this
       simp at rsf
-      obtain ⟨p,hp1,hp2,hp3,hp4⟩ := rsf notset
+      obtain ⟨p,hp1,hp2,hp3,hp4⟩ := rsf.mp notset
 
       have root_xyg: p.root ∉ p.stem :=
       by
@@ -445,16 +439,12 @@ by
         --* xを根とする根付き集合は、n-1の大きさのhyperedgeも持たないとの仮定より、少なくとも一つは存在する。xが根でU-xがステムになる。
 
         rename_i hh
-        --lemma closuresystem_rootedsets_implication (SF:ClosureSystem α)[DecidablePred SF.sets]:
-        --let RS := rootedSetsFromSetFamily SF.toSetFamily
-        --∀ p ∈ RS.rootedsets, ∀ q ∈ RS.rootedsets, q.root ∈ p.stem → p.root ∉ q.stem
-        --→ ∃ r ∈ RS.rootedsets, r.root = p.root ∧ r.stem ⊆ p.stem ∪ q.stem \ {q.root}  :=
         let cri := closuresystem_rootedsets_implication SF r hr3 p hp1
         have : p.root ∈ r.stem :=
         by
           rw [hr2]
           rw [hh]
-          simp_all only [ge_iff_le, tsub_le_iff_right, Finset.sdiff_subset, not_false_eq_true, forall_const,
+          simp_all only [ge_iff_le,  Finset.sdiff_subset, not_false_eq_true, forall_const,
             Finset.coe_mem, implies_true, imp_self, Finset.mem_erase, ne_eq, and_true]
           intro a
           simp_all only [not_true_eq_false]
@@ -464,7 +454,7 @@ by
         by
           rw [hr1]
           rw [@Finset.subset_sdiff] at hp2
-          simp_all only [ge_iff_le, tsub_le_iff_right, Finset.sdiff_subset, not_false_eq_true,
+          simp_all only [Finset.sdiff_subset, not_false_eq_true,
             forall_const, Finset.disjoint_insert_right, Finset.disjoint_singleton_right,
             Finset.coe_mem, implies_true]
         specialize cri this
@@ -484,7 +474,7 @@ by
             by_contra h_contra
             --hrr3 : rr.stem ⊆ r.stem ∪ p.stem \ {↑y}
             rw [@Finset.subset_sdiff] at hrr3
-            simp_all only [ge_iff_le, tsub_le_iff_right, Finset.sdiff_subset, not_false_eq_true,
+            simp_all only [Finset.sdiff_subset, not_false_eq_true,
               forall_const, Finset.coe_mem, implies_true, Finset.mem_erase, ne_eq, and_true,
               Finset.disjoint_singleton_right, not_true_eq_false, and_false]
 
@@ -509,13 +499,9 @@ by
         by
           simp_all only [Subtype.forall, Finset.mem_singleton, forall_eq, Finset.card_singleton, ne_eq]
           simp_all only [Finset.mem_singleton]
-          obtain ⟨w, h⟩ := h
           obtain ⟨left, right⟩ := hr
-          obtain ⟨left_1, right_1⟩ := h
           obtain ⟨left_2, right⟩ := right
-          obtain ⟨left_3, right_1⟩ := right_1
           subst left_2
-          simp_all only
           apply Aesop.BuiltinRules.not_intro
           intro a
           subst a
@@ -526,14 +512,10 @@ by
           have :(rootedSetsFromSetFamily SF.toSetFamily).ground = SF.ground:=
           by
             simp_all only [Subtype.forall, Finset.mem_singleton, forall_eq, Finset.card_singleton, ne_eq]
-            obtain ⟨left, right⟩ := hr
-            obtain ⟨w, h⟩ := h
-            obtain ⟨left_1, right⟩ := right
             exact hx
           rw [this] at rsf
           rw [hx]
-          simp_all only [Subtype.forall, Finset.mem_singleton, forall_eq, Finset.card_singleton, ne_eq,
-            Finset.subset_singleton_iff]
+          simp_all only [Subtype.forall, forall_eq, ne_eq,Finset.subset_singleton_iff]
           simp_all only [Finset.mem_singleton]
           cases rsf with
           | inl h => simp_all only [Finset.not_mem_empty]
@@ -566,8 +548,8 @@ by
         simp_all only [Subtype.forall, tsub_le_iff_right, ne_eq, ge_iff_le, Finset.one_le_card]
         obtain ⟨left, right⟩ := hs2
         contrapose! right
-        simp_all only [Finset.not_nonempty_iff_eq_empty, Finset.not_mem_empty, forall_const, IsEmpty.forall_iff,
-          implies_true, Finset.subset_empty, Finset.card_empty, zero_add, zero_le]
+        simp_all only [Finset.not_nonempty_iff_eq_empty, Finset.not_mem_empty, forall_const,
+          Finset.subset_empty, Finset.card_empty, zero_add, zero_le]
       by_cases cdg : s = SF.ground
       case pos =>
         exact hs2.2 cdg
@@ -612,7 +594,7 @@ by
             by
               subst hx
               simp_all only [Subtype.forall, ge_iff_le, Finset.one_le_card, tsub_le_iff_right, ne_eq, sdiff_eq_left,
-                Finset.disjoint_singleton_right, Finset.coe_mem, not_true_eq_false, not_false_eq_true, and_true,
+                Finset.coe_mem, not_true_eq_false, not_false_eq_true, and_true,
                 Finset.sdiff_subset]
               obtain ⟨val, property⟩ := x
               simp_all only
@@ -630,7 +612,7 @@ by
             simp_all only [Subtype.forall, tsub_le_iff_right, ne_eq, sdiff_eq_left,
               Finset.disjoint_singleton_right, Finset.coe_mem, not_true_eq_false, not_false_eq_true,
               and_true, Finset.sdiff_subset, ge_iff_le, Finset.one_le_card,
-              Finset.card_erase_of_mem, tsub_pos_iff_lt]
+              tsub_pos_iff_lt]
             exact this_1
           obtain ⟨y, hy⟩ := this
           have : y ∈ SF.ground :=
@@ -641,34 +623,74 @@ by
               and_true, Finset.sdiff_subset]
           let hh := h x ⟨y, this⟩
           obtain ⟨vp, hvp1, hvp2,hvp3⟩ := hh
-          use vp --そもそもはここが間違い。
-          constructor
-          ·
+          let vp' := ValidPair.mk (SF.ground.erase x.val) x.val (show x.val ∉ (SF.ground.erase x.val) from
+            by
+              simp_all only [Finset.mem_erase, ne_eq, not_true_eq_false, Finset.coe_mem, and_true, not_false_eq_true]
+              subst hx
+              simp_all only [Subtype.forall, Finset.sdiff_subset, ge_iff_le, Finset.one_le_card, false_and,
+                not_false_eq_true]
+          )
+          let siu := stem_is_upward_closed SF vp vp' hvp1
+          have :vp.root = vp'.root :=
+          by
             subst hx
             simp_all only [Subtype.forall, ge_iff_le, Finset.one_le_card, Finset.mem_erase, ne_eq, and_true,
-              tsub_le_iff_right, sdiff_eq_left, Finset.disjoint_singleton_right, Decidable.not_not, Finset.sdiff_subset]
-          · constructor
-            · show vp.stem = SF.ground.erase ↑x
-              sorry --これは成り立たない。vp.stemのほうは、定理の仮定hによって存在が保証された根付き集合なので、stemがn-1とは限らない。
-              --何らかの定理を利用する必要がある。根付き集合のフィルター性とか。
-            ·
-              subst hx
-              simp_all only [Subtype.forall, ge_iff_le, Finset.one_le_card, Finset.mem_erase, ne_eq, and_true,
-                tsub_le_iff_right, sdiff_eq_left, Finset.disjoint_singleton_right, Decidable.not_not,
-                Finset.sdiff_subset]
+              tsub_le_iff_right, sdiff_eq_left, Finset.disjoint_singleton_right, Decidable.not_not,
+              Finset.sdiff_subset, not_true_eq_false, not_false_eq_true, vp']
+          specialize siu this
+          have : vp.stem ⊆ vp'.stem :=
+          by
+            have :vp'.stem = SF.ground.erase x :=
+            by
+              dsimp [vp']
+            rw [this]
+            intro z
+            intro hz
+            by_cases hz1: z = x
+            case pos =>
+              subst hz1
+              simp_all only [Finset.mem_erase, ne_eq, Finset.mem_singleton, Finset.coe_mem, and_true]
+              simp
+              --hvp2 : ↑x = vp.root
+              rename_i th
+              rw [←th] at hz
+              exact vp.root_not_in_stem hz
+            case neg =>
+              by_cases hz2: z = y
+              case pos =>
+                subst hz2
+                simp_all only [Finset.mem_erase, ne_eq, Finset.mem_singleton, Finset.coe_mem, and_true]
+              case neg =>
+                rw [Finset.mem_erase]
+                constructor
+                · exact hz1
+                · let rsf := ((rootedSetsFromSetFamily SF.toSetFamily).inc_ground vp hvp1).1
+                  have : (rootedSetsFromSetFamily SF.toSetFamily).ground = SF.ground:=
+                  by
+                    dsimp [rootedSetsFromSetFamily]
+                  rw [this] at rsf
+                  exact rsf hz
 
+          specialize siu this
+          have : vp'.stem ⊆ SF.ground :=
+          by
+            dsimp [vp']
+            exact Finset.erase_subset (↑x) SF.ground
+          specialize siu this
+          use vp'
+          constructor
+          · dsimp [vp']
+          · constructor
+            · dsimp [vp']
+            · exact siu
         rw [hx] at hs1
-        rw [@Finset.sdiff_singleton_eq_erase] at hs1
+        rw [←Finset.erase_eq] at hs1
         exact (hmr this) hs1
 
       --仮定hから、xをrootで、U-x内にステムがあるものが存在するので、補題より矛盾。
       case neg =>--cd: s.card = SF.ground.card - 1の否定
         have : s.card = SF.ground.card - 2:=
         by
-          --hs2.1: SF.ground.card - 2 ≤ s.card
-          --sinc : s ⊆ SF.ground
-          --cd : ¬s.card = SF.ground.card - 1
-          --cdg : ¬s = SF.ground
           have s_le: s.card ≤ SF.ground.card :=
           by
             apply Finset.card_le_card
@@ -690,16 +712,13 @@ by
         by
           simp_all only [Subtype.forall, le_refl, ne_eq, not_false_eq_true, and_self, ge_iff_le, Finset.one_le_card]
           omega
-        --have :∃ x y :SF.ground, SF.ground \ {x.val, y.val} = s :=
-        --by
+
         let ete := exists_two_elements_removed sinc this geq2
         obtain ⟨x, y, hxy⟩ := ete
-        --  use ⟨x, hxy.1⟩
-        --  use ⟨y, hxy.2.1⟩
-        --  simp_all only [Subtype.forall, le_refl, ne_eq, not_false_eq_true, and_self, ge_iff_le, Finset.one_le_card]
+
         let hh := h ⟨x, hxy.1⟩ ⟨y, hxy.2.1⟩
         obtain ⟨r, hr1, hr2, hr3⟩ := hh
-        --sがhyperedgeになっている。hxy.2.2
+
         let r' := ValidPair.mk s x (show x ∉ s from
           by
             simp_all only [Finset.mem_sdiff, Finset.mem_insert, Finset.mem_singleton, not_or, not_and, ne_eq]
@@ -762,22 +781,88 @@ by
             forall_const, r']
         specialize siu this
         --r'の存在と、sがhyperedgeであることに矛盾。
+        let RS := (rootedSetsFromSetFamily SF.toSetFamily)
+        have exis: ∃ (p : ValidPair α), p ∈ RS.rootedsets ∧ p.stem ⊆ s ∧ p.root  ∈ SF.ground ∧ p.root ∉ s :=
+        by
+          use r'
+          constructor
+          · rename_i this_2 this_3 this_4
+            subst this_2
+            obtain ⟨left, right⟩ := hxy
+            obtain ⟨left_1, right⟩ := right
+            subst right
+            exact siu
+          · constructor
+            · rw [←hxy.2.2]
+              rename_i this_2 this_3 this_4
+              let hh:= h ⟨x,hxy.1⟩ ⟨y,hxy.2.1⟩
+              obtain ⟨r, hr1, hr2, hr3⟩ := hh
+              intro z
+              by_cases hz: z = x
+              case pos =>
+                intro a
+                subst hz hr2
+                simp_all only [Subtype.forall, le_refl, ne_eq, not_false_eq_true, and_self, ge_iff_le,
+                  Finset.one_le_card, r']
+              case neg =>
+                by_cases hz2: z = y
+                case pos =>
+                  intro hz3
+                  rw [Finset.mem_sdiff]
+                  constructor
+                  · subst hr2 hz2
+                    simp_all only [Subtype.forall, le_refl, ne_eq, not_false_eq_true, and_self, ge_iff_le,
+                      Finset.one_le_card, r']
+                  ·
+                    subst hr2 hz2
+                    simp_all [r']
+                    obtain ⟨left, right⟩ := hxy
+                    obtain ⟨left_1, right⟩ := right
+                    subst right
+                    simp_all only [Finset.mem_sdiff, Finset.mem_insert, Finset.mem_singleton, or_true,
+                      not_true_eq_false, and_false]
 
-        let rs2 := rootedset_setfamily2 SF
+                case neg =>
+                  intro hz3
+                  rw [Finset.mem_sdiff]
+                  constructor
+                  ·
+                    subst hr2
+                    simp_all [r']
+                    obtain ⟨left, right⟩ := hxy
+                    obtain ⟨left_1, right⟩ := right
+                    subst right
+                    simp_all only [Finset.mem_sdiff, Finset.mem_insert, Finset.mem_singleton, or_self,
+                      not_false_eq_true, and_true]
+                  ·
+                    subst hr2
+                    simp_all only [Subtype.forall, le_refl, ne_eq, not_false_eq_true, and_self, ge_iff_le,
+                      Finset.one_le_card, Finset.mem_insert, Finset.mem_singleton, or_self, r']
 
+            · constructor
+              · rename_i this_2 this_3 this_4
+                subst this_2
+                simp_all only [Subtype.forall, le_refl, ne_eq, not_false_eq_true, and_self, ge_iff_le,
+                  Finset.one_le_card, r']
 
+              · rename_i this_2 this_3 this_4
+                subst this_2
+                simp_all [r']
+                obtain ⟨left, right⟩ := hxy
+                obtain ⟨left_1, right⟩ := right
+                subst right
+                simp_all only [Finset.mem_sdiff, Finset.mem_insert, Finset.mem_singleton, true_or, not_true_eq_false,
+                  and_false, not_false_eq_true]
 
+        have sinc: s ⊆ SF.ground :=
+        by
+          rename_i this_2 this_3 this_4
+          subst this_2
+          simp_all only [Subtype.forall, le_refl, ne_eq, not_false_eq_true, and_self, ge_iff_le, Finset.one_le_card, RS,
+            r']
 
-
-
-
-
-
-
-
-
-
-
+        let rs2 := (rootedset_setfamily_cor SF s sinc).mpr exis
+        exact rs2 hs1
 
 --Ground - {x,y}というhyperedgeがあるとフランクルの予想の反例にならないということ。
 --Ground - {x,y}がhyperedgeの時に{x,y}は優位でないということは、どちらかはrare vertex

@@ -85,6 +85,9 @@ Hyperedgeがすべて通る点をbridgeと呼ぶ。ブリッジをtraceしても
 
 台集合の大きさから-1や-2の大きさのhyperedgeを持つとフランクルの予想の反例になり得ないという基本的な定理を証明した。そのために、2点優位と2点平均abundantが同値であることの証明も行った。2点平均abundantとは、2点{x,y}に対して、すべてのhyperedge数からxとyの次数を引いたものが負であること。2点優位とは、{x,y}を含むhyperedgeのほうが、2点とdisjointなhyperedgeよりも多いこと。
 
+サイズn-1やn-2のhyperedgeを持たない時に、根付き集合がどのようになるかという必要十分条件も与えた。
+この研究の主要な成果のひとつといえる。(hyperedge_minustwo_rootedset)
+
 ## 安部の定理の形式化
 
 T. Abe Strongly semimodular lattice and Frankl's conjectureでは、束上でのrare vertexの存在の十分条件を与えた。それと同値な定理を閉集合族の世界に翻訳して、Lean 4で証明した。
