@@ -1,3 +1,4 @@
+--根付きサーキット間の推論関係など、やや応用的な内容。
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Finset.Powerset
@@ -203,10 +204,8 @@ by
         · dsimp [allPairs]
           --dsimp [Finset.product]
           simp
-          --apply Finset.mem_product.mpr
-          --simp
           constructor
-          · simp_all only [Finset.mem_singleton] --yinground
+          · simp_all only [Finset.mem_singleton]
           · simp_all only [Finset.mem_singleton]
         · dsimp [isCompatible]
           simp_all only [Finset.mem_singleton, not_false_eq_true, Finset.singleton_subset_iff, implies_true, and_self]
@@ -281,9 +280,7 @@ by
         simp
         --apply Finset.mem_product.mpr
         constructor
-        simp_all only [implies_true, and_self, true_and, Finset.mem_singleton, Finset.mem_powerset,
-          Finset.singleton_subset_iff]
-        --simp
+        simp_all only [implies_true, and_self, true_and, Finset.mem_singleton]
         let hxyground := hxy SF.ground SF.has_ground
         simp_all only [implies_true, and_self, true_and, Finset.mem_singleton, hxyground]
 
@@ -468,8 +465,7 @@ by
     dsimp [s] at rss
     have :r.stem ⊆ {x.val} :=
     by
-      simp_all only [Finset.singleton_subset_iff, Finset.coe_mem, subset_refl, Finset.mem_singleton, forall_const, s,
-        RS]
+      simp_all only [Finset.singleton_subset_iff, Finset.coe_mem, Finset.mem_singleton]
     specialize rss this
     have : r.root ∈ SF.ground :=
     by
@@ -484,7 +480,7 @@ by
       simp at rsc
       dsimp [rootedpair_to_subtype] at rsc
       convert rsc
-      simp_all only [Finset.singleton_subset_iff, Finset.coe_mem, subset_refl, Finset.mem_singleton, RS, s]
+      simp_all only [Finset.singleton_subset_iff, Finset.coe_mem, subset_refl]
     let rr := r.root_not_in_stem
     simp [hr2] at rr
     simp_all only [Finset.singleton_subset_iff, Finset.coe_mem, subset_refl, implies_true,Finset.mem_singleton, s, RS]
