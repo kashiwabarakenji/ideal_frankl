@@ -1,10 +1,12 @@
 --主に頂点がrareになるための条件の定理を証明する。
+--根付き集合の根がない頂点がrareになることもここで証明。
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Finset.Powerset
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Logic.Function.Defs
 import rooted.CommonDefinition
+import rooted.GeneralLemma
 import rooted.RootedCircuits
 import rooted.RootedImplication
 import LeanCopilot
@@ -86,52 +88,7 @@ by
     simp at a
     linarith
 
-omit [Fintype α] in
-lemma ssubset_lem (s t : Finset α) (v : α) (h1 : s ⊂ t) (h2 : t ⊆ s ∪ {v}) : t = s ∪ {v} :=
-by
-  -- 真部分集合の定義より、s ⊆ t かつ s ≠ t
-  have h3 : s ⊆ t := by
-    rw [Finset.ssubset_def] at h1
-    simp_all only
-  have h4 : s ≠ t := by
-    simp_all only [ne_eq]
-    apply Aesop.BuiltinRules.not_intro
-    intro a
-    subst a
-    simp_all only [Finset.subset_union_left, subset_refl]
-    rw [Finset.ssubset_def] at h1
-    simp_all only [subset_refl, not_true_eq_false, and_false]
 
-  -- v が t に含まれていることを示す
-  have hv_in_t : v ∈ t :=
-    by
-      by_contra hv_not_in_t
-      -- 仮定より t ⊆ s ∪ {v}
-      -- v ∉ t より t ⊆ s が成り立つ
-      have h_t_subset_s : t ⊆ s := by
-        rw [Finset.union_comm] at h2
-        rw [Finset.subset_iff]
-        rw [Finset.subset_iff] at h2
-        intro x hx
-        simp_all only [Finset.mem_union, Finset.mem_singleton, ne_eq]
-        obtain h | h := h2 hx
-        · subst h
-          simp_all only
-        · simp_all only
-      exact h4 (Finset.Subset.antisymm h3 h_t_subset_s)
-
-  -- s ∪ {v} ⊆ t を示す
-  have h_s_union_v_subset_t : s ∪ {v} ⊆ t :=
-    by
-      intros x hx
-      cases Finset.mem_union.1 hx with
-      | inl hs => exact h3 hs
-      | inr hv =>
-        have : v ∈ t := hv_in_t
-        simp_all only [ne_eq, Finset.mem_union, or_true, Finset.mem_singleton]
-
-  -- s ∪ {v} = t を示す
-  exact Finset.Subset.antisymm h2 h_s_union_v_subset_t
 
 lemma sv_lemma (SF: ClosureSystem α) [DecidablePred SF.sets] (s:Finset SF.ground)(v: SF.ground):
  v ∉ s → ¬ SF.sets (s.image Subtype.val)  → SF.sets ((s.image Subtype.val) ∪ {v.val}) → (closure_operator_from_SF SF).cl s = s ∪ {v} :=

@@ -3,8 +3,8 @@ import Mathlib.Data.Finset.Card
 import Mathlib.Data.Finset.Powerset
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Logic.Function.Defs
-import rooted.RootedCircuits
 import rooted.RootedSets
+import rooted.RootedCircuits
 import rooted.Bridge
 import LeanCopilot
 

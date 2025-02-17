@@ -12,7 +12,7 @@ package Ideal {
   ]
 }
 @[default_target]
-lean_lib «rooted» where --この名前はそれほど重要でなく、プロジェクト名に合わせる必要もない。
+lean_lib rooted where --この名前はそれほど重要でなく、プロジェクト名に合わせる必要もない。
   --roots:= #[`rooted.StemSizeOne] --この名前は、lake buildされるターゲットになる。importと同じ名前になる。
   srcDir := "." -- ピリオドにすると、プロジェクトフォルダのトップからになる。
 require mathlib from git

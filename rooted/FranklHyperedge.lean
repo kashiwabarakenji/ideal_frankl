@@ -19,7 +19,7 @@ import rooted.Superior
 import rooted.Bridge
 
 variable {α : Type}  [DecidableEq α] [Fintype α]
-set_option maxHeartbeats 5000000 --増やさないとエラー
+set_option maxHeartbeats 300000 --増やさないとエラー
 
 open Classical
 
@@ -39,20 +39,18 @@ by
     rw [Finset.mem_filter]
     obtain ⟨sval, sproperty⟩ := s
     constructor
-    ·
-
-      simp_all only
-      simp_all only [Finset.mem_filter, Finset.mem_powerset, S]
+    · simp_all only
+      simp_all only [Finset.mem_filter, Finset.mem_powerset,S]
       obtain ⟨left, right⟩ := sproperty
       intro x hx
       simp_all only [Finset.mem_erase, ne_eq]
       obtain ⟨left_2, right_1⟩ := hx
       exact left right_1
+
     · constructor
       ·
-        simp_all only [T, S]
+        simp_all only [S]
         obtain ⟨val, property⟩ := x
-        simp_all only
         simp_all only [Finset.mem_filter, Finset.mem_powerset, S]
         obtain ⟨left, right⟩ := sproperty
         obtain ⟨left_1, right⟩ := right
@@ -61,7 +59,7 @@ by
           simp_all only [S, M]
           ext a : 1
           simp_all only [Finset.mem_erase, ne_eq, Finset.mem_inter, Finset.mem_sdiff, Finset.mem_singleton,
-            and_congr_left_iff, iff_and_self, S]
+            and_congr_left_iff, iff_and_self]
           intro a_1 a_2
           exact left a_1
         let sic := SF.intersection_closed sval M left_1 setM
@@ -81,25 +79,25 @@ by
       by_cases hh:y = x
       case pos
         =>
-        simp_all only [Subtype.mk.injEq, T, S]
+        simp_all only [Subtype.mk.injEq, S]
         obtain ⟨val_2, property_2⟩ := s2
         simp_all only
-        simp_all only [Finset.mem_filter, Finset.mem_powerset, S, T]
+        simp_all only [Finset.mem_filter, Finset.mem_powerset, S]
       case neg
         =>
         have : y ∈ s1.val.erase x :=
         by
           rw [@Finset.mem_erase]
-          simp_all only [Subtype.mk.injEq, ne_eq, not_false_eq_true, and_self, T, S, ii]
+          simp_all only [Subtype.mk.injEq, ne_eq, not_false_eq_true, and_self, S]
         have : y ∈ s2.val.erase x :=
         by
-          simp_all only [Subtype.mk.injEq, Finset.mem_erase, ne_eq, not_false_eq_true, true_and,and_self]
+          simp_all only [Subtype.mk.injEq, ne_eq, not_false_eq_true, true_and,and_self]
         simp_all only [Subtype.mk.injEq, Finset.mem_erase, ne_eq, not_false_eq_true, true_and]
     · intro hy
       by_cases hh:y = x
       case pos
       =>
-        simp_all only [Subtype.mk.injEq, T, S]
+        simp_all only [Subtype.mk.injEq, S]
         obtain ⟨val_1, property_1⟩ := s1
         simp_all only
         simp_all only [Finset.mem_filter, Finset.mem_powerset, and_true, S]
@@ -108,9 +106,6 @@ by
         have : y ∈ s1.val.erase x :=
         by
           simp_all only [Subtype.mk.injEq, Finset.mem_erase, ne_eq, not_false_eq_true, and_self, T, S, ii]
-        --have : y ∈ s2.val.erase x :=
-        --by
-        --  simp_all only [Subtype.mk.injEq, Finset.mem_erase, ne_eq, not_false_eq_true, and_self, T, S, ii]
         rw [@Finset.mem_erase] at this
         exact this.2
 
@@ -119,7 +114,7 @@ by
     let fcl := @Finset.card_le_card_of_injOn S T S.attach T.attach (fun s => ii s) (fun s hs => Finset.mem_attach _ _)
     have :Set.InjOn (fun s => ii s) ↑S.attach :=
     by
-      simp_all only [Subtype.mk.injEq, Subtype.forall, Finset.mem_filter, Finset.mem_powerset, and_imp, S, T, ii]
+      simp_all only [Subtype.mk.injEq, Subtype.forall, Finset.mem_filter,  and_imp, S, ii]
       obtain ⟨val, property⟩ := x
       simp_all only
       intro s hs
@@ -129,10 +124,6 @@ by
       obtain ⟨val_2, property_2⟩ := x₂
       simp_all only [Subtype.mk.injEq]
       simp_all only [subset_refl, Finset.mem_filter, Finset.mem_powerset]
-      obtain ⟨left, right⟩ := property_1
-      obtain ⟨left_1, right_1⟩ := property_2
-      obtain ⟨left_2, right⟩ := right
-      obtain ⟨left_3, right_1⟩ := right_1
       apply inj
       · simp_all only [subset_refl]
       · simp_all only [subset_refl]
@@ -142,9 +133,9 @@ by
       · simp_all only [subset_refl]
       · simp_all only [subset_refl]
     convert fcl this
-    simp_all only [Subtype.mk.injEq, Subtype.forall, Finset.mem_filter, Finset.mem_powerset, and_imp, subset_refl,
+    simp_all only [Subtype.mk.injEq, Subtype.forall, Finset.mem_filter,  and_imp, subset_refl,
       Finset.card_attach, S, T, ii]
-    simp_all only [Subtype.mk.injEq, Subtype.forall, Finset.mem_filter, Finset.mem_powerset, and_imp, subset_refl,
+    simp_all only [Subtype.mk.injEq, Subtype.forall, Finset.mem_filter,  and_imp, subset_refl,
       Finset.card_attach, S, T, ii]
 
   --convert (rare_and_card SF.toSetFamily x).mpr
@@ -265,7 +256,6 @@ by
                 simp_all only
                 apply sg
                 simp_all only [Finset.mem_erase, ne_eq, and_true]
-                apply Aesop.BuiltinRules.not_intro
                 intro a_1
                 subst a_1
                 simp_all only [not_true_eq_false]
@@ -276,14 +266,12 @@ by
           have : t = SF.ground.erase x.val :=
           by
             obtain ⟨val, property⟩ := x
-            simp_all only
             ext a : 1
             simp_all only [Finset.mem_erase, ne_eq]
             apply Iff.intro
             · intro a_1
               apply And.intro
-              · apply Aesop.BuiltinRules.not_intro
-                intro a_2
+              · intro a_2
                 subst a_2
                 simp_all only
               · exact inc a_1
@@ -305,7 +293,7 @@ by
     let hh := h.2 (SF.ground.erase x.val) sfs
     simp at hh
 
---hyperedge_minusone_rootedsetを使いやすくしたもの。最初からこの形でよかった？
+--existsを使って、hyperedge_minusone_rootedsetを使いやすくしたもの。
 lemma hyperedge_minusone_rootedset' (SF : ClosureSystem α) [DecidablePred SF.sets] (x : SF.ground) :
   ¬ SF.sets (SF.ground.erase x.val) ↔
   ∃ vp : ValidPair α, vp.root = x.val ∧ vp.stem = SF.ground.erase x.val ∧ vp ∈ (rootedSetsFromSetFamily SF.toSetFamily).rootedsets :=
@@ -352,27 +340,23 @@ by
         by_contra h_contra
         have : (SF.ground.erase x.val).card = SF.ground.card -1 :=
         by
-          simp_all only [ge_iff_le, tsub_le_iff_right, Finset.sdiff_subset, not_false_eq_true, forall_const,
-            Finset.coe_mem, implies_true, imp_self, Finset.card_erase_of_mem]
+          simp_all only [ Finset.sdiff_subset, not_false_eq_true,Finset.coe_mem,  Finset.card_erase_of_mem]
         let htmp := h (SF.ground.erase x.val) h_contra
-        norm_cast at htmp
-        norm_cast at this
+        --norm_cast at htmp
+        --norm_cast at this
         rw [this] at htmp
         simp at htmp
         omega
     have neqg:SF.ground \ {x.val,y.val} ≠ SF.ground:=
     by
       simp_all only [ne_eq, Finset.coe_mem, not_true_eq_false, not_false_eq_true, sdiff_eq_left,
-        Finset.disjoint_insert_right, Finset.disjoint_singleton_right, and_self]
+        Finset.disjoint_insert_right, Finset.disjoint_singleton_right, and_self]--
     obtain ⟨r, hr1, hr2, hr3⟩ := (hyperedge_minusone_rootedset' SF x).mp sfsx
 
     by_cases x = y
     case pos =>
       use r
-      rename_i h_1
-      subst h_1
-      simp_all only [Finset.mem_erase, ne_eq, not_true_eq_false, Finset.coe_mem, and_true, not_false_eq_true,
-        and_self]
+      simp_all only [Finset.mem_erase, ne_eq, not_true_eq_false, Finset.coe_mem, and_true, not_false_eq_true]
 
     case neg neqxy => --xとyが異なる場合
 
@@ -380,16 +364,13 @@ by
       by
         have hsub : (SF.ground \ {x.val, y.val}) = SF.ground \ insert x.val {y.val} :=
         by
-          simp_all only [ge_iff_le, tsub_le_iff_right]
+          simp_all only [ge_iff_le]
         have : ({x.val, y.val}:Finset α).card <= 2:=
         by
           exact Finset.card_insert_le _ _
         rw [hsub, Finset.card_sdiff]
+
         ·
-          rename_i x_1
-          simp_all only [ge_iff_le, tsub_le_iff_right]
-          obtain ⟨val_1, property_1⟩ := x
-          obtain ⟨val_2, property_2⟩ := y
           simp_all only
           omega
         · rw [@Finset.insert_subset_iff]
@@ -406,15 +387,16 @@ by
       let rsf := (rootedset_setfamily_cor SF (SF.ground \ ({x.val,y.val}:Finset α)))
       have :SF.ground \ {↑x, ↑y} ⊆ SF.ground :=
       by
-        simp_all only [ge_iff_le, tsub_le_iff_right, Finset.sdiff_subset, Finset.mem_image, Subtype.exists,
-          exists_and_right, exists_eq_right, Finset.mem_sdiff, Finset.mem_insert,  not_or, not_and]
+        simp_all only [ Finset.sdiff_subset, Finset.mem_image,exists_eq_right, Finset.mem_sdiff, Finset.mem_insert,  not_and]
       specialize rsf this
       simp at rsf
       obtain ⟨p,hp1,hp2,hp3,hp4⟩ := rsf.mp notset
+      clear notset
 
-      have root_xyg: p.root ∉ p.stem :=
-      by
-        exact p.root_not_in_stem
+      --わざわざ補題にすることもなさそう。
+      --have root_xyg: p.root ∉ p.stem :=
+      --by
+      --  exact p.root_not_in_stem
 
       --* このhyperedgeを排除する根付き集合が存在する。その根はxかyのどちらからである。
       --* ステムは、U-x,yに含まれるので、xを根としてyを含まないステムを持つか、yを根としてxを含まないステムを持つかのどちらかになる。
@@ -427,15 +409,12 @@ by
         use p
         use hp1
         --* xを根に持ちyを含まない根付き集合が存在する時は証明完了。
-        simp_all only [ge_iff_le, tsub_le_iff_right, Finset.sdiff_subset, not_false_eq_true, forall_const, Finset.coe_mem,
-          not_true_eq_false, IsEmpty.forall_iff, imp_self]
+        simp_all only [ not_false_eq_true, Finset.coe_mem, not_true_eq_false,  imp_self]
         simp
         rw [@Finset.subset_sdiff] at hp2
         simp_all only [Finset.disjoint_insert_right, not_false_eq_true, Finset.disjoint_singleton_right, true_and]
       case inr =>
-        --* yを根に持ちxを含まないと仮定。このとき、xを根としてyを含まないステムを持つことを証明。。
-
-
+        --* yを根に持ちxを含まないと仮定。このとき、xを根としてyを含まないステムを持つことを証明。
         --* xを根とする根付き集合は、n-1の大きさのhyperedgeも持たないとの仮定より、少なくとも一つは存在する。xが根でU-xがステムになる。
 
         rename_i hh
@@ -444,23 +423,18 @@ by
         by
           rw [hr2]
           rw [hh]
-          simp_all only [ge_iff_le,  Finset.sdiff_subset, not_false_eq_true, forall_const,
-            Finset.coe_mem, implies_true, imp_self, Finset.mem_erase, ne_eq, and_true]
+          simp_all only [ge_iff_le,  Finset.sdiff_subset, Finset.coe_mem, Finset.mem_erase, ne_eq, and_true]
           intro a
-          simp_all only [not_true_eq_false]
           exact neqxy (Subtype.ext a.symm)
         let cri := cri this
         have :r.root ∉ p.stem :=
         by
           rw [hr1]
           rw [@Finset.subset_sdiff] at hp2
-          simp_all only [Finset.sdiff_subset, not_false_eq_true,
-            forall_const, Finset.disjoint_insert_right, Finset.disjoint_singleton_right,
-            Finset.coe_mem, implies_true]
+          simp_all only [not_false_eq_true,Finset.disjoint_insert_right, Finset.coe_mem]
         specialize cri this
 
         --根付き集合と根にyを持つものと推論を考えると、xを根に持ち、yをステムに含まない根付き集合の存在がいえる。yを根に持つ根付きサーキットはxを含まないことに注意。推論の補題closuresystem_rootedsets_implicationを利用。こちら向きの証明完了。
-
         obtain ⟨rr,hrr1,hrr2,hrr3⟩ := cri
 
         use rr
@@ -468,15 +442,12 @@ by
         · simp_all only [ge_iff_le, tsub_le_iff_right, Finset.sdiff_subset, not_false_eq_true, forall_const,
           Finset.coe_mem, implies_true, imp_self, Finset.mem_erase, ne_eq, and_true]
         · constructor
-          · simp_all only [ge_iff_le, tsub_le_iff_right, Finset.sdiff_subset, not_false_eq_true, forall_const,
-            Finset.coe_mem, implies_true, imp_self, Finset.mem_erase, ne_eq, and_true]
+          · simp_all only [Finset.sdiff_subset, not_false_eq_true,Finset.coe_mem, Finset.mem_erase, ne_eq]
           · rw [hh] at hrr3
             by_contra h_contra
             --hrr3 : rr.stem ⊆ r.stem ∪ p.stem \ {↑y}
             rw [@Finset.subset_sdiff] at hrr3
-            simp_all only [Finset.sdiff_subset, not_false_eq_true,
-              forall_const, Finset.coe_mem, implies_true, Finset.mem_erase, ne_eq, and_true,
-              Finset.disjoint_singleton_right, not_true_eq_false, and_false]
+            simp_all only [Finset.sdiff_subset, Finset.coe_mem, implies_true, Finset.disjoint_singleton_right]
 
   · intro h
     -- * 逆を示す。U-{x,y}を持つとすると、xを根にしてyを含まない根付きサーキットを考えると矛盾。台集合が1点のときを分離した方がいいか。
@@ -497,7 +468,7 @@ by
         obtain ⟨y,hy⟩ := h_contra
         have : x ≠ y:=
         by
-          simp_all only [Subtype.forall, Finset.mem_singleton, forall_eq, Finset.card_singleton, ne_eq]
+          simp_all only [Subtype.forall, Finset.mem_singleton, forall_eq, Finset.card_singleton]
           simp_all only [Finset.mem_singleton]
           obtain ⟨left, right⟩ := hr
           obtain ⟨left_2, right⟩ := right
@@ -511,7 +482,7 @@ by
           let rsf := ((rootedSetsFromSetFamily SF.toSetFamily).inc_ground r hr.1).1
           have :(rootedSetsFromSetFamily SF.toSetFamily).ground = SF.ground:=
           by
-            simp_all only [Subtype.forall, Finset.mem_singleton, forall_eq, Finset.card_singleton, ne_eq]
+            simp_all only [ Finset.mem_singleton, forall_eq, Finset.card_singleton, ne_eq]
             exact hx
           rw [this] at rsf
           rw [hx]
@@ -520,7 +491,7 @@ by
           cases rsf with
           | inl h => simp_all only [Finset.not_mem_empty]
           | inr h_1 => simp_all only [Finset.mem_singleton, not_true_eq_false]
-        simp_all only [Subtype.forall, Finset.mem_singleton, forall_eq, Finset.card_singleton, ne_eq, not_true_eq_false]
+        simp_all only [Finset.mem_singleton, forall_eq, Finset.card_singleton, ne_eq, not_true_eq_false]
 
       --ステムが空だと空集合がhyperedgeでなくなる。空集合がhyperedgeであるという仮定に反する。
       let het := (has_empty_theorem3 SF).mpr
@@ -530,8 +501,7 @@ by
         use r
         use hr.1
         constructor
-        simp_all only [Subtype.forall, Finset.mem_singleton, forall_eq, Finset.card_singleton, Finset.not_mem_empty,
-          not_false_eq_true, and_true]
+        simp_all only [Subtype.forall, Finset.mem_singleton,Finset.card_singleton, Finset.not_mem_empty,not_false_eq_true]
         exact this
       specialize het this
       contradiction
@@ -545,11 +515,10 @@ by
         exact SF.inc_ground s hs1
       have geq1: SF.ground.card ≥ 1:=
       by
-        simp_all only [Subtype.forall, tsub_le_iff_right, ne_eq, ge_iff_le, Finset.one_le_card]
+        simp_all only [Subtype.forall, tsub_le_iff_right, Finset.one_le_card]
         obtain ⟨left, right⟩ := hs2
         contrapose! right
-        simp_all only [Finset.not_nonempty_iff_eq_empty, Finset.not_mem_empty, forall_const,
-          Finset.subset_empty, Finset.card_empty, zero_add, zero_le]
+        simp_all only [Finset.not_nonempty_iff_eq_empty, Finset.subset_empty,  zero_add, zero_le]
       by_cases cdg : s = SF.ground
       case pos =>
         exact hs2.2 cdg
@@ -567,7 +536,7 @@ by
         by
           have hdiff_set : (SF.ground \ s).card = 1 :=
           by
-            simp_all only [Subtype.forall, tsub_le_iff_right, ne_eq, ge_iff_le, Finset.one_le_card]
+            simp_all only [Subtype.forall,ne_eq, ge_iff_le, Finset.one_le_card]
             obtain ⟨left, right⟩ := hs2
             rw [Finset.card_sdiff]
             · simp_all only
@@ -576,9 +545,7 @@ by
           have : x ∈ SF.ground :=
           by
             rw [@Finset.Subset.antisymm_iff] at hx
-            simp_all only [Subtype.forall, tsub_le_iff_right, ne_eq, ge_iff_le, Finset.one_le_card,
-              Finset.subset_singleton_iff, Finset.sdiff_eq_empty_iff_subset, Finset.singleton_subset_iff,
-              Finset.mem_sdiff]
+            simp_all only [Subtype.forall, Finset.sdiff_eq_empty_iff_subset, Finset.singleton_subset_iff,Finset.mem_sdiff]
           use ⟨x,this⟩
           simp
           exact Eq.symm (sdiff_eq_symm sinc hx)
@@ -593,9 +560,7 @@ by
             have : SF.ground.card ≥ 2:=
             by
               subst hx
-              simp_all only [Subtype.forall, ge_iff_le, Finset.one_le_card, tsub_le_iff_right, ne_eq, sdiff_eq_left,
-                Finset.coe_mem, not_true_eq_false, not_false_eq_true, and_true,
-                Finset.sdiff_subset]
+              simp_all only [Subtype.forall, Finset.one_le_card, Finset.coe_mem,not_false_eq_true, Finset.sdiff_subset]
               obtain ⟨val, property⟩ := x
               simp_all only
               omega
@@ -604,39 +569,29 @@ by
             have :(SF.ground.erase x.val).card ≥ 1:=
             by
               subst hx
-              simp_all only [Subtype.forall, ge_iff_le, Finset.one_le_card, Finset.coe_mem, Finset.card_erase_of_mem,
-                tsub_le_iff_right, ne_eq, sdiff_eq_left, Finset.disjoint_singleton_right, not_true_eq_false,
-                not_false_eq_true, and_true, Finset.sdiff_subset]
+              simp_all only [Finset.one_le_card, Finset.coe_mem, sdiff_eq_left, Finset.disjoint_singleton_right]
             apply Finset.card_pos.mp
             rename_i this_1
-            simp_all only [Subtype.forall, tsub_le_iff_right, ne_eq, sdiff_eq_left,
-              Finset.disjoint_singleton_right, Finset.coe_mem, not_true_eq_false, not_false_eq_true,
-              and_true, Finset.sdiff_subset, ge_iff_le, Finset.one_le_card,
-              tsub_pos_iff_lt]
+            simp_all only [ Finset.coe_mem, Finset.sdiff_subset,Finset.one_le_card,tsub_pos_iff_lt]
             exact this_1
           obtain ⟨y, hy⟩ := this
           have : y ∈ SF.ground :=
           by
             subst hx
-            simp_all only [Subtype.forall, ge_iff_le, Finset.one_le_card, Finset.mem_erase, ne_eq, tsub_le_iff_right,
-              sdiff_eq_left, Finset.disjoint_singleton_right, Finset.coe_mem, not_true_eq_false, not_false_eq_true,
-              and_true, Finset.sdiff_subset]
+            simp_all only [ Finset.one_le_card, Finset.mem_erase, sdiff_eq_left, Finset.disjoint_singleton_right, Finset.sdiff_subset]
           let hh := h x ⟨y, this⟩
           obtain ⟨vp, hvp1, hvp2,hvp3⟩ := hh
           let vp' := ValidPair.mk (SF.ground.erase x.val) x.val (show x.val ∉ (SF.ground.erase x.val) from
             by
               simp_all only [Finset.mem_erase, ne_eq, not_true_eq_false, Finset.coe_mem, and_true, not_false_eq_true]
               subst hx
-              simp_all only [Subtype.forall, Finset.sdiff_subset, ge_iff_le, Finset.one_le_card, false_and,
-                not_false_eq_true]
+              simp_all only [Subtype.forall, Finset.sdiff_subset,false_and, not_false_eq_true]
           )
           let siu := stem_is_upward_closed SF vp vp' hvp1
           have :vp.root = vp'.root :=
           by
             subst hx
-            simp_all only [Subtype.forall, ge_iff_le, Finset.one_le_card, Finset.mem_erase, ne_eq, and_true,
-              tsub_le_iff_right, sdiff_eq_left, Finset.disjoint_singleton_right, Decidable.not_not,
-              Finset.sdiff_subset, not_true_eq_false, not_false_eq_true, vp']
+            simp_all only [ not_false_eq_true, vp']
           specialize siu this
           have : vp.stem ⊆ vp'.stem :=
           by
@@ -649,7 +604,7 @@ by
             by_cases hz1: z = x
             case pos =>
               subst hz1
-              simp_all only [Finset.mem_erase, ne_eq, Finset.mem_singleton, Finset.coe_mem, and_true]
+              simp_all only [Finset.mem_erase, ne_eq, Finset.mem_singleton, Finset.coe_mem]
               simp
               --hvp2 : ↑x = vp.root
               rename_i th
@@ -659,7 +614,7 @@ by
               by_cases hz2: z = y
               case pos =>
                 subst hz2
-                simp_all only [Finset.mem_erase, ne_eq, Finset.mem_singleton, Finset.coe_mem, and_true]
+                simp_all only [Finset.mem_erase,  Finset.mem_singleton, Finset.coe_mem]
               case neg =>
                 rw [Finset.mem_erase]
                 constructor
@@ -703,14 +658,12 @@ by
               linarith
 
             let fe := Finset.eq_of_subset_of_card_le sinc this
-            simp_all only [Subtype.forall, tsub_le_iff_right, le_add_iff_nonneg_right, zero_le, ne_eq,
-              not_true_eq_false, and_false, fe]
-          simp_all only [Subtype.forall, tsub_le_iff_right, ne_eq, not_false_eq_true, and_true, ge_iff_le,
-            Finset.one_le_card]
+            simp_all only [ le_add_iff_nonneg_right, not_true_eq_false, and_false, fe]
+          simp_all only [ne_eq, not_false_eq_true, and_true,Finset.one_le_card]
           omega
         have geq2: SF.ground.card ≥ 2:=
         by
-          simp_all only [Subtype.forall, le_refl, ne_eq, not_false_eq_true, and_self, ge_iff_le, Finset.one_le_card]
+          simp_all only [Subtype.forall, not_false_eq_true, Finset.one_le_card]
           omega
 
         let ete := exists_two_elements_removed sinc this geq2
@@ -723,20 +676,19 @@ by
           by
             simp_all only [Finset.mem_sdiff, Finset.mem_insert, Finset.mem_singleton, not_or, not_and, ne_eq]
             subst hr2
-            simp_all only [Subtype.forall, le_refl, not_false_eq_true, and_self, ge_iff_le, Finset.one_le_card]
+            simp_all only [Subtype.forall, not_false_eq_true, and_self, ge_iff_le, Finset.one_le_card]
             obtain ⟨left, right⟩ := hxy
             obtain ⟨left_1, right⟩ := right
             subst right
-            simp_all only [Finset.sdiff_subset, sdiff_eq_left, Finset.disjoint_insert_right, not_true_eq_false,
+            simp_all only [ sdiff_eq_left, Finset.disjoint_insert_right,
               Finset.disjoint_singleton_right, and_self, not_false_eq_true, Finset.mem_sdiff, Finset.mem_insert,
-              Finset.mem_singleton, true_or, and_false]
+              true_or, and_false]--
         )
 
         let siu := stem_is_upward_closed SF r r' hr1
         have : r.root = r'.root:=
         by
-          simp_all only [Subtype.forall, le_refl, ne_eq, not_false_eq_true, and_self, ge_iff_le, Finset.one_le_card,
-            r']
+          simp_all only [Subtype.forall, not_false_eq_true, Finset.one_le_card,r']
           obtain ⟨left, right⟩ := hxy
           obtain ⟨left_1, right⟩ := right
           subst right
@@ -775,10 +727,7 @@ by
         specialize siu this
         have :r'.stem ⊆ SF.ground :=
         by
-          rename_i this_2 this_3
-          subst this_2
-          simp_all only [Subtype.forall, le_refl, ne_eq, not_false_eq_true, and_self, ge_iff_le, Finset.one_le_card,
-            forall_const, r']
+          simp_all only [Subtype.forall, not_false_eq_true, Finset.one_le_card, r']
         specialize siu this
         --r'の存在と、sがhyperedgeであることに矛盾。
         let RS := (rootedSetsFromSetFamily SF.toSetFamily)
@@ -786,15 +735,13 @@ by
         by
           use r'
           constructor
-          · rename_i this_2 this_3 this_4
-            subst this_2
+          ·
             obtain ⟨left, right⟩ := hxy
             obtain ⟨left_1, right⟩ := right
             subst right
             exact siu
           · constructor
             · rw [←hxy.2.2]
-              rename_i this_2 this_3 this_4
               let hh:= h ⟨x,hxy.1⟩ ⟨y,hxy.2.1⟩
               obtain ⟨r, hr1, hr2, hr3⟩ := hh
               intro z
@@ -802,8 +749,7 @@ by
               case pos =>
                 intro a
                 subst hz hr2
-                simp_all only [Subtype.forall, le_refl, ne_eq, not_false_eq_true, and_self, ge_iff_le,
-                  Finset.one_le_card, r']
+                simp_all only [Subtype.forall, le_refl, Finset.one_le_card, r']
               case neg =>
                 by_cases hz2: z = y
                 case pos =>
@@ -819,8 +765,7 @@ by
                     obtain ⟨left, right⟩ := hxy
                     obtain ⟨left_1, right⟩ := right
                     subst right
-                    simp_all only [Finset.mem_sdiff, Finset.mem_insert, Finset.mem_singleton, or_true,
-                      not_true_eq_false, and_false]
+                    simp_all only [Finset.mem_sdiff, Finset.mem_insert, Finset.mem_singleton, or_true,not_true_eq_false]--
 
                 case neg =>
                   intro hz3
@@ -828,38 +773,33 @@ by
                   constructor
                   ·
                     subst hr2
-                    simp_all [r']
+                    simp_all only [r']
                     obtain ⟨left, right⟩ := hxy
                     obtain ⟨left_1, right⟩ := right
                     subst right
-                    simp_all only [Finset.mem_sdiff, Finset.mem_insert, Finset.mem_singleton, or_self,
-                      not_false_eq_true, and_true]
+                    simp_all only [Finset.mem_sdiff, Finset.mem_insert, Finset.mem_singleton, not_false_eq_true]
                   ·
                     subst hr2
-                    simp_all only [Subtype.forall, le_refl, ne_eq, not_false_eq_true, and_self, ge_iff_le,
-                      Finset.one_le_card, Finset.mem_insert, Finset.mem_singleton, or_self, r']
+                    simp_all only [Subtype.forall,  not_false_eq_true,Finset.one_le_card, Finset.mem_insert, Finset.mem_singleton, or_self, r']
 
             · constructor
               · rename_i this_2 this_3 this_4
                 subst this_2
-                simp_all only [Subtype.forall, le_refl, ne_eq, not_false_eq_true, and_self, ge_iff_le,
-                  Finset.one_le_card, r']
+                simp_all only [Subtype.forall,  not_false_eq_true, and_self, Finset.one_le_card, r']
 
               · rename_i this_2 this_3 this_4
                 subst this_2
-                simp_all [r']
+                simp_all only [r']
                 obtain ⟨left, right⟩ := hxy
                 obtain ⟨left_1, right⟩ := right
                 subst right
-                simp_all only [Finset.mem_sdiff, Finset.mem_insert, Finset.mem_singleton, true_or, not_true_eq_false,
-                  and_false, not_false_eq_true]
+                simp_all only [Finset.mem_sdiff, Finset.mem_insert, true_or, not_true_eq_false,and_false, not_false_eq_true]--
 
         have sinc: s ⊆ SF.ground :=
         by
           rename_i this_2 this_3 this_4
           subst this_2
-          simp_all only [Subtype.forall, le_refl, ne_eq, not_false_eq_true, and_self, ge_iff_le, Finset.one_le_card, RS,
-            r']
+          simp_all only [Subtype.forall,  not_false_eq_true, and_self,Finset.one_le_card, r']
 
         let rs2 := (rootedset_setfamily_cor SF s sinc).mpr exis
         exact rs2 hs1

@@ -1,3 +1,4 @@
+--SetFamilyもSubtypeも用いないレベルの前順序の話。集合族版の対応する定理があるものもある。
 import Mathlib.Data.Finset.Powerset
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Logic.Function.Defs

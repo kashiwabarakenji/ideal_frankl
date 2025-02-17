@@ -1,3 +1,4 @@
+--根付きサーキットに関する定義と定理を集めた。根付き集合については、RootedSets.leanを参照。
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Finset.Powerset
 import Mathlib.Data.Fintype.Basic
@@ -24,7 +25,6 @@ structure RootedCircuits (α : Type) [DecidableEq α] extends RootedSets α wher
       p₁.root = p₂.root → p₁.stem ⊆ p₂.stem → p₁.stem = p₂.stem
 
 --RootedSetsから極小なものを計算して、RootedCircuitsを構築する関数。
---circuitsに関する補題と、circuitsに関係しない補題でファイルを分けた方がいいかも。
 def rootedcircuits_from_RS (RS : RootedSets α) : RootedCircuits α :=
 {
   ground := RS.ground
@@ -288,22 +288,6 @@ by
   simp_all only [Finset.mem_subtype, Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right,
     Subtype.coe_eta, Finset.coe_mem, exists_const]
 
-/-
---Mathlibにないと思って証明したが、Finset.nonempty_iff_ne_emptyを使ってNonemptyを使えば良いとClaudeに教えてもらった。
-lemma Finset.exists_mem_of_ne_empty2 {α : Type} [DecidableEq α] (s : Finset α) (h : s ≠ ∅) :
-  ∃ x, x ∈ s :=
-by
-  -- Finset の内部構造を展開
-  match s with
-  | ⟨val, nodup⟩ =>
-  simp at h -- s ≠ ∅ を Multiset の条件に変換
-  -- Multiset に要素があることを証明
-  simp_all only [Finset.mem_mk]
-  contrapose! h
-  ext a : 1
-  simp_all only [Finset.mem_mk, Finset.not_mem_empty]
--/
---結果的には、これで良かった。Nonemptyというのは、要素が存在するのと同じだった。
 
 --rootedcircuitsを考えても、根つき集合族を考えても、集合族が同じであること。
 theorem rootedcircuits_makes_same_setfamily: ∀ (RS : RootedSets α), ∀ (s : Finset α),
@@ -359,10 +343,3 @@ by
       · rw [rootedcircuits_from_RS] at a
         simp_all only [Finset.mem_filter]
       · simp_all only
-
-
-
----lemma rootedcircuits_setfamily (RS : RootedSets α) (SF:ClosureSystem α)
--- (eq:  rootedsetToClosureSystem RS = SF) :
---  ∀ (s : Finset α), s ⊆ SF.ground → (¬ SF.sets s ↔ ∃ (p : ValidPair α), p ∈ (rootedcircuits_from_RS RS).rootedsets ∧ p.stem ⊆ s ∧ p.root  ∈ (closureOperator SF (s.subtype (λ x => x ∈ SF.ground))).image Subtype.val ∧ p.root ∉ s) :=
---の系として得られる。ステムを含んで根を含まないものは、hyperedgeでないので。

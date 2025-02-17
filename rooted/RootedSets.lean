@@ -1,3 +1,5 @@
+--根付き集合に関する基本的な定義と定理。根付きサーキットに関するものは、RootedCircuitsに。ちょっと応用的なものは、RootedImplicationなどにある。
+--これ以上、量が増えたら、前半と後半でファイルを分離してもよい。
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Finset.Powerset
 import Mathlib.Data.Fintype.Basic
@@ -8,6 +10,7 @@ import Mathlib.Data.Multiset.Basic
 import Mathlib.Data.Finset.Prod
 import rooted.CommonDefinition
 import rooted.ClosureOperator
+import rooted.GeneralLemma
 import Mathlib.Tactic
 import LeanCopilot
 
@@ -64,13 +67,6 @@ noncomputable def rootedpair_to_subtype (RS : RootedSets α) (p: ValidPair α) (
     simp_all only [Finset.mem_subtype]
     exact p.root_not_in_stem
   )
-
---subtypeに関する補題。どこかにまとめた方が良い。
-lemma subtype_val_eq {α : Type} {p : α → Prop} (x y : Subtype p) :
-    x = y ↔ Subtype.val x = Subtype.val y := by
-  apply Iff.intro
-  · intro h; rw [h]
-  · intro h; ext; exact h
 
 -- RootedSetsにフィルタされた通常の集合族の定義。こちらはSetFamilyではなく、ただの集合族。
 noncomputable def filteredFamily (RS : RootedSets α):
@@ -265,6 +261,7 @@ by
         · simp_all only
         · exact rts
 
+--根付き集合のステムは、フィルターになっていること。
 lemma stem_is_upward_closed (SF: ClosureSystem α) :
 let RS := rootedSetsFromSetFamily SF.toSetFamily
 ∀ (r r':ValidPair α) , r ∈ RS.rootedsets → r.root =r'.root → r.stem ⊆ r'.stem → r'.stem ⊆ SF.ground → r'∈ RS.rootedsets :=

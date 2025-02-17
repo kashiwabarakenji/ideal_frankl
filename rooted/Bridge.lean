@@ -1,4 +1,4 @@
---importする必要がない、RootedSetsに関する定理
+--bridgeとか、空集合をもつこととか、空集合のステムを持つ根付きサーキットとか。
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Finset.Powerset
 import Mathlib.Data.Fintype.Basic

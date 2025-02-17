@@ -9,11 +9,12 @@ import Mathlib.Logic.Function.Defs
 import Mathlib.Data.Finset.Union
 import Mathlib.Tactic
 import rooted.CommonDefinition
+import rooted.ClosureOperator
+import rooted.RootedSets
 import rooted.RootedCircuits
 import rooted.RootedImplication
-import rooted.ClosureOperator
 import rooted.RootedFrankl
-import rooted.RootedSets
+
 
 variable {α : Type}  [DecidableEq α] [Fintype α]
 

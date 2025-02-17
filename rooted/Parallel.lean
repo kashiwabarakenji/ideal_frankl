@@ -1,6 +1,8 @@
-import rooted.RootedImplication
-import rooted.ClosureMinors
+--Parallelな頂点に関すること。一部は、RootedImplicationと記述が被っている。
 import Mathlib.Data.Nat.Defs
+import rooted.ClosureMinors
+import rooted.RootedImplication
+
 
 open Classical
 

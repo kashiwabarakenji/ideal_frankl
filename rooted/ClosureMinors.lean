@@ -1,3 +1,4 @@
+--ファイル名はMinorsだが、traceのみを扱っている。closure systemのtraceがまたclosure systemであることを示している。
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Fintype.Basic
@@ -12,6 +13,7 @@ variable {α : Type} [DecidableEq α] [Fintype α]
 open Finset
 open Classical
 
+--台集合が2点以上あると、1点除いても空にはならないということ。もっと短く証明できるかも。
 lemma ground_nonempty_after_minor {α : Type} [DecidableEq α] (ground : Finset α) (x : α) (hx: x ∈ ground) (ground_ge_two: ground.card ≥ 2) : (ground.erase x).Nonempty :=
   by
     rw [Finset.erase_eq]
@@ -40,6 +42,17 @@ lemma ground_nonempty_after_minor {α : Type} [DecidableEq α] (ground : Finset 
     rw [g_eq_x] at ground_ge_two
     rw [Finset.card_singleton] at ground_ge_two
     contradiction
+
+--上と同じ補題の別証明 by o1
+lemma ground_nonempty_after_minor2 {α : Type} [DecidableEq α]
+    (ground : Finset α) (x : α) (hx : x ∈ ground) (ground_ge_two : 2 ≤ ground.card) :
+    (ground.erase x).Nonempty := by
+  rw [Finset.nonempty_iff_ne_empty]
+  intro h
+  have h_card : (ground.erase x).card = 0 := Finset.card_eq_zero.mpr h
+  rw [Finset.card_erase_of_mem hx] at h_card
+  have : ground.card = 1 := by omega
+  linarith
 
 --traceコマンドと一緒にならないようにSetFamilyをつけた。
 def SetFamily.trace {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) (x : α) (hx: x ∈ F.ground) (ground_ge_two: F.ground.card ≥ 2): SetFamily α :=
@@ -77,7 +90,8 @@ def SetFamily.trace {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α)
         simp_all only [ge_iff_le, not_false_eq_true]
   }
 
-  --closure systemのtraceがclosure systemであることを示す。DecidablePred F.setsを入れるとエラー。
+--closure systemのtraceがclosure systemであることを示す。
+--DecidablePred F.setsを入れるとエラー。
 instance  trace_closure_system(F : ClosureSystem α) (x : α) (hx: x ∈ F.ground) (ground_ge_two: F.ground.card ≥ 2)  : ClosureSystem α :=
 {
   ground := F.ground.erase x,
@@ -209,147 +223,8 @@ instance  trace_closure_system(F : ClosureSystem α) (x : α) (hx: x ∈ F.groun
       dsimp [SetFamily.trace] at this
       simp_all only [mem_erase, ne_eq, not_true_eq_false, and_true, not_false_eq_true, true_and]
 }
- /-
-  {
-    ground := F.ground.erase x,
 
-    sets := fun s => (SetFamily.trace (F.toSetFamily) x hx ground_ge_two).sets s
-
-    has_ground :=
-    by
-      let thisF := SetFamily.trace (F.toSetFamily) x hx ground_ge_two
-      have : thisF.sets (F.ground.erase x) := by
-        constructor
-        intro h
-        simp at h
-        right
-        have : F.ground.erase x ∪ {x} = F.ground := by
-          ext a : 1
-          simp_all only [mem_union, mem_erase, ne_eq, mem_singleton]
-          apply Iff.intro
-          · intro a_1
-            cases a_1 with
-            | inl h => simp_all only
-            | inr h_1 =>
-              subst h_1
-              simp_all only
-          · intro a_1
-            simp_all only [and_true]
-            tauto
-        convert F.has_ground
-      simp
-      exact this
-
-    intersection_closed := by
-      intro s t hs ht
-      simp_all only
-      dsimp [SetFamily.trace]
-      dsimp [SetFamily.trace] at hs
-      dsimp [SetFamily.trace] at ht
-      constructor
-      ·
-        simp_all only [ge_iff_le, mem_inter, and_self, not_false_eq_true]
-
-      · cases hs.2
-        case inl hs1 =>
-          cases ht.2
-          case inl ht1 =>
-            left
-            exact F.intersection_closed s t hs1 ht1
-          case inr ht1 =>
-            left
-            have : s ∩ (t ∪ {x}) = s ∩ t := by
-              ext a : 1
-              simp_all only [mem_inter, mem_union, mem_singleton]
-              apply Iff.intro
-              · intro a_1
-                simp_all only [ge_iff_le, true_or, and_true, or_true, true_and]
-                obtain ⟨left, right⟩ := a_1
-                cases right with
-                | inl h => simp_all only
-                | inr h_1 =>
-                  subst h_1
-                  simp_all only
-              · intro a_1
-                simp_all only [and_true]
-                tauto
-            rw [←this]
-            apply F.intersection_closed s (t ∪ {x}) hs1 ht1
-
-        case inr hs1 =>
-          cases ht.2
-          case inl ht1 =>
-            left
-            have : (s ∪ {x}) ∩ t = s ∩ t := by
-              ext a : 1
-              simp_all only [mem_inter, mem_union, mem_singleton]
-              apply Iff.intro
-              · intro a_1
-                simp_all only [ge_iff_le, true_or, and_true, or_true, true_and]
-                obtain ⟨left, right⟩ := a_1
-                cases left with
-                | inl h => simp_all only
-                | inr h_1 =>
-                  subst h_1
-                  simp_all only
-              · intro a_1
-                simp_all only [and_true]
-                tauto
-            rw [←this]
-            exact F.intersection_closed (s ∪ {x}) t hs1 ht1
-          case inr ht1 =>
-            right
-            have : (s ∪ {x}) ∩ (t ∪ {x}) =(s ∩ t) ∪ {x} := by
-              ext a : 1
-              simp_all only [mem_inter, mem_union, mem_singleton]
-              apply Iff.intro
-              · intro a_1
-                simp_all only [ge_iff_le, true_or, and_true, or_true, true_and]
-                obtain ⟨left, right⟩ := a_1
-                cases left with
-                | inl h =>
-                  cases right with
-                  | inl h_1 => simp_all only [and_self, true_or]
-                  | inr h_2 =>
-                    subst h_2
-                    simp_all only
-                | inr h_1 =>
-                  cases right with
-                  | inl h =>
-                    subst h_1
-                    simp_all only
-                  | inr h_2 =>
-                    subst h_1
-                    simp_all only [and_self, or_true]
-              · intro a_1
-                simp_all only [ge_iff_le, or_true, and_true]
-                cases a_1 with
-                | inl h => simp_all only [true_or, and_self]
-                | inr h_1 =>
-                  subst h_1
-                  simp_all only [or_true, and_self]
-            rw [←this]
-            exact F.intersection_closed (s ∪ {x}) (t ∪ {x}) hs1 ht1
-
-    inc_ground := by
-      intro s hs
-      rw [subset_erase]
-      dsimp [SetFamily.trace] at hs
-      constructor
-      ·
-        cases hs.2
-        case inl hs1 =>
-          exact F.inc_ground s hs1
-        case inr hs1 =>
-          have hhh: s ∪ {x} ⊆ F.ground := F.inc_ground (s ∪ {x}) hs1
-          simp_all only [ge_iff_le, or_true, and_true]
-          intro y hy
-          exact hhh (mem_union_left _ hy)
-      · simp_all only [ge_iff_le, not_false_eq_true]
-
-    nonempty_ground := ground_nonempty_after_minor F.ground x hx ground_ge_two
-  }
--/
+--traceにより根付き集合がどのように変換するか。
 theorem trace_closure_system_rootedsets (F : ClosureSystem α)[DecidablePred F.sets] (x : α) (hx: x ∈ F.ground) (ground_ge_two: F.ground.card ≥ 2)[∀ s, Decidable (F.sets s)]:
   let RS := rootedSetsFromSetFamily F.toSetFamily
   --let _ : DecidablePred (SetFamily.trace (F.toSetFamily) x hx ground_ge_two).sets := by infer_instance
@@ -369,7 +244,7 @@ theorem trace_closure_system_rootedsets (F : ClosureSystem α)[DecidablePred F.s
       obtain ⟨h_left_1, h_right⟩ := h_right
       obtain ⟨h_left_2, h_right⟩ := h_right
       have rstground : RSt.ground = F.ground.erase x := by
-        subst h_right
+        --subst h_right
         simp_all only [RSt]
         obtain ⟨left, right⟩ := p_inc
         simp_all only [mem_image, mem_attach, ValidPair.mk.injEq, true_and, Subtype.exists, exists_and_left,
@@ -383,7 +258,7 @@ theorem trace_closure_system_rootedsets (F : ClosureSystem α)[DecidablePred F.s
           dsimp [rootedSetsFromSetFamily]
           subst h_right
           simp_all only [mem_erase, ne_eq, not_true_eq_false, and_true, not_false_eq_true]
-        subst h_right
+        --subst h_right
         simp_all only [ne_eq, RSt]
         obtain ⟨left, right⟩ := p_inc
         simp_all only [mem_image, mem_attach, ValidPair.mk.injEq, true_and, Subtype.exists, exists_and_left,
@@ -398,7 +273,7 @@ theorem trace_closure_system_rootedsets (F : ClosureSystem α)[DecidablePred F.s
         · dsimp [allCompatiblePairs]
           let pinc1 := p_inc.1
           have: p.stem ⊆ RSt.ground := by
-            subst h_right
+            --subst h_right
             simp_all only [RSt]
             obtain ⟨left, right⟩ := p_inc
             simp_all only [mem_image, mem_attach, ValidPair.mk.injEq, true_and, Subtype.exists, exists_and_left,
@@ -428,19 +303,15 @@ theorem trace_closure_system_rootedsets (F : ClosureSystem α)[DecidablePred F.s
           dsimp [allCompatiblePairs]
           dsimp [isCompatible]
           dsimp [allPairs]
-          --rw [Finset.product]
           simp
           apply And.intro
-          · --apply Finset.mem_product.mpr
+          ·
             constructor
-            --simp_all only [implies_true, and_self, true_and, Finset.mem_singleton, Finset.mem_powerset,
-            --  Finset.singleton_subset_iff]
             rw [Finset.subset_iff] at left
             simp_all only [mem_erase, ne_eq]
             intro y hy
             simp_all only
 
-            --simp
             exact right
 
           · apply And.intro
@@ -456,7 +327,6 @@ theorem trace_closure_system_rootedsets (F : ClosureSystem α)[DecidablePred F.s
               show h_left_1 ∈ t --tがxを含むかどうかで場合分けの必要があるかも。
               dsimp [allCompatiblePairs] at h_left_2
               dsimp [allPairs] at h_left_2
-              --rw [Finset.product] at h_left_2
               have ⟨h_mem1, h_mem2⟩ := Finset.mem_filter.mp h_left_2
               dsimp [isCompatible] at h_mem2
               by_cases ht: x ∈ t
@@ -535,23 +405,19 @@ theorem trace_closure_system_rootedsets (F : ClosureSystem α)[DecidablePred F.s
       have pinc := (rootedSetsFromSetFamily F.toSetFamily).inc_ground p h.2.2
       dsimp [rootedSetsFromSetFamily]
       dsimp [rootedSetsSF]
-      --dsimp [allCompatiblePairs]
-      --dsimp [allPairs]
       simp
       use p.stem
       use p.root
       have :(p.stem, p.root) ∈ allCompatiblePairs (F.trace x hx ground_ge_two) := by
         dsimp [allCompatiblePairs]
         dsimp [allPairs]
-        --rw [Finset.product]
         simp
         obtain ⟨left, right⟩ := h
         obtain ⟨left_1, right⟩ := right
         apply And.intro
         · --apply Finset.mem_product.mpr
           constructor
-          · simp_all only [implies_true, and_self, true_and, Finset.mem_singleton, Finset.mem_powerset,
-              Finset.singleton_subset_iff]
+          · simp_all only [implies_true, and_self, true_and, Finset.mem_singleton, Finset.mem_powerset]
             let hxyground := right
             dsimp [RSt] at rstground
             rw [Finset.subset_erase]
@@ -595,7 +461,7 @@ theorem trace_closure_system_rootedsets (F : ClosureSystem α)[DecidablePred F.s
               have :p.stem = left := by
                 simp_all only [or_true, and_true, RSt]
                 obtain ⟨left_2, right⟩ := left_2
-                obtain ⟨left_4, right_2⟩ := pinc
+                --obtain ⟨left_4, right_2⟩ := pinc
                 obtain ⟨left_5, right⟩ := right
                 rw [← right_1]
               have :p.root ∈ t ∪ {x} := by
@@ -603,7 +469,7 @@ theorem trace_closure_system_rootedsets (F : ClosureSystem α)[DecidablePred F.s
                 subst this
                 simp_all only [or_true, and_true, RSt]
                 obtain ⟨left, right⟩ := left_2
-                obtain ⟨left_2, right_1⟩ := pinc
+                --obtain ⟨left_2, right_1⟩ := pinc
                 obtain ⟨left_4, right⟩ := right
                 intro y hy
                 simp_all only [mem_union, mem_singleton]
