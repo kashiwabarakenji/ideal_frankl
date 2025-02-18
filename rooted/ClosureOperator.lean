@@ -576,6 +576,47 @@ by
      exact idempotent_from_SF_finset_lem F t h
   simp_all only [cl]
 
+--closureの要素のclosureをしても、もとのものよりも広くならない。
+lemma closure_singleton_lemma {α : Type} [DecidableEq α] [Fintype α] (F : ClosureSystem α)[DecidablePred F.sets] (s : Finset F.ground) (x : F.ground) :
+  x ∈ closureOperator F s ↔ closureOperator F {x} ⊆ closureOperator F s :=
+by
+  apply Iff.intro
+  · intro h
+    let cl := (closure_operator_from_SF F).cl
+    have h_closure : {x} ⊆ cl {x} := extensive_from_SF_finset F {x}
+    have s_closed: F.sets (Finset.image Subtype.val (cl s)):=
+    by
+      exact closureOperator_image_in_sets F s
+    have : {x} ⊆ cl s :=
+    by
+      simp_all only [Finset.singleton_subset_iff, cl]
+      obtain ⟨val, property⟩ := x
+      exact h
+
+    have : cl ({x}) ⊆ (cl s) := by
+      let cml := closure_monotone_lemma F {x} (cl s) s_closed this
+      simp_all [cl]
+
+    simp_all only [cl]
+    exact this
+  · intro h
+    let cl := (closure_operator_from_SF F).cl
+    have h_closure : {x} ⊆ cl {x} := extensive_from_SF_finset F {x}
+
+    have : cl ({x}) ⊆ (cl s) := by
+      dsimp [cl]
+      simp_all only [Finset.singleton_subset_iff, cl]
+      obtain ⟨val, property⟩ := x
+      exact h
+
+    have : {x} ⊆ cl s :=
+    by
+      exact Finset.Subset.trans h_closure this
+
+    dsimp [cl] at this
+    dsimp [closure_operator_from_SF] at this
+    simp_all only [Finset.singleton_subset_iff, cl]
+
 --hyperedgeでないもののclosureをとると真に大きくなるという補題。
 lemma closure_ssubset {α : Type} [DecidableEq α] [Fintype α] (F : ClosureSystem α)[DecidablePred F.sets] (s : Finset F.ground) :
   ¬ F.sets (s.image Subtype.val) → s ⊂ closureOperator F s :=

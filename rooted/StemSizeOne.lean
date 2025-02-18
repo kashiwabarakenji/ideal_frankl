@@ -8,6 +8,7 @@ import Mathlib.Tactic
 import rooted.CommonDefinition
 import rooted.RootedCircuits
 import rooted.RootedImplication
+import rooted.Dominant
 import rooted.ClosureOperator
 import rooted.RootedFrankl
 import rooted.RootedSets
@@ -377,16 +378,10 @@ by
       Subtype.exists, exists_and_right, exists_eq_right, exists_true_left, Finset.mem_singleton, forall_eq,
       exists_const, Finset.card_singleton, Subtype.coe_eta, Finset.coe_mem]
     · rw [preorder.R_hat_eq_ReflTransGen] at hz
-      simp_all only [Finset.singleton_subset_iff, Finset.mem_image, Finset.mem_filter, Finset.mem_attach, true_and,
-        Subtype.exists, exists_and_right, exists_eq_right, exists_true_left, Finset.mem_singleton, forall_eq,
-        exists_const, Finset.card_singleton, Subtype.coe_eta]
+      simp_all only [Finset.singleton_subset_iff, Finset.mem_image, Finset.mem_filter,
+        Finset.mem_attach, true_and, Subtype.exists, exists_and_right, exists_eq_right,
+        exists_true_left, Finset.mem_singleton, forall_eq, Finset.card_singleton, Subtype.coe_eta]
       simp_all only [Finset.coe_mem]
-      obtain ⟨val, property⟩ := z
-      obtain ⟨w, h⟩ := hpp
-      obtain ⟨val, property⟩ := val
-      obtain ⟨w_1, h⟩ := h
-      obtain ⟨left, right⟩ := h
-      simp_all only
       constructor
       on_goal 2 => {exact yp
       }
@@ -880,7 +875,6 @@ by
         apply And.intro
         · dsimp [allPairs]
           dsimp [rootedsetToClosureSystem]
-          --rw [Finset.product]
           apply Finset.mem_product.mpr
           constructor
           · simp_all only [Finset.mem_powerset, Finset.singleton_subset_iff]
@@ -1012,9 +1006,6 @@ by
     simp_all only [Finset.univ_eq_attach, Finset.attach_nonempty_iff, Finset.mem_attach, forall_const, Subtype.forall]
     rfl
 
-  --let vprop := v.property
-  --simp [eq_ground] at vprop
-
   --vと同値な頂点集合としてPを取る。
   let P := equivalent_vertex SF v --⟨v.val, vprop⟩
 
@@ -1038,10 +1029,7 @@ by
     let RC := rootedcircuits_from_RS RS
     --ステムサイズが1になる証明で暗黙につかっている。
     let sorc := size_one_rooted_circuits RC.toRootedSets h_one
-    --simp at sorc
 
-    --lemma rootedcircuits_extsts (RS : RootedSets α) (p : ValidPair α) :
-    --p ∈ RS.rootedsets → ∃r ∈ (rootedcircuits_from_RS RS).rootedsets, r.root = p.root ∧ r.stem ⊆ p.stem :=
     obtain ⟨u, hu, hroot2, hstem⟩ := rootedcircuits_extsts (rootedSetsFromSetFamily SF.toSetFamily) r hr
     --この根付き集合uのステムの大きさが1であることが、size_one_rooted_circuitsの仮定によりわかる。
     --ここで構成したuが、欲しかった、vとパラレルな点。
@@ -1051,7 +1039,6 @@ by
       ext
       · subst eq
         simp_all only [implies_true, Finset.univ_eq_attach, Finset.attach_nonempty_iff, Finset.mem_attach, forall_const]
-        --simp_all only
         obtain ⟨val, property⟩ := v
         subst hroot
         rfl
@@ -1135,7 +1122,7 @@ by
         Subtype.forall, Finset.singleton_subset_iff, Finset.card_singleton, RC]
       --これは、vの極小性 hsfからいえる。
       --当初、RS.groundとSF.groundでsubtypeの世界が世界が違ったが、なんとか修正。--vは極大にとっていた、実は極小にとるのが正解だった。
-      have hsforder: ∀ (a : α) (b : a ∈ SF.ground),   (vertexorder_is_preorder SF).le ⟨a ,b⟩ v  → (vertexorder_is_preorder SF).le  v ⟨a ,b⟩:=
+      have hsforder: ∀ (a : α) (b : a ∈ SF.ground),   (dominated SF).le ⟨a ,b⟩ v  → (dominated SF).le  v ⟨a ,b⟩:=
       by
         intro a b hh
         let hsfab := hsf a b
@@ -1147,7 +1134,7 @@ by
         subst eq
         simp_all only [ne_eq, forall_const]
 
-      dsimp [vertexorder_is_preorder] at hsforder
+      dsimp [dominated] at hsforder
       let hsorder2:= hsforder u_point ug Ruv
       --vertexorderが成り立つ関係とステムサイズ1が存在することの関係を使う。
       obtain ⟨rr, hrr⟩ :=((vertexorderlemma SF v.val u_point).mp ⟨hsorder2, vuneq⟩)

@@ -1,14 +1,80 @@
---Parallelな頂点に関すること。一部は、RootedImplicationと記述が被っている。
+--Parallelな頂点に関すること。
 import Mathlib.Data.Nat.Defs
 import rooted.ClosureMinors
-import rooted.RootedImplication
-
+import rooted.Dominant
 
 open Classical
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 
---parallelの定義は、今のところimplicationのところにある。
+def vertex_equiv (SF:ClosureSystem α)[DecidablePred SF.sets] : {x // x ∈ SF.ground} → {x // x ∈ SF.ground} → Prop :=
+  fun x y => vertexorder SF x y ∧ vertexorder SF y x
+
+-- Preorder構造のある型での例
+lemma vetex_equiv_is_equivalence (SF:ClosureSystem α)[DecidablePred SF.sets]:
+  Equivalence (vertex_equiv SF) :=
+{
+  -- 反射性: x ∼ x
+  refl := fun x => by
+    dsimp [vertex_equiv]
+    simp
+    dsimp [vertexorder]
+    constructor
+    simp_all only [Finset.coe_mem]
+    intro h
+    simp
+
+  -- 対称性: x ∼ y → y ∼ x
+  symm := by
+    intro x y a
+    obtain ⟨val, property⟩ := x
+    obtain ⟨val_1, property_1⟩ := y
+    exact a.symm
+  -- 推移性: x ∼ y ∧ y ∼ z → x ∼ z
+
+  trans := by
+    intro x y z a b
+    dsimp [vertex_equiv] at a b
+    dsimp [vertex_equiv]
+    constructor
+    · exact (dominated SF).le_trans _ _ _ a.1 b.1
+    · exact (dominated SF).le_trans _ _ _ b.2 a.2
+}
+
+lemma vertex_equiv_degree (SF:ClosureSystem α)[DecidablePred SF.sets]:
+  ∀ (x y:SF.ground), (vertex_equiv SF) x y →  SF.degree x.val = SF.degree y.val :=
+by
+  intro x y h
+  obtain ⟨hx, hxy⟩ := h.1
+  obtain ⟨hy, hyx⟩ := h.2
+  simp_all only [hx, hy, Finset.coe_mem]
+  dsimp [SetFamily.degree]
+  congr
+  ext x : 2
+  simp_all only [and_congr_right_iff]
+  intro a
+  apply Iff.intro
+  · intro a_1
+    simp_all only
+  · intro a_1
+    simp_all only
+
+--ほぼ、定義そのままだが、使うので示しておく。
+lemma vertex_equiv_hyperedge (SF:ClosureSystem α)[DecidablePred SF.sets]:
+  ∀ (x y:SF.ground), (vertex_equiv SF) x y → ∀ (s:Finset α), SF.sets s →  (x.val ∈ s ↔ y.val ∈ s) :=
+by
+  intro x y h
+  intro s hs
+  obtain ⟨hx, hxy⟩ := h.1
+  obtain ⟨hy, hyx⟩ := h.2
+  have hxy' := hxy s hs
+  have hyx' := hyx s hs
+  simp_all only [hx, hy, Finset.coe_mem]
+  apply Iff.intro
+  · intro a
+    simp_all only
+  · intro a
+    simp_all only
 
 lemma parallel_same_degree (SF: ClosureSystem α) [DecidablePred SF.sets] (x y:α) (p:parallel SF x y):
   SF.degree x = SF.degree y :=
@@ -834,3 +900,34 @@ by
       let ihnf := ihn F'_closure  h_ground_card'
       rw [h_closure_ground] at ihnf
       exact ihnf
+
+--parellelの定義とvertex_equivの定義が同じである補題
+lemma parallel_vertex_equiv {α :Type} [Fintype α] [DecidableEq α] (SF:ClosureSystem α) [DecidablePred SF.sets] (x y:SF.ground):
+  is_Parallel SF x y ↔ vertex_equiv SF x y ∧ (x ≠ y):=
+by
+  dsimp [is_Parallel, vertex_equiv]
+  dsimp [vertexorder]
+  apply Iff.intro
+  ·
+    intro a
+    simp_all only [Finset.coe_mem, true_and, implies_true, and_self]
+    obtain ⟨val, property⟩ := x
+    obtain ⟨val_1, property_1⟩ := y
+    simp_all only [Subtype.mk.injEq, not_false_eq_true]
+  · intro h
+    constructor
+    · simp_all only [Finset.coe_mem, true_and]
+    · constructor
+      ·
+        simp_all only [Finset.coe_mem, true_and]
+        obtain ⟨val, property⟩ := x
+        obtain ⟨val_1, property_1⟩ := y
+        simp_all only [Subtype.mk.injEq, not_false_eq_true]
+      ·
+        intro s a
+        simp_all only [Finset.coe_mem, true_and]
+        apply Iff.intro
+        · intro a_1
+          simp_all only
+        · intro a_1
+          simp_all only

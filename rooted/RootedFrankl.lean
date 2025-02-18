@@ -8,7 +8,7 @@ import Mathlib.Logic.Function.Defs
 import rooted.CommonDefinition
 import rooted.GeneralLemma
 import rooted.RootedCircuits
-import rooted.RootedImplication
+import rooted.Dominant
 import LeanCopilot
 
 open Classical
@@ -359,12 +359,12 @@ by
   · simp_all only [Finset.card_attach]
   · simp_all only [Finset.card_attach]
 
---instance vertexorder_is_preorder (SF : ClosureSystem α) [DecidablePred SF.sets]
+--instance dominated (SF : ClosureSystem α) [DecidablePred SF.sets]
 
---頂点を与えると、それと同値な頂点集合全体を返す関数。vertex_orderでなく、vertexorder_is_preorderを使う必要があった。
+--頂点を与えると、それと同値な頂点集合全体を返す関数。vertex_orderでなく、dominatedを使う必要があった。
 --preorder.leanのところとの記号の整合性を考える必要がある。
 noncomputable def equivalent_vertex (SF: ClosureSystem α) [DecidablePred SF.sets] (v: SF.ground):Finset SF.ground:=
-Finset.filter (fun x => (vertexorder_is_preorder SF).le v x ∧ (vertexorder_is_preorder SF).le x v) SF.ground.attach
+Finset.filter (fun x => (dominated SF).le v x ∧ (dominated SF).le x v) SF.ground.attach
 
 --同じ同値類に属する頂点は、同値であり、degreeが等しいことを示す必要がある。
 lemma equivalent_vertex_lemma (SF: ClosureSystem α) [DecidablePred SF.sets] (v: SF.ground):
@@ -387,7 +387,7 @@ by
   intro xneqv
   dsimp [parallel]
   dsimp [equivalent_vertex] at hx
-  dsimp [vertexorder_is_preorder] at hx
+  dsimp [dominated] at hx
   dsimp [vertexorder] at hx
   simp_all only [Finset.mem_filter, Finset.mem_attach, true_and, Finset.coe_mem]
   obtain ⟨val, property⟩ := v
@@ -846,7 +846,7 @@ by
       dsimp [equivalent_vertex] at h_1
       simp_all only [Finset.mem_filter, Finset.mem_attach, true_and]
       obtain ⟨left_4, right_2⟩ := h_1
-      dsimp [vertexorder_is_preorder] at left_4
+      dsimp [dominated] at left_4
       dsimp [vertexorder] at left_4
       simp_all only [true_and]
 
@@ -872,7 +872,7 @@ by
       dsimp [equivalent_vertex] at h_1
       simp_all only [Finset.mem_filter, Finset.mem_attach, true_and]
       obtain ⟨left_4, right_2⟩ := h_1
-      dsimp [vertexorder_is_preorder] at left_4
+      dsimp [dominated] at left_4
       dsimp [vertexorder] at left_4
       simp_all only [true_and]
 

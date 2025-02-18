@@ -1,11 +1,12 @@
---SetFamilyもSubtypeも用いないレベルの前順序の話。集合族版の対応する定理があるものもある。
+--SetFamilyもSubtypeも用いないレベルの前順序の話。集合族版の対応する定理があるものもある。たとえば、dominatedは、RootedImplication.leanにある。
 import Mathlib.Data.Finset.Powerset
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Logic.Function.Defs
 import Mathlib.Tactic
 import rooted.CommonDefinition
 import rooted.RootedCircuits
-import rooted.RootedImplication
+--import rooted.RootedImplication
+import rooted.Dominant
 import rooted.RootedFrankl
 import LeanCopilot
 
@@ -393,7 +394,7 @@ theorem S_eq_S_star_fromR (R : α → α → Prop) :
     · simp_all only
 
 --S_RがPreorderのinstanceであることは、ここまででは証明してない。
---それと同等なことは、RootedImplication.leanのinstance vertexorder_is_preorder (SF : ClosureSystem α) [DecidablePred SF.sets] で示している。
+--それと同等なことは、RootedImplication.leanのinstance dominated (SF : ClosureSystem α) [DecidablePred SF.sets] で示している。
 
 /-
 1. **`down_closure S` の定義**
