@@ -13,7 +13,7 @@ package Ideal {
 }
 @[default_target]
 lean_lib rooted where --この名前はそれほど重要でなく、プロジェクト名に合わせる必要もない。
-  roots:= #[`rooted.Dominant, `rooted.ClosureOperator, `rooted.RootedImplication, `rooted.RootedFrankl, `rooted.StemSizeOne, `rooted.FranklHyperedge] --この名前は、lake buildされるターゲットになる。importと同じ名前になる。
+  roots:= #[`rooted.GeneralLemma, `rooted.Dominant, `rooted.Parallel, `rooted.ClosureOperator, `rooted.RootedImplication, `rooted.RootedFrankl, `rooted.StemSizeOne, `rooted.FranklHyperedge] --この名前は、lake buildされるターゲットになる。importと同じ名前になる。
   srcDir := "." -- ピリオドにすると、プロジェクトフォルダのトップからになる。
 require mathlib from git
   "https://github.com/leanprover-community/mathlib4.git"  @ "v4.16.0" -- "v4.8.0"

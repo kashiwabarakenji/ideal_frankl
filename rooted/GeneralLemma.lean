@@ -139,3 +139,37 @@ by
   simp_all only [Finset.mem_mk, Finset.not_mem_empty]
 -/
 --結果的には、これで良かった。Nonemptyというのは、要素が存在するのと同じだった。
+
+lemma add_compl_card {α : Type} [DecidableEq α] (X : Finset α) (P Q : α → Prop) [DecidablePred P] [DecidablePred Q] :
+  (Finset.filter P X).card =
+    (Finset.filter (λ s => P s ∧ Q s) X).card +
+    (Finset.filter (λ s => P s ∧ ¬Q s) X).card :=
+by
+  have h_disjoint : Disjoint
+      (Finset.filter (λ s => P s ∧ Q s) X)
+      (Finset.filter (λ s => P s ∧ ¬Q s) X) := by
+    apply Finset.disjoint_filter.mpr
+    intro s
+    simp only [and_imp, not_and, not_not]
+    intro _ _ h_not_Q
+    intro _
+    simp_all only
+
+  have h_union :
+    Finset.filter P X =
+      Finset.filter (λ s => P s ∧ Q s) X ∪ Finset.filter (λ s => P s ∧ ¬Q s) X := by
+    ext s
+    simp only [Finset.mem_filter, Finset.mem_union]
+    constructor
+    · intro hP
+      by_cases Q s
+      · left; simp_all only [and_self]
+      · right; simp_all only [not_false_eq_true, and_self]
+    · intro hPQ
+      cases hPQ with
+      | inl h => simp_all only [and_self]
+      | inr h => simp_all only [and_self]
+
+  rw [h_union]
+  rw [Finset.card_union_of_disjoint]
+  exact h_disjoint

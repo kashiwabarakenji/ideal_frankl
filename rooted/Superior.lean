@@ -559,6 +559,8 @@ by
   _ = (Finset.filter (fun s => SF.sets s ∧ ({x.val, y.val} ∩ s).card = 1) SF.ground.powerset).card := by simp_all only [ne_eq, gt_iff_lt, f, S]
 
 --2点優位であれば、2点平均abundnatという定理。
+--pairのnorm_degree_sumとsuperiorのndsの関係を証明した方が良いかも。
+--今の定理の証明を残したまま、新たな補題を証明する方向で改善をはかる。
 theorem two_superior_implies_nds_positive (SF: ClosureSystem α) [DecidablePred SF.sets] (x y :SF.ground) (neq: x ≠ y):
   superior SF ({x.val,y.val}:Finset α) → normalized_degree_sum SF ({x.val,y.val}:Finset α) > 0 :=
 by
@@ -669,4 +671,199 @@ by
   norm_cast at tsin
   --norm_cast at eoiz
   simp_all only [P,Q]
+  linarith
+
+lemma com4 (A B C D : ℕ) : A + B + C + D = D + B + C + A := by
+  ring
+
+lemma number_of_hyperedges_pair_card (SF: ClosureSystem α) [DecidablePred SF.sets] (x y :SF.ground) (neq: x ≠ y):
+  ↑(Finset.filter (fun s => SF.sets s) SF.ground.powerset).card =
+  ↑(Finset.filter (fun s => SF.sets s ∧ ↑x ∉ s ∧ ↑y ∉ s) SF.ground.powerset).card +
+    ↑(Finset.filter (fun s => SF.sets s ∧ ↑x ∈ s ∧ ↑y ∉ s) SF.ground.powerset).card +
+    ↑(Finset.filter (fun s => SF.sets s ∧ ↑x ∉ s ∧ ↑y ∈ s) SF.ground.powerset).card +
+    ↑(Finset.filter (fun s => SF.sets s ∧ ↑x ∈ s ∧ ↑y ∈ s) SF.ground.powerset).card :=
+by
+  -- `SF.sets s` を `x ∈ s` と `x ∉ s` に分ける
+  have h1 := add_compl_card SF.ground.powerset (fun s => SF.sets s) (fun s => x.val ∈ s)
+
+  -- `x ∈ s` の部分を `y ∈ s` と `y ∉ s` に分ける
+  have h2 := add_compl_card (Finset.filter (fun s => SF.sets s ∧ x.val ∈ s) SF.ground.powerset)
+    (fun s => True) (fun s => y.val ∈ s)
+
+  -- `x ∉ s` の部分を `y ∈ s` と `y ∉ s` に分ける
+  have h3 := add_compl_card (Finset.filter (fun s => SF.sets s ∧ x.val ∉ s) SF.ground.powerset)
+    (fun s => True) (fun s => y.val ∈ s)
+
+  -- `Finset.card` の等式を適用
+  rw [Finset.filter_filter] at h2 h3
+  rw [h1]
+  simp at h2
+  rw [h2]
+  simp at h3
+  rw [h3]
+  rw [Finset.filter_filter]
+  rw [Finset.filter_filter]
+  rw [Finset.filter_filter]
+  rw [Finset.filter_filter]
+  ring_nf
+  rw [com4]
+
+  congr
+  · ext s
+    simp only [and_assoc]
+  · ext s
+    simp_all only [ne_eq]
+    obtain ⟨val, property⟩ := x
+    obtain ⟨val_1, property_1⟩ := y
+    simp_all only [Subtype.mk.injEq]
+    apply Iff.intro
+    · intro a
+      simp_all only [not_false_eq_true, and_self]
+    · intro a
+      simp_all only [and_self, not_false_eq_true]
+  · ext s
+    simp only [and_assoc]
+  · ext s
+    simp_all only [ne_eq]
+    obtain ⟨val, property⟩ := x
+    obtain ⟨val_1, property_1⟩ := y
+    simp_all only [Subtype.mk.injEq]
+    apply Iff.intro
+    · intro a
+      simp_all only [and_self]
+    · intro a
+      simp_all only [and_self]
+
+--{x,y}のペア次数とxの次数とyの次数の関係。今は補題として使っていないが、これを使って、pair優位の定理を証明できたかも。
+theorem two_superior_pair_eq_pair_degree (SF: ClosureSystem α) [DecidablePred SF.sets] (x y :SF.ground) (neq: x ≠ y):
+  ((Finset.filter (fun s => (SF.sets s ∧ {x.val,y.val} ⊆ s)) SF.ground.powerset).card:ℤ) - (Finset.filter (fun s => (SF.sets s ∧ {x.val,y.val} ∩ s = ∅)) SF.ground.powerset).card + SF.number_of_hyperedges = SF.degree x.val + SF.degree y.val  :=
+by
+  let n00 := (Finset.filter (fun s => (SF.sets s ∧ x.val ∉ s ∧ y.val ∉ s)) SF.ground.powerset).card
+  let n10 := (Finset.filter (fun s => (SF.sets s ∧ x.val ∈ s ∧ y.val ∉ s)) SF.ground.powerset).card
+  let n01 := (Finset.filter (fun s => (SF.sets s ∧ x.val ∉ s ∧ y.val ∈ s)) SF.ground.powerset).card
+  let n11 := (Finset.filter (fun s => (SF.sets s ∧ x.val ∈ s ∧ y.val ∈ s)) SF.ground.powerset).card
+
+  have h11: (Finset.filter (fun s => (SF.sets s ∧ {x.val,y.val} ⊆ s)) SF.ground.powerset).card = n11 :=
+  by
+    simp_all only [ne_eq, gt_iff_lt,Finset.mem_filter, Finset.mem_powerset, Finset.card_eq_zero, CharP.cast_eq_zero, n11]
+    have :∀ s:Finset α, s ∈ SF.ground.powerset → (x.val ∈ s ∧ y.val ∈ s ↔ {x.val,y.val} ⊆ s) :=
+    by
+      intro s hs
+      simp_all only [ne_eq, gt_iff_lt, Finset.mem_powerset, Finset.subset_iff, Finset.not_mem_empty]
+      apply Iff.intro
+      · intro h
+        simp_all only [ne_eq, gt_iff_lt, Finset.not_mem_empty, Finset.not_mem_singleton, Finset.mem_insert, Finset.mem_singleton]
+        intro x_1 a
+        cases a with
+        | inl h =>
+          subst h
+          simp_all only
+        | inr h_1 =>
+          subst h_1
+          simp_all only
+      · intro h
+        simp_all only [Finset.mem_insert, Finset.mem_singleton, forall_eq_or_imp, forall_eq, and_self, n11]
+    simp_all only [Finset.mem_powerset, n11]
+    congr 1
+    ext a : 1
+    simp_all only [Finset.mem_filter, Finset.mem_powerset, and_congr_right_iff, implies_true]
+
+  have h10: SF.degree x.val = n10 + n11 :=
+  by
+    dsimp [SetFamily.degree]
+    dsimp [n10,n11]
+    let acc := add_compl_card SF.ground.powerset (fun s => SF.sets s∧ x.val ∈ s ) (fun s => y.val ∈ s)
+    rw [add_comm]
+    simp_all only [ne_eq, Nat.cast_add, n10, n11, acc]
+    congr
+    · simp only [and_assoc]
+    · ext x : 2
+      apply Iff.intro
+      · intro a
+        simp_all only [not_false_eq_true, and_self]
+      · intro a
+        simp_all only [and_self, not_false_eq_true]
+  have h01: SF.degree y.val = n01 + n11 :=
+  by
+    dsimp [SetFamily.degree]
+    dsimp [n01,n11]
+    let acc := add_compl_card SF.ground.powerset (fun s => SF.sets s∧ y.val ∈ s ) (fun s => x.val ∈ s)
+    simp_all only [ne_eq, Nat.cast_add, n01, n11, acc]
+    have : ∀ s:Finset α, ↑(Finset.filter (fun s => (SF.sets s ∧ y.val ∈ s) ∧ x.val ∉ s) SF.ground.powerset).card =
+       ↑(Finset.filter (fun s => SF.sets s ∧ ↑x ∉ s ∧ ↑y ∈ s) SF.ground.powerset).card :=
+    by
+      intro s
+      congr
+      ext z : 2
+      apply Iff.intro
+      · intro a
+        simp_all only [not_false_eq_true, and_self]
+      · intro a
+        simp_all only [and_self, not_false_eq_true]
+    rw [this]
+    norm_cast
+    have :(Finset.filter (fun s => (SF.sets s ∧ ↑y ∈ s) ∧ ↑x ∈ s) SF.ground.powerset).card
+      =  (Finset.filter (fun s => SF.sets s ∧ ↑x ∈ s ∧ ↑y ∈ s) SF.ground.powerset).card :=
+    by
+      congr
+      ext z : 2
+      apply Iff.intro
+      · intro a
+        simp_all only [ne_eq, gt_iff_lt, Finset.mem_filter, Finset.mem_powerset, and_self]
+      · intro a
+        simp_all only [ne_eq, gt_iff_lt, Finset.mem_filter, Finset.mem_powerset, and_self]
+    rw [this]
+    ring
+    simp_all only [forall_const, n10, n01, n11]
+    obtain ⟨val, property⟩ := x
+    obtain ⟨val_1, property_1⟩ := y
+    simp_all only [Subtype.mk.injEq]
+    exact Finset.univ
+
+  have h00: (Finset.filter (fun s => (SF.sets s ∧ {x.val,y.val} ∩ s = ∅)) SF.ground.powerset).card = n00 :=
+  by
+    simp_all only [ne_eq, gt_iff_lt, Finset.mem_filter, Finset.mem_powerset, Finset.card_eq_zero, CharP.cast_eq_zero, n00]
+    have :∀ s:Finset α, s ∈ SF.ground.powerset → (x.val ∉ s ∧ y.val ∉ s ↔ {x.val,y.val} ∩ s = ∅) :=
+    by
+      intro s hs
+      simp_all only [ne_eq, gt_iff_lt, Finset.mem_powerset, Finset.subset_iff, Finset.not_mem_empty]
+      apply Iff.intro
+      · intro h
+        simp_all only [ne_eq, gt_iff_lt, Finset.not_mem_empty, Finset.not_mem_singleton, Finset.mem_insert, Finset.mem_singleton]
+        simp_all only [forall_eq_or_imp, forall_eq, not_false_eq_true, Finset.insert_inter_of_not_mem,
+          Finset.singleton_inter_of_not_mem, n10, n01, n00, n11]
+      · intro h
+        simp_all only [Finset.mem_insert, Finset.mem_singleton, forall_eq_or_imp, forall_eq, and_self, n00]
+        constructor
+        ·
+          intro a
+          simp_all only [Finset.insert_inter_of_mem, Finset.insert_ne_empty]
+        · intro a
+          rw [← @Finset.disjoint_iff_inter_eq_empty] at h
+          simp_all only [Finset.disjoint_insert_left, Finset.disjoint_singleton_left, not_true_eq_false, and_false, n10,
+            n01, n00, n11]
+
+    simp_all only [Finset.mem_powerset, n00]
+    congr 1
+    ext a : 1
+    simp_all only [Finset.mem_filter, Finset.mem_powerset, and_congr_right_iff, implies_true]
+
+  have hn: SF.number_of_hyperedges = n00 + n10 + n01 + n11 :=
+  by
+    dsimp [SetFamily.number_of_hyperedges]
+    dsimp [n00,n10,n01,n11]
+    simp_all only [ne_eq, gt_iff_lt, Finset.card_union_of_disjoint, n10, n01, n00, n11]
+    rw [number_of_hyperedges_pair_card]
+    simp_all only [Nat.cast_add, n00, n01, n11, n10]
+    norm_cast
+    simp_all only [ne_eq, not_false_eq_true, n00, n01, n11, n10]
+
+  have dy: SF.degree y.val = n01 + n11 :=
+  by
+    simp_all only [ne_eq, n10, n01, n00, n11]
+  have dx: SF.degree x.val = n10 + n11 :=
+  by
+    simp_all only [ne_eq, n10, n01, n00, n11]
+  rw [dx,dy]
+  rw [h11,h00]
   linarith
