@@ -1,3 +1,4 @@
+--import Init.Core
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Finset.Powerset
@@ -5,7 +6,8 @@ import Mathlib.Data.Finset.Defs
 import Mathlib.Data.Fintype.Basic
 import LeanCopilot
 
-variable {V : Type} [Fintype V]
+variable {V : Type} [Fintype V] [DecidableEq V] --DecidableEqがないとintersectionがとれない。
+open Classical
 
 -- Prop への関数としての単体的複体の定義
 structure SimplicialComplex (V : Type) [Fintype V] where
@@ -118,3 +120,71 @@ def isShellable (Δ : SimplicialComplex V) : Prop :=
     F.Perm (facets Δ).toList ∧
     -- 2) シェリング条件を満たす
     shellingCondition Δ F d
+
+-- Define the shelling condition for non-pure complexes
+def shellingConditionNonPure (Δ : SimplicialComplex V) (F : List (Finset V)) (d : ℕ) : Prop :=
+  ∀ j, (h1:1 < j) → (h2:j ≤ F.length) →
+    let idx : Fin F.length := ⟨ j-1, by
+      apply Nat.lt_of_lt_of_le (Nat.pred_lt (Nat.succ_ne_zero _))
+      simp_all only [Nat.succ_eq_add_one]
+      omega
+    ⟩
+    let currentFacet := F.get idx
+    let prevFacets := F.take (j-1)
+    let Δprev := subcomplexFromFacets Δ prevFacets
+    let intersection := restrictComplex Δprev currentFacet
+    -- Check if the intersection is a pure subcomplex of dimension d-1
+    isPureOfDim (d - 1) intersection
+
+-- Define shellability without purity
+def isShellableNonPure (Δ : SimplicialComplex V) : Prop :=
+  let d := dim Δ
+  ∃ (F : List (Finset V)),
+    F.Perm (facets Δ).toList ∧
+    shellingConditionNonPure Δ F d
+
+def shellingLemmaCondition (F : List (Finset V)) : Prop :=
+  ∀ i k, (h0:1 ≤ i) → (h1:i < k) → (h2:k ≤ F.length) →
+    ∃ j x, ( 1 ≤ j ∧ j < k ∧ x ∈ F.get ⟨k-1, by omega⟩ ∧ ((h3:j≥ 1) → (h4:j < k) →
+    (((F.get ⟨i-1, by omega⟩):Finset V) ∩ ((F.get ⟨k-1, by omega⟩):Finset V) ⊆ (Finset.univ:Finset V) ∧
+    (((F.get ⟨i-1, by omega⟩) ∩ (F.get ⟨k-1, by omega⟩)) ⊆ ((F.get ⟨j-1, by omega⟩) ∩ (F.get ⟨k-1, by omega⟩))) ∧
+    ((F.get ⟨j-1, by omega⟩ ∩ F.get ⟨k-1, by omega⟩) = F.get ⟨k-1, by omega⟩ \ {x}))))
+
+def isFacetSequence (Δ : SimplicialComplex V) (F : List (Finset V)) : Prop :=
+  F.Perm (Finset.filter (isFacet Δ) (Finset.powerset Finset.univ)).toList
+
+/-
+  シェラビリティの標準的な定義と補題 2.3 の条件が同値であることを示す定理
+-/
+
+theorem shelling_iff_shellingLemma (Δ : SimplicialComplex V) :
+  (∃ (F : List (Finset V)), isFacetSequence Δ F ∧ shellingLemmaCondition F) ↔
+  isShellableNonPure Δ :=
+  ⟨
+    -- 左方向: shellingLemmaCondition を満たすなら isShellableNonPure になる
+    fun ⟨F, hFacetSeq, hShellingCond⟩ =>
+      let d := dim Δ
+      ⟨F, hFacetSeq, fun j h1 h2 =>
+        match List.exists_mem_of_length_pos (Nat.lt_of_lt_of_le h1 h2) with
+        | ⟨idx, hidx⟩ =>
+          let currentFacet := (F.get? (j-1)).getD ∅
+          let prevFacets := F.take (j-1)
+          let Δprev := subcomplexFromFacets Δ prevFacets
+          let intersection := restrictComplex Δprev currentFacet
+          isPureOfDim (d - 1) intersection
+      ⟩,
+
+    -- 右方向: isShellableNonPure なら shellingLemmaCondition を満たす
+    fun ⟨F, hFacetSeq, hShelling⟩ =>
+      ⟨F, hFacetSeq, fun i k h1 h2 h3 =>
+        match List.exists_mem_of_length_pos h3 with
+        | ⟨idx, hidx⟩ =>
+          let currentFacet := (F.get? (k-1)).getD ∅
+          let prevFacets := F.take (k-1)
+          let Δprev := subcomplexFromFacets Δ prevFacets
+          let intersection := restrictComplex Δprev currentFacet
+          match hShelling k h1 h3 with
+          | ⟨x, j, hj1, hj2, hj3, hj4⟩ => ⟨j, x, hj1, hj2, hj3, hj4⟩
+      ⟩
+  ⟩
+  
