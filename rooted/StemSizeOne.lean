@@ -943,8 +943,8 @@ def is_size_one_circuit (RS : RootedSets α):Prop:=
 --全部の根付き集合を考えている場合はそれでもよいが、部分的な表現だと、極小なものしか残さないと
 --導かれる集合族が変わってきてしまうということはないという理解であっているか。
 
---RSから定義した集合族から定義されるpreoder.R_hatがground上のPreorderが定義できる。
-instance size_one_circuits_preorder  [Fintype α] (RS : RootedSets α) [DecidablePred (rootedsetToClosureSystem RS).sets]
+--RSから定義した集合族から定義されるpreoder.R_hatがground上のPreorderが定義できる。サブタイプにPreorderが定義されていることに注意。
+instance size_one_circuits_preorder  {α : Type} [Fintype α]  [DecidableEq α] (RS : RootedSets α) -- [DecidablePred (rootedsetToClosureSystem RS).sets]
  : Preorder {x // x ∈ RS.ground} where
   le := λ x y => preorder.R_hat (R_from_RS1 RS) y x  -- xとyの順序が最初間違っていた。
   le_refl := λ x =>
