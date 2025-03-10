@@ -1,7 +1,9 @@
 --Parallelな頂点に関すること。
-import Mathlib.Data.Nat.Defs
+--import Mathlib.Data.Nat.Defs
+import rooted.CommonDefinition
 import rooted.ClosureMinors
 import rooted.Dominant
+import rooted.FamilyLemma
 
 open Classical
 
@@ -185,8 +187,8 @@ by
   simp_all only [ne_eq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem, Finset.card_singleton,
     Nat.reduceAdd, ge_iff_le]
 
---パラレルの1つの頂点をtraceしても、hyperedgeの数は変わらない。4時間ぐらい。
-lemma trace_paralel_vertex (SF: ClosureSystem α) [DecidablePred SF.sets] (x:α) (hx: x ∈ SF.ground):
+--パラレルの1つの頂点をtraceしても、hyperedgeの数は変わらない。4時間ぐらい。number_of_hyperedgesが入った定理名のほうがよいか。
+lemma trace_parallel_vertex_num (SF: ClosureSystem α) [DecidablePred SF.sets] (x:α) (hx: x ∈ SF.ground):
   (p:(∃ y: α, x ≠ y ∧ parallel SF x y)) →
  SF.number_of_hyperedges = (SF.toSetFamily.trace x hx (ground_card_ge_two SF x hx p)).number_of_hyperedges :=
 by
@@ -454,7 +456,7 @@ by
 
 --パラレルな頂点がある場合には、そのうち一つをtraceしても、traceした以外の頂点の次数が変わらない
 --hyperedgeの数が変わらないことの証明と似ているが、違うので、その結果を利用したり、共通の補題を設けるよりも、直接証明した方が早い気がするので、直接証明する。
-lemma trace_paralel_vertex_degree (SF: ClosureSystem α) [DecidablePred SF.sets] (x:α) (hx: x ∈ SF.ground) (z:α):
+lemma trace_parallel_vertex_degree (SF: ClosureSystem α) [DecidablePred SF.sets] (x:α) (hx: x ∈ SF.ground) (z:α):
   (p:(∃ y: α, x ≠ y ∧ parallel SF x y)) → z ≠ x →
  SF.degree z = (SF.toSetFamily.trace x hx (ground_card_ge_two SF x hx p)).degree z:=
 by
@@ -733,7 +735,7 @@ by
     simp_all only [Finset.mem_filter, Finset.mem_powerset]
     simp
 
-lemma trace_paralel_vertex_rare (SF: ClosureSystem α) [DecidablePred SF.sets] (x:α) (hx: x ∈ SF.ground):
+lemma trace_parallel_vertex_rare (SF: ClosureSystem α) [DecidablePred SF.sets] (x:α) (hx: x ∈ SF.ground):
   (p:(∃ y: α, x ≠ y ∧ parallel SF x y)) →
   ((∃ z:α, z ∈ SF.ground ∧ SF.toSetFamily.is_rare z) ↔ ∃ z:α, (z ∈ SF.ground \ {x}) ∧ (SF.toSetFamily.trace x hx (ground_card_ge_two SF x hx p)).is_rare z) :=
 by
@@ -765,8 +767,8 @@ by
           simp_all only [not_true_eq_false]
       ·
         simp_all only [tsub_le_iff_right, zero_add]
-        let tpvd := trace_paralel_vertex_degree SF z hx y ⟨y, hy, h⟩ hy.symm
-        let tpv := trace_paralel_vertex SF z hx ⟨y, hy, h⟩
+        let tpvd := trace_parallel_vertex_degree SF z hx y ⟨y, hy, h⟩ hy.symm
+        let tpv := trace_parallel_vertex_num SF z hx ⟨y, hy, h⟩
         rw [←tpvd]
         rw [←tpv]
         exact hz2
@@ -778,11 +780,11 @@ by
       · simp_all only [Finset.mem_sdiff, Finset.mem_singleton]
         simp_all only [ne_eq, not_false_eq_true, tsub_le_iff_right, zero_add, and_self]
       · --ここで、
-        --lemma trace_paralel_vertex_degree (SF: ClosureSystem α) [DecidablePred SF.sets] (x:α) (hx: x ∈ SF.ground) (z:α) (_:z ∈ SF.ground)
-        --trace_paralel_vertex (SF: ClosureSystem α) [DecidablePred SF.sets] (x:α) (hx: x ∈ SF.ground)
+        --lemma trace_parallel_vertex_degree (SF: ClosureSystem α) [DecidablePred SF.sets] (x:α) (hx: x ∈ SF.ground) (z:α) (_:z ∈ SF.ground)
+        --trace_parallel_vertex (SF: ClosureSystem α) [DecidablePred SF.sets] (x:α) (hx: x ∈ SF.ground)
         --を使う。
-        let tpvd := trace_paralel_vertex_degree SF x hx z ⟨y, hy, ⟨left, right⟩⟩ hzx
-        let tpv := trace_paralel_vertex SF x hx ⟨y, hy, ⟨left, right⟩⟩
+        let tpvd := trace_parallel_vertex_degree SF x hx z ⟨y, hy, ⟨left, right⟩⟩ hzx
+        let tpv := trace_parallel_vertex_num SF x hx ⟨y, hy, ⟨left, right⟩⟩
         rw [←tpvd]
         rw [←tpv]
         exact hz2
@@ -797,12 +799,13 @@ by
         intro a
         subst a
         simp_all only [Finset.mem_sdiff, Finset.mem_singleton, not_true_eq_false, and_false]
-      let tpvd := trace_paralel_vertex_degree SF x hx z ⟨y, hy, ⟨left, right⟩⟩ this
-      let tpv := trace_paralel_vertex SF x hx ⟨y, hy, ⟨left, right⟩⟩
+      let tpvd := trace_parallel_vertex_degree SF x hx z ⟨y, hy, ⟨left, right⟩⟩ this
+      let tpv := trace_parallel_vertex_num SF x hx ⟨y, hy, ⟨left, right⟩⟩
       rw [tpvd]
       rw [tpv]
       exact hz2
 
+--ここでのParallelの定義は、反射律は成り立っていない。
 def is_Parallel (SF:ClosureSystem α)[DecidablePred SF.sets] (x y:α) : Prop :=
 x ∈ SF.ground ∧ x ≠ y ∧ ∀ s : Finset α, SF.sets s → (x ∈ s ↔ y ∈ s)
 
@@ -888,7 +891,7 @@ by
           Finset.card_singleton, Nat.reduceAdd, Finset.card_erase_of_mem]
 
          --F'がrare vertexを持つことを示す。
-      let tpv := trace_paralel_vertex_rare F v₁ v1fg ⟨v₂, n12, right⟩
+      let tpv := trace_parallel_vertex_rare F v₁ v1fg ⟨v₂, n12, right⟩
       apply tpv.mpr
       have : n - 1 < n:= by
         subst fgc
@@ -931,3 +934,104 @@ by
           simp_all only
         · intro a_1
           simp_all only
+
+lemma trace_parallel_average_rare (SF: ClosureSystem α) [DecidablePred SF.sets] (x:α) (hx: x ∈ SF.ground):
+  (p:(∃ y: α, x ≠ y ∧ parallel SF x y)) →
+  SF.is_rare x →
+  SF.normalized_degree_sum ≤ SetFamily.normalized_degree_sum (SF.toSetFamily.trace x hx (ground_card_ge_two SF x hx p)) :=
+by
+  intro h_parallel
+  intro h_rare
+  dsimp [SetFamily.normalized_degree_sum]
+  --x以外の次数は、traceによって変わらない。よって、traceしたものの和は、元の和にxの次数を引いたもの。
+  --hyperedgeの数は変わらない。
+  let SFt := (SF.trace x hx (ground_card_ge_two SF x hx h_parallel))
+  have num:SFt.number_of_hyperedges = SF.number_of_hyperedges := by
+    dsimp [SetFamily.trace]
+    let tpv := trace_parallel_vertex_num SF x hx h_parallel
+    simp_all only [SFt, tpv]
+  have h_ground:SFt.ground = SF.ground \ {x} := by
+    dsimp [SFt]
+    dsimp [SetFamily.trace]
+    exact Finset.erase_eq SF.ground x
+  have h_sft:SFt.total_size_of_hyperedges = (SFt.ground.sum SFt.degree) :=
+  by
+    --double counting lemmaより。
+
+    let dcl := double_counting_lemma_X SFt SFt.ground
+    dsimp [SetFamily.total_size_of_hyperedges]
+    simp [dcl]
+    rw [←dcl]
+    have :∀ s, SFt.sets s → SFt.ground ∩ s = s := by
+      intro s hs
+      simp_all only [Finset.mem_inter, Finset.mem_filter, Finset.mem_powerset]
+      let sfi := SFt.inc_ground s hs
+      simp_all only [Finset.inter_eq_right, SFt]
+      obtain ⟨w, h⟩ := h_parallel
+      obtain ⟨left, right⟩ := h
+      rwa [← h_ground]
+    simp_all only [Finset.inter_eq_right, Nat.cast_sum, SFt]
+    obtain ⟨w, h⟩ := h_parallel
+    obtain ⟨left, right⟩ := h
+    rw [Finset.sum_congr]
+    rfl
+    intro s hs
+    let ts := this s
+    simp_all only [Finset.mem_filter, Finset.mem_powerset, Nat.cast_inj]
+    symm
+    congr
+    simp_all only [Finset.inter_eq_right]
+  have : SF.total_size_of_hyperedges = SF.ground.sum SF.degree := by
+    exact double_counting_lemma SF.toSetFamily
+
+  have tot:SFt.total_size_of_hyperedges = SF.total_size_of_hyperedges - SF.degree x := by
+    dsimp [SetFamily.trace]
+    let tpvd := trace_parallel_vertex_degree SF x hx
+    rw [h_sft]
+    rw [this]
+    --SFtのdegreeとSF.degreeは一緒なので等号が成り立つ。
+    have :SFt.ground.sum SFt.degree = SFt.ground.sum SF.degree := by
+      simp_all only [Finset.sum_congr, Finset.mem_filter, Finset.mem_powerset]
+      apply Finset.sum_congr
+      rfl
+      intro s hs
+      simp_all only [Finset.singleton_subset_iff, Finset.sum_sdiff_eq_sub, Finset.sum_singleton, ne_eq,
+        Finset.mem_sdiff, Finset.mem_singleton, not_false_eq_true, SFt, tpvd]
+    simp_all only [Finset.singleton_subset_iff, Finset.sum_sdiff_eq_sub, Finset.sum_singleton, ne_eq, SFt]
+
+  --calc
+  --  2 * SFt.total_size_of_hyperedges - SFt.number_of_hyperedges * SFt.ground.card
+  dsimp [SFt] at tot
+  dsimp [SFt] at h_sft
+  have h_rare_x : SF.is_rare x := h_rare
+  -- Utilize the property that x is rare in the final step.
+  rw [tot]
+  rw [num]
+  dsimp [SetFamily.is_rare] at h_rare_x
+  simp
+  dsimp [SFt] at h_ground
+  rw [h_ground]
+  have : (SF.ground \ {x}).card = SF.ground.card - 1 := by
+    apply Finset.card_sdiff
+    exact Finset.singleton_subset_iff.mpr hx
+  rw [this]
+  norm_cast
+  simp
+  rw [mul_sub]
+  rw [@Int.le_add_iff_sub_le]
+  have :SF.ground.card ≥ 1 := by
+   simp_all only [Finset.singleton_subset_iff, Finset.sum_sdiff_eq_sub, Finset.sum_singleton, tsub_le_iff_right,
+     zero_add, ge_iff_le, Finset.one_le_card, SFt]
+   exact ⟨x, hx⟩
+  simp_all only [Finset.singleton_subset_iff, Finset.sum_sdiff_eq_sub, Finset.sum_singleton, tsub_le_iff_right,
+    zero_add, ge_iff_le, Finset.one_le_card, Nat.cast_sub, Nat.cast_one, SFt]
+  obtain ⟨w, h⟩ := h_parallel
+  obtain ⟨left, right⟩ := h
+  rw [@mul_sub_one]
+  norm_cast
+  let rwi := @Int.add_le_add_iff_left 0 (- SF.number_of_hyperedges + 2 * SF.degree x) (2 * SF.ground.sum SF.degree)
+  simp
+  suffices 2 * SF.ground.sum SF.degree + 0 ≥ 2 * SF.ground.sum SF.degree + (-SF.number_of_hyperedges + 2 * SF.degree x) from by
+    simp_all only [add_zero, le_add_iff_nonneg_right, le_neg_add_iff_add_le, ge_iff_le]
+    linarith
+  simp_all only [add_zero, ge_iff_le, add_le_iff_nonpos_right, neg_add_le_iff_le_add]
