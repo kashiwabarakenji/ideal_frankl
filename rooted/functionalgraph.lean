@@ -4,9 +4,138 @@ import Mathlib.Data.Set.Function
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Tactic
 import LeanCopilot
+import rooted.CommonDefinition
+import rooted.ClosureMinors
+import rooted.Dominant
+import rooted.FamilyLemma
 
 open Finset Set Classical
 
+variable {α : Type} [Fintype α] [DecidableEq α]
+
+--計画：functional graphが定義する前順序を考える。この前順序にcompatibleな集合族(順序ideal全体)を考える。
+--この集合族が平均rareであることを示すのがメイン定理。
+--f:ground -> groundの前順序の定義式は、各頂点に対して、親(直前の上の元)がちょうど1つである。v < f(v)
+--考える集合族の要素は、その順序idealとする。
+--順序idealとは、下に閉じている集合のことである。Lean 4にはstructure Order.Idealというものがあるが利用するか？
+--SetFamilyにはRootedSetsから自然に定義できるので、ここだけでOrder.Idealを使うのは不自然。
+--Stem.SizeOne.leanのsize_one_circuits_preorder でRSからPreorderのインスタンスが定義できるので、基本はこれを使う。
+--証明は、いくつかの補題に分けられる。
+--補題：前順序は同値(Parallel)な頂点を同一視することにより、半順序だと思うことができる。
+--同値な頂点の片方をtraceすることにより、同一視していく方向性。
+--functional graphが定義する前順序は、同値類が順序と思った場合に根となる頂点にしか出てこない。
+--集合族としては、パラレルな頂点を持つ頂点をtraceしていくことにより、パラレルな頂点を持たない集合族を得ることができる。
+--Lean 4において、PartialOrderのインスタンスになることまで示すとよいか。Preorderのインスタンスになっていることを示しているのであれば、あとは反対称律を示せば良い。
+--補題の補題: その同値類を作る頂点は、rareな頂点になる。
+--この補題の証明は、その同値類を含む単射を作ることで可能。
+--補題の補題：パラレルを持つ頂点を繰り返しtraceすることにより、パラレルな頂点を持たない、半順序によって定義される集合族が得られる。
+--traceで1つずつ頂点を減らしていくアプローチは、前順序を順序に変換するのが大変かも。もともとの定義式に戻らなくて、transitive closureを使えば良いか。
+--補題の補題: パラレルな要素をtraceした場合、もとの前順序で大小関係があることと、traceした集合族での大小関係は一致する。ここでの大小関係は、要素がxを含んでいたらyも含むという関係。
+--よって、パラレルな要素をtraceした集合族もこれにより、前順序を定めることができる。
+--Parallel.leanでさきに証明しておくか。
+--補題： 集合族に対して、パラレルな要素を持つ要素で、rareな頂点をtraceして平均rareであれば、もともと平均rareである。
+--この補題の証明は、すでにParallel.leanのファイルの中で行っている。
+--平均rareとは、(順序idealの大きさの和*2-順序idealの個数*台集合の大きさ)<=0のことである。
+--補題：この半順序は、各ノードに対して、親がたかだかひとつである。
+--証明は、functional graphによる前順序の定義からわかる。2つあるとすると、前順序の定義に反する。
+--よって、考えるべき集合族は、各頂点がたかだか1つ親を持ち、パラレルな頂点を持たないような集合族になる。
+--これらの補題により、あとは、パラレルな頂点を同一視した半順序に対して、平均rareであることを示せばよい。
+--パラレルな頂点のtraceで、順序idealがどのように写るかは、traceの定義によりわかる。
+--traceして小さくして半順序を考えた方がいいのか、traceせずに同値類のまま進めたほうがいいかは、要検討。
+--同値類のまま進めるということは、SetFamilyを使わずに、同値類上に直接半順序を定義することになると思われる。
+--Lean 4では商集合を定義するためのSetoid　というものがある。
+--SetFamilyを使った方が、既存のdegreeとかrareなどの定義が利用できる。
+--補題：この半順序集合は、連結成分による同値類を考えることができる。代表元として、極大な要素を取ることができる。
+--証明は、どの要素も極大な要素に対応付けられることと、複数の極大要素を上に持つことがないことからわかる。
+--ただ、連結な同値類は考えなくても、証明できるような気もする。
+--連結成分による同値類は、パラレルな要素の同値類とは別なので注意。
+--補題：半順序集合の順序idealの個数は、台集合の数よりも同じか多い。
+--これは、各要素を単項idealに対応させれば、それが単射になることからわかる。反対称律から、単射でなければパラレルな要素が出てくる。
+--われわれの枠組みに限らない一般的な定理となる。principal_ideal_injectiveで証明済み。
+--補題：n-1の大きさの台集合を持つ集合族が平均rareであれば、それに極大要素をひとつ付け加えたものも平均rareである。
+--n-1の集合族が最初にあって付け加えると考えるよりも、もともとの集合族から極大な要素をdeletionすると考えた方がよいかも。
+--付け加えた頂点をdeletionすることでn-1の集合族が得られる。付け加えることで、元の順序idealに加えて、順序idealがちょうどひとつ付け加わる。
+--証明は、付け加わった順序idealの大きさをkとすると、kはn以下で、頂点を付け加わることで、
+--順序idealの大きさの和はkだけ増える。
+--順序idealの個数は、ちょうど1増える。
+--台集合の大きさは1増える。
+--よって、(順序idealの大きさの和*2-順序idealの個数*台集合の大きさ)は増えることはない。
+--sumを順序idealのもともとの和として、numを順序idealのもともとの個数として、num >= nであり、k <= nであるので、
+--増加分は、((sum+k)*2 - (n+1)(num+1))-(2*sum - n*num) = 2k-n-num-1 <= 0である。
+--極大な要素が1点の連結成分である場合は、別に考えなくても大丈夫か？単にk=1の場合ということで大丈夫か確認する。
+
+--ここから古い、初期のもの。SetFamily ベースのものに書き換えることにしたので、完成したら消す。
+
+--Preorderを定義する前にClosureSystemを定義してしまったが、Preorderを導入してからそれのidealとして導入した方が良かったかも。
+def family_onestem_eachvertex (V: Finset α) (f : α → α) (nonemp:V.Nonempty): ClosureSystem α :=
+{
+  ground := V,
+  sets := fun s : Finset α => s ⊆ V ∧ (∀ v ∈ V, f v ∈ s → v ∈ s)
+  inc_ground:= by
+    intro s a
+    exact a.1
+  nonempty_ground := by
+    exact nonemp
+  has_ground := by
+    simp_all only
+    constructor
+    · simp_all only [subset_refl]
+    · intro v a a_1
+      simp_all only
+  intersection_closed := by
+    intro s t a b
+    simp_all only
+    constructor
+    ·
+      obtain ⟨left, right⟩ := a
+      obtain ⟨left_1, right_1⟩ := b
+      intro v hv
+      simp_all only [Finset.mem_inter]
+      obtain ⟨left_2, right_2⟩ := hv
+      apply left_1
+      simp_all only
+    ·
+      intro v a_1 a_2
+      simp_all only [Finset.mem_inter, and_self]
+
+  }
+
+--RootedSetsから導入してみた。これは、直接Closureを定義できるし、このアプローチのほうがいいかも。
+noncomputable def rootedset_onestem_eachvertex (V: Finset α) (f : α → α) (valid:∀ v:V, f v.val ∈ V \ {v.val}) (nonemp:V.Nonempty): RootedSets α :=
+{
+  ground := V,
+  rootedsets := V.attach.image (λ v => ValidPair.mk ({f v.val}) v.val (by
+     let vl := valid v
+     rw [@mem_sdiff] at vl
+     rw [@not_mem_singleton] at vl
+     exact not_mem_singleton.mpr (id (Ne.symm vl.right))))
+  inc_ground := by
+    intros p hp
+    specialize hp
+    constructor
+    · simp at hp
+      obtain ⟨v, ⟨hv, ⟨hv_in, hp_in⟩⟩⟩ := hp
+      simp
+      simp_all only [mem_sdiff, Finset.mem_singleton, Subtype.forall]
+    ·
+      simp_all only [Finset.mem_image, mem_attach, true_and, Subtype.exists]
+      obtain ⟨w, h⟩ := hp
+      obtain ⟨w_1, h⟩ := h
+      subst h
+      simp_all only
+  nonempty_ground := by
+     exact nonemp,
+}
+
+/-
+structure RootedSets (α : Type) [DecidableEq α] where
+  ground : Finset α
+  rootedsets : Finset (ValidPair α)
+  inc_ground : ∀ p ∈ rootedsets, p.stem ⊆ ground ∧ p.root ∈ ground
+  nonempty_ground : ground.Nonempty
+-/
+
+-----古いもの。setfamilyを使わないもの。あとで完成したら消す。-----
 variable {V : Type} [Fintype V] [DecidableEq V] [Nonempty V]
 set_option linter.unusedSectionVars false
 
@@ -27,16 +156,16 @@ def degree (F : Finset (Finset V)) (v : V) : ℕ :=
 
 /-- 集合族 F の平均次数 -/
 def avg_degree (F : Finset (Finset V)) : ℚ :=
-  (∑ v in univ, degree F v) / (Fintype.card V : ℚ)
+  (∑ v ∈ univ, degree F v) / (Fintype.card V : ℚ)
 
 /-- 集合族 F の各要素の大きさの平均 -/
 def avg_size (F : Finset (Finset V)) : ℚ :=
-  (∑ I in F, I.card) / (F.card : ℚ)
+  (∑ I ∈ F, I.card) / (F.card : ℚ)
 
 /-- 補題1: double counting の原理
     頂点の次数の総和と、各集合の要素数の総和は一致する。 -/
 theorem double_counting (F : Finset (Finset V)) :
-  (∑ v ∈ univ, degree F v) = (∑ I in F, I.card) :=
+  (∑ v ∈ univ, degree F v) = (∑ I ∈ F, I.card) :=
 sorry
 
 /-- 補題1（平均次数と平均サイズの同値性）:
@@ -197,7 +326,7 @@ theorem average_ideal_size_bound
   : avg_size I ≤ (fintype.card P : ℚ) / 2 :=
 sorry
 -/
-
+/-
 /-- 補題7: 極大ノードの rare 性
     poset P において、任意の極大元 m（すなわち、∀ x, ¬ (m < x) を満たす m）は、
     m を含む順序ideal の個数が全順序ideal の個数の半分以下である。 -/
@@ -481,4 +610,5 @@ by
   · intro a_1
     subst a_1
     simp_all only
+-/
 -/

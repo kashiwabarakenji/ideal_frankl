@@ -17,6 +17,7 @@ import LeanCopilot
 
 open Classical
 
+--サイズ1の根付き集合から定義される2項関係(Preorder)。根のほうが大きい方？
 --subtypeを使うように変更した。preoderの話は台集合の概念がないので、直接使いずらい。
 def R_from_RS1 {α : Type} [DecidableEq α] (RS : RootedSets α) : {x // x ∈ RS.ground} → {x // x ∈ RS.ground} → Prop :=
   λ (x y:RS.ground) => ∃ r ∈ RS.rootedsets, r.root = y ∧ r.stem = {x.val}
@@ -189,12 +190,13 @@ by
 以上から両者は同値であることがわかる．
 -/
 
-
+--RSから作った順序によるsが生成するイデアルの作用素。結果的に閉包作用素。
 noncomputable def preorder_ideal {α : Type} [DecidableEq α] [Fintype α]
   (RS : RootedSets α) [DecidablePred (rootedsetToClosureSystem RS).sets]
   (s : Finset RS.ground) : Finset RS.ground :=
   Finset.filter (λ x => ∃ y ∈ s, preorder.R_hat (R_from_RS1 RS) y x) RS.ground.attach
 
+--ideal生成作用素がextensiveであること。後ろで使っている。
 lemma preorder_extensive {α : Type} [DecidableEq α] [Fintype α]
   (RS : RootedSets α) [DecidablePred (rootedsetToClosureSystem RS).sets]
   (s : Finset RS.ground) : s ⊆ (preorder_ideal RS s) :=
@@ -211,7 +213,8 @@ by
     obtain ⟨val, property⟩ := x
     rfl
 
---preorderのイデアルの集合preorder_idealは、本当にイデアルになっている。
+--preorderのイデアルの集合preorder_idealは、本当にイデアルになっている。つまり下に閉じている。
+--現在は補題としては使ってないようだが利用して証明することもできる。
 lemma preorder_ideal_closed_lemma  {α : Type} [DecidableEq α] [Fintype α]
   (RS : RootedSets α) [DecidablePred (rootedsetToClosureSystem RS).sets]
   --(h₁ : ∀ p ∈ RS.rootedsets, p.stem.card = 1)
@@ -243,6 +246,7 @@ by
     · simp_all only
     · simp_all only [rr2]
 
+--sが生成するidealにxが入っていたら、sの中にxより大きいものが存在する。
 lemma find_source_of_ideal_element {α : Type} [DecidableEq α] [Fintype α]
   (RS : RootedSets α) [DecidablePred (rootedsetToClosureSystem RS).sets]
   (s : Finset RS.ground) (x : RS.ground) (hx : x ∈ (preorder_ideal RS s)) :
@@ -258,9 +262,11 @@ by
   constructor
   · exact ⟨_, r, hr⟩
 
+
 --上のlemma　preorder_ideal_closed_lemmaを使って、証明をやり直したつもりだったが、結果的に使ってない。
 --find_source_of_ideal_elementを使うように書き換えられるが、まだ行なっていない。
 --この補題preorder_ideal_closedは、preorder_idealがhyperedgeであることを示す。
+--後に補題として利用する。
 lemma preorder_ideal_closed {α : Type} [DecidableEq α] [Fintype α]
   (RS : RootedSets α) [DecidablePred (rootedsetToClosureSystem RS).sets]
   (h₁ : ∀ p ∈ RS.rootedsets, p.stem.card = 1) (s : Finset RS.ground) :
@@ -387,7 +393,7 @@ by
       }
       · simp_all only
 
---デバッグのために補題を外に出す。別の補題でも役に立った。
+--デバッグのために補題を外に出す。別の補題でも役に立った。sがsubtypeの部分集合であるときに、それを含むhyperedgeが存在すること。
 lemma nonempty_filtered_powerset {α : Type} [DecidableEq α] [Fintype α] (RS : RootedSets α)  [DecidablePred (rootedsetToClosureSystem RS).sets] (s : Finset RS.ground) :
   let SF := rootedsetToClosureSystem RS
   (Finset.filter (fun t => SF.sets t ∧ Finset.image Subtype.val s ⊆ t) RS.ground.powerset).Nonempty :=
@@ -402,7 +408,8 @@ by
     intro x_1 a
     simp_all only [Finset.coe_mem]
 
---preorderのところにあるdown_closure_eq_Infの集合続版。preorderのほうの定理を利用しても証明できると思われるが、直接証明する。
+--preorderのところにあるdown_closure_eq_Infの集合族版。preorderのほうの定理を利用しても証明できると思われるが、直接証明する。
+--それを含むhyperedgeのすべての共通部分と、閉包作用素が一致する。
 lemma preorder_ideal_lemma {α : Type} [DecidableEq α] [Fintype α]
   (RS : RootedSets α) [DecidablePred (rootedsetToClosureSystem RS).sets]
   (h₁ : ∀ p ∈ RS.rootedsets, p.stem.card = 1) :
@@ -571,6 +578,7 @@ by
       obtain ⟨a, ha, rfl⟩ := hssss
       exact ha
 
+--ステムサイズがすべて1の場合は、closure operatorと、前順序集合のidealが一致する。
 --いままで証明したことを利用するだけなので、証明がもっと短く書けるかもしれない。
 lemma size_one_preorder_closure {α : Type} [DecidableEq α] [Fintype α]
   (RS : RootedSets α) [DecidablePred (rootedsetToClosureSystem RS).sets]
@@ -688,7 +696,7 @@ lemma size_zero_rooted_sets [Fintype α](RS : RootedSets α) [DecidablePred (roo
     simp
 
 --rootedcircuitsはここでは、ステムが包含関係極小のものがRSに存在するかでは、なくて、SFから作った極小なものが存在するかであることに注意。
---ステムサイズ1で生成される集合族は、rooted circuitsもステムサイズが1である。
+--ステムサイズ1で生成される集合族は、rooted circuitsもステムサイズが1である。重要な定理。
 theorem size_one_rooted_circuits [Fintype α](RS : RootedSets α) [DecidablePred (rootedsetToClosureSystem RS).sets]
   (h₁ : ∀ p,p ∈ RS.rootedsets → p.stem.card = 1) :
   let SF := rootedsetToClosureSystem RS
@@ -927,6 +935,7 @@ by
     contradiction --直接矛盾を導く方がよい。
     --transitivityより、rootedpairで、一歩でその点からq.rootへ行ける。qの極小性と矛盾。
 
+--すべてのステムサイズが1であるという条件。前の定理もこれを使ってもよい。
 def is_size_one_circuit (RS : RootedSets α):Prop:=
   ∀ p, p ∈ (rootedcircuits_from_RS RS).rootedsets → p.stem.card = 1
 --rootedcircuits_from_RS RSの定義は、ステムの極小元を持ってきているだけなので、弱い。
@@ -934,6 +943,7 @@ def is_size_one_circuit (RS : RootedSets α):Prop:=
 --全部の根付き集合を考えている場合はそれでもよいが、部分的な表現だと、極小なものしか残さないと
 --導かれる集合族が変わってきてしまうということはないという理解であっているか。
 
+--RSから定義した集合族から定義されるpreoder.R_hatがground上のPreorderが定義できる。
 instance size_one_circuits_preorder  [Fintype α] (RS : RootedSets α) [DecidablePred (rootedsetToClosureSystem RS).sets]
  : Preorder {x // x ∈ RS.ground} where
   le := λ x y => preorder.R_hat (R_from_RS1 RS) y x  -- xとyの順序が最初間違っていた。
@@ -954,6 +964,7 @@ instance size_one_circuits_preorder  [Fintype α] (RS : RootedSets α) [Decidabl
     · simp_all only
     · tauto
 
+--極大な要素が必ず存在する。下の定理の証明で利用。
 --よくわからないけど、証明が完了した。本当はもっと簡単にいけたはず。
 lemma exists_maximal_in_ground [Fintype α] (RS : RootedSets α) [DecidablePred (rootedsetToClosureSystem RS).sets]:
   ∃ m : RS.ground, ∀ x : RS.ground, (preorder.R_hat (R_from_RS1 RS) x m) → (preorder.R_hat (R_from_RS1 RS) m x):=

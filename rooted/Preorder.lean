@@ -2,6 +2,7 @@
 import Mathlib.Data.Finset.Powerset
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Logic.Function.Defs
+import Mathlib.Order.Ideal
 import Mathlib.Tactic
 import rooted.CommonDefinition
 import rooted.RootedCircuits
@@ -523,3 +524,96 @@ lemma down_closure_is_closed (S : Finset P) :
   refine ⟨s, hsS, Finset.mem_filter.mpr ⟨Finset.mem_univ y, hxy.trans y_le_s⟩⟩
 
 end preorder
+
+--順序集合に関する補題。
+variable {PO : Type*} [PartialOrder PO] [Fintype PO]-- [DecidableRel (λ a b => a ≤ b)]
+
+-- 各要素 x に対応する単項順序idealを定義
+def principal_ideal (x : PO) : Order.Ideal PO :=
+  { carrier := { y | y ≤ x },
+    lower' := λ a b hba ha => le_trans hba ha,
+    directed' := λ a b ha hb => ⟨x, le_refl x, (by simp_all only [Set.mem_setOf_eq, and_self]), hb⟩,
+    nonempty' := ⟨x, le_refl x⟩ }
+
+-- Define a PartialOrder instance for Order.Ideal PO to resolve the typeclass instance problem.
+instance orderIdealPartialOrder : PartialOrder (Order.Ideal PO) :=
+{ le := λ I J => I.carrier ⊆ J.carrier,
+  le_refl := by intros; simp_all only [LowerSet.carrier_eq_coe, Order.Ideal.coe_toLowerSet, subset_refl]
+  le_trans := by
+    intros;
+    rename_i a_2
+    simp_all only [LowerSet.carrier_eq_coe, Order.Ideal.coe_toLowerSet, SetLike.coe_subset_coe]
+    rename_i a_1
+    exact fun ⦃x⦄ a => a_2 (a_1 a)
+  le_antisymm := by
+    intros I J hIJ hJI
+    simp_all only [LowerSet.carrier_eq_coe, Order.Ideal.coe_toLowerSet, SetLike.coe_subset_coe]
+    exact le_antisymm hIJ hJI
+}
+
+-- 単項順序イデアルが異なる要素に対して異なることを示す
+omit [Fintype PO] in
+lemma principal_ideal_injective : Function.Injective (principal_ideal : PO → Order.Ideal PO) :=
+  λ x y h => by
+    simp only [principal_ideal, Order.Ideal.mk.injEq, Set.ext_iff, Set.mem_setOf_eq] at h
+    simp_all only [LowerSet.mk.injEq]
+    simp only [le_antisymm_iff] at h
+    simp_all only [Set.le_eq_subset, Set.setOf_subset_setOf]
+    obtain ⟨left, right⟩ := h
+    apply le_antisymm
+    · simp_all only [le_refl]
+    · simp_all only [le_refl]
+
+-- Order.Ideal PO が有限集合であることを示す
+--POがFintypeなので、Order.Ideal POもFintypeであることを示す？
+noncomputable instance fintypeOrderIdeal : Fintype (Order.Ideal PO) :=
+by
+  haveI : Fintype (Set PO) :=
+  by
+    infer_instance
+  -- Define a predicate that checks if a subset is an order ideal.
+  let ideal_predicate (s : Set PO) : Prop := ∃ (I : Order.Ideal PO), I.carrier = s
+  -- Show that the predicate is decidable.
+  haveI : DecidablePred ideal_predicate := by
+    intro s
+    -- Use the fact that checking order ideal properties is decidable for finite posets.
+    exact inferInstance
+  let S := {s : Set PO // ideal_predicate s}
+  -- Use the fact that S is finite
+  haveI : Fintype S := inferInstance
+  -- Establish an equivalence between Order.Ideal PO and S
+  let to_S : Order.Ideal PO → S := λ I => ⟨I.carrier, ⟨I, rfl⟩⟩
+  let from_S : S → Order.Ideal PO := λ x => Classical.choose x.property
+  have to_S_injective : Function.Injective to_S := by
+    intros I J h
+    simp [to_S] at h
+    simp_all only [LowerSet.carrier_eq_coe, Order.Ideal.coe_toLowerSet, Subtype.mk.injEq, SetLike.coe_set_eq, S,
+      ideal_predicate, to_S]
+  have to_S_surjective : Function.Surjective to_S := by
+    intro ⟨s, ⟨I, h⟩⟩
+    existsi I
+    simp [to_S, h]
+    subst h
+    simp_all only [LowerSet.carrier_eq_coe, Order.Ideal.coe_toLowerSet, S, ideal_predicate, to_S]
+  have equiv : Equiv (Order.Ideal PO) S := by
+    dsimp [Equiv]
+    refine' { toFun := to_S, invFun := from_S, .. }
+    ·
+      simp_all only [LowerSet.carrier_eq_coe, Order.Ideal.coe_toLowerSet, S, ideal_predicate, to_S, from_S]
+      intro x
+      simp_all only [SetLike.coe_set_eq, choose_eq, to_S, S, ideal_predicate]
+    ·
+      simp_all only [LowerSet.carrier_eq_coe, Order.Ideal.coe_toLowerSet, S, ideal_predicate, to_S, from_S]
+      intro x
+      simp_all only [from_S, to_S, S, ideal_predicate]
+      obtain ⟨val, property⟩ := x
+      obtain ⟨w, h⟩ := property
+      subst h
+      simp_all only [SetLike.coe_set_eq, choose_eq, from_S, to_S, S, ideal_predicate]
+  --· -- `toFun (invFun s) = s` を示す
+  simp_all only [LowerSet.carrier_eq_coe, Order.Ideal.coe_toLowerSet, S, ideal_predicate, to_S]
+  exact Fintype.ofInjective _ to_S_injective
+
+-- 順序イデアルの個数がノードの数以上であることを証明
+theorem card_ideals_ge_card_nodes : Fintype.card PO ≤ Fintype.card (Order.Ideal PO) :=
+  Fintype.card_le_of_injective principal_ideal principal_ideal_injective
