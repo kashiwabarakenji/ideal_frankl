@@ -18,9 +18,235 @@ def fCompatible (f : V → V) (F : Finset V) : Prop :=
 noncomputable def fCompatibles (f : V → V) : Finset (Finset V) :=
   univ.filter (fCompatible f)
 
+/-! ### 平均次数と平均サイズについて -/
+
+/-- 各頂点 v の次数：
+    その頂点を含む f-compatible 集合の個数  -/
+def degree (F : Finset (Finset V)) (v : V) : ℕ :=
+  (F.filter (λ I => v ∈ I)).card
+
+/-- 集合族 F の平均次数 -/
+def avg_degree (F : Finset (Finset V)) : ℚ :=
+  (∑ v in univ, degree F v) / (Fintype.card V : ℚ)
+
+/-- 集合族 F の各要素の大きさの平均 -/
+def avg_size (F : Finset (Finset V)) : ℚ :=
+  (∑ I in F, I.card) / (F.card : ℚ)
+
+/-- 補題1: double counting の原理
+    頂点の次数の総和と、各集合の要素数の総和は一致する。 -/
+theorem double_counting (F : Finset (Finset V)) :
+  (∑ v ∈ univ, degree F v) = (∑ I in F, I.card) :=
+sorry
+
+/-- 補題1（平均次数と平均サイズの同値性）:
+    集合族の平均次数が (|V|)/2 以下であることと、
+    平均サイズが (|V|)/2 以下であることは同値である。
+    （※F.nonempty を仮定） -/
+theorem avg_degree_iff_avg_size (F : Finset (Finset V)) (hF : F.Nonempty) :
+  avg_degree F ≤ (Fintype.card V : ℚ) / 2 ↔ avg_size F ≤ (Fintype.card V : ℚ) / 2 :=
+sorry
+
+/-! ### 順序集合（Poset）に関する補題 -/
+
+variable {P : Type} [Fintype P] [PartialOrder P][DecidableEq P]
+
+/-- 極大元の定義
+    m が極大であるとは、任意の x に対して m < x なら矛盾が生じる、という性質。 -/
+def is_maximal (m : P) : Prop :=
+∀ x : P, m < x → False
+
+/- P の全ての極大元の集合。 -/
+noncomputable def maximalElements : Finset P :=
+univ.filter is_maximal
+
+theorem unique_maximal_above (x y z : P)
+  (hxy : x ≤ y) (hy_max : is_maximal y)
+  (hxz : x ≤ z) (hz_max : is_maximal z) : y = z :=
+sorry
+--同値類になることを示した方がいいかも。代表元として、極大元がとれる。
+
+/-- 各ノードがたかだか 1 つの親（直前の上位ノード）を持つことを表す性質 -/
+def atMostOneParent (P : Type) [PartialOrder P] : Prop :=
+  ∀ v : P, ∀ u₁ u₂ : P, u₁ < v → u₂ < v → u₁ = u₂
+
+/-- 極大元 m に対して、その単元ideal（m 以下の全要素の集合）を定義する。 -/
+noncomputable def principalIdeal (m : P) : Finset P :=
+({x : P | x ≤ m} : Set P).toFinset
+
+/-- 補題: もし y と z が異なる極大元であれば、
+    それぞれの単元idealは互いに交わらない。 -/
+theorem principalIdeal_disjoint {y z : P}
+  (ap: atMostOneParent P) (hy_max : is_maximal y) (hz_max : is_maximal z)
+  (h : y ≠ z) : (principalIdeal y) ∩ (principalIdeal z) = ∅ :=
+sorry
+
+/-- 有限な poset では、任意の要素 x に対して、x ≤ m かつ m が極大である m が存在する。 -/
+theorem exists_maximal_above (x : P) : ∃ m : P, is_maximal m ∧ x ≤ m :=
+sorry
+
+/-- 各 x に対して、x の上にある極大元を選ぶ（存在定理より classical.choice で選んでいる）。 -/
+noncomputable def maxAbove (x : P) : P :=
+Classical.choose (exists_maximal_above x)
+
+theorem maxAbove_spec (x : P) : is_maximal (maxAbove x) ∧ x ≤ maxAbove x :=
+Classical.choose_spec (exists_maximal_above x)
+
+/-- 補題: もし m が極大ならば、m の上にある極大元は m 自身である。
+    （有限 poset では、極大元は下閉性より自明に m ≤ m かつ m の上に m 以外は存在しない。） -/
+theorem maxAbove_idempotent (m : P) (h : is_maximal m) : maxAbove m = m :=
+sorry
+
+/-- 各 x に対して、maxAbove (x) は x の上にある極大元であり、さらに極大元であるため、
+    maxAbove (maxAbove x) = maxAbove x が成立する。 -/
+theorem maxAbove_self (x : P) : maxAbove (maxAbove x) = maxAbove x :=
+by
+  -- maxAbove_spec (maxAbove x) により、maxAbove x ≤ maxAbove (maxAbove x) とあるが、maxAbove x は極大
+  have hmax := (maxAbove_spec x).1
+  apply maxAbove_idempotent
+  exact hmax
+
+
+/-- x と y を、x の上にある極大元が等しいことによって同値とする同値関係の定義。 -/
+def maxEquiv (x y : P) : Prop :=
+maxAbove x = maxAbove y
+
+instance maxEquivSetoid : Setoid P where
+  r := maxEquiv
+  iseqv :=  @Equivalence.mk _ maxEquiv
+    -- reflexivity
+    λ x => by rfl
+    -- symmetry
+    λ h => by
+      unfold maxEquiv
+      simpa [maxAbove] using h.symm
+    -- transitivity
+    λ hxy hyz => by exact hxy.trans hyz--eq.trans hxy hyz
+
+
+/-- 同値関係 maxEquiv により、各同値類の代表として maxAbove x が取れる。
+    すなわち、任意の x ∈ P に対して、maxAbove x は極大であり、かつ x ~ maxAbove x が成立する。 -/
+theorem maxAbove_is_repr (x : P) : maxEquiv x (maxAbove x) :=
+by
+  -- maxAbove x と x は同値、すなわち maxAbove x = maxAbove (maxAbove x) であるが、
+  -- これは maxAbove_self により示される。
+  dsimp [maxEquiv]
+  exact (maxAbove_self x).symm
+
+/-- 結果として、maxEquiv による同値類の各代表元は、その同値類に属する極大元となる。 -/
+theorem each_class_has_maximal_repr (x : P) : ∀ y, maxEquiv x y → maxAbove x = maxAbove y :=
+fun y h=> h
+
+/- この同値関係によって、P は同値類に分解され、各同値類の代表元として maxAbove x が選べる。 -/
+/-
+def maxEquivQuotient : Type :=
+  Quotient (maxEquivSetoid)
+-/
+
+-- ここで、各同値類の代表として maxAbove x を選ぶ写像を定義することもできるが、基本的には
+-- Quotient.mk を用いて同値類の扱いが可能である。
+
+
+--------------
+
+
+/-- 補題2: 単元idealによる順序idealの個数下界
+    各 v ∈ P に対して、単元 ideal { u | u ≤ v } は一意であるため、
+    順序ideal の個数は少なくとも |P| 個存在する。 -/
+theorem principal_ideals_injective (h : atMostOneParent P) :
+  Function.Injective (λ v : P => { u : P // u ≤ v }) :=
+sorry
+
+/-- 補題3: 台集合の拡張が平均次数に与える影響
+    台集合のサイズを n-1 から n に拡張した場合、
+    平均次数（各頂点の次数の平均）は上昇しない。 -/
+theorem extension_avg_degree_nonincreasing
+  {V' : Type} [Fintype V'] [DecidableEq V']
+  (i : V → V')
+  (F : Finset (Finset V))
+  (F_ext : Finset (Finset V')) -- F_ext は F の拡張版とする
+  : avg_degree F_ext ≤ avg_degree F :=
+sorry
+
+/-- 補題4: 連結な半順序集合における極大ノードの一意性
+    連結な poset で、各ノードがたかだか 1 つの親を持つならば、
+    極大なノードはただひとつ存在し、その単元idealは全体集合となる。 -/
+theorem connected_maximal_unique
+  (h_conn : ∀ x y : P, ∃ z, x ≤ z ∧ y ≤ z)
+  (h : atMostOneParent P) :
+  ∃! m : P, ∀ x : P, x ≤ m :=
+sorry
+
+/- 補題5: 非連結な半順序集合における平均順序ideal大きさの評価
+    各連結成分で平均がその成分の大きさの半分以下であれば、
+    全体としても平均は |P|/2 以下となる。 -/
+/-部分的に半順序集合を考える。
+theorem disconnected_avg_bound
+  (h_comp : ∀ (S : Finset P), (* S が連結成分ならばその平均順序ideal大きさは |S|/2 以下 *) True)
+  : True :=
+sorry
+-/
+
+/- 補題6: 半順序集合における順序idealの平均大きさの上界
+    各ノードがたかだか 1 つの親を持つ poset では、
+    順序ideal の平均大きさは |P|/2 以下である。 -/
+/-
+theorem average_ideal_size_bound
+  (h : atMostOneParent P)
+  (I : Finset (Finset P)) (* I を poset P の順序ideal の全体とする *)
+  : avg_size I ≤ (fintype.card P : ℚ) / 2 :=
+sorry
+-/
+
+/-- 補題7: 極大ノードの rare 性
+    poset P において、任意の極大元 m（すなわち、∀ x, ¬ (m < x) を満たす m）は、
+    m を含む順序ideal の個数が全順序ideal の個数の半分以下である。 -/
+theorem maximal_element_rare
+  (h : atMostOneParent P)
+  (m : P) (h_max : ∀ x : P, ¬ (m < x))
+  : (fintype.card { I : Finset P | m ∈ I ∧ (* I が順序ideal であることの条件 *) True })
+    ≤ (fintype.card { I : Finset P | (* I が順序ideal であることの条件 *) True }) / 2 :=
+sorry
+
+/-! ### f-compatible 集合と順序ideal の同型性、およびパラレル化操作 -/
+
+/-- 補題8:
+    有限集合 V 上の写像 f : V → V に対し、
+    「もし f v ∈ I ならば v ∈ I」という性質を満たす集合族（f-compatible 集合）は、
+    関係 v < f v により生成される前順序の順序ideal と一対一対応する。
+    さらに、ideal の大きさが 2 以上となる同値類は、
+    同値な要素をまとめたときの極大元に対応する。 -/
+theorem f_compatible_ideal_iso (f : V → V) :
+  (* fCompatibles f と、v < f v によって生成される順序ideal との間に同型が存在することを示す。 *)
+  sorry :=
+sorry
+
+/-- 補題9: rare な頂点のパラレル化と平均次数の変化
+    poset において、rare な頂点 x を、x と同じ含有条件を持つ新たな頂点 y としてパラレル化した場合、
+    全体の平均次数（または平均サイズ）は上昇しない（場合によっては低下する）。 -/
+theorem parallelization_avg_nonincreasing
+  (F : Finset (Finset V))
+  (x : V)
+  (h_rare : (* x が rare であることの条件 *) True)
+  : True :=
+sorry
+
+/-! ### 定理: ideal の平均大きさの上界 -/
+
+/-- 定理:
+    有限集合 V 上の写像 f : V → V に対し、
+    「もし f v ∈ I ならば v ∈ I」という性質を満たす集合族（すなわち f-compatible 集合）、
+    すなわち前順序の順序ideal の平均サイズは、
+    台集合 V の大きさの半分以下である。 -/
+theorem ideal_average_bound (f : V → V) :
+  avg_size (fCompatibles f) ≤ (fintype.card V : ℚ) / 2 :=
+sorry
+
 omit [DecidableEq V] in
 lemma fCompatibles_nonempty (f : V → V) : (fCompatibles f).Nonempty :=
   by simp [fCompatibles]; exact ⟨∅, by simp [fCompatible]⟩
+
+
 
 omit [DecidableEq V] in
 lemma ground_is_fCompatible (f : V → V) : fCompatible f univ := by simp [fCompatible]

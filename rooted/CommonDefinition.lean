@@ -1,7 +1,9 @@
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Finset.Powerset
+import Mathlib.Data.Finset.Sum
 import Mathlib.Data.Fintype.Basic
+import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 
@@ -20,6 +22,16 @@ noncomputable def SetFamily.degree (F : SetFamily α)[DecidablePred F.sets]: α 
 
 def SetFamily.is_rare (F : SetFamily α) (v : α)  [DecidablePred F.sets]  : Prop :=
   2 * F.degree v - F.number_of_hyperedges <= 0
+
+noncomputable def SetFamily.total_size_of_hyperedges (F : SetFamily α) [DecidablePred F.sets] : Int :=
+  Int.ofNat  (((Finset.powerset F.ground).filter F.sets).sum Finset.card)
+
+noncomputable def SetFamily.normalized_degree {α : Type} [DecidableEq α]  (F : SetFamily α) [DecidablePred F.sets] (x: α): ℤ :=
+  2 * (F.degree x:Int) - (F.number_of_hyperedges:Int)
+
+noncomputable def SetFamily.normalized_degree_sum {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α) [DecidablePred F.sets]: ℤ :=
+  2 * (F.total_size_of_hyperedges:Int) - (F.number_of_hyperedges:Int)*(F.ground.card:Int)
+
 
 --ClosureSystemの定義から空集合を分離した。
 @[ext]

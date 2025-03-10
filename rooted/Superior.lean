@@ -14,6 +14,7 @@ import rooted.RootedSets
 import rooted.RootedCircuits
 import rooted.RootedImplication
 import rooted.RootedFrankl
+--import rooted.FamilyLemma
 
 
 variable {α : Type}  [DecidableEq α] [Fintype α]
@@ -44,34 +45,7 @@ lemma sum_degree_eq_sum_card (S : Finset (Finset α)) :
   simp_all only [Finset.sum_ite_mem, Finset.univ_inter, Finset.sum_const, smul_eq_mul, mul_one]
 -/
 
---Xに関するdouble counting lemmaも証明した方がいい？
-lemma double_counting_lemma (SF:ClosureSystem α) [DecidablePred SF.sets] (X: Finset α) :
-  ∑ s ∈ (SF.ground.powerset.filter SF.sets), (X ∩ s).card = ∑ v ∈ X,SF.degree v :=
-by
-  dsimp [SetFamily.degree]
 
-  --hyperedge sと頂点vが、v∈ sが成り立つ個数についてsを先に和を計算するか、vの和を先に計算するかの違い。
-  --上の補題を直接適用できない。s.cardでなくて、(s ∩ X).cardになっているので。
-  let S := Finset.filter SF.sets SF.ground.powerset
-  have : ∑ s ∈ S, (X ∩ s).card
-       = ∑ s ∈ S, ∑ v ∈ X, if v ∈ s then 1 else 0 := by
-    congr with s
-    -- (X ∩ s).card を ∑ v in X, if v ∈ s then 1 else 0 で書き換え
-    rw [Finset.card_eq_sum_ones, Finset.sum_boole]
-    simp_all only [Finset.sum_const, smul_eq_mul, mul_one, Nat.cast_id]
-    rfl
-  -- 上記の式を使って和の順序を交換
-  rw [this, Finset.sum_comm]
-  -- 内側の和を書き換え: ∑ s in S, if v ∈ s then 1 else 0 = (filter (λ s, v ∈ s) S).card
-
-  rw [Finset.sum_congr rfl]
-  symm
-  norm_cast
-
-  intro x a
-  simp_all only [Finset.sum_ite_mem, Finset.sum_const, smul_eq_mul, mul_one, Finset.sum_boole, Nat.cast_id, S]
-  congr 1
-  rw [Finset.filter_filter]
 
 lemma sum_nonpos_exists_nonpos {α : Type} [DecidableEq α]
   (s : Finset α) (nonempty : s ≠ ∅) (f : α → ℤ) (h : s.sum f ≤ 0) :
@@ -103,7 +77,7 @@ by
     simp_all only
     linarith
 
-  have := double_counting_lemma SF X
+  have := double_counting_lemma_X SF.toSetFamily X
   norm_cast at hh
   norm_cast at this
   have :2 * ∑ v ∈ X, SF.degree v ≤  X.card * (Finset.filter (fun s => SF.sets s) SF.ground.powerset).card :=
