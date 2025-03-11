@@ -2,6 +2,7 @@ import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Finset.Powerset
 import Mathlib.Data.Set.Function
 import Mathlib.Data.Fintype.Basic
+import Mathlib.Order.Defs.PartialOrder
 import Mathlib.Tactic
 import LeanCopilot
 import rooted.CommonDefinition
@@ -14,13 +15,15 @@ open Finset Set Classical
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 
---概略：function f:ground -> groundが定義する前順序を考える。この前順序に順序ideal全体を考えて、集合族と思う。
+--概略：function f:ground -> groundが定義する前順序を考える。この前順序に順序ideal全体を考えて、有限集合ground上の集合族と思う。
 --この集合族が平均rareであることを示すのがメイン定理。
 --⚪︎前順序
---f:ground -> groundの関数が与えられると、v < f(v)というV上の2項関係が定義できて、これのtransitive closureを考えると頂点上に前順序が定義できる。
---vからみて、f(v)を親と呼ぶ。vとf(v)は、異なるとしても同じ場合を許しても、似た問題になる。
+--groundを有限台集合とする。
+--f:ground -> groundの関数が与えられると、v < f(v)というground上の2項関係が定義できて、これのtransitive closureを考えるとground上に前順序が定義できる。
+--vからみて、f(v)を親と呼ぶ。vとf(v)は異なると仮定しても同じ場合を許しても、似た問題になる。とりあえず異なると仮定して考えている。
 --親を辿っていくと、頂点が循環することがある。その部分は、前順序において、同値な頂点集合ということになる。
 --補題：functionが与えられると、前順序における頂点の同値類ができる。
+--証明は一般的な前順序の議論でできる。
 --⚪︎順序idealと平均rare
 --順序idealとは、考えている前順序で、下に閉じている集合のことである。
 --頂点集合上に前順序が与えられると順序idealの全体が決まる。これは集合族のhyperedgeと思って、平均rareになるかなどが議論できる。
@@ -37,6 +40,8 @@ variable {α : Type} [Fintype α] [DecidableEq α]
 --補題: サイズ2以上の同値類の頂点は、rareな頂点になる。
 --この補題の証明は、その同値類をhyperedge全体から含まないhyperedge全体への単射を作ることで可能。
 --⚪︎パラレルな頂点のtraceと同値類上の半順序
+--ground上に同値類が与えられていて、以下の条件を満たすとする。1. サイズ2以上の同値類は、半順序の極大な要素のみ。2. 半順序の親は、たかだか1つ。
+--この半順序に対して、順序idealを考えて、hyperedgeと思って、集合族を考えることができる。
 --同値な頂点(パラレルな頂点とも呼ぶ)のひとつをtraceすることにより、同一視していく方向性。
 --補題: パラレルな頂点をtraceした場合、もとの前順序で大小関係があることと、traceした集合族での大小関係は一致する。ここでの大小関係は、hyperedgeがxを含んでいたらyも含むという関係。
 --よって、パラレルな頂点をtraceした集合族もこれにより、前順序を定めることができる。サイズ2以上の同値類から同値な頂点をひとつtraceしても、半順序の親がたかだか1つということも変わらない。
@@ -48,8 +53,9 @@ variable {α : Type} [Fintype α] [DecidableEq α]
 --補題: 集合族に対して、パラレルな要素を持つものが平均rareであることを示すためには、サイズ2以上の同値類をすべて1頂点にまでtraceしたものが平均rareであることを示せば良い。
 --パラレルな頂点の個数に関する帰納法で示すことができる。サイズがkの同値類があれば、k-1を足すということでbase caseが0にするとよい。
 --⚪︎半順序と平均rare
---パラレルな頂点がなくなったあとは、グラフ論の森で各連結成分に根が指定されているものと思うことができる。根から遠い頂点が下となる。
---パラレルな頂点がなくなったあとは、極大な頂点(=グラフの根)をdeletionしていく。
+--ここまでで、サイズ2以上の同値類はないと仮定してよくなったので、同値類のサイズは全部1で、頂点集合ground上の半順序と思うことができる。
+--パラレルな頂点がなくなったあとは、グラフ論の森(forest)で各連結成分に根が指定されているものと思うことができる。根から遠い頂点が下となる。
+--パラレルな頂点がなくなったあとは、極大な頂点(=グラフの根)をdeletionしていく。集合族としては、根のdeletionと考えても、traceと考えても同じ。
 --補題：半順序集合の順序idealの個数は、台集合の数よりも同じか多い。
 --これは、各要素を単項idealに対応させれば、それが単射になることからわかる。反対称律から、単射でなければパラレルな要素が出てくる。
 --われわれの枠組みに限らない一般的な定理となる。principal_ideal_injectiveで証明済み。
@@ -135,6 +141,40 @@ noncomputable def rootedset_onestem_eachvertex {α : Type} [Fintype α] [Decidab
 --preorderになるというlemmaの形ではうまくいかなかったので、instanceにしてみる。Preorderがサブタイプに定義されている。
 noncomputable instance size_one_preorder {α : Type} [Fintype α] [DecidableEq α] (V: Finset α) (f : α → α) (valid:∀ v : { x : α // x ∈ V }, f v.val ∈ V \ {v.val}) (nonemp:V.Nonempty):
   Preorder { x // x ∈ V } := size_one_circuits_preorder (rootedset_onestem_eachvertex V f valid nonemp)
+
+--前順序が同値類を作り、それ上の半順序を作るという一般的な話の部分。setoidが導入されている。
+def equiv_rel {α : Type} [Preorder α] (x y : α) : Prop := x ≤ y ∧ y ≤ x
+
+lemma equiv_rel_refl {α : Type} [Preorder α]  : Reflexive (@equiv_rel α _) := fun x => ⟨le_refl x, le_refl x⟩
+
+lemma equiv_rel_symm  {α : Type} [Preorder α] : Symmetric (@equiv_rel α _) :=
+  fun (x y : α) (h : equiv_rel x y) => ⟨h.2, h.1⟩
+
+lemma equiv_rel_trans {α : Type} [Preorder α] : Transitive (@equiv_rel α _) :=
+  fun x y z ⟨h1, h2⟩ ⟨h3, h4⟩ => ⟨le_trans h1 h3, le_trans h4 h2⟩
+
+lemma equiv_rel_equiv {α : Type}  [Preorder α]: Equivalence (@equiv_rel α _) :=
+  ⟨equiv_rel_refl, @equiv_rel_symm α _, @equiv_rel_trans α _⟩
+
+instance setoid_preorder {α : Type}[Preorder α]: Setoid α := ⟨@equiv_rel α _, equiv_rel_equiv⟩
+
+noncomputable instance finite_quotient_classes {α : Type} [Preorder α] [Fintype α]: Finset (Quotient (@setoid_preorder α _)) :=
+  Finset.image (@Quotient.mk α setoid_preorder) (Finset.univ:Finset α)
+
+example [Preorder α]: Nonempty (Finset (Quotient (@setoid_preorder α _))) :=
+  ⟨finite_quotient_classes⟩
+
+instance quotient_partial_order {α : Type}[Preorder α]: PartialOrder (Quotient (@setoid_preorder α _)) where
+  le := Quotient.lift₂ (fun x y => x ≤ y) (fun a b c d ⟨hab1, hab2⟩ ⟨hcd1, hcd2⟩ =>
+    propext ⟨fun h => le_trans hab2 (le_trans h hcd1),
+    by
+      intro a_1
+      --hab1 : a ≤ cと、a_1 : c ≤ dと、hcd2 : d ≤ bからa ≤ bがいえる。
+      exact le_implies_le_of_le_of_le hab1 hcd2 a_1
+    ⟩)
+  le_refl := fun x => Quotient.inductionOn x (fun a => le_refl a)
+  le_trans := fun x y z => Quotient.inductionOn₃ x y z (fun a b c => le_trans)
+  le_antisymm := fun x y => Quotient.inductionOn₂ x y (fun a b h1 h2 => Quotient.sound ⟨h1, h2⟩)
 
 /-
 structure RootedSets (α : Type) [DecidableEq α] where
