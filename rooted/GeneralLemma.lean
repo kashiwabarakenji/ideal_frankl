@@ -173,3 +173,9 @@ by
   rw [h_union]
   rw [Finset.card_union_of_disjoint]
   exact h_disjoint
+
+lemma exists_mem_of_ne_empty {α : Type} [DecidableEq α] (s : Finset α) (h : s ≠ ∅) :
+  ∃ x, x ∈ s :=
+by
+  rw [←Finset.nonempty_iff_ne_empty] at h
+  exact h

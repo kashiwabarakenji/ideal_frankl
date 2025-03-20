@@ -7,12 +7,13 @@ import Mathlib.Order.Cover
 import Mathlib.Tactic
 import LeanCopilot
 import rooted.CommonDefinition
-import rooted.ClosureMinors
+import rooted.GeneralLemma
+--import rooted.ClosureMinors
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 
 -- (_: f1.ground ∩ f2.ground = ∅ )
-def DirectiProduct  (f1 f2: SetFamily α): SetFamily α :=
+def DirectProduct  (f1 f2: SetFamily α): SetFamily α :=
 {
   ground := f1.ground ∪ f2.ground,
   sets := fun s => ∃s1:Finset α, ∃ s2 :Finset α, f1.sets s1 ∧ f2.sets s2 ∧ s = s1 ∪ s2
@@ -38,15 +39,15 @@ def DirectiProduct  (f1 f2: SetFamily α): SetFamily α :=
 }
 
 --(_: f1.ground ∩ f2.ground = ∅ )
-instance directiProduct_decidable(f1 f2: SetFamily α) [DecidablePred f1.sets] [DecidablePred f2.sets]:
-  DecidablePred (DirectiProduct f1 f2).sets :=
+instance direct_Product_decidable(f1 f2: SetFamily α) [DecidablePred f1.sets] [DecidablePred f2.sets]:
+  DecidablePred (DirectProduct f1 f2).sets :=
 by
-  rw [DirectiProduct]
+  rw [DirectProduct]
   simp_all only [exists_and_left]
   infer_instance
 
-lemma directiProduct_number_of_hyperedges (f1 f2: SetFamily α) (disj: f1.ground ∩ f2.ground = ∅ ) [DecidablePred f1.sets] [DecidablePred f2.sets]:
-  (DirectiProduct f1 f2).number_of_hyperedges = f1.number_of_hyperedges * f2.number_of_hyperedges :=
+lemma direct_Product_number_of_hyperedges (f1 f2: SetFamily α) (disj: f1.ground ∩ f2.ground = ∅ ) [DecidablePred f1.sets] [DecidablePred f2.sets]:
+  (DirectProduct f1 f2).number_of_hyperedges = f1.number_of_hyperedges * f2.number_of_hyperedges :=
 by
   let S1 := Finset.filter (fun s => f1.sets s) (f1.ground.powerset)
   let S2 := Finset.filter (fun s => f2.sets s) (f2.ground.powerset)
@@ -63,11 +64,11 @@ by
     unfold SetFamily.number_of_hyperedges
     rfl
 
-  have eq_nhe_prod : (DirectiProduct f1 f2).number_of_hyperedges = Int.ofNat SP.card := by
+  have eq_nhe_prod : (DirectProduct f1 f2).number_of_hyperedges = Int.ofNat SP.card := by
     unfold SetFamily.number_of_hyperedges
     simp_all only [Int.ofNat_eq_coe, exists_and_left, Nat.cast_inj, S1, S2, SP]
     congr 1
-    simp [DirectiProduct]
+    simp [DirectProduct]
 
   /-
     3. 写像 (s1, s2) ↦ s1 ∪ s2 を構成。
@@ -316,12 +317,12 @@ by
     . exact i_inj2   --  (b) 単射性
     . exact i_surj2  --  (c) 全射性
   /-
-    5. 以上より最終的に (DirectiProduct f1 f2).number_of_hyperedges
+    5. 以上より最終的に (DirectProduct f1 f2).number_of_hyperedges
        = f1.number_of_hyperedges * f2.number_of_hyperedges
        を示す
   -/
   calc
-    (DirectiProduct f1 f2).number_of_hyperedges
+    (DirectProduct f1 f2).number_of_hyperedges
     = Int.ofNat SP.card := eq_nhe_prod
     _ = Int.ofNat (S1.card * S2.card) := by
       dsimp [SProd.sprod]
@@ -333,8 +334,8 @@ by
     _ = f1.number_of_hyperedges * f2.number_of_hyperedges := by
       rw [← eq_nhe_f1, ← eq_nhe_f2]
 
-lemma directiProduct_total_size_of_hyperedges (f1 f2: SetFamily α) (disj: f1.ground ∩ f2.ground = ∅ ) [DecidablePred f1.sets] [DecidablePred f2.sets]:
-  (DirectiProduct f1 f2).total_size_of_hyperedges = f1.total_size_of_hyperedges * f2.number_of_hyperedges + f1.number_of_hyperedges * f2.total_size_of_hyperedges := by
+lemma direct_Product_total_size_of_hyperedges (f1 f2: SetFamily α) (disj: f1.ground ∩ f2.ground = ∅ ) [DecidablePred f1.sets] [DecidablePred f2.sets]:
+  (DirectProduct f1 f2).total_size_of_hyperedges = f1.total_size_of_hyperedges * f2.number_of_hyperedges + f1.number_of_hyperedges * f2.total_size_of_hyperedges := by
   let S1 := Finset.filter (fun s => f1.sets s) (f1.ground.powerset)
   let S2 := Finset.filter (fun s => f2.sets s) (f2.ground.powerset)
   let SP := Finset.filter
@@ -350,10 +351,10 @@ lemma directiProduct_total_size_of_hyperedges (f1 f2: SetFamily α) (disj: f1.gr
     unfold SetFamily.total_size_of_hyperedges
     rfl
 
-  have eq_ts_dp : (DirectiProduct f1 f2).total_size_of_hyperedges
+  have eq_ts_dp : (DirectProduct f1 f2).total_size_of_hyperedges
                     = Int.ofNat (SP.sum (fun s => s.card)) := by
     unfold SetFamily.total_size_of_hyperedges
-    dsimp [DirectiProduct]
+    dsimp [DirectProduct]
     dsimp [SP]
     simp_all only [Int.ofNat_eq_coe, Nat.cast_sum, exists_and_left, SP, S1, S2]
 
@@ -396,25 +397,7 @@ lemma directiProduct_total_size_of_hyperedges (f1 f2: SetFamily α) (disj: f1.gr
     apply And.intro
     · gcongr
     · exact ⟨_, right_1, _, right, rfl⟩
-  /-
-  have hi : ∀ p : S1.product S2, toUnion p ∈ SP := by
-    intro p hp
-    -- p = (x,y) かつ x ∈ S1, y ∈ S2
-    rw [Finset.product] at hp
-    dsimp [SProd.sprod] at hp
-    dsimp [toUnion]
-    simp_all only [Int.ofNat_eq_coe, Nat.cast_sum, exists_and_left, Finset.filter_val, Finset.mem_mk,
-      Multiset.mem_product, Multiset.mem_filter, Finset.mem_val, Finset.mem_powerset, Finset.mem_filter, toUnion, S1,
-      S2, SP]
-    obtain ⟨fst, snd⟩ := p
-    obtain ⟨left, right⟩ := hp
-    obtain ⟨left, right_1⟩ := left
-    obtain ⟨left_1, right⟩ := right
-    simp_all only [toUnion]
-    apply And.intro
-    · gcongr
-    · exact ⟨_, right_1, _, right, rfl⟩
-  -/
+
   --------------------------------------------------------------------------------
   -- (b) 単射性:
   --     (x1 ∪ x2 = y1 ∪ y2) ⇒ (x1,x2)=(y1,y2) を示す。
@@ -587,143 +570,7 @@ lemma directiProduct_total_size_of_hyperedges (f1 f2: SetFamily α) (disj: f1.gr
   toUnion a₁ ha₁ = toUnion a₂ ha₂ → a₁ = a₂ := by
     intros a₁ ha₁ a₂ ha₂ h
     exact i_inj a₁ a₂ ha₁ ha₂ h
-  /-
-  have inj : ∀ (p₁ p₂ : Finset α × Finset α),
-    p₁ ∈ S1.product S2 →
-    p₂ ∈ S1.product S2 →
-    toUnion p₁ = toUnion p₂ →
-    p₁ = p₂ := by
-    intro p₁ p₂ hp₁ hp₂ heq
-    cases p₁ with
-    | mk x1 x2 =>
-      have hx1 : f1.sets x1 := by
-        simp_all only [Int.ofNat_eq_coe, exists_and_left, Finset.product_eq_sprod, Finset.mem_product,
-          Finset.mem_filter, Finset.mem_powerset, and_imp, Prod.forall, SP, S2, S1, toUnion]
-      have hx2: f2.sets x2 := by
-        simp_all only [Int.ofNat_eq_coe, exists_and_left, Finset.product_eq_sprod, Finset.mem_product,
-          Finset.mem_filter, Finset.mem_powerset, and_imp, Prod.forall, SP, S2, S1, toUnion]
-      cases p₂ with
-      | mk y1 y2 =>
-        have hy1 : f1.sets y1 := by
-          simp_all only [Int.ofNat_eq_coe, exists_and_left, Finset.product_eq_sprod, Finset.mem_product,
-            Finset.mem_filter, Finset.mem_powerset, and_imp, Prod.forall, Finset.filter_val, Multiset.mem_product,
-            Multiset.mem_filter, Finset.mem_val, and_true, SP, S2, S1, toUnion]
-        have hy2: f2.sets y2 := by
-          simp_all only [Int.ofNat_eq_coe, exists_and_left, Finset.product_eq_sprod, Finset.mem_product,
-            Finset.mem_filter, Finset.mem_powerset, and_imp, Prod.forall, Finset.filter_val, Multiset.mem_product,
-            Multiset.mem_filter, Finset.mem_val, and_true, SP, S2, S1, toUnion]
-        -- x1 ∪ x2 = y1 ∪ y2
-        -- S1.product S2 上で x1,x2,y1,y2 が対応する ground に属す等の事実を用いる
-        -- (台集合が交わらないので分解が一意)
-        have eq_x1 : x1 = (x1 ∪ x2) ∩ f1.ground := by
-          ext a
-          simp
-          apply Iff.intro
-          · intro a_in_x1
-            constructor
-            . left; assumption
-            rcases Finset.mem_product.1 hp₁ with ⟨h_x1, h_x2⟩
-            rcases Finset.mem_filter.1 h_x1 with ⟨h_x1_pow, h_x1_sets⟩
-            have x1_sub := Finset.mem_powerset.1 h_x1_pow
-            exact x1_sub a_in_x1
 
-             -- 同様に y1 = (y1 ∪ y2) ∩ f1.ground など示せる
-          · intro a_1
-            simp_all only [Int.ofNat_eq_coe, Nat.cast_sum, exists_and_left, Finset.product_eq_sprod, Finset.mem_product,
-              Finset.mem_filter, Finset.mem_powerset, and_imp, Prod.forall, S1, S2, toUnion, SP]
-            obtain ⟨left, right⟩ := hp₁
-            obtain ⟨left_1, right_1⟩ := hp₂
-            obtain ⟨left_2, right_2⟩ := a_1
-            obtain ⟨left, right_3⟩ := left
-            obtain ⟨left_3, right⟩ := right
-            obtain ⟨left_1, right_4⟩ := left_1
-            obtain ⟨left_4, right_1⟩ := right_1
-            cases left_2 with
-            | inl h => simp_all only [S1, S2, toUnion, SP]
-            | inr h_1 =>
-              have : a ∈ f2.ground := by
-                exact left_3 h_1
-              have ain: a ∈ f1.ground ∩ f2.ground := by
-                exact Finset.mem_inter_of_mem right_2 (left_3 h_1)
-              exfalso
-              simp_all only [Finset.not_mem_empty, S1, S2, toUnion, SP]
-        have eq_x2 : x2 = (x1 ∪ x2) ∩ f2.ground := by
-          ext a
-          simp
-          apply Iff.intro
-          · intro a_in_x2
-            constructor
-            . right; assumption
-            . rcases Finset.mem_product.1 hp₁ with ⟨h_x1, h_x2⟩
-              rcases Finset.mem_filter.1 h_x1 with ⟨h_x1_pow, h_x1_sets⟩
-              have x1_sub := Finset.mem_powerset.1 h_x1_pow
-              exact f2.inc_ground x2 hx2 a_in_x2
-
-          · intro a_1
-            cases a_1.1
-            case inl h =>
-              have : a ∈ f1.ground := by
-                exact f1.inc_ground x1 hx1 h
-              have ain: a ∈ f1.ground ∩ f2.ground := by
-                exact Finset.mem_inter_of_mem this a_1.2
-              exfalso
-              rw [disj] at ain; exact Finset.not_mem_empty a ain
-            case inr h_1 =>
-              exact h_1
-        have eq_y1 : y1 = (y1 ∪ y2) ∩ f1.ground := by
-          ext a
-          simp
-          apply Iff.intro
-          · intro a_in_y1
-            constructor
-            . left; assumption
-            . rcases Finset.mem_product.1 hp₂ with ⟨h_y1, h_y2⟩
-              rcases Finset.mem_filter.1 h_y1 with ⟨h_y1_pow, h_y1_sets⟩
-              have y1_sub := Finset.mem_powerset.1 h_y1_pow
-              exact y1_sub a_in_y1
-          · intro a_1
-            cases a_1.1
-            case inl h =>
-              exact h
-            case inr h_1 =>
-              have : a ∈ f2.ground := by
-                exact f2.inc_ground y2 hy2 h_1
-              have ain: a ∈ f1.ground ∩ f2.ground := by
-                exact Finset.mem_inter_of_mem a_1.2 this
-              exfalso
-              rw [disj] at ain; exact Finset.not_mem_empty a ain
-        have eq_y2 : y2 = (y1 ∪ y2) ∩ f2.ground := by
-          ext a
-          simp
-          apply Iff.intro
-          · intro a_in_y2
-            constructor
-            . right; assumption
-            . rcases Finset.mem_product.1 hp₂ with ⟨h_y1, h_y2⟩
-              rcases Finset.mem_filter.1 h_y1 with ⟨h_y1_pow, h_y1_sets⟩
-              have y1_sub := Finset.mem_powerset.1 h_y1_pow
-              exact f2.inc_ground y2 hy2 a_in_y2
-          · intro a_1
-            cases a_1.1
-            case inl h =>
-              have : a ∈ f1.ground := by
-                exact f1.inc_ground y1 hy1 h
-              have ain: a ∈ f1.ground ∩ f2.ground := by
-                exact Finset.mem_inter_of_mem this a_1.2
-              exfalso
-              rw [disj] at ain; exact Finset.not_mem_empty a ain
-            case inr h_1 =>
-              exact h_1
-        simp
-        dsimp [toUnion] at heq
-        rw [←heq] at eq_y1
-        rw [←heq] at eq_y2
-        constructor
-        . rw [eq_x1, eq_y1]
-        . rw [eq_x2, eq_y2]
-          -- これで x1 = y1
-          -- 同様に x2 = y2 も得られるので (x1,x2)=(y1,y2)
-  -/
   --------------------------------------------------------------------------------
   -- (c) 全射性:
   --     任意の s ∈ SP をとると、s = x ∪ y で x ∈ S1, y ∈ S2 を構成できる
@@ -762,31 +609,6 @@ lemma directiProduct_total_size_of_hyperedges (f1 f2: SetFamily α) (disj: f1.gr
     let sj := i_surj b hb
     obtain ⟨p, hp, h⟩ := sj
     exact BEx.intro p hp (h hp)
-  /-
-  have surj :∀ b ∈ S1.product S2, ∃ a, ∃ (ha : a ∈ SP), toUnion a ha = b : Prop := by
-
-    intro s hs
-    rw [Finset.mem_filter] at hs
-    let ⟨_, ⟨x, y, hx_sets, hy_sets, rfl⟩⟩ := hs
-    -- x,y は f1.sets, f2.sets を満たすので S1,S2 の要素
-    have hx_in : x ∈ S1 := by
-      rw [mem_filter]
-      constructor
-      . apply mem_powerset.mpr (f1.inc_ground x hx_sets)
-      . exact hx_sets
-    have hy_in : y ∈ S2 := by
-      rw [mem_filter]
-      constructor
-      . apply mem_powerset.mpr (f2.inc_ground y hy_sets)
-      . exact hy_sets
-    -- (x,y) ∈ S1×S2
-    have p_in : (x,y) ∈ S1.product S2 := by
-      rw [mem_product]
-      exact ⟨hx_in, hy_in⟩
-    -- s = x ∪ y
-    exists (x,y)
-    exact ⟨p_in, rfl⟩
-  -/
 
   /- 4. sum_bij を使って
        ∑(s in SP) s.card = ∑(p in S1×S2) (p.1 ∪ p.2).card
@@ -804,7 +626,6 @@ lemma directiProduct_total_size_of_hyperedges (f1 f2: SetFamily α) (disj: f1.gr
     dsimp [toUnion] at *
     -- Using that p.1 ⊆ f1.ground and p.2 ⊆ f2.ground along with disj: f1.ground ∩ f2.ground = ∅,
     -- we deduce p.1 ∩ p.2 = ∅ and so card (p.1 ∪ p.2) = p.1.card + p.2.card.
-
 
       -- 最後に、値部分 (f p) = (p.1 ∪ p.2).card, (f s) = s.card が一致するから OK
 
@@ -842,7 +663,7 @@ lemma directiProduct_total_size_of_hyperedges (f1 f2: SetFamily α) (disj: f1.gr
         exact f2.inc_ground p.2 hx2
       by_contra h_contra
       have h_contra2: ∃ a, a ∈ p.1 ∩ p.2 := by
-        exact Finset.exists_mem_of_ne_empty (p.1 ∩ p.2) h_contra
+        exact exists_mem_of_ne_empty (p.1 ∩ p.2) h_contra
       obtain ⟨a, ha⟩ := h_contra2
       rw [Finset.mem_inter] at ha
       have h: a ∈ f1.ground ∩ f2.ground := by
@@ -889,31 +710,25 @@ lemma directiProduct_total_size_of_hyperedges (f1 f2: SetFamily α) (disj: f1.gr
             simp
             exact Eq.symm (Finset.sum_mul S1 Finset.card S2.card)
 
-    have h_right:  ∑ p ∈ S1 ×ˢ S2, p.2.card = (S2.sum (fun y => y.card)) * S1.card := by
+    have h_right: ∑ p ∈ S1.product S2, p.2.card = (S2.sum (fun y => y.card)) * S1.card := by
       /- 同様に後半 -/
-      --_ + ∑ p ∈ S1.product S2, p.2.card
+      dsimp [Finset.product]
       calc
         ∑ p ∈ (S1  ×ˢ S2), p.2.card
-        = ∑ x ∈ S1, x.card * (∑ y ∈ S2, 1) := by
+        = ∑ y ∈ S2, y.card * (∑ x ∈ S1, 1) := by
           simp only [Finset.sum_const]
           rw [Finset.sum_product]
+          rw [Finset.sum_comm]
           congr
-          ext x
-
-
-
+          ext yy
           simp
-          exact Nat.mul_comm S1.card x.card
-
-      _ = (S1.sum (fun x => x.card)) * S2.card
-          + ∑ y ∈ S2, y.card * (∑ x ∈ S1, 1)
-        := by { simp only [Finset.sum_const, Finset.card_eq_sum_ones] }
-      _ = (S1.sum (fun x => x.card)) * S2.card
-          + (∑ y ∈ S2, y.card) * S1.card
-        := by { simp only [Finset.sum_const, Finset.card_eq_sum_ones] }
-      _ = (S1.sum fun x => x.card) * S2.card
-          + (S2.sum fun y => y.card) * S1.card
-        := by { simp only [Finset.sum_const, Finset.card_eq_sum_ones] }
+          exact Nat.mul_comm S1.card yy.card
+      _ = (S2.sum (fun y => y.card)) * S1.card := by
+        rw [Finset.sum_const]
+        simp only [Nat.cast_sum, Finset.card_eq_sum_ones]
+        simp
+        exact Eq.symm (Finset.sum_mul S2 Finset.card S1.card)
+    --dsimp [Finset.product]
 
     rw [h_left, h_right]
 
@@ -925,13 +740,55 @@ lemma directiProduct_total_size_of_hyperedges (f1 f2: SetFamily α) (disj: f1.gr
      = (S1.product S2).sum (fun p => p.1.card + p.2.card)
      = (∑(x in S1) x.card)*|S2| + (∑(y in S2) y.card)*|S1|.
   -/
-  show (DirectiProduct f1 f2).total_size_of_hyperedges =
+  show (DirectProduct f1 f2).total_size_of_hyperedges =
   f1.total_size_of_hyperedges * f2.number_of_hyperedges + f1.number_of_hyperedges * f2.total_size_of_hyperedges
   rw [eq_ts_dp]
   rw [eq_sum]
   rw [eq_disjoint_sum]
   rw [eq_sum_expand]
-  dsimp [DirectiProduct, SetFamily.number_of_hyperedges, SetFamily.total_size_of_hyperedges]
+  dsimp [DirectProduct, SetFamily.number_of_hyperedges, SetFamily.total_size_of_hyperedges]
   dsimp [S1, S2]
   simp
   rw [Int.mul_comm]
+
+omit [Fintype α] in
+lemma direct_product_ground_set (f1 f2: SetFamily α)  [DecidablePred f1.sets] [DecidablePred f2.sets]:
+  (DirectProduct f1 f2).ground = f1.ground ∪ f2.ground := by
+  ext a
+  simp
+  apply Iff.intro
+  · intro a_1
+    dsimp [DirectProduct] at a_1
+    simp_all only [Finset.mem_union]
+  · intro a_1
+    dsimp [DirectProduct]
+    simp_all only [Finset.mem_union]
+
+omit [Fintype α] in
+lemma direct_product_ground_set_card (f1 f2: SetFamily α) (disj: f1.ground ∩ f2.ground = ∅ ) [DecidablePred f1.sets] [DecidablePred f2.sets]:
+  (DirectProduct f1 f2).ground.card = f1.ground.card + f2.ground.card := by
+  rw [direct_product_ground_set f1 f2]
+  rw [←Finset.card_union_add_card_inter]
+  simp_all only [Finset.card_empty, add_zero]
+
+lemma direct_Product_normalized_degree_sum (f1 f2: SetFamily α) (disj: f1.ground ∩ f2.ground = ∅ ) [DecidablePred f1.sets] [DecidablePred f2.sets]:
+  (DirectProduct f1 f2).normalized_degree_sum = f2.number_of_hyperedges*f1.normalized_degree_sum + f1.number_of_hyperedges * f2.normalized_degree_sum := by
+  let S1 := Finset.filter (fun s => f1.sets s) (f1.ground.powerset)
+  let S2 := Finset.filter (fun s => f2.sets s) (f2.ground.powerset)
+  let SP := Finset.filter
+    (fun s => ∃ (x y : Finset α), f1.sets x ∧ f2.sets y ∧ s = x ∪ y)
+    ((f1.ground ∪ f2.ground).powerset)
+  dsimp [SetFamily.normalized_degree_sum]
+  rw [direct_Product_total_size_of_hyperedges f1 f2 disj]
+  rw [direct_Product_number_of_hyperedges f1 f2 disj]
+  let dpg := direct_product_ground_set_card f1 f2 disj
+  rw [dpg]
+  simp
+  norm_cast
+  ring_nf
+  simp
+  have :f2.number_of_hyperedges * f1.number_of_hyperedges * (↑f1.ground.card + ↑f2.ground.card)
+    = f1.number_of_hyperedges * f2.number_of_hyperedges * f1.ground.card + f1.number_of_hyperedges * f2.number_of_hyperedges * f2.ground.card := by
+    ring
+  rw [this]
+  ring_nf

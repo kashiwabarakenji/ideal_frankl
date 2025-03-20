@@ -452,11 +452,6 @@ by
   convert rootedset_setfamily RS SF eq s hs
   simp
 
-lemma Finset.exists_mem_of_ne_empty {α : Type} [DecidableEq α] (s : Finset α) (h : s ≠ ∅) :
-  ∃ x, x ∈ s :=
-by
-  rw [←Finset.nonempty_iff_ne_empty] at h
-  exact h
 
 --hyperedgeがないときの、根付きサーキットの形が与えられる。補題として使われる。
 lemma ClosureSystemTheorem_mpr_lemma (SF : ClosureSystem α) [DecidablePred SF.sets] [∀ s, Decidable (SF.sets s)] :
@@ -558,7 +553,7 @@ by
       obtain ⟨left, right⟩ := h_2
       simp_all only [not_true_eq_false]
 
-  match Finset.exists_mem_of_ne_empty ((closure_operator_from_SF SF).cl s \ s) this with
+  match exists_mem_of_ne_empty ((closure_operator_from_SF SF).cl s \ s) this with
   | ⟨root, hroot⟩ =>
     have root_not_in_s : root ∉ s := by
       simp_all only [Finset.mem_sdiff, not_false_eq_true]
