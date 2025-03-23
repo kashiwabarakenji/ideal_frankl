@@ -103,9 +103,12 @@ lemma path_exists {α : Type} [Fintype α] (R : α → α → Prop) (x y : α) (
       simp [this, hzn]
       --simp [Nat.not_le.mpr (Nat.lt_succ_self n)]
       intro h
-      subst hz₀ hzn
-      simp_all only [Fin.val_last, Fin.natCast_eq_last]
-      sorry
+      have : n.succ ≤ n := by
+        convert h
+        subst hz₀ hzn
+        simp_all only [Fin.natCast_eq_last, Nat.succ_eq_add_one]
+        simp [Fin.val_add]
+      exact False.elim (Nat.not_succ_le_self n this)
 
     · intro i
       simp [Fin.castSucc, Fin.succ]
@@ -190,21 +193,15 @@ lemma path_exists2 {α : Type} [Fintype α] (R : α → α → Prop) (x y : α)
 
     -- 2. 終点が c(=y) であること
     constructor
-    · have : ↑(Fin.last (n + 1)) = n + 1 := rfl
-      -- いま i = Fin.last (n+1) を代入すると、i.val = n+1 なので i ≤ n が偽になり else c が返る
-      simp [this, hzn]   -- hzn は「z n = b(=中間頂点)」の情報
+    · simp [Fin.last, hzn]
       intro h
-      -- ここで n+1 ≤ n という不可能な仮定が出るので矛盾
-      subst hz₀ hzn
-      simp_all only [Fin.val_last, Fin.natCast_eq_last]
-      have eq₁ : ↑(↑n + 1) = n.succ := rfl
-      simp_all only [Nat.succ_eq_add_one]
-      sorry
-      rw [eq₁] at h
-      exact Nat.not_succ_le_self n h
 
-
-
+      have : n.succ ≤ n := by
+        convert h
+        subst hz₀ hzn
+        simp_all only [Fin.natCast_eq_last, Nat.succ_eq_add_one]
+        simp [Fin.val_add]
+      exact False.elim (Nat.not_succ_le_self n this)
 
     -- 3. 各区間で R が成り立つこと
     · intro i
