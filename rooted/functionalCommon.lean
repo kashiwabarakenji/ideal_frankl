@@ -91,6 +91,7 @@ variable {α : Type} [Fintype α] [DecidableEq α]
 --連結成分が3個以上の場合は、帰納法で証明することになる。
 
 --Preorderを定義する前にClosureSystemを定義してしまったが、Preorderを導入してからそれのidealとして導入した方が良かったかも。
+--現状使っていない。
 def family_onestem_eachvertex (V: Finset α) (f : α → α) (nonemp:V.Nonempty): ClosureSystem α :=
 {
   ground := V,
@@ -176,7 +177,7 @@ noncomputable def rootedset_onestem_eachvertex_sub {α : Type} [Fintype α] [Dec
     simp_all only [ne_eq, Subtype.forall, attach_nonempty_iff]
   }
 
---この形が一番良いか？alpha上のRootedSetsを与える。
+--この形が一番良いか？alpha上のRootedSetsを与える。集合族を定義するのにこの形を利用している。
 noncomputable def rootedset_onestem_eachvertex_V {α : Type} [Fintype α] [DecidableEq α] (V: Finset α) (f : V → V) (valid:∀ v : V, f v ≠ v) (nonemp:Finset.Nonempty V): RootedSets α :=
 {
   ground := V,
@@ -220,9 +221,11 @@ noncomputable def rootedset_onestem_eachvertex_V {α : Type} [Fintype α] [Decid
 --noncomputable instance size_one_preorder {α : Type} [Fintype α] [DecidableEq α] (V: Finset α) (f : α → α) (valid:∀ v : { x : α // x ∈ V }, f v.val ∈ V \ {v.val}) (nonemp:V.Nonempty):
 --  Preorder { x // x ∈ V } := size_one_circuits_preorder (rootedset_onestem_eachvertex V f valid nonemp)
 
-noncomputable instance size_one_preorder {α : Type} [Fintype α] [DecidableEq α] (V: Finset α) (f : V → V) (valid:∀ v : V, f v ≠ v) (nonemp:V.Nonempty):
+--setupを定義する時に利用している。
+noncomputable def size_one_preorder {α : Type} [Fintype α] [DecidableEq α] (V: Finset α) (f : V → V) (valid:∀ v : V, f v ≠ v) (nonemp:V.Nonempty):
   Preorder { x // x ∈ V } := size_one_circuits_preorder (rootedset_onestem_eachvertex_V V f valid nonemp)
 
+--setupを与える形で書き直した方が良いかも。主定理を述べるために必要。
 noncomputable def preorder_ideal_system {α : Type} [Fintype α] [DecidableEq α] (V: Finset α) [Preorder { x // x ∈ V }] (nonemp:V.Nonempty): ClosureSystem α :=
 {
   ground := V

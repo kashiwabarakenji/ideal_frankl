@@ -30,31 +30,98 @@ variable {α : Type} [Fintype α] [DecidableEq α]
 --instance setoid_preorder {α : Type}[Preorder α]: Setoid α := ⟨@equiv_rel α _, equiv_rel_equiv⟩
 --そのPreorderから
 --instance quotient_partial_order {α : Type}[Preorder α]: PartialOrder (Quotient (@setoid_preorder α _)) where
---を利用して、半順序を作る。
+--を利用して、半順序を作る。今のままだとPartialOrderがどう定義されているかがはいっていない。SetupとSetup2を分けるといいかも。
+
+--Setupは、fの定義からPreorder関係の定義を行うもの。idealやsetroid上のpartialまでは含まない。
+--partialOrderを含むものは、Setupを継承したSetup2で行う。
 structure Setup (α : Type) [Fintype α] [DecidableEq α] where
   (V        : Finset α)
   (nonemp   : V.Nonempty)
   (f        : V → V)
   (valid    : ∀ v : V, f v ≠ v)
   (pre      : Preorder {x // x ∈ V})
-  (setoid   : Setoid {x // x ∈ V})
   (h_pre    : pre = size_one_preorder V f valid nonemp)
-  (h_setoid : setoid = setoid_preorder)
+  (setoid   : Setoid {x // x ∈ V})
+  (h_setoid : setoid = setoid_preorder) --これは順序ではなく、同値類まで。
+
+instance (s : Setup α) : Preorder {x // x ∈ s.V} := s.pre
+
+--quotient_partial_orderよりも証明が長いのは、preorderが間接的に定義されているから？
+def partialOrder_from_preorder (s : Setup α) : PartialOrder (Quotient s.setoid) where
+  le := by
+    exact Quotient.lift₂ (fun x y => s.pre.le x y)
+      (by
+
+        intros a₁ b₁ a₂ b₂ h₁ h₂
+
+        -- まず setoid の定義を展開
+        have h₁' := s.h_setoid ▸ h₁
+        have h₂' := s.h_setoid ▸ h₂
+
+        simp [setoid_preorder] at h₁' h₂'
+
+        rcases h₁' with ⟨h₁_le, h₁_ge⟩
+        rcases h₂' with ⟨h₂_le, h₂_ge⟩
+
+        apply propext
+        constructor
+        · intro h
+          exact le_implies_le_of_le_of_le h₁_ge h₂_le h
+        · intro h
+          exact le_implies_le_of_le_of_le h₁_le h₂_ge h
+
+      )
+  le_refl := by
+    intro xx
+    simp_all only
+    simp [Quotient.lift₂]
+    induction xx using Quotient.inductionOn
+    simp_all only [Quotient.lift_mk, le_refl]
+
+  le_trans := by
+    intro x y z
+    simp_all only
+    induction x using Quotient.inductionOn
+    simp_all only [Quotient.lift_mk, Quotient.lift₂]
+    induction y using Quotient.inductionOn
+    induction z using Quotient.inductionOn
+    simp_all only [Quotient.lift_mk, Quotient.lift₂]
+    rename_i a a_1 a_2
+    intro a_3 a_4
+    exact a_3.trans a_4
+
+  le_antisymm := by
+    intro x y
+    simp_all only
+    induction x using Quotient.inductionOn
+    rename_i a
+    intro a_1 a_2
+    simp_all only [Quotient.lift_mk]
+    symm
+    induction' y using Quotient.inductionOn with y
+    simp_all only [Quotient.lift_mk, Quotient.eq]
+    induction s
+    rename_i h_pre setoid h_setoid
+    subst h_pre h_setoid
+    simp_all only [AntisymmRel.setoid_r]
+    trivial
+
+--半順序を加えたSetup
+--上のinstanceは、s.po.leとは別物になってしまうので、instanceでなくてdefのほうがよい。
+structure Setup2 (α : Type) [Fintype α] [DecidableEq α] extends Setup α where
   (po       : PartialOrder (Quotient setoid))
+  (h_po     :  po = partialOrder_from_preorder toSetup)
+
+--前に定義していたquotient_partial_orderと内容的に被っている。
+instance (s : Setup2 α) : PartialOrder (Quotient s.setoid) := s.po
 
 --setupからrootedsetを作るもの。fから作るには、rootedset_onestem_eachvertex_Vを利用すれば良い。setupに含めてもよいかも。
 --RootedSetsから2項関係にするには、R_from_RS1 を用いると、ステムサイズ1のものだけから2項関係を作ってくれる。
 noncomputable def rootedset_from_setup {α : Type} [Fintype α] [DecidableEq α] (s: Setup α) : RootedSets α :=
  rootedset_onestem_eachvertex_V s.V s.f s.valid s.nonemp
 
-def isMaximal [Preorder α] (a : α) : Prop :=
-  ∀ b : α, a ≤ b → b ≤ a
-
-/--
-商集合上 `(Quotient setoid_preorder, ≤)` における「極大元」であることを表す述語です。
--/
-def isMaximalQ [Preorder α](x : Quotient (@setoid_preorder α _)) : Prop :=
-  ∀ y, x ≤ y → y ≤ x
+def isMaximal (s: Setup2 α) (a : s.V) : Prop :=
+  ∀ b : s.V, s.pre.le a b → s.pre.le b a
 
 noncomputable def eqClass_subtype {α : Type} [DecidableEq α] (V : Finset α) [Setoid {x : α // x ∈ V}] (x : {x : α // x ∈ V}) : Finset {x // x ∈ V} :=
   V.attach.filter (fun y => Setoid.r x y)

@@ -17,6 +17,8 @@ open Finset Set Classical
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 
+--このファイル自体は残すが使わずに、内容をsetup中心にした他のファイルに分散させる予定。
+
 --前順序が同値類を作り、それ上の半順序を作るという一般的な話の部分。setoidが導入されている。
 def equiv_rel {α : Type} [Preorder α] (x y : α) : Prop := x ≤ y ∧ y ≤ x
 
@@ -31,17 +33,17 @@ lemma equiv_rel_trans {α : Type} [Preorder α] : Transitive (@equiv_rel α _) :
 lemma equiv_rel_equiv {α : Type}  [Preorder α]: Equivalence (@equiv_rel α _) :=
   ⟨equiv_rel_refl, @equiv_rel_symm α _, @equiv_rel_trans α _⟩
 
---preorderから定義するsetoidのインスタンス。
+--preorderから定義するsetoidのインスタンス。setupの定義で用いる。
 instance setoid_preorder {α : Type}[Preorder α]: Setoid α := ⟨@equiv_rel α _, equiv_rel_equiv⟩
 
-instance setoid_preorder_subtype {α : Type} (V : Finset α) [Preorder {x // x ∈ V}] : Setoid {x // x ∈ V} :=
-  ⟨@equiv_rel {x // x ∈ V} _, equiv_rel_equiv⟩
+--instance setoid_preorder_subtype {α : Type} (V : Finset α) [Preorder {x // x ∈ V}] : Setoid {x // x ∈ V} :=
+--  ⟨@equiv_rel {x // x ∈ V} _, equiv_rel_equiv⟩
 
 --消すとエラー。[∀ a b : α, Decidable (a ≤ b)]も必要。
-noncomputable instance decidableEq_Quotient_setoid_preorder {α : Type} [Preorder α] [∀ a b : α, Decidable (a ≤ b)] :
-  DecidableEq (Quotient (setoid_preorder : Setoid α)) :=
-by
-  infer_instance
+--noncomputable instance decidableEq_Quotient_setoid_preorder {α : Type} [Preorder α] [∀ a b : α, Decidable (a ≤ b)] :
+--  DecidableEq (Quotient (setoid_preorder : Setoid α)) :=
+--by
+--  infer_instance
 
 /- コメントアウトしてもエラーが出ないので使ってないのかも。
 noncomputable instance finite_quotient_classes {α : Type} [Preorder α] [Fintype α]: Finset (Quotient (@setoid_preorder α _)) :=
@@ -52,6 +54,7 @@ example [Preorder α]: Nonempty (Finset (Quotient (@setoid_preorder α _))) :=
 -/
 
 --preorderから定義されるpartialorderのインスタンス。
+/-
 instance quotient_partial_order {α : Type}[Preorder α]: PartialOrder (Quotient (@setoid_preorder α _)) where
   le := Quotient.lift₂ (fun x y => x ≤ y) (fun a b c d ⟨hab1, hab2⟩ ⟨hcd1, hcd2⟩ =>
     propext ⟨fun h => le_trans hab2 (le_trans h hcd1),
@@ -63,9 +66,11 @@ instance quotient_partial_order {α : Type}[Preorder α]: PartialOrder (Quotient
   le_refl := fun x => Quotient.inductionOn x (fun a => le_refl a)
   le_trans := fun x y z => Quotient.inductionOn₃ x y z (fun a b c => le_trans)
   le_antisymm := fun x y => Quotient.inductionOn₂ x y (fun a b h1 h2 => Quotient.sound ⟨h1, h2⟩)
-
+-/
 
 --preorderとは限らないsetoidとそれ上のpartial orderが与えられた時に、それのidealとしてのSetFamilyの要素を定義する。
+--現在は、setupを使ってないが、setup2を使って書き直してもよさそう。
+--preorderのidealとpartial orderのidealが同じという証明のところでも出てくる。
 noncomputable def setoid_ideal_ClosureSystem {α : Type} [Fintype α] [DecidableEq α]  (V:Finset α) (nonemp: V.Nonempty)(r : Setoid { x // x ∈ V }) [PartialOrder (Quotient r)] : ClosureSystem α :=
 {
     ground := V,
@@ -167,7 +172,7 @@ noncomputable def setoid_ideal_ClosureSystem {α : Type} [Fintype α] [Decidable
       -/
 
 }
-
+/-
 --今の所、使ってないのかも。
 lemma preorder_partialorder_lemma_exists {α : Type} [Fintype α] [DecidableEq α] (V: Finset α) [Preorder { x // x ∈ V }] (w v:Quotient (@setoid_preorder {x // x ∈ V} _))  :
   w ≤ v ↔ (∃ x y, w = Quotient.mk (@setoid_preorder {x // x ∈ V} _) x ∧ v = Quotient.mk (@setoid_preorder {x // x ∈ V} _) y ∧ x ≤ y) := by
@@ -465,6 +470,7 @@ theorem Preorder_eq_PartialOrder {α : Type}  [Fintype α] [DecidableEq α]  (V 
         have : w.val ∈ s := by
           exact aS this
         exact this
+
 ------------
 --最初に作った部分。SetFamilyとは関係なく作ったので、今は使ってない。でもスッキリかけているし、参考になる部分があるかも。
 
@@ -583,3 +589,4 @@ lemma IsIdeal.pushforward_isIdealQ {α : Type} [Fintype α] [Preorder α]
     · rw [quotient_le_iff]
       rw [quotient_le_iff]
       exact ⟨hac, hbc⟩
+-/
