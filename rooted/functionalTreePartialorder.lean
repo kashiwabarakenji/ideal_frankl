@@ -122,11 +122,6 @@ structure Setup2 (α : Type) [Fintype α] [DecidableEq α] extends Setup α wher
 --前に定義していたquotient_partial_orderと内容的に被っている。
 instance (s : Setup2 α) : PartialOrder (Quotient s.setoid) := s.po
 
-
-
-def isMaximal (s: Setup2 α) (a : s.V) : Prop :=
-  ∀ b : s.V, s.pre.le a b → s.pre.le b a
-
 --instを入れなくても、自動的にs.poのインスタンスを使ってくれている。
 lemma pullback_preorder_lemma (s : Setup2 α)-- [inst : PartialOrder (Quotient s.setoid)]
  (j1 j2 : (Quotient s.setoid)) (x1 x2 : s.V) :
@@ -164,7 +159,7 @@ def isMaximalQ (s : Setup2 α) (x : Quotient (s.setoid)) : Prop :=
 
 --isMaximalの定義もsetupに合わせる必要があるのでは。
 lemma isMaximal_iff (s: Setup2 α) (a : s.V) :
-  isMaximal s a ↔ isMaximalQ s (Quotient.mk s.setoid a) := by
+  isMaximal s.toSetup a ↔ isMaximalQ s (Quotient.mk s.setoid a) := by
   constructor
   · --------------------
     -- (→) 方向の証明
@@ -199,7 +194,7 @@ lemma isMaximal_iff (s: Setup2 α) (a : s.V) :
 「商集合上での極大元の集合」とが、商写像 `Quotient.mk` を通じて
 ちょうど同じものになる、ということを集合レベルでも示せます。
 -/
-noncomputable def MaxSet (s:Setup2 α) := ({ a : s.V | isMaximal s a }:Finset s.V)
+noncomputable def MaxSet (s:Setup2 α) := ({ a : s.V | isMaximal s.toSetup a }:Finset s.V)
 noncomputable def MaxQuotSet (s:Setup2 α) : Finset (Quotient (s.setoid)) :=
   { x : Quotient s.setoid | isMaximalQ s x }
 
@@ -244,6 +239,69 @@ lemma MaxQuotSet_eq_image (s:Setup2 α) :
       rw [isMaximal_iff] at ha
       apply ha
       simp_all only
+
+/-- 有限の半順序集合において、任意の元 `x` に対し `x ≤ y` かつ `y` が極大な元 `y` が存在する -/
+theorem exists_max_ge_of_mem {s : Setup2 α} {q : Quotient s.setoid} :
+  ∃ y : Quotient s.setoid, s.po.le q y ∧ ∀ z : Quotient s.setoid, s.po.le y z → z = y :=
+by
+  let uA:Finset (Quotient s.setoid) := univ
+  let A := uA.filter (fun z => s.po.le q z)
+
+
+  have hA_nonempty : A.Nonempty := ⟨q, by simp_all only [mem_filter, Finset.mem_univ, le_refl, and_self, A, uA]⟩
+
+  obtain ⟨m, hmA, hmax⟩ := Finset.exists_maximal A hA_nonempty
+  have hms : m ∈ uA := by simp_all only [mem_filter, Finset.mem_univ, true_and, A, uA]--mem_of_mem_filter hmA
+  have hxm : s.po.le q m := by simp_all only [mem_filter, Finset.mem_univ, true_and, A, uA]
+
+  use m
+  constructor
+  · exact hxm
+  · intro z
+    intro h
+    let hmaxz := hmax z
+    simp at hmaxz
+    have notspo: ¬ (s.po.lt m z) :=
+    by
+      simp_all only [mem_filter, Finset.mem_univ, and_self, A, uA]
+      apply Aesop.BuiltinRules.not_intro
+      intro a
+      apply hmaxz
+      · simp_all only [mem_filter, Finset.mem_univ, true_and, A, uA]
+        exact le_trans hxm h
+      · simp_all only [A, uA]
+
+    have : z ∈ A:=
+    by
+      simp_all only [mem_filter, Finset.mem_univ, and_self, true_and, A, uA]
+      exact le_trans hxm h
+    specialize hmaxz this
+    --rw  [s.h_po] at h  --rwできるがやらない方が良かったみたい。
+    --rw [partialOrder_from_preorder] at h
+    --なんだかよくわからないけど、証明できたパターン。不等式の分解が難しい。
+    --po.ltをleで書き直した。
+    have : ¬((¬s.po.le z m) ∧ s.po.le m z) := --これはhmaxzと同値なはず。
+    by
+      rw [s.h_po]
+      rw [partialOrder_from_preorder]
+      rw [s.h_po] at notspo
+      rw [partialOrder_from_preorder] at notspo
+      simp_all only [mem_filter, Finset.mem_univ, and_self, true_and, Decidable.not_not, not_false_eq_true,
+        not_true_eq_false, and_true, A, uA]
+      simp_all only [not_and, Decidable.not_not, A, uA]
+      intro a
+      simp_all only [imp_false, not_false_eq_true, A, uA]
+    rw [not_and_or] at this
+    simp at this
+    cases this with
+    |inl hh =>
+      apply s.po.le_antisymm
+      exact hh
+      exact h
+    |inr hh =>
+      rename_i h
+      exfalso
+      exact hh h
 
 --残った示すべきことは、半順序のほうで、
 --各ノードに対して、唯一の極大元が存在するということがわかればよい。

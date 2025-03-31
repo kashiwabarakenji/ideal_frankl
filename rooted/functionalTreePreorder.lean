@@ -1044,6 +1044,8 @@ lemma eqClass_size_ge_two_implies_inverse
 
     exact s.pre.le_trans y (s.f x) x ihht slex1
 
+-------ここからfの繰り返しに関する部分------
+
 --iterationで辿り着くものには、大小関係がある。
 lemma iteratef_lemma (s: Setup α) (x : s.V):
   ∀ n, s.pre.le x (s.f^[n] x) := by
@@ -1138,7 +1140,7 @@ by
   simp_all only
   omega
 
---otera
+--上の定理の大小関係を整えたものを出力する定理
 lemma iteratef_pegion_ordered (s : Setup α) (x : s.V) :
   ∃ (n1 n2 : ℕ), n1 < n2 ∧ (s.f^[n1] x) = (s.f^[n2] x) := by
   obtain ⟨n1, n2, hne, heq⟩ := iteratef_pegion s x
@@ -1266,6 +1268,65 @@ by
     exact hsub_card
 
   use n1
+
+def isMaximal (s: Setup α) (a : s.V) : Prop :=
+  ∀ b : s.V, s.pre.le a b → s.pre.le b a
+
+lemma iteratef_size2m (s: Setup α) (x: s.V)  :
+  ∀ (n : Nat), 2 ≤ (eqClass_setup s (s.f^[n] x)).card →
+  isMaximal s (s.f^[n] x) :=
+by
+  intro n h
+  dsimp [isMaximal]
+  exact fun b a => eqClass_size_ge_two_implies_inverse s (s.f^[n] x) h b a
+
+--ノードの上にサイズ2以上が2つあると、それらは一致する。
+lemma iteratef_size2_eq (s: Setup α) (x: s.V)  :
+ ∀ (n1 n2 : Nat), 2 ≤ (eqClass_setup s (s.f^[n1] x)).card ∧ 2 ≤ (eqClass_setup s (s.f^[n2] x)).card
+  → eqClass_setup s (s.f^[n1] x) = eqClass_setup s (s.f^[n2] x) :=
+by
+  intro n1 n2 h
+  have m1 : isMaximal s (s.f^[n1] x) :=
+  by
+    exact iteratef_size2m s x n1 h.1
+  have m2 : isMaximal s (s.f^[n2] x) :=
+  by
+    exact iteratef_size2m s x n2 h.2
+
+  by_cases n1 = n2
+  case pos =>
+    congr
+  case neg =>
+    have le1: s.pre.le (s.f^[n1] x)  (s.f^[n2] x) :=
+    by
+      by_cases n1 <= n2
+      case pos =>
+        --fが大きい方が大きいのは
+        have :n1 < n2 :=
+        by
+          omega
+        exact iteratef_lemma_two s x n1 n2 this
+      case neg =>
+        have : n2 < n1 :=
+        by
+          simp_all only [not_le]
+        have : s.pre.le (s.f^[n2] x)  (s.f^[n1] x) :=
+        by
+          exact iteratef_lemma_two s x n2 n1 this
+        dsimp [isMaximal] at m2
+        let m2sf := m2 (s.f^[n1] x)
+        exact m2sf this
+    have le2: s.pre.le  (s.f^[n2] x)  (s.f^[n1] x) :=
+    by
+      obtain ⟨val, property⟩ := x
+      obtain ⟨left, right⟩ := h
+      apply m1
+      simp_all only
+    exact
+      eqClass_eq s (s.f^[n1] x) (s.f^[n2] x)
+        (m2 (s.f^[n1] x) (m1 (s.f^[n2] x) (m2 (s.f^[n1] x) (m1 (s.f^[n2] x) le1))))
+        (m1 (s.f^[n2] x) (m2 (s.f^[n1] x) (m1 (s.f^[n2] x) (m2 (s.f^[n1] x) le2))))
+
 --------------------
 ----今は使ってないもの。
 def finSub (n : ℕ) (i : Fin n) : Fin n :=
