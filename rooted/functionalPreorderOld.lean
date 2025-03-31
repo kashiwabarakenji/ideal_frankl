@@ -19,23 +19,6 @@ variable {α : Type} [Fintype α] [DecidableEq α]
 
 --このファイル自体は残すが使わずに、内容をsetup中心にした他のファイルに分散させる予定。
 
---前順序が同値類を作り、それ上の半順序を作るという一般的な話の部分。setoidが導入されている。
-def equiv_rel {α : Type} [Preorder α] (x y : α) : Prop := x ≤ y ∧ y ≤ x
-
-lemma equiv_rel_refl {α : Type} [Preorder α]  : Reflexive (@equiv_rel α _) := fun x => ⟨le_refl x, le_refl x⟩
-
-lemma equiv_rel_symm  {α : Type} [Preorder α] : Symmetric (@equiv_rel α _) :=
-  fun (x y : α) (h : equiv_rel x y) => ⟨h.2, h.1⟩
-
-lemma equiv_rel_trans {α : Type} [Preorder α] : Transitive (@equiv_rel α _) :=
-  fun _ _ _ ⟨h1, h2⟩ ⟨h3, h4⟩ => ⟨le_trans h1 h3, le_trans h4 h2⟩
-
-lemma equiv_rel_equiv {α : Type}  [Preorder α]: Equivalence (@equiv_rel α _) :=
-  ⟨equiv_rel_refl, @equiv_rel_symm α _, @equiv_rel_trans α _⟩
-
---preorderから定義するsetoidのインスタンス。setupの定義で用いる。
-instance setoid_preorder {α : Type}[Preorder α]: Setoid α := ⟨@equiv_rel α _, equiv_rel_equiv⟩
-
 --instance setoid_preorder_subtype {α : Type} (V : Finset α) [Preorder {x // x ∈ V}] : Setoid {x // x ∈ V} :=
 --  ⟨@equiv_rel {x // x ∈ V} _, equiv_rel_equiv⟩
 
@@ -69,7 +52,7 @@ instance quotient_partial_order {α : Type}[Preorder α]: PartialOrder (Quotient
 -/
 
 --preorderとは限らないsetoidとそれ上のpartial orderが与えられた時に、それのidealとしてのSetFamilyの要素を定義する。
---現在は、setupを使ってないが、setup2を使って書き直してもよさそう。
+--以下は、setupを使ってないが、setup2を使って書き直したものをTreeIdealに置く。
 --preorderのidealとpartial orderのidealが同じという証明のところでも出てくる。
 noncomputable def setoid_ideal_ClosureSystem {α : Type} [Fintype α] [DecidableEq α]  (V:Finset α) (nonemp: V.Nonempty)(r : Setoid { x // x ∈ V }) [PartialOrder (Quotient r)] : ClosureSystem α :=
 {

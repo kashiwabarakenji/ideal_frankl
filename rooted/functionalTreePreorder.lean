@@ -13,7 +13,6 @@ import rooted.Dominant
 import rooted.FamilyLemma
 import rooted.StemSizeOne
 import rooted.functionalCommon
-import rooted.functionalPreorder
 
 open Finset Set Classical
 
@@ -21,166 +20,7 @@ set_option maxHeartbeats 500000
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 
---補題1. function fから作られるpreorderから引き起こされるsetoidの同値類において、同値類の大きさが2以上であれば、極大要素になっているという定理を作りたい。
---補題2. functionalなpreorderから引き起こされるsetoidの同値類のpartial orderに関して、直前の要素はたかだか一つである。
---instance size_one_circuits_preorder  {α : Type} [Fintype α]  [DecidableEq α] (RS : RootedSets α) -- [DecidablePred (rootedsetToClosureSystem RS).sets] : Preorder {x // x ∈ RS.ground} where
---noncomputable instance size_one_preorder {α : Type} [Fintype α] [DecidableEq α] (V: Finset α) (f : V → V) (valid:∀ v : V, f v ≠ v) (nonemp:V.Nonempty):
--- Preorder { x // x ∈ V } := size_one_circuits_preorder (rootedset_onestem_eachvertex_V V f valid nonemp)
---を利用して、functionからPreorderを作成。
---instance setoid_preorder {α : Type}[Preorder α]: Setoid α := ⟨@equiv_rel α _, equiv_rel_equiv⟩
---そのPreorderから
---instance quotient_partial_order {α : Type}[Preorder α]: PartialOrder (Quotient (@setoid_preorder α _)) where
---を利用して、半順序を作る。今のままだとPartialOrderがどう定義されているかがはいっていない。SetupとSetup2を分けるといいかも。
-
---Setupは、fの定義からPreorder関係の定義を行うもの。idealやsetroid上のpartialまでは含まない。
---partialOrderを含むものは、Setupを継承したSetup2で行う。
-structure Setup (α : Type) [Fintype α] [DecidableEq α] where
-  (V        : Finset α)
-  (nonemp   : V.Nonempty)
-  (f        : V → V)
-  (valid    : ∀ v : V, f v ≠ v)
-  (pre      : Preorder {x // x ∈ V})
-  (h_pre    : pre = size_one_preorder V f valid nonemp)
-  (setoid   : Setoid {x // x ∈ V})
-  (h_setoid : setoid = setoid_preorder) --これは順序ではなく、同値類まで。
-
-instance (s : Setup α) : Preorder {x // x ∈ s.V} := s.pre
-
---quotient_partial_orderよりも証明が長いのは、preorderが間接的に定義されているから？
-def partialOrder_from_preorder (s : Setup α) : PartialOrder (Quotient s.setoid) where
-  le := by
-    exact Quotient.lift₂ (fun x y => s.pre.le x y)
-      (by
-
-        intros a₁ b₁ a₂ b₂ h₁ h₂
-
-        -- まず setoid の定義を展開
-        have h₁' := s.h_setoid ▸ h₁
-        have h₂' := s.h_setoid ▸ h₂
-
-        simp [setoid_preorder] at h₁' h₂'
-
-        rcases h₁' with ⟨h₁_le, h₁_ge⟩
-        rcases h₂' with ⟨h₂_le, h₂_ge⟩
-
-        apply propext
-        constructor
-        · intro h
-          exact le_implies_le_of_le_of_le h₁_ge h₂_le h
-        · intro h
-          exact le_implies_le_of_le_of_le h₁_le h₂_ge h
-
-      )
-  le_refl := by
-    intro xx
-    simp_all only
-    simp [Quotient.lift₂]
-    induction xx using Quotient.inductionOn
-    simp_all only [Quotient.lift_mk, le_refl]
-
-  le_trans := by
-    intro x y z
-    simp_all only
-    induction x using Quotient.inductionOn
-    simp_all only [Quotient.lift_mk, Quotient.lift₂]
-    induction y using Quotient.inductionOn
-    induction z using Quotient.inductionOn
-    simp_all only [Quotient.lift_mk, Quotient.lift₂]
-    rename_i a a_1 a_2
-    intro a_3 a_4
-    exact a_3.trans a_4
-
-  le_antisymm := by
-    intro x y
-    simp_all only
-    induction x using Quotient.inductionOn
-    rename_i a
-    intro a_1 a_2
-    simp_all only [Quotient.lift_mk]
-    symm
-    induction' y using Quotient.inductionOn with y
-    simp_all only [Quotient.lift_mk, Quotient.eq]
-    induction s
-    rename_i h_pre setoid h_setoid
-    subst h_pre h_setoid
-    simp_all only [AntisymmRel.setoid_r]
-    trivial
-
---半順序を加えたSetup
---上のinstanceは、s.po.leとは別物になってしまうので、instanceでなくてdefのほうがよい。
-structure Setup2 (α : Type) [Fintype α] [DecidableEq α] extends Setup α where
-  (po       : PartialOrder (Quotient setoid))
-  (h_po     :  po = partialOrder_from_preorder toSetup)
-
---前に定義していたquotient_partial_orderと内容的に被っている。
-instance (s : Setup2 α) : PartialOrder (Quotient s.setoid) := s.po
-
---setupからrootedsetを作るもの。fから作るには、rootedset_onestem_eachvertex_Vを利用すれば良い。setupに含めてもよいかも。
---RootedSetsから2項関係にするには、R_from_RS1 を用いると、ステムサイズ1のものだけから2項関係を作ってくれる。
-noncomputable def rootedset_from_setup {α : Type} [Fintype α] [DecidableEq α] (s: Setup α) : RootedSets α :=
- rootedset_onestem_eachvertex_V s.V s.f s.valid s.nonemp
-
-def isMaximal (s: Setup2 α) (a : s.V) : Prop :=
-  ∀ b : s.V, s.pre.le a b → s.pre.le b a
-
-noncomputable def eqClass_subtype {α : Type} [DecidableEq α] (V : Finset α) [Setoid {x : α // x ∈ V}] (x : {x : α // x ∈ V}) : Finset {x // x ∈ V} :=
-  V.attach.filter (fun y => Setoid.r x y)
-
-noncomputable def eqClass_setup {α : Type} [DecidableEq α][Fintype α] (s: Setup α) (x : {x : α // x ∈ s.V}) : Finset {x // x ∈ s.V} :=
-  s.V.attach.filter (fun y => s.setoid.r x y)
-
---同じ同値類に入っている要素には大小関係がある。
-lemma eqClass_le (s: Setup α) : (x y: {x : α // x ∈ s.V}) → y ∈ eqClass_setup s x → s.pre.le x y :=
-by
-  intro x y h
-  simp [eqClass_setup] at h
-  rw [s.h_setoid] at h
-  simp_all only [AntisymmRel.setoid_r]
-  obtain ⟨val, property⟩ := x
-  obtain ⟨val_1, property_1⟩ := y
-  exact h.1
-
-lemma eqClass_ge (s: Setup α) : (x y: {x : α // x ∈ s.V}) → y ∈ eqClass_setup s x → s.pre.le y x :=
-by
-  intro x y h
-  simp [eqClass_setup] at h
-  rw [s.h_setoid] at h
-  simp_all only [AntisymmRel.setoid_r]
-  obtain ⟨val, property⟩ := x
-  obtain ⟨val_1, property_1⟩ := y
-  exact h.2
-
-lemma eqClass_eq (s: Setup α) : (x y: {x : α // x ∈ s.V}) → s.pre.le x y →s.pre.le y x → eqClass_setup s x = eqClass_setup s y :=
-by
-  intro x y hxy hyx
-  ext z
-  apply Iff.intro
-  ·
-    simp [eqClass_setup]
-    rw [s.h_setoid]
-    simp_all only [AntisymmRel.setoid_r]
-    obtain ⟨xval, xproperty⟩ := x
-    obtain ⟨yval, yproperty⟩ := y
-    dsimp [AntisymmRel]
-    intro h
-    constructor
-    ·
-      exact s.pre.le_trans ⟨yval, yproperty⟩ ⟨xval, xproperty⟩ z hyx h.1
-    ·
-      exact s.pre.le_trans z ⟨xval, xproperty⟩ ⟨yval, yproperty⟩ h.2 hxy
-  ·
-    simp [eqClass_setup]
-    rw [s.h_setoid]
-    simp_all only [AntisymmRel.setoid_r]
-    obtain ⟨xval, xproperty⟩ := x
-    obtain ⟨yval, yproperty⟩ := y
-    dsimp [AntisymmRel]
-    intro h
-    constructor
-    ·
-      exact s.pre.le_trans ⟨xval, xproperty⟩ ⟨yval, yproperty⟩ z hxy h.1
-    ·
-      exact s.pre.le_trans z ⟨yval, yproperty⟩ ⟨xval, xproperty⟩ h.2 hyx
+--目標補題. function fから作られるpreorderから引き起こされるsetoidの同値類において、同値類の大きさが2以上であれば、極大要素になっているという定理を作りたい。
 
 --Preorderのstar_implies_pathExistsでも同じことを証明している。大きい方から小さい方の鎖になっているような。
 lemma path_exists {α : Type} [Fintype α] (R : α → α → Prop) (x y : α) (h : Relation.ReflTransGen R x y) :
@@ -212,10 +52,7 @@ lemma path_exists {α : Type} [Fintype α] (R : α → α → Prop) (x y : α) (
       subst hz₀ hzn
       simp_all only [Fin.natCast_eq_last, Fin.val_zero, zero_le, ↓reduceDIte, Fin.zero_eta]
     constructor
-    · --have : (⟨n, Nat.lt_succ_self n⟩ : Fin (n + 1)) = Fin.last n := rfl
-      --simp [this, hzn]  -- z (n + 1) = c を示す（ただし c = y）
-      --simp only [Fin.last]
-      have : ↑(Fin.last (n + 1)) = n + 1 := rfl
+    · have : ↑(Fin.last (n + 1)) = n + 1 := rfl
       simp [this, hzn]
       --simp [Nat.not_le.mpr (Nat.lt_succ_self n)]
       intro h
@@ -269,226 +106,6 @@ lemma path_exists {α : Type} [Fintype α] (R : α → α → Prop) (x y : α) (
         cases i
         simp_all only
         omega
-
-def finSub (n : ℕ) (i : Fin n) : Fin n :=
-  ⟨(n - i.val) - 1, Nat.lt_of_lt_of_le (Nat.sub_lt (Nat.sub_pos_of_lt i.isLt) Nat.zero_lt_one)
-      (Nat.sub_le n i.val)⟩
-
---そもそもこの命題は必要で、成り立つのか？reverseだけでよくないか。
-/-
-lemma path_exists {α : Type} [Fintype α] (R : α → α → Prop) (x y : α)
-  (h : Relation.ReflTransGen R y x) :
-  ∃ (n : ℕ) (z : Fin (n + 1) → α),
-    z 0 = x ∧
-    z n = y ∧
-    ∀ i : Fin n, R (z i.castSucc) (z i.succ):= by
-  --let R' : α → α → Prop := fun x y => R y x
-  /-have :Relation.ReflTransGen R' x y := by
-    induction h
-    case refl x =>
-      apply Relation.ReflTransGen.refl
-    case tail a b h₁ h₂ ih =>
-      simp_all only [Function.const_apply, R']
-      exact Relation.ReflTransGen.head h₂ ih
-  -/ --R'の順番を変える必要はなかった。
-  obtain ⟨n, z, hz₀, hzn, hR⟩ := path_exists_reverse R y x h
-  by_cases hn:n = 0
-  case pos =>
-    use n
-    rw [hn]
-    subst hn hz₀ hzn
-    simp_all only [IsEmpty.forall_iff, Fin.isValue, Nat.reduceAdd, Nat.cast_zero, and_true, and_self,
-      exists_apply_eq_apply]
-  case neg =>
-
-    let z' : Fin (n + 1) → α := fun i => z (n - i)
-    use n
-    use z'
-    constructor
-    · dsimp [z']
-      subst hz₀ hzn
-      simp_all only [Fin.natCast_eq_last, Fin.val_zero, zero_le, Fin.zero_eta]
-      simp_all only [sub_zero, z']
-
-    · constructor
-      · dsimp [z']
-        subst hz₀ hzn
-        simp_all only [Fin.natCast_eq_last, sub_self, z']
-      · intro i
-        specialize hR (finSub n i)
-        dsimp [z']
-        dsimp [finSub] at hR
-        --simp_all only [Fin.castSucc, Fin.succ]
-        --hRは、fin nなのかfin n+1なのか。00この上まではFin nっぽい。castSuccの影響でn+1になっている。
-
-        have t1: z (n - ↑i - 1 + 1) = z (↑n - i.castSucc) := by
-          subst hz₀ hzn
-          simp_all only [Fin.natCast_eq_last, Fin.coe_eq_castSucc, sub_add_cancel, z']
-        have t2: z (n - ↑i - 1) =  z (↑n - i.succ) := by
-          subst hz₀ hzn
-          simp_all only [Fin.natCast_eq_last, Fin.coe_eq_castSucc, sub_add_cancel, z']
-          sorry
-        rw [←t2]
-        rw [←t1]
-        sorry        --hRとRは逆の関係になっている。
--/
-
-lemma path_exists2 {α : Type} [Fintype α] (R : α → α → Prop) (x y : α)
-  (h : Relation.ReflTransGen R x y) :
-  ∃ (n : ℕ) (z : Fin (n + 1) → α),
-    z 0 = x ∧
-    z n = y ∧
-    ∀ i : Fin n, R (z i.castSucc) (z i.succ) := by
-  induction h
-  case refl x =>
-    -- x = y の場合は n=0 の列を取る
-    exists 0
-    let z : Fin (0+1) → α := fun _ => x
-    exists z
-    constructor
-    · rfl
-    constructor
-    · rfl
-    -- 長さ0のときは i : Fin 0 が存在しないので仮定矛盾 (vacuous truth)
-    · intro i
-      cases i
-      simp_all only [Nat.reduceAdd, Fin.castSucc_mk, Fin.succ_mk, z]
-      simp_all only [not_lt_zero']
-
-  case tail b c h₁ h₂ ih =>
-    -- 推移的ケース: x から b に到達 (ih)，さらに R b c で b から c
-    rcases ih with ⟨n, z, hz₀, hzn, hR⟩
-    -- 新しいパスの長さ: n + 1
-    use n + 1
-    -- i ≤ n のときは z i、そうでなければ c を返すように定義
-    use fun i : Fin (n + 2) => if h : (i : ℕ) ≤ n then z ⟨i.val, Nat.lt_succ_of_le h⟩ else c
-
-    -- 1. 始点が x であること
-    constructor
-    · subst hz₀ hzn
-      -- i = 0 のとき i ≤ n は明らかなので z 0 = x
-      simp_all only [Fin.natCast_eq_last, Fin.val_zero, zero_le, ← Fin.ext_iff,
-                     Fin.zero_eta, ↓reduceDIte]
-
-    -- 2. 終点が c(=y) であること
-    constructor
-    · simp [Fin.last, hzn]
-      intro h
-
-      have : n.succ ≤ n := by
-        convert h
-        subst hz₀ hzn
-        simp_all only [Fin.natCast_eq_last, Nat.succ_eq_add_one]
-        simp [Fin.val_add]
-      exact False.elim (Nat.not_succ_le_self n this)
-
-    -- 3. 各区間で R が成り立つこと
-    · intro i
-      simp [Fin.castSucc, Fin.succ]
-      split_ifs with h₁ h₂
-      · -- i ≤ n かつ (i+1) ≤ n の場合は、IH の hR i を使う
-        subst hz₀ hzn
-        simp_all only [Fin.natCast_eq_last]
-        rename_i h₂_1
-        have h₃ := h₂
-        simp_all only
-        exact hR ⟨i, h₂_1⟩
-      · -- i ≤ n だが i+1 ≤ n でない ⇒ i = n の場合
-        have : i = Fin.last n := by
-          apply Fin.ext
-          rw [Fin.val_last]
-          subst hz₀ hzn
-          simp_all only [not_le, Fin.natCast_eq_last]
-          omega
-        subst this hz₀ hzn
-        simp_all only [Fin.val_last, not_le, Fin.natCast_eq_last]
-        -- このときは R (z n) c を使う
-        --exact h₂
-      · -- i ≤ n だが i+1 ≤ n は偽、かつ else に該当する矛盾ケース
-        apply absurd h₁
-        subst hz₀ hzn
-        simp_all only [not_le, Fin.natCast_eq_last, not_true_eq_false]
-        cases i
-        simp_all only
-        omega
-      · -- i ≤ n でない場合も Fin (n+2) の取りうる範囲と矛盾
-        apply absurd h₁
-        subst hz₀ hzn
-        simp_all only [not_le, Fin.natCast_eq_last, not_true_eq_false]
-        have := h₁
-        simp_all only
-        cases i
-        simp_all only
-        omega
-
---補題. Subtype上における道の存在定理。後ろにpath_exists_setupがあるので、そちらを主に使うとよい。
-lemma path_exists_subtype {α : Type} [Fintype α] (V:Finset α) (R : V → V → Prop) (x y : V) (h : Relation.ReflTransGen R x y) :
-  ∃ (n : ℕ) (z : Fin (n + 1) → V), z 0 = x ∧ z n = y ∧ ∀ i : Fin n, R (z i.castSucc) (z i.succ) := by
-  -- スカラー版の R を定義：V 上の R を α 上に拡張
-  let R' : α → α → Prop := fun a b =>
-    if ha : a ∈ V then
-      if hb : b ∈ V then R ⟨a, ha⟩ ⟨b, hb⟩
-      else false
-    else false
-
-  -- x y : V なので、それぞれ α に埋め込める
-  let x' : α := x
-  let y' : α := y
-
-  -- R' 上での ReflTransGen を構成する
-  have h' : Relation.ReflTransGen R' x' y' := by
-    -- x = ⟨x.val, x.property⟩, よって R' x y は R x y を含む
-    induction h with
-    | refl  =>
-      apply Relation.ReflTransGen.refl
-    | tail a h₁ ih =>
-      apply Relation.ReflTransGen.tail ih
-      simp_all only [exists_and_left, exists_eq_left, R', x', y']
-      simp_all only [Bool.false_eq_true, dite_else_false, coe_mem, ↓reduceDIte, x', y', R']
-
-  -- path_exists を R' に適用
-  rcases path_exists R' x' y' h' with ⟨n, z, hz₀, hzn, hR'⟩
-
-  -- z の各点が V にあることを保証しつつ、型を α → V に変換
-  have memV : ∀ i : Fin (n + 1), z i ∈ V := by
-    -- z 0 = x ∈ V, z n = y ∈ V, 各ステップで R' が成り立つ => 各点 ∈ V
-    intro i
-    induction i using Fin.induction with
-    | zero =>
-      rw [hz₀]
-      exact x.property
-    | succ i ih =>
-      specialize ih
-      -- R' (z i.castSucc) (z i.succ) により ∃ va vb, ... で z i.succ ∈ V
-      simp_all only [Bool.false_eq_true, dite_else_false, Fin.natCast_eq_last, x', R', y']
-      obtain ⟨val, property⟩ := x
-      obtain ⟨val_1, property_1⟩ := y
-      subst hz₀ hzn
-      simp_all only [R']
-      cases hR' i
-      simp_all only [R']
-      rename_i h_1
-      obtain ⟨w_1, h_1⟩ := h_1
-      simp_all only [R']
-
-  -- z を V 型に変換
-  let z' : Fin (n + 1) → V := fun i => ⟨z i, memV i⟩
-
-  -- パス条件の検証
-  use n, z'
-  constructor
-  · -- z' 0 = x
-    apply Subtype.ext
-    exact hz₀
-  constructor
-  · -- z' n = y
-    apply Subtype.ext
-    exact hzn
-  · -- 各ステップで R が成り立つ
-    intro i
-    specialize hR' i
-    simp_all only [Bool.false_eq_true, dite_else_false, Fin.natCast_eq_last, exists_true_left, x', y', R', z']
-
 
 --fで直前関係になっていれば、a <= bとなること。自明かと思っていたけど、深く定義を追っていかないと証明できなかった。
 --size_one_preorder_setup_step も参照。
@@ -652,11 +269,7 @@ by
       subst h
       simp_all only [and_self, vp]
 
---s.preのほうはsize_one_preorderやsize_one_circuits_preorderでRootedSetsを定義して、そこからpreorder.R_hatを使って集合族でPreorderを定義。
---右辺のほうは単純にtransitive closureで定義。
---lemma ReflTransGen.to_R_hat {R : α → α → Prop} {x y : α} (h : Relation.ReflTransGen R x y) : R_hat R x y := by
---lemma R_hat.to_ReflTransGen {R : α → α → Prop} {x y : α} (h : R_hat R x y) : Relation.ReflTransGen R x y
---の2つの補題を使うといいかも。
+--preorderは、rootedset_from_setupの繰り返しで作られている。
 lemma size_one_preorder_setup_lemma (s: Setup α) (x y : {x : α // x ∈ s.V}) :
   s.pre.le x y ↔  @Relation.ReflTransGen s.V (R_from_RS1 (rootedset_from_setup s))  y x:=
 by
@@ -698,6 +311,8 @@ by
     subst hzn hz₀
     simp_all only [Fin.natCast_eq_last, R]
 
+--大小関係はfの繰り返しで書けること。こちらよりのちのiteratefのほうがすっきりしているかもしれない。
+--setup用になっているのでこれを主に使えば良い。このなかでpath_exists_setup_reverseを使っている。
 lemma path_exists_setup (s: Setup α) (x y : {x : α // x ∈ s.V}) :
   s.pre.le x y →
   ∃ (n : ℕ) (z : Fin (n + 1) → {x : α // x ∈ s.V}), z 0 = x ∧ z n = y ∧ ∀ i : Fin n, s.f (z i.castSucc) = (z i.succ) :=
@@ -775,23 +390,6 @@ by
         Fin.mk.injEq]
       rw [add_comm]
       rfl
-/-上と同じなので消す。
-lemma path_exists_setup2 (s: Setup α) (x y : {x : α // x ∈ s.V}) :
-  s.pre.le x y →
-  ∃ (n : ℕ) (z : Fin (n + 1) → {x : α // x ∈ s.V}), z 0 = x ∧ z n = y ∧ ∀ i : Fin n, s.f (z i.castSucc) = (z i.succ) :=
-by
-  intro h
-  let R := R_from_RS1 (rootedset_from_setup s)
-  have h' : @Relation.ReflTransGen s.V R y x := by
-    exact (size_one_preorder_setup_lemma s x y).mp h
-  dsimp [R] at h'
-  let pe := path_exists_setup s x y h -- (R_from_RS1 (rootedset_from_setup s)) x y h'
-  obtain ⟨n, z, hz₀, hzn, hstep⟩ := pe
-  use n, z
--/
-
-    --いままでのなにかの定理を使えば証明できる。それを補題として独立させる必要がある。
-    --すなわち、R_from_RS1 (rootedset_from_setup s)のR_hatで定義した順序と、s.pre.le=size_one_preorderの順序が一致することを示す。
 
 --補題。上の補題は、途中のノードに対しても成り立つこと。
 lemma path_implies_front {α : Type} [Fintype α] [DecidableEq α] (s : Setup α) (a : {x // x ∈ s.V})
@@ -900,9 +498,6 @@ by
   simp_all only [Fin.coe_eq_castSucc, Fin.val_zero, Nat.cast_zero, zero_add, Fin.val_last, Fin.is_le', Nat.cast_sub,
     Fin.natCast_eq_last, sub_add_cancel, Fin.coe_castSucc, Fin.val_succ, Nat.cast_add, Nat.cast_one, implies_true,
     and_self, z']
-
---補題. 同じ同値類の異なる頂点間の道は、同値類の外を通らないこと。
---証明。同じ同値類の頂点をaとbとする。上の補題より、aからbへのパスがある。aのとなりの頂点をvとすると、a <= vで、v <= bなので、
 
 --補題。サイズ2以上の同値類は、fの行き先が同値類の外にでない。
 lemma eqClass_size_ge_two_implies_outside
@@ -1100,8 +695,6 @@ by
 
 --補題. サイズが2以上の同値類は、極大要素になること。
 --サイズ2以上の同値類からいけるところは、同じ同値類内に必ずなる。このことは前の補題で示されている。
---結局、何回行っても同値類の外にでれない。何歩で行けるかを調べて、nに関する帰納法で証明するのがいいのか。
---最初の1歩とそれ以外に分けた方がいいのか、最後の一歩を分けた方がいいのか。どちらでも同じか。最初の方で証明した。
 lemma eqClass_size_ge_two_implies_inverse
     {α : Type} [Fintype α] [DecidableEq α]
     (s : Setup α)
@@ -1222,7 +815,6 @@ lemma eqClass_size_ge_two_implies_inverse
       --hzは、Fin nn+1が定義域であり、0からnnの値まで定義されている。ここでのiは、0からnn-1までなので溢れてはいない。
       --ゴールのs.f (z (↑↑i + 1)) = z (↑(↑i + 1) + 1)は、Fin (nn +2)で定義されてしまっている。これはおかしい？
       -- ここで、iがnnに達する場合の処理を追加する必要があるかもしれない。
-
 
       by_cases hi:i = nn --iがnnになることはない気がするのでいらないかも。Fin nnでは、ii= 0のとき。
       case pos =>
@@ -1442,11 +1034,7 @@ lemma eqClass_size_ge_two_implies_inverse
             have h3 : (⟨ii, hiii⟩ : Fin (nn + 2)) + 1 = ⟨ii + 1, hi5⟩ := by
               rw [Fin.add_def]
               exact Fin.mk.inj_iff.mpr h2
-            --両辺同じに見える。不要。
-            /-have h4 : (⟨ii + 1, hi5⟩ : Fin (nn + 2)) = ⟨ii + 1, hi5⟩ := by
-              apply Fin.ext
-              rfl
-            -/
+
             rw [h1, h3]
             apply Eq.symm
             apply Fin.mk.inj_iff.mpr
@@ -1455,3 +1043,446 @@ lemma eqClass_size_ge_two_implies_inverse
     let ihht := ihh this
 
     exact s.pre.le_trans y (s.f x) x ihht slex1
+
+--iterationで辿り着くものには、大小関係がある。
+lemma iteratef_lemma (s: Setup α) (x : s.V):
+  ∀ n, s.pre.le x (s.f^[n] x) := by
+  intro n
+  induction n generalizing x
+  case zero =>
+      simp_all only [Function.iterate_zero, id_eq, le_refl]
+
+  case succ n ih =>
+      rw [Function.iterate_succ]
+      simp
+      have ihh:s.pre.le (s.f x) (s.f^[n] (s.f x)) := by
+        simp_all only [Subtype.forall]
+      have : s.pre.le (x) (s.f x) := by
+        apply f_and_pre
+        simp_all only [Subtype.forall]
+      exact s.pre.le_trans x (s.f x) (s.f^[n] (s.f x)) this ihh
+
+--大小関係があるとiterationで辿り着く。
+lemma iteratef_lemma_ref (s: Setup α) (x y: s.V) (h: s.pre.le x y):
+  ∃ n:Nat, (s.f^[n] x)=y := by
+  let pes := path_exists_setup s x y h
+  obtain ⟨n, h⟩ := pes
+  use n
+  obtain ⟨z, hz0,hzn, hz⟩ := h
+  have nnf: ∀ nn : Fin (n+1), z nn = s.f^[nn.val] x := by
+      let motive : Fin (n+1) → Prop := fun nn => z nn = s.f^[nn.val] x
+      apply (@Fin.induction (n) motive)
+      case zero =>
+        subst hzn hz0
+        simp_all only [Fin.natCast_eq_last, Fin.val_zero, Function.iterate_zero, id_eq, motive]
+      case succ =>
+        intro i hi
+        dsimp [motive] at hi
+        dsimp [motive]
+        rw [←(hz i)]
+        rw [hi]
+        rw [← hz0]
+        --rw [@subtype_val_eq]
+        exact Eq.symm (Function.iterate_succ_apply' s.f (↑i) (z 0))
+  have h_lt : n < n + 1 := by exact lt_add_one n
+  let nnff :=nnf (Fin.mk n h_lt)
+  simp at nnff
+  rw [←nnff]
+  rw [←hzn]
+  simp
+  congr
+
+lemma iteratef_lemma_two (s: Setup α) (x: s.V) (n1 n2: Nat) :
+  n1 < n2 → s.pre.le (s.f^[n1] x) (s.f^[n2] x) :=
+by
+  -- ここで f の n 回の反復を考えます
+  intro h
+  let n := n2 - n1
+  have : n + n1 = n2 := by
+    simp_all only [n]
+    obtain ⟨val, property⟩ := x
+    omega
+  have : s.f^[n] (s.f^[n1] x) = s.f^[n2] x := by
+    rw [←this]
+    rw [Function.iterate_add]
+    exact rfl
+  let il := iteratef_lemma s (s.f^[n1] x) n
+  rw [this] at il
+  exact il
+
+--補題:fのiterationの全体は、重複しているものがある。
+--証明：鳩の巣原理。
+lemma iteratef_pegion (s: Setup α) (x: s.V)  : ∃ (n1 n2: Nat), n1 ≠ n2 ∧ (s.f^[n1] x) = s.f^[n2] x :=
+by
+  let dom := (Finset.Icc 0 (s.V.card + 1)).image (fun i => (s.f^[i] x))
+  have : s.V.card < ((Finset.Icc 0 (s.V.card + 1))).card := by
+    simp_all only [Nat.card_Icc, tsub_zero, ge_iff_le]
+    obtain ⟨val, property⟩ := x
+    linarith
+  have : Fintype.card { x // x ∈ s.V } < Fintype.card (Finset.Icc 0 (s.V.card + 1)) :=
+  by
+    simp_all only [Nat.card_Icc, tsub_zero, Fintype.card_coe, Finset.mem_Icc, zero_le, true_and]
+  have : Fintype.card { x // x ∈ s.V } < Fintype.card (Fin (#s.V + 1)) := by
+    simp_all only [Nat.card_Icc, tsub_zero, Fintype.card_coe, Finset.mem_Icc, zero_le, true_and, Fintype.card_fin,
+      lt_add_iff_pos_right, Nat.lt_one_iff, pos_of_gt]
+
+  let fe := @Fintype.exists_ne_map_eq_of_card_lt (Fin (s.V.card + 1)) s.V _ _ (λ i=> s.f^[i.val] x) this
+  obtain ⟨n1, n2, h⟩ := fe
+  use n1, n2
+  simp_all only [Nat.card_Icc, tsub_zero, Fintype.card_coe, Finset.mem_Icc, zero_le, true_and, Fintype.card_fin,
+    lt_add_iff_pos_right, Nat.lt_one_iff, pos_of_gt, ne_eq, and_true]
+  obtain ⟨val, property⟩ := x
+  obtain ⟨left, right⟩ := h
+  apply Aesop.BuiltinRules.not_intro
+  intro a
+  simp_all only
+  omega
+
+--otera
+lemma iteratef_pegion_ordered (s : Setup α) (x : s.V) :
+  ∃ (n1 n2 : ℕ), n1 < n2 ∧ (s.f^[n1] x) = (s.f^[n2] x) := by
+  obtain ⟨n1, n2, hne, heq⟩ := iteratef_pegion s x
+  by_cases h : n1 < n2
+  · exact ⟨n1, n2, h, heq⟩
+  · have h' : n2 < n1 := Nat.lt_of_le_of_ne (Nat.le_of_not_lt h) hne.symm
+    simp_all only [ne_eq, not_lt]
+    obtain ⟨val, property⟩ := x
+    apply Exists.intro
+    · apply Exists.intro
+      · apply And.intro
+        · exact h'
+        · simp_all only
+
+  --補題：何回もiterationすると、サイズが2以上の同値類に辿り着く。
+  --証明：鳩の巣の上の補題のn1とn2のノードは同じで、その次のノードは、異なるが同じ同値類に属するノードになる。
+lemma iteratef_size2 (s: Setup α) (x: s.V)  : ∃ (n : Nat), 2 ≤ (eqClass_setup s (s.f^[n] x)).card :=
+by
+  let h := iteratef_pegion_ordered s x
+  /- hの別の分解の仕方。参考まで。
+  cases h with
+  | intro n1 h' =>
+    cases h' with
+    | intro n2 h'' =>
+      cases h'' with
+      | intro hneq heq =>
+      -- ここで n1, n2, hneq, heq が使える
+  -/
+  --obtain ⟨n1, n2, hneq, heq⟩ : ∃ n1 n2, n1 ≠ n2 ∧ s.f^[n1] x = s.f^[n2] x := h
+  obtain ⟨n1, n2, hneq, heq⟩ := h
+  let y := s.f^[n1] x
+  let z := s.f^[n1+1] x
+  have y12: y = s.f^[n2] x := by
+    simp_all only [y]
+  have fzy: z = s.f y := by
+    dsimp [y]
+    exact Function.iterate_succ_apply' s.f n1 x
+  have neqyz: y ≠ z := by
+    intro h
+    rw [fzy] at h
+    let hnot :=  s.valid y
+    rw [Eq.symm h] at hnot
+    contradiction
+  have : s.pre.le y z := by
+    exact f_and_pre s y z (id (Eq.symm fzy))
+  have : n2 > n1 + 1:= by
+    by_cases n2 = n1 + 1
+    case pos h =>
+      rw [h] at y12
+      rw [h] at hneq
+      have : y = s.f (s.f^[n1] x) :=
+      by
+        exact False.elim (neqyz y12)
+      have :y = s.f y := by
+        exact this
+      have :y ≠ s.f y := by
+        exact fun a => neqyz y12
+      contradiction
+    case neg h =>
+      simp_all only [Function.iterate_succ, Function.comp_apply, ne_eq, gt_iff_lt, y, z]
+      omega
+
+  have : s.pre.le z y := by
+    --zからyにfで行けるので、s.pre.le z yとなる。
+    let ilt := iteratef_lemma_two s x (n1+1) n2 this
+    dsimp [y,z]
+    simp_all only [Function.iterate_succ, Function.comp_apply, ne_eq, ge_iff_le, y, z]
+    rwa [← fzy]
+  have yineq: y ∈ eqClass_setup s y := by
+    simp_all only [Function.iterate_succ, Function.comp_apply, ne_eq, gt_iff_lt, y, z]
+    rw [eqClass_setup]
+    simp_all only [mem_filter, mem_attach, true_and]
+    rfl
+
+  have : z ∈ eqClass_setup s y := by
+    dsimp [eqClass_setup]
+    simp_all only [Finset.mem_filter, Finset.mem_univ, true_and]
+    constructor
+    · simp_all only [Function.iterate_succ, Function.comp_apply, ne_eq, gt_iff_lt, mem_attach, y, z]
+    ·
+      simp_all only [Function.iterate_succ, Function.comp_apply, ne_eq, gt_iff_lt, y, z]
+      obtain ⟨val, property⟩ := x
+      obtain ⟨val_1, property_1⟩ := y
+      obtain ⟨val_2, property_2⟩ := z
+      symm
+      rw [← fzy]
+      simp_all only
+      symm
+      rw [← fzy]
+      simp_all only
+      induction s
+      rename_i h_pre h_setoid po this_2
+      subst h_pre h_setoid
+      simp_all only [AntisymmRel.setoid_r]
+      constructor
+      · simp_all only
+      · simp_all only
+  have : (eqClass_setup s y).card ≥ 2 := by
+    dsimp [eqClass_setup]
+    simp_all only [Finset.card_filter, Finset.card_univ, true_and, Finset.mem_univ, Finset.mem_filter]
+    --zも(eqClass_setup s y).cardの要素で、neqyzなので、同値類の大きさは2以上。
+    have hsub : {y, z} ⊆ eqClass_setup s y := by
+      simp_all only [Function.iterate_succ, Function.comp_apply, ne_eq, gt_iff_lt, y, z]
+      obtain ⟨val, property⟩ := x
+      obtain ⟨val_1, property_1⟩ := y
+      obtain ⟨val_2, property_2⟩ := z
+      intro x hx
+      simp_all only [Finset.mem_insert, Finset.mem_singleton]
+      obtain ⟨val_3, property_3⟩ := x
+      cases hx with
+      | inl h => simp_all only
+      | inr h_1 => simp_all only
+    have hsub_card: ({y,z}:Finset s.V).card ≤ (eqClass_setup s y).card := by
+      exact Finset.card_le_card hsub
+    have :({y,z}:Finset s.V).card = 2:= by
+      simp_all only [Function.iterate_succ, Function.comp_apply, ne_eq, gt_iff_lt, Finset.mem_singleton,
+        not_false_eq_true, card_insert_of_not_mem, Finset.card_singleton, Nat.reduceAdd, y, z]
+    rw [this] at hsub_card
+    simp
+    simp_all only [Function.iterate_succ, Function.comp_apply, ne_eq, gt_iff_lt, Finset.mem_singleton,
+      not_false_eq_true, card_insert_of_not_mem, Finset.card_singleton, Nat.reduceAdd, y, z]
+    obtain ⟨val, property⟩ := x
+    obtain ⟨val_1, property_1⟩ := y
+    obtain ⟨val_2, property_2⟩ := z
+    exact hsub_card
+
+  use n1
+--------------------
+----今は使ってないもの。
+def finSub (n : ℕ) (i : Fin n) : Fin n :=
+  ⟨(n - i.val) - 1, Nat.lt_of_lt_of_le (Nat.sub_lt (Nat.sub_pos_of_lt i.isLt) Nat.zero_lt_one)
+      (Nat.sub_le n i.val)⟩
+
+lemma path_exists2 {α : Type} [Fintype α] (R : α → α → Prop) (x y : α)
+  (h : Relation.ReflTransGen R x y) :
+  ∃ (n : ℕ) (z : Fin (n + 1) → α),
+    z 0 = x ∧
+    z n = y ∧
+    ∀ i : Fin n, R (z i.castSucc) (z i.succ) := by
+  induction h
+  case refl x =>
+    -- x = y の場合は n=0 の列を取る
+    exists 0
+    let z : Fin (0+1) → α := fun _ => x
+    exists z
+    constructor
+    · rfl
+    constructor
+    · rfl
+    -- 長さ0のときは i : Fin 0 が存在しないので仮定矛盾 (vacuous truth)
+    · intro i
+      cases i
+      simp_all only [Nat.reduceAdd, Fin.castSucc_mk, Fin.succ_mk, z]
+      simp_all only [not_lt_zero']
+
+  case tail b c h₁ h₂ ih =>
+    -- 推移的ケース: x から b に到達 (ih)，さらに R b c で b から c
+    rcases ih with ⟨n, z, hz₀, hzn, hR⟩
+    -- 新しいパスの長さ: n + 1
+    use n + 1
+    -- i ≤ n のときは z i、そうでなければ c を返すように定義
+    use fun i : Fin (n + 2) => if h : (i : ℕ) ≤ n then z ⟨i.val, Nat.lt_succ_of_le h⟩ else c
+
+    -- 1. 始点が x であること
+    constructor
+    · subst hz₀ hzn
+      -- i = 0 のとき i ≤ n は明らかなので z 0 = x
+      simp_all only [Fin.natCast_eq_last, Fin.val_zero, zero_le, ← Fin.ext_iff,
+                     Fin.zero_eta, ↓reduceDIte]
+
+    -- 2. 終点が c(=y) であること
+    constructor
+    · simp [Fin.last, hzn]
+      intro h
+
+      have : n.succ ≤ n := by
+        convert h
+        subst hz₀ hzn
+        simp_all only [Fin.natCast_eq_last, Nat.succ_eq_add_one]
+        simp [Fin.val_add]
+      exact False.elim (Nat.not_succ_le_self n this)
+
+    -- 3. 各区間で R が成り立つこと
+    · intro i
+      simp [Fin.castSucc, Fin.succ]
+      split_ifs with h₁ h₂
+      · -- i ≤ n かつ (i+1) ≤ n の場合は、IH の hR i を使う
+        subst hz₀ hzn
+        simp_all only [Fin.natCast_eq_last]
+        rename_i h₂_1
+        have h₃ := h₂
+        simp_all only
+        exact hR ⟨i, h₂_1⟩
+      · -- i ≤ n だが i+1 ≤ n でない ⇒ i = n の場合
+        have : i = Fin.last n := by
+          apply Fin.ext
+          rw [Fin.val_last]
+          subst hz₀ hzn
+          simp_all only [not_le, Fin.natCast_eq_last]
+          omega
+        subst this hz₀ hzn
+        simp_all only [Fin.val_last, not_le, Fin.natCast_eq_last]
+        -- このときは R (z n) c を使う
+        --exact h₂
+      · -- i ≤ n だが i+1 ≤ n は偽、かつ else に該当する矛盾ケース
+        apply absurd h₁
+        subst hz₀ hzn
+        simp_all only [not_le, Fin.natCast_eq_last, not_true_eq_false]
+        cases i
+        simp_all only
+        omega
+      · -- i ≤ n でない場合も Fin (n+2) の取りうる範囲と矛盾
+        apply absurd h₁
+        subst hz₀ hzn
+        simp_all only [not_le, Fin.natCast_eq_last, not_true_eq_false]
+        have := h₁
+        simp_all only
+        cases i
+        simp_all only
+        omega
+
+--補題. Subtype上における道の存在定理。後ろにpath_exists_setupがあるので、そちらを主に使うとよい。
+lemma path_exists_subtype {α : Type} [Fintype α] (V:Finset α) (R : V → V → Prop) (x y : V) (h : Relation.ReflTransGen R x y) :
+  ∃ (n : ℕ) (z : Fin (n + 1) → V), z 0 = x ∧ z n = y ∧ ∀ i : Fin n, R (z i.castSucc) (z i.succ) := by
+  -- スカラー版の R を定義：V 上の R を α 上に拡張
+  let R' : α → α → Prop := fun a b =>
+    if ha : a ∈ V then
+      if hb : b ∈ V then R ⟨a, ha⟩ ⟨b, hb⟩
+      else false
+    else false
+
+  -- x y : V なので、それぞれ α に埋め込める
+  let x' : α := x
+  let y' : α := y
+
+  -- R' 上での ReflTransGen を構成する
+  have h' : Relation.ReflTransGen R' x' y' := by
+    -- x = ⟨x.val, x.property⟩, よって R' x y は R x y を含む
+    induction h with
+    | refl  =>
+      apply Relation.ReflTransGen.refl
+    | tail a h₁ ih =>
+      apply Relation.ReflTransGen.tail ih
+      simp_all only [exists_and_left, exists_eq_left, R', x', y']
+      simp_all only [Bool.false_eq_true, dite_else_false, coe_mem, ↓reduceDIte, x', y', R']
+
+  -- path_exists を R' に適用
+  rcases path_exists R' x' y' h' with ⟨n, z, hz₀, hzn, hR'⟩
+
+  -- z の各点が V にあることを保証しつつ、型を α → V に変換
+  have memV : ∀ i : Fin (n + 1), z i ∈ V := by
+    -- z 0 = x ∈ V, z n = y ∈ V, 各ステップで R' が成り立つ => 各点 ∈ V
+    intro i
+    induction i using Fin.induction with
+    | zero =>
+      rw [hz₀]
+      exact x.property
+    | succ i ih =>
+      specialize ih
+      -- R' (z i.castSucc) (z i.succ) により ∃ va vb, ... で z i.succ ∈ V
+      simp_all only [Bool.false_eq_true, dite_else_false, Fin.natCast_eq_last, x', R', y']
+      obtain ⟨val, property⟩ := x
+      obtain ⟨val_1, property_1⟩ := y
+      subst hz₀ hzn
+      simp_all only [R']
+      cases hR' i
+      simp_all only [R']
+      rename_i h_1
+      obtain ⟨w_1, h_1⟩ := h_1
+      simp_all only [R']
+
+  -- z を V 型に変換
+  let z' : Fin (n + 1) → V := fun i => ⟨z i, memV i⟩
+
+  -- パス条件の検証
+  use n, z'
+  constructor
+  · -- z' 0 = x
+    apply Subtype.ext
+    exact hz₀
+  constructor
+  · -- z' n = y
+    apply Subtype.ext
+    exact hzn
+  · -- 各ステップで R が成り立つ
+    intro i
+    specialize hR' i
+    simp_all only [Bool.false_eq_true, dite_else_false, Fin.natCast_eq_last, exists_true_left, x', y', R', z']
+
+--reverseだけでよくないか。
+/-
+lemma path_exists {α : Type} [Fintype α] (R : α → α → Prop) (x y : α)
+  (h : Relation.ReflTransGen R y x) :
+  ∃ (n : ℕ) (z : Fin (n + 1) → α),
+    z 0 = x ∧
+    z n = y ∧
+    ∀ i : Fin n, R (z i.castSucc) (z i.succ):= by
+  --let R' : α → α → Prop := fun x y => R y x
+  /-have :Relation.ReflTransGen R' x y := by
+    induction h
+    case refl x =>
+      apply Relation.ReflTransGen.refl
+    case tail a b h₁ h₂ ih =>
+      simp_all only [Function.const_apply, R']
+      exact Relation.ReflTransGen.head h₂ ih
+  -/ --R'の順番を変える必要はなかった。
+  obtain ⟨n, z, hz₀, hzn, hR⟩ := path_exists_reverse R y x h
+  by_cases hn:n = 0
+  case pos =>
+    use n
+    rw [hn]
+    subst hn hz₀ hzn
+    simp_all only [IsEmpty.forall_iff, Fin.isValue, Nat.reduceAdd, Nat.cast_zero, and_true, and_self,
+      exists_apply_eq_apply]
+  case neg =>
+
+    let z' : Fin (n + 1) → α := fun i => z (n - i)
+    use n
+    use z'
+    constructor
+    · dsimp [z']
+      subst hz₀ hzn
+      simp_all only [Fin.natCast_eq_last, Fin.val_zero, zero_le, Fin.zero_eta]
+      simp_all only [sub_zero, z']
+
+    · constructor
+      · dsimp [z']
+        subst hz₀ hzn
+        simp_all only [Fin.natCast_eq_last, sub_self, z']
+      · intro i
+        specialize hR (finSub n i)
+        dsimp [z']
+        dsimp [finSub] at hR
+        --simp_all only [Fin.castSucc, Fin.succ]
+        --hRは、fin nなのかfin n+1なのか。00この上まではFin nっぽい。castSuccの影響でn+1になっている。
+
+        have t1: z (n - ↑i - 1 + 1) = z (↑n - i.castSucc) := by
+          subst hz₀ hzn
+          simp_all only [Fin.natCast_eq_last, Fin.coe_eq_castSucc, sub_add_cancel, z']
+        have t2: z (n - ↑i - 1) =  z (↑n - i.succ) := by
+          subst hz₀ hzn
+          simp_all only [Fin.natCast_eq_last, Fin.coe_eq_castSucc, sub_add_cancel, z']
+          sorry
+        rw [←t2]
+        rw [←t1]
+        sorry        --hRとRは逆の関係になっている。
+-/
