@@ -289,6 +289,39 @@ by
       exact s.pre.le_trans ⟨xval, xproperty⟩ ⟨yval, yproperty⟩ z hxy h.1
     ·
       exact s.pre.le_trans z ⟨yval, yproperty⟩ ⟨xval, xproperty⟩ h.2 hyx
+
+--必要に迫られて作った。
+lemma eqClass_eq_rev (s: Setup α) : (x y z: {x : α // x ∈ s.V}) → x ∈ eqClass_setup s z → y ∈ eqClass_setup s z → s.pre.le x y ∧ s.pre.le y x:=
+by
+  intro x y z hx hy
+  constructor
+  · dsimp [eqClass_setup] at hx
+    dsimp [eqClass_setup] at hy
+    rw [s.h_setoid] at hx hy
+    simp_all only [AntisymmRel.setoid_r]
+    obtain ⟨xval, xproperty⟩ := x
+    obtain ⟨yval, yproperty⟩ := y
+    simp_all only [mem_filter, mem_attach, true_and]
+    obtain ⟨val, property⟩ := z
+    rw [AntisymmRel] at hx hy
+    obtain ⟨left, right⟩ := hx
+    obtain ⟨left_1, right_1⟩ := hy
+    exact right.trans left_1
+  · dsimp [eqClass_setup] at hx
+    dsimp [eqClass_setup] at hy
+    rw [s.h_setoid] at hx hy
+    simp_all only [AntisymmRel.setoid_r]
+    obtain ⟨xval, xproperty⟩ := x
+    obtain ⟨yval, yproperty⟩ := y
+    simp_all only [mem_filter, mem_attach, true_and]
+    obtain ⟨val, property⟩ := z
+    rw [AntisymmRel] at hx hy
+    obtain ⟨left, right⟩ := hx
+    obtain ⟨left_1, right_1⟩ := hy
+    apply Preorder.le_trans
+    assumption
+    simp_all only
+
 -------------------------------
 ---以下は、古いというか、初期のもの。
 
