@@ -39,69 +39,10 @@ def partialOrderOfFq {A : Type} (f : A → A)
       intro x y z ⟨n, hn⟩ ⟨m, hm⟩
       exists (n + m)
       subst hn hm
-      unfold Nat.iterate
-      induction n generalizing x with
-      | zero => simp [Nat.iterate, Nat.zero_add]
-      | succ n ih =>
-        simp [Nat.iterate, Nat.succ_add, ih]
-        apply noLoop
-        dsimp [reach]
-        split
-        next x_1 x_2 =>
-          simp_all only [add_zero]
-          specialize ih x
-          split at ih
-          next x_3 x_4 =>
-            simp_all only [Function.iterate_zero, id_eq]
-            use 0
-            exact rfl
-          next x_3 x_4
-            k =>
-            simp_all only [Nat.succ_eq_add_one, Function.iterate_succ, Function.comp_apply]
-            use 0
-            exact rfl
-        next x_1 x_2 k =>
-          simp_all only [Nat.add_eq, Nat.succ_eq_add_one]
-          use 0
-          simp
-          specialize ih (f x)
-          rw [←ih]
-          simp_all only
-          exact ih
-        next x_1 x_2 =>
-          dsimp [reach]
-          specialize ih x
-          split at ih
-          · rename_i x1 x2 x3 x4
-            simp_all only [AddLeftCancelMonoid.add_eq_zero, Function.iterate_zero, id_eq, add_zero]
-            obtain ⟨left, right⟩ := x4
-            subst right left
-            exact ⟨0, by rw [Function.iterate_zero, id]⟩
-          · rename_i x1 x2 x3 x4 x5
-            simp_all only [Nat.succ_eq_add_one, Function.iterate_succ, Function.comp_apply]
-            search_proof
+      let fi := (Function.iterate_add_apply f m n x)
+      rw [add_comm] at fi
+      exact fi
 
-
-
-
-
-
-
-
-
-
-      sorry
-      dsimp [iterate] at *
-      -- iterate f n x = y, iterate f m y = z ⇒ iterate f (n+m) x = z
-      -- これは簡単な再帰的補題で証明できる
-      -- あるいは Mathlib.Data.Nat.Basic にある補題を使ってもOK
-      -- 簡単のため直接書く
-      induction n generalizing x with
-      | zero => exact hm
-      | succ n ih =>
-        rw [iterate, hn]
-        apply ih
-        assumption
   , le_antisymm := by
       intro x y hxy hyx
       exact noLoop x y hxy hyx
@@ -112,8 +53,10 @@ structure Setup_spo (α : Type) [Fintype α] [DecidableEq α] where
   (nonemp   : V.Nonempty)
   (setoid : Setoid {x : α // x ∈ V})
   (fq : Quotient setoid → Quotient setoid)
-  (spo : PartialOrder (Quotient setoid))
-  (le : ∀ x y : Quotient setoid, x ≤ y ↔
+  -- antisymmetry を保証する仮定：ループがあれば自明なもののみ
+  (noLoop : ∀ x y : Quotient setoid,
+  (reach fq x y → reach fq y x → x = y))
+  (spo : PartialOrder (Quotient setoid) := partialOrderOfFq fq noLoop)
 
 def isMaximal_spo (s: Setup_spo α) (x : Quotient s.setoid) : Prop :=
   ∀ y : Quotient s.setoid,
@@ -121,3 +64,11 @@ def isMaximal_spo (s: Setup_spo α) (x : Quotient s.setoid) : Prop :=
 
 def classOf (s : Setup_spo α) (q : Quotient s.setoid) [DecidableEq (Quotient s.setoid)]  : Finset {x // x ∈ s.V} :=
   Finset.filter (fun (a : {x // x ∈ s.V}) => @Quotient.mk'' _ s.setoid a = q) s.V.attach
+
+structure Setup_spo2 (α : Type) [Fintype α] [DecidableEq α]
+  extends Setup_spo α where
+  -- 極大でない要素の同値類のサイズが 1
+  singleton_if_not_maximal :
+    ∀ q : Quotient toSetup_spo.setoid,
+      ¬ isMaximal_spo toSetup_spo q →
+      (classOf toSetup_spo q).card = 1
