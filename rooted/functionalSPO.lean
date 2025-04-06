@@ -75,9 +75,9 @@ structure Setup_spo2 (α : Type) [Fintype α] [DecidableEq α]
   extends Setup_spo α where
   -- 極大でない要素の同値類のサイズが 1
   singleton_if_not_maximal :
-    ∀ q : Quotient toSetup_spo.setoid,
-      ¬ isMaximal_spo toSetup_spo q →
-      (classOf toSetup_spo q).card = 1
+  ∀ q : Quotient toSetup_spo.setoid,
+    (classOf toSetup_spo q).card ≥ 2 →
+    isMaximal_spo toSetup_spo q
 
 lemma reach_leq (s : Setup_spo α) (x y : Quotient s.setoid) :
   reach s.fq x y → s.spo.le x y := by
@@ -267,41 +267,48 @@ lemma eqClass_Maximal (s: Setup2 α) (q : Quotient s.setoid) :
   let ecs := eqClass_size_ge_two_implies_inverse s.toSetup (Quotient.out q) h
   obtain ⟨x, hx⟩ := Quotient.exists_rep q
   intro q2
-  specialize ecs x
+  obtain ⟨y, hy⟩ := Quotient.exists_rep q2
+  specialize ecs y
   let imi := isMaximal_iff s x
   rw [hx] at imi
   dsimp [isMaximal] at imi
   dsimp [isMaximalQ] at imi
-
-
-
-
-
-lemma eqClass_Maximal_spo (s: Setup_spo α)  (q : Quotient s.setoid) :
-  (classOf s q).card = 1 → ¬ isMaximal_spo s q := by
-  intro h
-  dsimp [isMaximal_spo]
-  rw [←eqClass_Class_of2 s] at h
-
-  --dsimp [classOf] at h
-  rw [Finset.card_eq_one] at h
-  --intro hm
-  simp_all only [Subtype.exists]
-
-
-
-
-
-
-
-  apply Iff.intro
-  · intro a
-    exact Quotient.sound' a
-  · intro a
-    rw [Quotient.mk''_eq_mk] at a
-    symm
-    simp only [Quotient.mk'] at a
-    simp_all only [Quotient.eq]
+  have: @Quotient.mk _ s.setoid q.out = q := by
+    subst hy hx
+    simp_all only [ge_iff_le, Subtype.forall, Quotient.out_eq]
+  rw [←this]
+  have : x ∈ eqClass_setup s.toSetup q.out := by
+      dsimp [eqClass_setup]
+      rw [Finset.mem_filter]
+      constructor
+      ·
+        subst hy hx
+        simp_all only [ge_iff_le, Subtype.forall, Quotient.out_eq, mem_attach]
+      ·
+        dsimp [eqClass_setup]
+        rw [←hx]
+        exact Quotient.mk_out x
+  have q_eq : s.pre.le x q.out := by
+    exact eqClass_ge s.toSetup q.out x this
+  have q_eq2 : s.pre.le q.out x := by
+    exact eqClass_le s.toSetup q.out x this
+  rw [←hy]
+  let imimp := imi.mp
+  have : ∀ (b : { x // x ∈ s.V }), x ≤ b → b ≤ x := by
+    intro b h
+    have : q.out ≤ b := by
+      exact Preorder.le_trans q.out x b q_eq2 h
+    have : b ≤ q.out := by
+      apply eqClass_size_ge_two_implies_inverse s.toSetup q.out
+      subst hy hx
+      simp_all only [ge_iff_le, Quotient.out_eq]
+      subst hy hx
+      simp_all only [ge_iff_le, Quotient.out_eq]
+    exact Preorder.le_trans b q.out x this q_eq2
+  specialize imimp this
+  intro a
+  subst hy hx
+  simp_all only [Subtype.forall, ge_iff_le, Subtype.coe_eta, implies_true, Quotient.out_eq]
 
 def setup2_induces_spo (s : Setup2 α) : Setup_spo2 α :=
 {
@@ -315,23 +322,30 @@ def setup2_induces_spo (s : Setup2 α) : Setup_spo2 α :=
   singleton_if_not_maximal := by
     intro q hq
     dsimp [isMaximal_spo] at hq
-    have : ¬ isMaximal_spo (setup_setupspo s) q := by
-      intro h
-      apply hq
-      exact h
-    --hqにqがmaximalでないという条件が入っていて、
-    --同値類の大きさが1であることを示す。
-
-    let eqc := eqClass_Class_of s
-
-
-
-
-
-    dsimp [singleton_if_not_maximal] at this
-    have : (classOf (setup_setupspo s) q).card = 1 := by
-      apply this q
-      exact this
-    exact this
-
+    let csm := eqClass_Maximal s q hq
+    dsimp [isMaximalQ] at csm
+    dsimp [isMaximal_spo]
+    intro y h
+    specialize csm y
+    dsimp [setup_setupspo] at h
+    dsimp [partialOrderOfFq] at h
+    have : s.po.le q y := by
+      simp_all only [ge_iff_le]
+      exact reach_leq2 s q y h
+    specialize csm this
+    --let rl2 := reach_leq2 s q y h
+    --simp_all only [ge_iff_le, rl2]
+    rw [spole_iff_po] at csm
+    exact csm
 }
+  --singleton_if_not_maximal := by
+  --  intro q hq
+  --  dsimp [isMaximal_spo] at hq
+  --  let csm := eqClass_Maximal s q hq
+  --  dsimp [isMaximalQ] at csm
+  --  dsimp [isMaximal_spo]
+  --  intro y h
+  --  specialize csm y
+  --  dsimp [setup_setupspo] at h
+  --  dsimp [partialOrderOfFq] at h
+  --  have : s.po.le q y := by}
