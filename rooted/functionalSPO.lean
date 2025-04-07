@@ -6,6 +6,7 @@ import Init.Data.Fin.Lemmas
 import Mathlib.Order.Defs.PartialOrder
 import Mathlib.Order.Cover
 import Mathlib.Logic.Function.Iterate
+import Mathlib.Data.Quot
 import Mathlib.Tactic
 import LeanCopilot
 import rooted.CommonDefinition
@@ -606,6 +607,68 @@ noncomputable def toNew (s : Setup_spo2 α) (x : {x : α // x ∈ s.V})
       exact hab
     )
 
+--Newを行って、Oldを行うと元の同値類に戻る。
+--いまいち、Quotient.inductionOnの使い方がわからないけど、証明できた。
+lemma NewOld_id (s : Setup_spo2 α) (x : {x : α // x ∈ s.V})
+  (hx : (classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).card ≥ 2)
+  (Cls : Quotient s.setoid) :
+  toOld s x (toNew s x hx Cls) = Cls := by
+  induction Cls using Quotient.inductionOn
+  case h a =>
+    dsimp [toNew]
+    dsimp [toOld]
+    dsimp [toErased]
+    --dsimp [restrictedSetoid]
+    dsimp [representativeNeSelf]
+
+    by_cases h:x ∈ (classOf s.toSetup_spo ⟦a⟧)
+    case pos =>
+      by_cases h_1 : a = x
+      case pos =>
+        subst h_1
+        simp
+        dsimp [classOf] at h
+        rw [Finset.mem_filter] at h
+        let cc := Classical.choose_spec (exists_ne_of_one_lt_card hx a)
+        simp_all only [mem_attach, and_self]
+        --obtain ⟨val, property⟩ := a
+        obtain ⟨left, right⟩ := cc
+        simp_all only [ne_eq]
+        dsimp [classOf] at left
+        rw [Finset.mem_filter] at left
+        obtain ⟨left_1, right_1⟩ := left
+        exact Quotient.eq''.mp right_1
+      case neg =>
+        dsimp [classOf] at h
+        rw [Finset.mem_filter] at h
+        obtain ⟨val, property⟩ := a
+        obtain ⟨val_1, property_1⟩ := x
+        simp_all only [Subtype.mk.injEq]
+        simp_all only [↓reduceDIte]
+
+    case neg =>
+      dsimp [classOf] at h
+      simp only [Finset.mem_filter] at h
+      simp at h
+      simp
+      obtain ⟨val, property⟩ := x
+      obtain ⟨val_1, property_1⟩ := a
+      simp_all only [Subtype.mk.injEq]
+      split
+      next h_1 =>
+        subst h_1
+        simp_all only [Subtype.coe_eta]
+        contrapose! h
+        simp_all only [ne_eq]
+        rfl
+      next h_1 =>
+        simp_all only
+        rfl
+
+--toNewやtoOldで順序が保存されることを示す必要があるのか。そのためには、新しい同値類の構造で順序が導入されている必要があるが。
+--段階的に導入するのがいいのか。そのためには、setup_spoになることをまず証明するか。
+--fqまでで、まだloopも定義されていない。setup_spo0みたいなものを作った方がいいかも。
+
 noncomputable def setup2_trace (s : Setup_spo2 α)(x: s.V) (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
 )).card ≥ 2): Setup_spo2 α :=
 {
@@ -636,7 +699,7 @@ noncomputable def setup2_trace (s : Setup_spo2 α)(x: s.V) (hx:(classOf s.toSetu
     dsimp [restrictedSetoid] at *
     obtain ⟨x, hx⟩ := Quotient.exists_rep q1
     obtain ⟨y, hy⟩ := Quotient.exists_rep q2
-    --have : x.val ≠ y.val := by  --極大のときは等しくなるのでは。
+    --新しいところにループがあると、古いところにもループができてしまう。
     sorry
   spo := sorry
   h_spo := by
