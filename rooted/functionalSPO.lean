@@ -338,14 +338,564 @@ def setup2_induces_spo (s : Setup2 α) : Setup_spo2 α :=
     rw [spole_iff_po] at csm
     exact csm
 }
-  --singleton_if_not_maximal := by
-  --  intro q hq
-  --  dsimp [isMaximal_spo] at hq
-  --  let csm := eqClass_Maximal s q hq
-  --  dsimp [isMaximalQ] at csm
-  --  dsimp [isMaximal_spo]
-  --  intro y h
-  --  specialize csm y
-  --  dsimp [setup_setupspo] at h
-  --  dsimp [partialOrderOfFq] at h
-  --  have : s.po.le q y := by}
+
+--Setup_spo2から得られるideal全体の集合族において、同値類の大きさが2以上のときに、1元traceしても、またSetup2になる。
+--同値類の要素は、パラレルであることは事前に示した方がいいのか。
+
+def restrictedSetoid (s: Setup_spo2 α)(x : {x : α // x ∈ s.V}): Setoid {y : α // y ∈ s.V.erase x.val} :=
+  Setoid.comap
+    (fun y => ⟨y.val, Finset.mem_of_mem_erase y.property⟩)
+    s.setoid
+
+--新旧の同値類同士は全単射するので、fqを定義するには、それの対応の写像を作る必要がある。
+def toOld (s : Setup_spo2 α) (x : {x : α // x ∈ s.V})
+  : Quotient (restrictedSetoid s x) → Quotient s.setoid :=
+  λ newCls =>
+    Quotient.liftOn newCls
+      (fun (y : {y : α // y ∈ s.V.erase x.val}) =>
+        -- y はもともと s.V に属するし，x とは違う
+        @Quotient.mk _ s.setoid (⟨y.val, by exact Finset.mem_of_mem_erase y.property⟩ : {z // z ∈ s.V})
+      )
+      -- liftOn の証明義務：代表の取り方が違っても結果が同値類の同じ要素に行くこと
+      (by
+        intros a b hab
+        apply Quotient.sound
+        -- restrictedSetoid で同値 ⇒ もともとの setoid でも同値
+        exact hab
+      )
+
+--同じ同値類から取ってきているという情報は次の補題を使う。
+noncomputable def representativeNeSelf
+  (s : Setup_spo2 α) (x : {x : α // x ∈ s.V})
+  (hx : (classOf s.toSetup_spo ⟦x⟧).card ≥ 2) :
+    { y // y ∈ s.V.erase ↑x } :=
+  have h' : ∃ b ∈ classOf s.toSetup_spo ⟦x⟧, b ≠ x := exists_ne_of_one_lt_card hx x
+  let b := Classical.choose (exists_ne_of_one_lt_card hx x)
+  have hb := Classical.choose_spec (exists_ne_of_one_lt_card hx x)
+  ⟨b, by
+    simp only [Finset.mem_erase]
+    exact ⟨Subtype.coe_ne_coe.mpr hb.right, b.property⟩⟩
+
+lemma representativeNeSelf_mem_classOf
+  (s : Setup_spo2 α) (x : {x // x ∈ s.V}) (hx : 2 ≤ (classOf s.toSetup_spo ⟦x⟧).card) :
+  ⟨(representativeNeSelf s x hx).val, Finset.mem_of_mem_erase (representativeNeSelf s x hx).property⟩ ∈ (classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).erase x :=
+by
+  dsimp [representativeNeSelf]
+  have hb := Classical.choose_spec (exists_ne_of_one_lt_card hx x)
+  simp_all only [ne_eq, Subtype.coe_eta, mem_erase, not_false_eq_true, and_self]
+
+--入っている値の範囲を変えたくて、使わなくなった。
+noncomputable def representativeNeSelf.old
+  (s : Setup_spo2 α) (x : {x : α // x ∈ s.V})
+  (hx : (classOf s.toSetup_spo ⟦x⟧).card ≥ 2) :
+    (classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).erase x :=
+
+  have h' : ∃ b ∈ classOf s.toSetup_spo ⟦x⟧, b ≠ x := exists_ne_of_one_lt_card hx x
+  let b := Classical.choose (exists_ne_of_one_lt_card hx x)
+  have hb := Classical.choose_spec (exists_ne_of_one_lt_card hx x)
+  ⟨b, by
+    simp only [Finset.mem_erase]
+    exact ⟨hb.right, hb.left⟩
+  ⟩
+
+noncomputable def toErased (s : Setup_spo2 α)
+  (x : {x : α // x ∈ s.V})
+  (hx : (classOf s.toSetup_spo ⟦x⟧).card ≥ 2) :
+  { y // y ∈ s.V } → { y // y ∈ s.V.erase x } :=
+  fun z =>
+    if h : z = x then
+      let z' := representativeNeSelf s x hx
+      ⟨z'.val, by
+        simp [Finset.mem_erase]
+        --exact z'.val.property
+        /-let zpr := z'.property
+        dsimp [classOf] at zpr
+        rw [Finset.mem_erase] at zpr
+        rw [Finset.mem_filter] at zpr
+        simp at zpr
+        convert zpr.1
+        simp_all only [iff_false, z']
+        obtain ⟨left, right⟩ := zpr
+        intro a
+        exact left (Subtype.ext a)
+        -/
+      ⟩
+    else
+      ⟨z.val, by
+        simp [Finset.mem_erase, h]
+        exact Subtype.coe_ne_coe.mpr h⟩
+
+lemma toErased_eq_ne
+  (s : Setup_spo2 α) (x z : {x // x ∈ s.V})
+  (hx : 2 ≤ (classOf s.toSetup_spo ⟦x⟧).card)
+  (h : z ≠ x) :
+  toErased s x hx z = ⟨z.val, by
+    simp [Finset.mem_erase]
+    exact Subtype.coe_ne_coe.mpr h⟩ :=
+by
+  unfold toErased
+  simp only
+  split
+  · contradiction
+  · rfl
+
+noncomputable def toNew (s : Setup_spo2 α) (x : {x : α // x ∈ s.V})
+  (hx : (classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).card ≥ 2)
+  : Quotient s.setoid → Quotient (restrictedSetoid s x) :=
+  fun oldCls =>
+    @Quotient.liftOn {x // x ∈ s.V} (Quotient (restrictedSetoid s x)) s.setoid oldCls
+
+  (fun z => @Quotient.mk _ (restrictedSetoid s x) (toErased s x hx z))
+
+  (by
+    intros a b hab
+    dsimp only [toErased]
+
+    split
+    · split
+      · -- case a = x, b = x
+        apply Quotient.sound
+        rename_i h h_1
+        subst h h_1
+        simp_all only [Setoid.refl]
+      · let rsp := (representativeNeSelf s x hx).property
+        let rmc := representativeNeSelf_mem_classOf s x hx
+        have : @Quotient.mk _ (restrictedSetoid s x) (toErased s x hx a) =
+            @Quotient.mk _ (restrictedSetoid s x) (toErased s x hx b) := by
+          dsimp [toErased]
+          dsimp [restrictedSetoid]
+          simp
+          rename_i h_1
+          simp only [h_1]
+          split_ifs with h_2
+          rename_i h
+          subst h
+          simp_all only
+          --dsimp [Setoid.comap]
+          --dsimp [representativeNeSelf]
+
+
+          rename_i h
+          --subst h
+          --simp_all only [mem_erase, ne_eq, not_false_eq_true, true_and]
+
+          rename_i h_3
+          --subst h_3
+          simp_all only [mem_erase, ne_eq, not_false_eq_true, true_and, coe_mem, and_true]
+        -- case a = x, b ≠ x
+          have :b ∈ (classOf s.toSetup_spo ⟦x⟧).erase x :=
+          by
+            dsimp [classOf]
+            rw [Finset.mem_erase]
+            constructor
+            ·
+              rename_i h
+              --subst h
+              simp_all only [not_false_eq_true, ne_eq]
+            · rw [Finset.mem_filter]
+              constructor
+              ·
+                rename_i h
+                --subst h
+                simp_all only [not_false_eq_true, mem_attach]
+              ·
+                rename_i h
+                --subst h
+                simp_all only [not_false_eq_true, Quotient.eq]
+                obtain ⟨val, property⟩ := a
+                obtain ⟨val_1, property_1⟩ := b
+                --simp_all only [Subtype.mk.injEq]
+                symm
+                exact hab
+          have : ↑b ∈ s.V.erase ↑x := by
+            rename_i h
+            subst h
+            simp_all only [not_false_eq_true, mem_erase, ne_eq, true_and, coe_mem, and_true]
+            obtain ⟨val, property⟩ := a
+            obtain ⟨val_1, property_1⟩ := b
+            simp_all only [Subtype.mk.injEq, not_false_eq_true]
+        have rrr:(restrictedSetoid s x).r (representativeNeSelf s x hx) ⟨↑b,  this⟩ :=
+          by
+            dsimp [restrictedSetoid]
+            dsimp [Setoid.comap]
+            dsimp [representativeNeSelf]
+            sorry
+        apply Quotient.sound
+
+        apply (restrictedSetoid s x).trans
+        · apply s.setoid.refl
+        · subst_vars
+          dsimp [representativeNeSelf]
+          --dsimp [Classical.choose]
+          dsimp [classOf]
+          rename_i h_3 this_1
+          exact rrr
+
+
+    · split
+      · -- case a ≠ x, b = x
+        apply Quotient.sound
+        apply (restrictedSetoid s x).trans
+        · apply s.setoid.refl
+        · let rsp := (representativeNeSelf s x hx).property
+          have :a ∈ (classOf s.toSetup_spo ⟦x⟧).erase x :=
+          by
+            rename_i h_1
+            subst h_1
+            simp_all only [mem_erase, ne_eq, not_false_eq_true, true_and]
+            obtain ⟨val, property⟩ := a
+            obtain ⟨val_1, property_1⟩ := b
+            simp_all only [Subtype.mk.injEq]
+            dsimp [classOf]
+            simp_all only [Quotient.eq, mem_filter, mem_attach, true_and]
+            exact hab
+          --aとxは、同じ同値類に入っている。暗黙に後ろで使っている。
+          have : @Quotient.mk _ (restrictedSetoid s x) (toErased s x hx a)
+            = @Quotient.mk _ (restrictedSetoid s x) (toErased s x hx x) :=
+          by
+            dsimp [toErased]
+            simp
+            dsimp [restrictedSetoid]
+            rename_i h_1
+            split_ifs with h_1
+            rename_i h
+            simp_all only
+            exact?
+
+
+          --#check (representativeNeSelf s x hx).property
+          have : (restrictedSetoid s x).r (toErased s x hx a) (toErased s x hx x) :=
+          by
+            rename_i h_1 this_1
+            subst h_1
+            simp_all only [mem_erase, ne_eq, not_false_eq_true, true_and, Quotient.eq]
+
+          rename_i h_1 h_2 h_3 h_4
+          have ha_ne_x : a ≠ x := h_1
+          have h₁ : toErased s x hx a = ⟨a.val, by
+          simp [Finset.mem_erase]
+          exact Subtype.coe_ne_coe.mpr ha_ne_x⟩ := toErased_eq_ne s x a hx ha_ne_x
+
+          have h₂ : (toErased s x hx x).val = (representativeNeSelf s x hx).val:= by
+            dsimp [toErased]
+            simp only [dif_pos rfl]
+            subst h_2
+            simp_all only [not_false_eq_true, mem_erase, ne_eq, true_and, Quotient.eq, ↓reduceDIte]
+
+          rw [←h₁]
+
+          have h_eq : toErased s x hx x =
+            ⟨↑↑(representativeNeSelf s x hx), (representativeNeSelf s x hx).property⟩ :=
+              Subtype.ext h₂
+          subst h_2
+          simp_all only [not_false_eq_true, mem_erase, ne_eq, true_and, Subtype.coe_eta, Quotient.eq]
+          obtain ⟨val, property⟩ := a
+          obtain ⟨val_1, property_1⟩ := b
+          simp_all only
+          exact h_4
+
+      · -- case a ≠ x, b ≠ x
+        apply Quotient.sound
+        exact hab
+  )
+
+  /-
+  (fun z => --fを構成する。
+    if h : z = x then  --zがxに一致する場合は、xの同値類の要素を取る。
+      --let eno := exists_ne_of_one_lt_card hx z
+      let x0 := representativeNeSelf s x hx  -- x0 : (classOf s.toSetup_spo ⟦x⟧).erase x
+      @Quotient.mk _ (restrictedSetoid s x) ⟨x0.val, by
+        simp [Finset.mem_erase, h]
+        let x0p := x0.property
+        dsimp [classOf] at x0p
+        rw [Finset.mem_erase] at x0p
+        convert x0p.1.symm
+        subst h
+        simp_all only [ne_eq, Quotient.eq, mem_filter, mem_attach, true_and, x0]
+        apply Iff.intro
+        · intro a
+          rw [Subtype.ext_iff, a]
+        · intro a
+          simp_all only [not_true_eq_false]
+      ⟩
+      -/
+      /-
+      let x0 := Classical.choose (exists_ne_of_one_lt_card hx z)
+      have ha := Classical.choose_spec (exists_ne_of_one_lt_card hx z)
+      let ha_inClass := ha.left --zとxは同じ同値類。
+      let ha_ne := ha.right
+      @Quotient.mk _ (restrictedSetoid s x) ⟨x0.val, by
+        simp [Finset.mem_erase, h]
+        apply Subtype.coe_ne_coe.mpr
+        subst h
+        simp_all only [ne_eq, not_false_eq_true, x0]
+      ⟩
+      -/
+    else
+      @Quotient.mk _ (restrictedSetoid s x) ⟨z.val, by
+        simp [Finset.mem_erase, h]
+        exact Subtype.coe_ne_coe.mpr h
+      ⟩
+  )
+  (by
+    intros a b hab
+    simp
+    split
+    · split-- case: a = x, b = x
+      · apply Quotient.sound
+        rename_i h h_1
+        subst h_1 h
+        simp_all only [Setoid.refl]
+      · -- case: a = x, b ≠ x
+        apply Quotient.sound
+        let rsp := (representativeNeSelf s x hx).property
+        have : b.val ∈ s.V.erase x.val := by
+          simp [Finset.mem_erase]
+          rename_i h h_1
+          subst h
+          obtain ⟨val, property⟩ := a
+          obtain ⟨val_1, property_1⟩ := b
+          simp_all only [Subtype.mk.injEq, not_false_eq_true]
+        have : b ∈ classOf s.toSetup_spo (@Quotient.mk _ s.setoid x) := by
+          obtain ⟨val, property⟩ := a
+          obtain ⟨val_1, property_1⟩ := b
+          simp_all only [Subtype.mk.injEq]
+          dsimp [classOf]
+          rw [Finset.mem_filter]
+          constructor
+          ·
+            rename_i h h_1
+            subst h
+            simp_all only [Subtype.mk.injEq, mem_erase, ne_eq, not_false_eq_true, and_self, mem_attach]
+          · exact Quotient.sound (id (s.setoid.symm hab))
+        dsimp [representativeNeSelf]
+        dsimp [classOf] at this
+        rw [Finset.mem_filter] at this
+        -- b ∈ classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)
+        --から、⟨↑(Classical.choose ⋯), ⋯⟩ ≈ ⟨↑b, ⋯⟩
+        --をいう必要あり。
+        --両方ともQuotient.mkで等しい。
+        have : @Quotient.mk _ (restrictedSetoid s x) x = @Quotient.mk _ (restrictedSetoid s x) b :=
+
+          by
+          simp [Finset.mem_erase]
+          subst h
+          simp_all only [ne_eq, Quotient.eq, mem_filter, mem_attach, true_and, x0]
+
+
+
+        exact hab.symm
+        /-
+        apply (restrictedSetoid s x).trans
+        · sorry
+        · apply (restrictedSetoid s x).refl
+        -/
+    · -- case: a ≠ x, b = x
+      split
+      · apply Quotient.sound
+        rename_i h h_1
+        sorry
+      · -- case: a ≠ x, b ≠ x
+        apply Quotient.sound
+        exact hab
+  )
+/-
+    split
+    · split
+      · simp_all only [Setoid.refl]
+      · -- もともとの setoid で a ≈ b なので、restrictedSetoid でも同値
+        apply Quotient.sound
+        rename_i h_1 h_2
+        let x0 := Classical.choose (exists_ne_of_one_lt_card hx x)
+        let rr := (restrictedSetoid s x).refl
+        have ha := Classical.choose_spec (exists_ne_of_one_lt_card hx x)
+        --show ⟨↑(Classical.choose ⋯), ⋯⟩ ≈ ⟨↑b, ⋯⟩
+        apply (restrictedSetoid s x).trans
+        · sorry
+        · sorry
+        · subst h_1
+          simp_all only [ne_eq, mem_erase]
+          obtain ⟨val, property⟩ := a
+          obtain ⟨val_1, property_1⟩ := b
+          obtain ⟨val_2, property_2⟩ := x0
+          obtain ⟨left, right⟩ := ha
+          simp_all only [Subtype.mk.injEq]
+          tauto
+    · -- restrictedSetoid で同値 ⇒ もともとの setoid でも同値
+      split
+      · rename_i h1 h2
+        apply Quotient.sound
+
+
+        -- ここで必要な証明を行う
+        sorry
+      ·
+        simp_all only [ge_iff_le, Quotient.eq]
+        obtain ⟨val, property⟩ := x
+        obtain ⟨val_1, property_1⟩ := a
+        obtain ⟨val_2, property_2⟩ := b
+        simp_all only
+        exact hab
+  )
+-/
+/-  --Quotient.liftOn.{u, v} {α : Sort u} {β : Sort v} {s : Setoid α} (q : Quotient s) (f : α → β)  (c : ∀ (a b : α), a ≈ b → f a = f b) : β
+  · intro z
+
+    have h : (z = x) ∨ (z ≠ x) := by
+      simp_all only [ge_iff_le, ne_eq]
+      obtain ⟨val, property⟩ := x
+      obtain ⟨val_1, property_1⟩ := z
+      simp_all only [Subtype.mk.injEq]
+      tauto
+    cases h with
+    | inl heq =>
+      let ⟨a, ⟨ha_inClass, ha_ne⟩⟩ := exists_ne_of_one_lt_card hx z
+      let qm := @Quotient.mk _ (restrictedSetoid s x) --⟨a.val, by simp [Finset.mem_erase, ha_ne]⟩
+
+      intro b
+      intro hh
+      -- b.val が s.V.erase x.val に入っていることを示すための証明ブロック
+      have hb : b.val ∈ s.V.erase x.val := by
+        simp [Finset.mem_erase]
+        subst  heq
+        simp_all only [ne_eq, Subtype.mk.injEq]
+        sorry
+        --exact ⟨ne.symm ha_ne, b.property⟩
+
+      -- b を restrictedSetoid の要素として mk
+      have qb : Quotient (restrictedSetoid s x) :=
+        qm ⟨b.val, hb⟩
+
+      -- 目標は qm ⟨a.val, ...⟩ = qb
+      apply Quotient.sound
+      -- もとの setoid で a ≈ b なので、restrictedSetoid でも同値
+      sorry
+      --apply hh.trans
+      --apply (Setoid.symm (Setoid.refl _))
+
+
+
+    | inr hne =>
+      intro b hh
+      apply congrFun rfl
+
+
+-/
+
+/-
+
+λ oldCls =>
+  Quotient.liftOn oldCls
+  (by
+    intro z
+    by_cases h : z = x
+    · -- z = x のとき（クラス [x] の処理）
+      have eno := exists_ne_of_one_lt_card hx z
+      match eno with
+      | ⟨a, ⟨ha_inClass, ha_ne⟩⟩ =>
+        exact @Quotient.mk _ (restrictedSetoid s x) ⟨a.val, by
+          simp [Finset.mem_erase]
+          subst h
+          simp_all only [ne_eq, Subtype.mk.injEq]
+        ⟩
+    · -- z ≠ x のとき（そのまま使える）
+      exact @Quotient.mk _ (restrictedSetoid s x) ⟨z.val, by
+        simp [Finset.mem_erase, h]
+        exact Subtype.coe_ne_coe.mpr h
+      ⟩
+  )
+  (by
+    -- Quotient.lift の well-definedness の証明
+    intros a b hab
+    exact Eq.propIntro (fun a => a) fun a => a
+  )
+-/
+
+/-
+    (fun (z : {z : α // z ∈ s.V}) =>
+      if h : z = x then
+        -- クラス [x] の場合：
+        -- x と同じクラスの中で x ≠ a なる a を一つ取って，新しい代表にする
+        by
+          let eno := exists_ne_of_one_lt_card hx z  -- クラスの要素が2以上あるので取り出せる
+          obtain ⟨a, ha_inClass, ha_ne⟩ := eno
+          exact Quotient.mk ⟨a.val, by
+          simp [Finset.mem_erase]
+          subst h
+          simp_all only [ne_eq, Subtype.mk.injEq]
+          ⟩
+
+      else
+        -- クラス [z] で z ≠ x の場合：
+        -- そのまま z を新しい台集合の要素として使える
+        @Quotient.mk _ (restrictedSetoid s x) (⟨z.val, by
+          simp [h]; exact Subtype.coe_ne_coe.mpr h--exact z.property
+        ⟩ : {y // y ∈ s.V.erase x.val})
+    )
+    (by
+      intros a b hab
+      apply Quotient.sound
+      -- 「元の setoid で同値 ⇒ restrictedSetoid でも同値」が成り立つ
+      exact hab
+    )
+    -/
+
+def setup2_trace (s : Setup_spo2 α)(x: s.V) (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
+)).card ≥ 2): Setup_spo2 α :=
+
+
+{
+  V := s.V.erase x,
+  nonemp := by
+    have : (classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).card > 1 := by
+      exact hx
+    have : ∃ x0, x0 ∈ classOf s.toSetup_spo (@Quotient.mk _ s.setoid x) ∧ x0 ≠ x := by
+      exact exists_ne_of_one_lt_card hx x
+    simp_all only [ge_iff_le, gt_iff_lt, ne_eq, Subtype.exists, coe_mem, erase_nonempty, nontrivial_coe]
+    obtain ⟨val, property⟩ := x
+    obtain ⟨w, h⟩ := this
+    obtain ⟨w_1, h⟩ := h
+    obtain ⟨left, right⟩ := h
+    simp_all only [Subtype.mk.injEq]
+    constructor
+    · simp_all only [mem_coe, ne_eq]
+      apply And.intro
+      · apply w_1
+      · use val
+
+  setoid := restrictedSetoid s x
+
+  fq := fun q => Quotient.map (fun y => ⟨y.val, Finset.mem_of_mem_erase y.property⟩) s.fq
+    (by
+      intro a b h
+      dsimp [restrictedSetoid] at *
+      obtain ⟨x, hx⟩ := Quotient.exists_rep a
+      obtain ⟨y, hy⟩ := Quotient.exists_rep b
+      subst hx
+      subst hy
+      exact h)
+
+  noLoop := by
+    intro q1 q2 hxy hyx
+    dsimp [restrictedSetoid] at *
+    obtain ⟨x, hx⟩ := Quotient.exists_rep q1
+    obtain ⟨y, hy⟩ := Quotient.exists_rep q2
+    have : x.val ≠ y.val := by
+
+      intro h
+      subst h
+      exact hx.2 (Finset.mem_erase.2 ⟨hx.1, hy.1⟩)
+    have : s.spo.le x y = reach (fq s) x y := by
+      dsimp [reach]
+      rw [spole_iff_po]
+      exact hxy
+    have : s.spo.le y x = reach (fq s) y x := by
+      dsimp [reach]
+      rw [spole_iff_po]
+      exact hyx
+    apply s.spo.le_antisymm
+    · subst this
+      exact hxy
+    · subst this
+      exact hyx
+}
