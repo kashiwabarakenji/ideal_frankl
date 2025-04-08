@@ -49,11 +49,13 @@ def partialOrderOfFq {A : Type} (f : A → A)
       exact noLoop x y hxy hyx
 }
 
-structure Setup_spo (α : Type) [Fintype α] [DecidableEq α] where
+structure Setup_spo_base (α : Type) [Fintype α] [DecidableEq α] where
   (V : Finset α)
   (nonemp   : V.Nonempty)
   (setoid : Setoid {x : α // x ∈ V})
   (fq : Quotient setoid → Quotient setoid)
+
+structure Setup_spo (α : Type) [Fintype α] [DecidableEq α] extends Setup_spo_base α where
   -- antisymmetry を保証する仮定：ループがあれば自明なもののみ
   (noLoop : ∀ x y : Quotient setoid,
     (reach fq x y → reach fq y x → x = y))
@@ -670,7 +672,7 @@ lemma NewOld_id (s : Setup_spo2 α) (x : {x : α // x ∈ s.V})
 --fqまでで、まだloopも定義されていない。setup_spo0みたいなものを作った方がいいかも。
 
 noncomputable def setup2_trace (s : Setup_spo2 α)(x: s.V) (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
-)).card ≥ 2): Setup_spo2 α :=
+)).card ≥ 2): Setup_spo_base α :=
 {
   V := s.V.erase x,
   nonemp := by
@@ -693,7 +695,9 @@ noncomputable def setup2_trace (s : Setup_spo2 α)(x: s.V) (hx:(classOf s.toSetu
   setoid := restrictedSetoid s x
 
   fq := fun q => toNew s x hx (s.fq (toOld s x q))
+}
 
+/-
   noLoop := by
     intro q1 q2 hxy hyx
     dsimp [restrictedSetoid] at *
@@ -711,5 +715,4 @@ noncomputable def setup2_trace (s : Setup_spo2 α)(x: s.V) (hx:(classOf s.toSetu
     dsimp [isMaximal_spo] at hq
     obtain ⟨x, hx⟩ := Quotient.exists_rep q
     sorry
-
-}
+-/
