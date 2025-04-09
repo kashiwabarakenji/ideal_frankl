@@ -379,6 +379,9 @@ theorem Preorder_eq_PartialOrder (s: Setup2 α)  :
           exact aS this
         exact this
 
+--証明すべき内容。
+-- setup_spo2をtraceしたもののidealがidealとしてtraceしたものと一致すること。
+
 /-
 --今の所、使ってないのかも。似た定理をSetupを使って作っている。pullback_preorder_lemmaなど。
 lemma preorder_partialorder_lemma_exists {α : Type} [Fintype α] [DecidableEq α] (V: Finset α) [Preorder { x // x ∈ V }] (w v:Quotient (@setoid_preorder {x // x ∈ V} _))  :

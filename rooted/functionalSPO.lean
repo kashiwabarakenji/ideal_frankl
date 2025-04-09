@@ -82,6 +82,15 @@ lemma reach_leq (s : Setup_spo α) (x y : Quotient s.setoid) :
   dsimp [partialOrderOfFq] at *
   exact h
 
+lemma reach_leq_rev (s : Setup_spo α) (x y : Quotient s.setoid) :
+  s.spo.le x y →  reach s.fq x y  := by
+  intro h
+  rw [s.h_spo] at h
+  dsimp [partialOrderOfFq] at h
+  dsimp [reach]
+  exact h
+
+  --こっちは、spoでなくてpoの方。
 lemma reach_leq2 (s : Setup2 α) (x y : Quotient s.setoid) :
   reach (fq s) x y → s.po.le x y := by
   --これはs.spo.leの定義な気もするが。
@@ -99,6 +108,17 @@ lemma reach_leq2 (s : Setup2 α) (x y : Quotient s.setoid) :
   rw [←hn] at fql
   convert fql
   rw [s.h_po]
+
+lemma reach_leq2_rev (s : Setup2 α) (q1 q2 : Quotient s.setoid) :
+  s.po.le q1 q2 → reach (fq s) q1 q2 :=
+by
+  --rw [s.h_po]これをするとfq_lemmaに適用できない。
+  dsimp [reach]
+  intro h
+  let fql := fq_lemma s q1 q2 h
+  obtain ⟨n, hn⟩ := fql
+  use n
+  exact hn.symm
 
 -- 証明すべきこと
 --1. setup2から得られるsetoidとpartialOrderは、Setup_spo2の定義を満たす。
@@ -368,6 +388,7 @@ by
   obtain ⟨h11,h12⟩ := h1
   exact Quotient.eq''.mp h12
 
+--s.Vからs.V.erase xへの要素の対応。
 noncomputable def toErased (s : Setup_spo α)
   (x : {x : α // x ∈ s.V})
   (hx : (classOf s ⟦x⟧).card ≥ 2) :
@@ -384,6 +405,7 @@ noncomputable def toErased (s : Setup_spo α)
         simp [Finset.mem_erase, h]
         exact Subtype.coe_ne_coe.mpr h⟩
 
+--toErasedの写像は、xと異なる場合は、恒等写像。
 lemma toErased_eq_ne
   (s : Setup_spo α) (x z : {x // x ∈ s.V})
   (hx : 2 ≤ (classOf s ⟦x⟧).card)
@@ -407,6 +429,7 @@ lemma Quotient.eq
 by
   simp_all only [Quotient.eq]
 -/
+-- yとzが同じ同値類であれば、移り先も同じ同値類。
 lemma toErased_eq
   (s : Setup_spo α) (x y z : {x : α // x ∈ s.V})
   (hx : 2 ≤ (classOf s ⟦x⟧).card)
@@ -660,7 +683,9 @@ by
 --段階的に導入するのがいいのか。そのためには、setup_spoになることをまず証明するか。
 --fqまでで、まだloopも定義されていない。setup_spo0みたいなものを作った方がいいかも。
 
-noncomputable def setup_trace (s : Setup_spo α)(x: s.V) (hx:(classOf s (@Quotient.mk _ s.setoid x
+
+
+noncomputable def setup_trace_base (s : Setup_spo α)(x: s.V) (hx:(classOf s (@Quotient.mk _ s.setoid x
 )).card ≥ 2): Setup_spo_base α :=
 {
   V := s.V.erase x,
@@ -690,12 +715,12 @@ noncomputable def setup_trace (s : Setup_spo α)(x: s.V) (hx:(classOf s (@Quotie
 --(toNew s x hx (s.fq^[n] (toOld s x q))と等しい。
 --使うかどうか不明。
 lemma setup2_trace_fq_one (s : Setup_spo α) (x: s.V) (hx:(classOf s (@Quotient.mk _ s.setoid x)).card ≥ 2) :
-  (setup_trace s x hx).fq = fun q => toNew s x hx (s.fq (toOld s x q)) := by
-  dsimp [setup_trace]
+  (setup_trace_base s x hx).fq = fun q => toNew s x hx (s.fq (toOld s x q)) := by
+  dsimp [setup_trace_base]
 
 lemma setup2_trace_fq_n (s : Setup_spo α) (x: s.V) (hx:(classOf s (@Quotient.mk _ s.setoid x)).card ≥ 2) (n :Nat):
-  ((setup_trace s x hx).fq)^[n] = fun q => toNew s x hx (s.fq^[n] (toOld s x q)) := by
-  dsimp [setup_trace]
+  ((setup_trace_base s x hx).fq)^[n] = fun q => toNew s x hx (s.fq^[n] (toOld s x q)) := by
+  dsimp [setup_trace_base]
   induction n
   case zero =>
     simp_all only [Function.iterate_zero, id_eq]
@@ -710,7 +735,7 @@ lemma setup2_trace_fq_n (s : Setup_spo α) (x: s.V) (hx:(classOf s (@Quotient.mk
     simp
     rw [←ih]
     funext q
-    dsimp [setup_trace]
+    dsimp [setup_trace_base]
     let no := NewOld_id s x hx
     simp_all only [no]
 
