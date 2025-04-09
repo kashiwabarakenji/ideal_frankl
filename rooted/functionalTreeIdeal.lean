@@ -17,6 +17,7 @@ import rooted.StemSizeOne
 import rooted.functionalCommon
 --import rooted.functionalTreePreorder
 import rooted.functionalTreePartialorder
+import rooted.functionalSPO
 
 
 
@@ -378,6 +379,148 @@ theorem Preorder_eq_PartialOrder (s: Setup2 α)  :
         have : w.val ∈ ss := by
           exact aS this
         exact this
+
+def spo_closuresystem (s: Setup_spo α) : ClosureSystem α :=
+  -- Implement the closure system logic here
+{
+  ground := s.V,
+    sets := fun ss =>
+    ∃ (I : Finset (Quotient s.setoid)),
+      (∀ q ∈ I, ∀ q', s.spo.le q' q → q' ∈ I) ∧  -- ideal 条件
+      (ss ⊆ s.V) ∧ ((hs:ss⊆ s.V) → (∀ (x : α) (h : x ∈ ss), Quotient.mk s.setoid ⟨x, by exact hs h⟩ ∈ I) ∧ (∀ q ∈ I,  ∀ (x:s.V), Quotient.mk s.setoid ⟨x, by simp⟩ = q → x.val ∈ ss)),
+  inc_ground := by
+    intro s a
+    obtain ⟨w, h⟩ := a
+    obtain ⟨left, right⟩ := h
+    obtain ⟨left_1, right⟩ := right
+    simp_all only [forall_true_left]
+  nonempty_ground := by
+    exact s.nonemp
+
+  has_ground := by --Vがsetsになることを示す。そのときは、すべての同値類がIに含まれる。
+    simp_all only
+    use Finset.univ
+    constructor
+    · simp_all
+    · simp_all only [subset_refl, Finset.mem_univ, implies_true, Subtype.coe_eta, coe_mem, imp_self, and_self]
+
+  intersection_closed := by
+    intro ss t ⟨Ia, hIa, hsub_a, ha⟩ ⟨Ib, hIb, hsub_b, hb⟩
+    let I := Ia ∩ Ib
+    have hI : ∀ q ∈ I, ∀ q', s.spo.le q' q → q' ∈ I := by
+      intro q hq q' hle
+      simp only [Finset.mem_inter] at hq
+      simp_all only [forall_true_left, Finset.mem_inter, I]
+      simp_all only
+      obtain ⟨left, right⟩ := hq
+      apply And.intro
+      · exact hIa q left q' hle
+      · apply hIb
+        on_goal 2 => {exact hle
+        }
+        · simp_all only
+    use I
+    constructor
+    · exact hI
+    constructor
+    · simp_all only [forall_true_left, Finset.mem_inter, and_imp, I]
+      simp_all only [I]
+      exact inter_subset_left.trans hsub_a
+    · intro hs
+      constructor
+      · intros x hx
+        simp_all only [Subtype.coe_eta, Subtype.forall, forall_true_left, Finset.mem_inter, and_imp, I]
+        simp_all only [I]
+        obtain ⟨left, right⟩ := ha
+        obtain ⟨left_1, right_1⟩ := hb
+        apply And.intro
+        · apply left
+          simp_all only [Finset.mem_inter, I]
+        · apply left_1
+          simp_all only [Finset.mem_inter, I]
+      · intros q hq x hx
+        subst hx
+        simp_all only [Subtype.coe_eta, Subtype.forall, forall_true_left, Finset.mem_inter, and_imp, I]
+        simp_all only [I]
+        obtain ⟨val, property⟩ := x
+        obtain ⟨left, right⟩ := ha
+        obtain ⟨left_1, right_1⟩ := hb
+        obtain ⟨left_2, right_2⟩ := hq
+        simp_all only [I]
+        apply And.intro
+        · apply right
+          · exact left_2
+          · congr
+        · apply right_1
+          · exact right_2
+          · congr
+}
+
+theorem Setup_spo_eq_PartialOrder (s: Setup2 α)  :
+  --出発点はpreoverでいいのか。
+  setoid_ideal_ClosureSystem s = spo_closuresystem (setup_setupspo s)  := by
+  --preorder_ideal_system s.toSetup = spo_closuresystem (setup_setupspo s)  := by
+  --#check @setoid_ideal_ClosureSystem _ _ V nonemp (@setoid_preorder V _:Setoid V) _
+  --#check setoid_ideal_ClosureSystem V nonemp (@setoid_preorder V _)
+  ext ss --ssは集合族としてのideal
+  · rfl
+  ·
+    dsimp [setoid_ideal_ClosureSystem, spo_closuresystem]
+    let st := s.setoid
+
+    apply Iff.intro
+    · intro a --sはpreorderのidealで、その性質がaに入っている。
+      simp at a
+      obtain ⟨hs, hhs⟩ := a --hsはsがVの要素であること。hhsは、sのidealとしての性質。
+      --hsとhssは、仮定の満たす性質。
+      --Iは同値類の集まりなので、sを含む同値類を全部持ってくるとよい。
+      --I'は、sを含む同値類の全体。
+      let I' := (Finset.univ : Finset s.V).filter (fun x =>
+         ∀ a:s.V, st.r a x → a.val ∈ ss) |>.image (Quotient.mk st)
+      use I'
+      --show (∀ q ∈ I', ∀ q' ≤ q, q' ∈ I') ∧ s ⊆ V ∧ ∀ (hs : s ⊆ V) (x : α) (h : x ∈ s), ⟦⟨x, ⋯⟩⟧ ∈ I'
+      --示すべきことは、I'がidealになっていることと、sの要素の同値類が全部I'に入っていること。
+      simp
+      constructor
+      · intro q hq q' hqq' --ここで使う性質は、I'の定義とhhs。qが大きい方で、q'が小さい方。q'がI'に入っていることを示すのが目標。
+        obtain ⟨x, hx⟩ := Quotient.exists_rep q
+        dsimp [I']
+        dsimp [I'] at hq
+        rw [Finset.mem_image] at hq
+        rw [Finset.mem_image]
+        simp
+        use x
+        constructor
+        · constructor
+          · intro aa bb
+            intro h
+            /-
+            have : x.val ∈ ss :=
+            by
+              subst hx
+              simp_all only [Subtype.forall, mem_filter, Finset.mem_univ, true_and, Quotient.eq, AntisymmRel.setoid_r,
+                Subtype.exists, st, I']
+              sorry
+            -/
+            sorry
+          · sorry
+        · subst hx
+          simp_all only [Subtype.forall, mem_filter, mem_attach, true_and, Subtype.exists, coe_mem, I', st]
+      · constructor
+        · obtain ⟨left, right⟩ := hhs
+          obtain ⟨left_1, right⟩ := right
+          simp_all only [forall_true_left, I', st]
+          obtain ⟨left_2, right⟩ := right
+          exact left_1
+        · intro hs
+          sorry
+    · sorry
+        --have : x.val ∈ ss := by --これはゴールと同じ。
+        --I'の満たすべき性質は。
+
+          --hxと
+        -- ここでhhsを使ってq'がI'に入ることを示す
+
 
 --証明すべき内容。
 -- setup_spo2をtraceしたもののidealがidealとしてtraceしたものと一致すること。

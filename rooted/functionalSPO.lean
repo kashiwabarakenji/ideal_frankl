@@ -82,6 +82,7 @@ lemma reach_leq (s : Setup_spo α) (x y : Quotient s.setoid) :
   dsimp [partialOrderOfFq] at *
   exact h
 
+
 lemma reach_leq_rev (s : Setup_spo α) (x y : Quotient s.setoid) :
   s.spo.le x y →  reach s.fq x y  := by
   intro h
@@ -109,6 +110,7 @@ lemma reach_leq2 (s : Setup2 α) (x y : Quotient s.setoid) :
   convert fql
   rw [s.h_po]
 
+--fq_lemmaと内容が被っている。
 lemma reach_leq2_rev (s : Setup2 α) (q1 q2 : Quotient s.setoid) :
   s.po.le q1 q2 → reach (fq s) q1 q2 :=
 by
