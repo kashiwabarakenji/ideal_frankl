@@ -456,70 +456,130 @@ def spo_closuresystem (s: Setup_spo α) : ClosureSystem α :=
           · congr
 }
 
+--s Setup2のQuotientと、setup_setupspoのQuotientの対応の写像が必要。
+noncomputable def setup_setupspo_quotient (s: Setup2 α) (q: Quotient s.setoid) : Quotient (setup_setupspo s).setoid :=
+  let rep : s.V := Quotient.out q
+  Quotient.mk (setup_setupspo s).setoid ⟨rep, by simp⟩
+
+lemma seteq_setupspo_eq  (s:Setup2 α) :
+s.setoid = (setup_setupspo s).setoid := by
+  dsimp [setup_setupspo]
+
+/- この補題がポイントだったと思ったけど、結果的につかってなかったみたい。
+lemma setup_setupspo_quotient_lemma (s: Setup2 α) (q: Quotient s.setoid) :
+  classOf (setup_setupspo s) (setup_setupspo_quotient s q) = eqClass_setup s.toSetup (Quotient.out q) := by
+  let ec := eqClass_Class_of2 s q
+  simp_all only [ec]
+  simp [setup_setupspo_quotient]
+-/
+
+--時間がかかった上に、よくわからないまま証明された。
 theorem Setup_spo_eq_PartialOrder (s: Setup2 α)  :
-  --出発点はpreoverでいいのか。
   setoid_ideal_ClosureSystem s = spo_closuresystem (setup_setupspo s)  := by
-  --preorder_ideal_system s.toSetup = spo_closuresystem (setup_setupspo s)  := by
-  --#check @setoid_ideal_ClosureSystem _ _ V nonemp (@setoid_preorder V _:Setoid V) _
-  --#check setoid_ideal_ClosureSystem V nonemp (@setoid_preorder V _)
   ext ss --ssは集合族としてのideal
   · rfl
   ·
     dsimp [setoid_ideal_ClosureSystem, spo_closuresystem]
-    let st := s.setoid
+    --let st := s.setoid
 
     apply Iff.intro
     · intro a --sはpreorderのidealで、その性質がaに入っている。
       simp at a
       obtain ⟨hs, hhs⟩ := a --hsはsがVの要素であること。hhsは、sのidealとしての性質。
-      --hsとhssは、仮定の満たす性質。
-      --Iは同値類の集まりなので、sを含む同値類を全部持ってくるとよい。
-      --I'は、sを含む同値類の全体。
-      let I' := (Finset.univ : Finset s.V).filter (fun x =>
-         ∀ a:s.V, st.r a x → a.val ∈ ss) |>.image (Quotient.mk st)
-      use I'
-      --show (∀ q ∈ I', ∀ q' ≤ q, q' ∈ I') ∧ s ⊆ V ∧ ∀ (hs : s ⊆ V) (x : α) (h : x ∈ s), ⟦⟨x, ⋯⟩⟧ ∈ I'
-      --示すべきことは、I'がidealになっていることと、sの要素の同値類が全部I'に入っていること。
+      use hs
       simp
       constructor
-      · intro q hq q' hqq' --ここで使う性質は、I'の定義とhhs。qが大きい方で、q'が小さい方。q'がI'に入っていることを示すのが目標。
+      · intro q hq q' hqq'
         obtain ⟨x, hx⟩ := Quotient.exists_rep q
-        dsimp [I']
-        dsimp [I'] at hq
-        rw [Finset.mem_image] at hq
-        rw [Finset.mem_image]
-        simp
-        use x
-        constructor
-        · constructor
-          · intro aa bb
-            intro h
-            /-
-            have : x.val ∈ ss :=
-            by
-              subst hx
-              simp_all only [Subtype.forall, mem_filter, Finset.mem_univ, true_and, Quotient.eq, AntisymmRel.setoid_r,
-                Subtype.exists, st, I']
-              sorry
-            -/
-            sorry
-          · sorry
-        · subst hx
-          simp_all only [Subtype.forall, mem_filter, mem_attach, true_and, Subtype.exists, coe_mem, I', st]
-      · constructor
-        · obtain ⟨left, right⟩ := hhs
-          obtain ⟨left_1, right⟩ := right
-          simp_all only [forall_true_left, I', st]
-          obtain ⟨left_2, right⟩ := right
-          exact left_1
-        · intro hs
-          sorry
-    · sorry
-        --have : x.val ∈ ss := by --これはゴールと同じ。
-        --I'の満たすべき性質は。
+        obtain ⟨x', hx'⟩ := Quotient.exists_rep q'
 
-          --hxと
-        -- ここでhhsを使ってq'がI'に入ることを示す
+        --暗黙に使っているっぽい。
+        have : s.V = (setup_setupspo s).V:= by
+          exact rfl
+        --使ってないのかも。
+        --have :x'.val ∈ (setup_setupspo s).V := by
+        --  subst hx hx'
+        --  simp_all only [Subtype.forall, mem_filter, mem_attach, true_and, Subtype.exists, coe_mem]
+        --have : x'.val ∈ s.V := by
+        --  subst hx hx'
+        --  simp_all only [Subtype.forall, mem_filter, mem_attach, true_and, Subtype.exists, coe_mem]
+        obtain ⟨hss1,hss2,hss3⟩ := hhs
+        specialize hss3 hss2
+        obtain ⟨hss31,hss32⟩ := hss3
+        have : q ∈ hs := by
+          specialize hss31 x
+          have :x.val ∈ ss :=
+          by
+            simp_all only [coe_mem, Subtype.coe_eta, Quotient.eq, Quotient.out_eq]
+            subst hx hx'
+            apply hss32
+            · exact hq
+            · rfl
+            · simp
+          specialize hss31 this
+          simp at hss31
+          simp_all only [coe_mem]
+        have :q' ∈ hs := by
+          specialize hss1 q
+          apply hss1 this
+          exact reach_leq2 s q' q hqq'
+        subst hx hx'
+        simp_all only [coe_mem]
+      · constructor
+        ·
+          obtain ⟨left, right⟩ := hhs
+          obtain ⟨left_1, right⟩ := right
+          exact left_1
+        · intro hsss
+          constructor
+          · intro x
+            intro h
+            obtain ⟨left, right⟩ := hhs
+            obtain ⟨left_1, right⟩ := right
+            simp_all only [forall_true_left]
+            obtain ⟨left_2, right⟩ := right
+            exact left_2 x h
+          · intro q hq x hx
+            intro a
+            subst a
+            obtain ⟨left, right⟩ := hhs
+            obtain ⟨left_1, right⟩ := right
+            simp_all only [forall_true_left]
+            obtain ⟨left_2, right⟩ := right
+            apply right
+            · exact hq
+            · rfl
+    . intro h
+      obtain ⟨left, right⟩ := h
+      obtain ⟨left_1, right⟩ := right
+      simp_all only [mem_mk, Subtype.coe_eta, Subtype.forall]
+      obtain ⟨left_2, right⟩ := right
+      simp_all only [forall_true_left]
+      obtain ⟨left_3, right⟩ := right
+      constructor
+      swap
+      · rw [seteq_setupspo_eq s]
+        exact left
+      · constructor
+        · intro q hq q' hqq'
+          simp
+          specialize left_1 q hq q'
+          apply left_1
+          exact (spole_iff_po s q' q).mp hqq'
+        ·
+          constructor
+          ·
+            exact left_2
+          · intro hs
+            --simp_all only [eq_mpr_eq_cast, cast_eq]
+            apply And.intro
+            · intro x h
+              exact left_3 x h
+            · intro q a a_1 b a_2
+              --subst a_2
+              apply right
+              · exact a
+              · congr
 
 
 --証明すべき内容。

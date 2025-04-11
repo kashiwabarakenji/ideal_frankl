@@ -207,7 +207,7 @@ def setup_setupspo (s: Setup2 α) : Setup_spo α :=
   h_spo := rfl
 }
 
-
+--eqClassとclassOfは同じもの。
 lemma eqClass_Class_of (s: Setup2 α) (x : {x : α // x ∈ s.V}) :
   (eqClass_setup s.toSetup) x = classOf (setup_setupspo s) (@Quotient.mk' _ s.setoid x) := by
   dsimp [classOf]
@@ -230,6 +230,7 @@ lemma eqClass_Class_of (s: Setup2 α) (x : {x : α // x ∈ s.V}) :
     simp only [Quotient.mk'] at a
     simp_all only [Quotient.eq]
 
+--上とほぼ同じだが、qを与えたもの。
 lemma eqClass_Class_of2 (s: Setup2 α) (q : Quotient s.setoid) :
   eqClass_setup s.toSetup (Quotient.out q) = (classOf (setup_setupspo s) q) :=
 by
