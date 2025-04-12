@@ -129,6 +129,7 @@ noncomputable def setoid_ideal_ClosureSystem (s: Setup2 α): ClosureSystem α :=
 
 }
 
+--この定理は、preorderとpartialorderのidealの関係。spoとの関係はあとの定理。
 theorem Preorder_eq_PartialOrder (s: Setup2 α)  :
   preorder_ideal_system s.toSetup = setoid_ideal_ClosureSystem s  := by
   --#check @setoid_ideal_ClosureSystem _ _ V nonemp (@setoid_preorder V _:Setoid V) _
@@ -266,8 +267,6 @@ theorem Preorder_eq_PartialOrder (s: Setup2 α)  :
         intro w a
         --left  ∀ q ∈ I, ∀ q' ≤ q, q' ∈ I
         --right s ⊆ V ∧ ∀ (hs : s ⊆ V) (x : α) (h : x ∈ s), ⟦⟨x, ⋯⟩⟧ ∈ I
-        --obtain ⟨val, property⟩ := v
-        --obtain ⟨val_1, property_1⟩ := w
         let q:= Quotient.mk st v
         let q':= Quotient.mk st w
         --simp_all only [forall_true_left]
@@ -287,11 +286,6 @@ theorem Preorder_eq_PartialOrder (s: Setup2 α)  :
           specialize left q this q' a
           exact left
         dsimp [q'] at qI
-        --preorderとorderの関係を使う必要があるかも。
-        --rw [← @Quotient.mk''_eq_mk] at qI
-        --dsimp [setoid_preorder] at qI  --このあとqI使ってない？
-        --dsimp [preorder_partialorder_lemma] at qI
-        --dsimp [setoid_preorder] at left
 
         obtain ⟨left_1, right⟩ := right --rightも使ってないかも。
 

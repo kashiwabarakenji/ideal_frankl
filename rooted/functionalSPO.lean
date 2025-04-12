@@ -74,6 +74,21 @@ def classOf (s : Setup_spo α) (q : Quotient s.setoid) [DecidableEq (Quotient s.
 --noncomputable def eqClass_setup (s: Setup α) (x : {x : α // x ∈ s.V}) : Finset {x // x ∈ s.V} :=
 --  s.V.attach.filter (fun y => s.setoid.r x y)
 
+lemma classOf_nonempty (s : Setup_spo α) (q : Quotient s.setoid) :
+  (classOf s q).Nonempty := by
+  dsimp [classOf]
+  rw [Finset.filter_nonempty_iff]
+  let a := Quotient.out q
+  use a
+  constructor
+  · exact mem_attach s.V a
+  · exact Quotient.out_eq q
+
+--わざわざ定義するまでもないかも。
+noncomputable def QuotientOf (s: Setup_spo α) (xx : Finset {x : α // x ∈ s.V}) :
+  Finset (Quotient s.setoid) :=
+  xx.image (@Quotient.mk _ s.setoid)
+
 lemma reach_leq (s : Setup_spo α) (x y : Quotient s.setoid) :
   reach s.fq x y → s.spo.le x y := by
   --これはs.spo.leの定義な気もするが。
