@@ -1,5 +1,6 @@
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Finset.Powerset
+import Mathlib.Data.Finset.Card
 import Mathlib.Data.Set.Function
 import Mathlib.Data.Fintype.Basic
 import Init.Data.Fin.Lemmas
@@ -270,11 +271,6 @@ theorem setoid_ideal_injection_injective
     simp_all
     obtain ⟨left, right⟩ := h₂
     obtain ⟨left_1, right⟩ := right
-    obtain ⟨w, h⟩ := left_1
-    obtain ⟨left_1, right_1⟩ := h
-    obtain ⟨left_2, right_1⟩ := right_1
-    simp_all only [forall_true_left]
-    obtain ⟨left_3, right_1⟩ := right_1
     exact right
 
 
@@ -286,11 +282,6 @@ theorem setoid_ideal_injection_injective
     simp_all
     obtain ⟨left, right⟩ := h₁
     obtain ⟨left_1, right⟩ := right
-    obtain ⟨w, h⟩ := left_1
-    obtain ⟨left_1, right_1⟩ := h
-    obtain ⟨left_2, right_1⟩ := right_1
-    simp_all only [forall_true_left]
-    obtain ⟨left_3, right_1⟩ := right_1
     exact right
 
   have h₁_union : ss₁ = (ss₁ \ classOf s q) ∪ (classOf s q) :=
@@ -356,7 +347,7 @@ lemma powerset_image {α β : Type*}[DecidableEq β]
         obtain ⟨w, h⟩ := a_1
         obtain ⟨left, right⟩ := h
         obtain ⟨left, right_1⟩ := left
-        subst right
+        --subst right
         simp_all only [a]
 
       -- (⇐) y ∈ t → y ∈ a.image f
@@ -409,7 +400,7 @@ lemma filter_set_of_set_comp_eq_image_filter
     subst right_1
     exact ⟨w, ⟨left, right⟩, rfl⟩
 
--「Filter 後に image を取ったカードが等しい」単射性を利用。
+--「Filter 後に image を取ったカードが等しい」単射性を利用。
 --card_filter_image_eqで使っているが直接証明した方が簡単そう。
 lemma card_of_image_filter_of_inj_on
   {α β : Type} [DecidableEq α] [DecidableEq β]
@@ -547,8 +538,105 @@ lemma setoid_ideal_number_of_hyperedges (s : Setup_spo α)(q : Quotient s.setoid
   let siic := setoid_ideal_injection_card s q
   exact siic
 
+lemma setoid_ideal_domain_codomain (s : Setup_spo α)(q : Quotient s.setoid ) (hm: isMaximal_spo s q) :
+  (setoid_ideal_injection_domain s q).card ≤ (setoid_ideal_injection_codomain s q).card := by
+  --dsimp [setoid_ideal_injection_domain, setoid_ideal_injection_codomain]
+
+  --domainからcodomainへの写像が単射であることを使う。setoid_ideal_injectionで示されている。
+
+  have : Function.Injective (setoid_ideal_injection s q hm) := by
+    intro a b hab
+    exact (setoid_ideal_injection_injective s q hm hab)
+
+  let fcl :=  @Finset.card_le_card_of_injective _ _ (setoid_ideal_injection_domain s q) (setoid_ideal_injection_codomain s q) (setoid_ideal_injection s q hm)
+  specialize fcl this
+  simp_all only
+
+lemma degree_le_setoid_ideal_injection_domain_card
+  (s : Setup_spo α) (q : Quotient s.setoid) (x : {x // x ∈ classOf s q}) :
+  (spo_closuresystem s).degree ↑↑x  = #(setoid_ideal_injection_domain s q) :=
+by
+  dsimp [setoid_ideal_injection_domain]
+  dsimp [SetFamily.degree]
+  dsimp [classOf]
+  simp
+  have :s.V = (spo_closuresystem s).ground := by  dsimp [spo_closuresystem]
+  rw [←this]
+  --補題を示していく。中身が等しいわけではない。片方はsubtypeで片方はそうでない。
+  /-
+  have :filter (fun s_1 => (spo_closuresystem s).sets s_1 ∧ ↑↑x ∈ s_1) (spo_closuresystem s).ground.powerset
+    =
+    Finset.filter
+      (fun (ss: Finset {x//x ∈ s.V}) =>
+        (spo_closuresystem s).sets (Finset.image Subtype.val ss) ∧
+          filter (fun a => Quotient.mk'' a = q) s.V.attach ⊆ ss)
+      s.V.attach.powerset := by
+  -/
+  -- filter (fun s_1 => (spo_closuresystem s).sets s_1 ∧ ↑↑x ∈ s_1) (spo_closuresystem s).ground.powerset
+  --からFinset.filter (fun (ss: Finset {x//x ∈ s.V}) => (spo_closuresystem s).sets (Finset.image Subtype.val ss) ∧ filter (fun a => Quotient.mk'' a = q) s.V.attach ⊆ ss)
+  --への全単射を作る。
+  let domain := filter (fun s_1 => (spo_closuresystem s).sets s_1 ∧ ↑↑x ∈ s_1) (spo_closuresystem s).ground.powerset
+  let codomain := Finset.filter (fun (ss: Finset {x//x ∈ s.V}) => (spo_closuresystem s).sets (Finset.image Subtype.val ss) ∧ filter (fun a => Quotient.mk'' a = q) s.V.attach ⊆ ss)
+  --xを含むhyperedgeは、qの同値類の元だし、逆も言えるので、本来は簡単なはず。上は、subtypeでなく、下はsubtypeであることに注意。
+  let i : ∀ (a : Finset α), a ∈ domain → Finset {x // x ∈ s.V} :=
+    fun a ha => s.V.attach.filter (fun ss =>  Quotient.mk'' a = q) --これは違う。aはhyperedgeで、qを含むもの。
+
+  have H₁ : ∀ a ha, i a ha ∈ t := by
+    -- i a ha が定義通りに t の条件を満たすことを示す
+
+  have H₂ : ∀ a₁ ha₁ a₂ ha₂, i a₁ ha₁ = i a₂ ha₂ → a₁ = a₂ := by
+    -- attach と filter の injectivity に基づいて証明
+
+  have H₃ : ∀ b ∈ t, ∃ a ha, i a ha = b := by
+    -- 任意の b ∈ t に対して、もとの ground.powerset の元 a を再構成する
+
+  exact Finset.card_bij i H₁ H₂ H₃
+
+  let φ (ss : Finset α) : Finset {x // x ∈ s.V} := s.V.attach.filter (fun a => ↑a ∈ ss)
+
+  have h_inj : Set.InjOn φ domain := by
+    intro ss₁ h₁ ss₂ h₂ h_eq
+    sorry
+    -- φ ss₁ = φ ss₂ → ss₁ = ss₂ を示す（filter と injectivity）
+
+  have h_card : domain.card = (domain.image φ).card := Finset.card_image_of_injOn φ h_inj
+
+  have : domain.image φ = setoid_ideal_injection_domain s q := by
+    sorry
+
+  -- φ ss が domain の定義と一致していることを示す
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 theorem setoid_ideal_rare (s : Setup_spo2 α)(q : Quotient (s.toSetup_spo).setoid )(hm: isMaximal_spo s.toSetup_spo q) :
   ∀ (x : classOf s.toSetup_spo q), (spo_closuresystem s.toSetup_spo).toSetFamily.is_rare x := by
 
   dsimp [SetFamily.is_rare]
-  sorry
+  rw [←setoid_ideal_number_of_hyperedges s.toSetup_spo q]
+  let sid := setoid_ideal_domain_codomain s.toSetup_spo q hm
+  /-
+  obtain ⟨x, hx⟩ := Quotient.exists_rep q
+  have :x ∈ classOf s.toSetup_spo q := by
+    subst hx
+    obtain ⟨val, property⟩ := x
+    rw [classOf]
+    simp_all only [Quotient.eq, mem_filter, mem_attach, true_and]
+    rfl
+  -/
+
+  intro x_1
+  simp
+  let dls := degree_le_setoid_ideal_injection_domain_card s.toSetup_spo q x_1
+  linarith
