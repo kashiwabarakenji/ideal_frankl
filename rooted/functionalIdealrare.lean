@@ -374,6 +374,10 @@ lemma powerset_image {α β : Type*}[DecidableEq β]
         obtain ⟨left, right⟩ := h
         use x
 
+------------
+
+--使ってない。これもpowersetとimageの順序を交換している様に見えるが。
+--微妙に証明すべき式の形と一致してないのかも。
 lemma card_filter_image_image_eq_filter
   {α β : Type} [DecidableEq α] [DecidableEq β]
   {s : Finset α} (f : α → β) (p : Finset β → Prop) [DecidablePred p] :
@@ -383,6 +387,7 @@ lemma card_filter_image_image_eq_filter
   rw [←@powerset_image α β _ s f]
   simp only [filter_image]
 
+--使ってない。証明すべき式の形と一致してないのかも。
 lemma filter_set_of_set_comp_eq_image_filter
   {α β : Type*} [DecidableEq α] [DecidableEq β]
   (S : Finset (Finset α)) (f : Finset α → Finset β)
@@ -404,6 +409,8 @@ lemma filter_set_of_set_comp_eq_image_filter
     subst right_1
     exact ⟨w, ⟨left, right⟩, rfl⟩
 
+-「Filter 後に image を取ったカードが等しい」単射性を利用。
+--card_filter_image_eqで使っているが直接証明した方が簡単そう。
 lemma card_of_image_filter_of_inj_on
   {α β : Type} [DecidableEq α] [DecidableEq β]
   (s : Finset α) (f : α → β) (p : α → Prop) [DecidablePred p]
@@ -412,6 +419,8 @@ lemma card_of_image_filter_of_inj_on
 by
   exact card_image_iff.mpr hf
 
+
+--setoid_ideal_injection_cardの証明で使っている。
 lemma card_filter_image_eq
   {α β : Type} [DecidableEq α] [DecidableEq β]
   (S₀ : Finset α) (φ : α → β) (P : β → Prop)
@@ -424,8 +433,69 @@ by
   rw [filter_image]
   simp_all only [coe_filter, cif]
 
+--Subtype を val で写したときの単射性を保証するもの。
+--setoid_ideal_injection_cardの証明で使っている。
+lemma image_val_inj_on
+  {α : Type*} [DecidableEq α]
+  {V : Finset α}
+  (S : Finset (Finset {x // x ∈ V})) :
+  Set.InjOn (fun ss => ss.image Subtype.val) S.toSet :=
+by
+  intros x hx y hy h
+  apply Finset.ext
+  intro a
+  constructor
+  · intro ha
+    have : ↑a ∈ Finset.image Subtype.val x := Finset.mem_image_of_mem _ ha
+    simp_all only [mem_coe, Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, Subtype.coe_eta,
+      coe_mem, exists_const]
+  · intro ha
+    have : a.val ∈ x.image Subtype.val := by simp_all only [mem_coe, Finset.mem_image, Subtype.exists,
+      exists_and_right, exists_eq_right, Subtype.coe_eta, coe_mem, exists_const]
+    obtain ⟨a', ha', hval⟩ := Finset.mem_image.mp this
+    have : a = a' := by
+      simp_all only [mem_coe, Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, Subtype.coe_eta,
+        coe_mem, exists_const]
+      obtain ⟨val, property⟩ := a
+      obtain ⟨val_1, property_1⟩ := a'
+      subst hval
+      simp_all only
+    rw [this]; exact ha'
+
+--attach した要素からなる powerset を val で写したら元の powerset に戻る
+lemma powerset_image_attach {α : Type*} [DecidableEq α] (V : Finset α) :
+  Finset.image (fun ss => ss.image Subtype.val) V.attach.powerset = V.powerset := by
+  apply Finset.ext
+  intro s
+  constructor
+  · intro h
+    obtain ⟨ss, hss, rfl⟩ := Finset.mem_image.mp h
+    apply Finset.mem_powerset.mpr
+    intro x hx
+    simp_all only [Finset.mem_powerset, Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right]
+    obtain ⟨w, h⟩ := h
+    obtain ⟨w_1, h_1⟩ := hx
+    obtain ⟨left, right⟩ := h
+    simp_all only
+  · intro h
+    -- h: S ⊆ V を利用
+    let ss := V.attach.filter (fun ⟨x, _⟩ => x ∈ s)
+    -- ss は V.attach の部分集合
+    have hss : ss ∈ V.attach.powerset := by
+      simp_all only [Finset.mem_powerset, filter_subset, ss]
+    -- ss.image Subtype.val = S を証明
+    have hS : ss.image Subtype.val = s := by
+      ext a
+      simp [ss]
+      intro a_1
+      simp_all only [Finset.mem_powerset, filter_subset, ss]
+      exact h a_1
+    -- S が左辺に含まれることを示す
+    rw [Finset.mem_image]
+    exact ⟨ss, hss, hS⟩
+
 lemma setoid_ideal_injection_card
-  (s : Setup_spo α) (q : Quotient s.setoid) (hm : isMaximal_spo s q) :
+  (s : Setup_spo α) (q : Quotient s.setoid)  :
   #(filter (fun ss => (spo_closuresystem s).sets (Finset.image Subtype.val ss)) s.V.attach.powerset) =
   #(filter (fun s_1 => (spo_closuresystem s).sets s_1) (spo_closuresystem s).ground.powerset) :=
 by
@@ -438,14 +508,22 @@ by
 
   let cfi := card_filter_image_eq S₀ φ P
   have : InjOn φ ↑(filter (fun x => P (φ x)) S₀) := by
-    sorry
+    exact image_val_inj_on (filter (fun x => P (φ x)) S₀)
   specialize cfi this
+  --dsimp [S₀, S₁, φ, P]
+  rw [cfi]
 
-  convert cfi
-  dsimp [S₀, S₁, φ, P]
   have :s.V = (spo_closuresystem s).ground := by  dsimp [spo_closuresystem]
-  rw [←this]
-  simp_all only [coe_filter, Finset.mem_powerset, S₀, φ, S₁, P]
+  have h_image : Finset.image φ S₀ = S₁ := by
+    dsimp [S₀, S₁, φ]
+    exact powerset_image_attach s.V
+
+  dsimp [S₁] --ここで同値性が失われたかも。
+  dsimp [S₀, φ, P]
+
+  --simp_all only [coe_filter, Finset.mem_powerset, S₀, φ, S₁, P]
+  simp_all only [coe_filter, Finset.mem_powerset, P, S₀, φ, S₁]
+
 
 lemma setoid_ideal_number_of_hyperedges (s : Setup_spo α)(q : Quotient s.setoid ):
   (setoid_ideal_injection_domain s q).card + (setoid_ideal_injection_codomain s q).card =
@@ -466,85 +544,8 @@ lemma setoid_ideal_number_of_hyperedges (s : Setup_spo α)(q : Quotient s.setoid
   simp at h_part
   norm_cast
   rw [h_part]
-
-
-  let f := fun (ss : Finset s.V) => ss.image Subtype.val
-
-  -- A を使って書き換えたフィルター条件
-  let filtered := powerset.filter A
-
-  -- f が inj_on であることを証明
-  have f_inj : Set.InjOn f filtered := by
-    intros x hx y hy h_eq
-    apply Finset.ext
-    · intro a
-      simp_all only [coe_filter, Finset.mem_powerset, mem_setOf_eq, and_true, A, p, powerset, filtered, f]
-      --obtain ⟨val, property⟩ := a
-      --obtain ⟨left, right⟩ := hy
-      apply Iff.intro
-      · intro ha
-        have : a.val ∈ y.image Subtype.val := by rw [← h_eq]; exact Finset.mem_image_of_mem _ ha
-        obtain ⟨a', ha', hval⟩ := Finset.mem_image.mp this
-        -- a.val = a'.val ⇒ a = a' （Subtype ext）
-        simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, Subtype.coe_eta, coe_mem,
-          exists_const, A, p, powerset, filtered, f]
-
-      · intro a
-        search_proof
-
-  --haveI : DecidableEq (Subtype fun x => x ∈ s.V) := inferInstance
-  haveI : DecidablePred (spo_closuresystem s).sets := inferInstance
-  let _inst : DecidablePred (fun x : α => x ∈ s.V) := by infer_instance --subtype_decidable_eq--Finset.decidableMem s.V;
-  have cfi := @card_filter_image_image_eq_filter {x // x ∈ s.V} α inferInstance inferInstance s.V.attach Subtype.val (spo_closuresystem s).sets
-
-  haveI : DecidablePred (spo_closuresystem s).sets := inferInstance
-
-  have fss := filter_set_of_set_comp_eq_image_filter
-        s.V.attach.powerset
-        (fun (ss : Finset {x // x ∈ s.V}) => ss.image Subtype.val)
-        (spo_closuresystem s).sets
-
-  have fss2 :  (s.V.attach.powerset.filter (fun ss => (spo_closuresystem s).sets (ss.image Subtype.val))).image (fun ss => ss.image Subtype.val)
-  =
-  (s.V.attach.powerset.image (fun ss => ss.image Subtype.val)).filter (spo_closuresystem s).sets
-  := filter_set_of_set_comp_eq_image_filter
-        s.V.attach.powerset
-        (fun ss => ss.image Subtype.val)
-        (spo_closuresystem s).sets
-
-  have fss_card := congrArg Finset.card fss
-  #check Finset.card_image_of_injOn
-  have h_card := Finset.card_image_of_injOn f_inj
-
-  rw [← h_card]
-  dsimp [filtered]
-  dsimp [f]
-  dsimp [A]
-  simp at fss_card
-  convert fss_card
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  /- have fss_card :
-   (filter (fun ss => (spo_closuresystem s).sets (ss.image Subtype.val)) s.V.attach.powerset).card =
-    ((s.V.attach.powerset.image (fun ss => ss.image Subtype.val)).filter (spo_closuresystem s).sets).card :=
-  by
-  -/
-  --have :s.V = (spo_closuresystem s).ground := by  dsimp [spo_closuresystem]
-
-
+  let siic := setoid_ideal_injection_card s q
+  exact siic
 
 theorem setoid_ideal_rare (s : Setup_spo2 α)(q : Quotient (s.toSetup_spo).setoid )(hm: isMaximal_spo s.toSetup_spo q) :
   ∀ (x : classOf s.toSetup_spo q), (spo_closuresystem s.toSetup_spo).toSetFamily.is_rare x := by
