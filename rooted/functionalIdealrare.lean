@@ -25,6 +25,11 @@ open Finset Set Classical
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 
+instance subtype_decidable_eq {p : α → Prop} [DecidablePred p] : DecidableEq (Subtype p) :=
+  fun ⟨a, ha⟩ ⟨b, hb⟩ =>
+    if h : a = b then isTrue (Subtype.ext h)
+    else isFalse (fun H => absurd (congrArg Subtype.val H) h)
+
 
 noncomputable def setoid_ideal_injection_domain (s : Setup_spo α)(q : Quotient s.setoid ): Finset (Finset s.V) :=
    s.V.attach.powerset.filter (fun (ss:Finset s.V) => (spo_closuresystem s).sets (ss.image Subtype.val)  ∧ (classOf s q) ⊆ ss)
@@ -256,6 +261,23 @@ theorem setoid_ideal_injection_injective
 
   -- 差集合が等しい → 元の集合が等しいことを示す
   -- ss₁ = (ss₁ \ classOf s q) ∪ classOf s q
+
+  have h₂_subset : classOf s q ⊆ ss₂ := by
+    dsimp [setoid_ideal_injection_domain, setoid_ideal_injection_codomain] at h₂
+    dsimp [spo_closuresystem] at h₂
+    dsimp [classOf]
+    simp_all only [Subtype.mk.injEq]  --場所を変えるとエラー。
+    simp_all
+    obtain ⟨left, right⟩ := h₂
+    obtain ⟨left_1, right⟩ := right
+    obtain ⟨w, h⟩ := left_1
+    obtain ⟨left_1, right_1⟩ := h
+    obtain ⟨left_2, right_1⟩ := right_1
+    simp_all only [forall_true_left]
+    obtain ⟨left_3, right_1⟩ := right_1
+    exact right
+
+
   have h₁_subset : classOf s q ⊆ ss₁ := by
     dsimp [classOf]
     dsimp [setoid_ideal_injection_domain, setoid_ideal_injection_codomain] at h₁
@@ -278,13 +300,6 @@ theorem setoid_ideal_injection_injective
     dsimp [setoid_ideal_injection_domain, setoid_ideal_injection_codomain] at h₁
     simp_all only [Subtype.mk.injEq]
 
-  -- powerset の要素なので classOf s q ⊆ ss₁, ss₂
-  have h₂_subset : classOf s q ⊆ ss₂ := by
-    dsimp [setoid_ideal_injection_domain, setoid_ideal_injection_codomain] at h₂
-    dsimp [spo_closuresystem] at h₂
-    dsimp [classOf]
-    sorry
-
   -- Finset.sdiff_union_of_subset : A = (A \ B) ∪ B  (if B ⊆ A)
   have eq₂ : ss₂ = (ss₂ \ classOf s q) ∪ classOf s q :=
   by
@@ -301,7 +316,238 @@ theorem setoid_ideal_injection_injective
 
   exact Subtype.mk_eq_mk.mpr this
 
+omit [Fintype α] [DecidableEq α] in
+lemma powerset_image {α β : Type*}[DecidableEq β]
+  (s : Finset α) (f : α → β) :
+  s.powerset.image (fun a => a.image f) = (s.image f).powerset := by
+  -- 要素レベルで等しいことを示すために `ext t` で両辺のメンバーシップを比較
+  ext t
+  --simp only [mem_image, mem_powerset]
+  constructor
+  · -- (→) もし `t` が左辺に属するなら
+    intro a
+    simp_all only [Finset.mem_image, Finset.mem_powerset]
+    obtain ⟨w, h⟩ := a
+    obtain ⟨left, right⟩ := h
+    subst right
+    rw [Finset.image_subset_iff]
+    intro x a
+    simp_all only [Finset.mem_image]
+    exact ⟨x, left a, rfl⟩
+  · -- (←) もし `t` が右辺に属するなら
+    intro ht
+    -- t ⊆ s.image f
+    -- このとき「t = ある a の像 `a.image f`」となる部分集合 a ⊆ s を作ればよい
+    let a := s.filter (fun x => f x ∈ t)
+    rw [Finset.mem_image]
+    use a
+    constructor
+    · -- a ⊆ s は自明
+      apply mem_powerset.mpr
+      simp_all only [Finset.mem_powerset, filter_subset, a]
+    · -- a.image f = t を示す
+      ext y
+      --simp only [mem_image, mem_filter]
+      constructor
+      -- (⇒) y ∈ a.image f → y ∈ t
+      ·
+        intro a_1
+        simp_all only [Finset.mem_powerset, Finset.mem_image, mem_filter, a]
+        obtain ⟨w, h⟩ := a_1
+        obtain ⟨left, right⟩ := h
+        obtain ⟨left, right_1⟩ := left
+        subst right
+        simp_all only [a]
+
+      -- (⇐) y ∈ t → y ∈ a.image f
+      · intro hy
+        -- y ∈ t かつ t ⊆ s.image f なので y = f x の形で x ∈ s
+        -- x を a に入れれば y = f x ∈ a.image f
+        -- ただし「f x ∈ t」であることが a へのフィルタ条件
+
+        have : y ∈ s.image f := by
+          simp_all only [Finset.mem_powerset, Finset.mem_image, a]
+          simpa [a] using ht hy--mem_of_mem_powerset ht hy
+        obtain ⟨x, hx_s, rfl⟩ := mem_image.mp this
+        simp_all only [Finset.mem_powerset, Finset.mem_image, mem_filter, a]
+        obtain ⟨w, h⟩ := this
+        obtain ⟨left, right⟩ := h
+        use x
+
+lemma card_filter_image_image_eq_filter
+  {α β : Type} [DecidableEq α] [DecidableEq β]
+  {s : Finset α} (f : α → β) (p : Finset β → Prop) [DecidablePred p] :
+  ((s.powerset.image (Finset.image f)).filter p).card =
+    ((s.image f).powerset.filter p).card := by
+  rw [@filter_image]
+  rw [←@powerset_image α β _ s f]
+  simp only [filter_image]
+
+lemma filter_set_of_set_comp_eq_image_filter
+  {α β : Type*} [DecidableEq α] [DecidableEq β]
+  (S : Finset (Finset α)) (f : Finset α → Finset β)
+  (p : Finset β → Prop) [DecidablePred p] :
+  (S.filter (fun s => p (f s))).image f = (S.image f).filter p := by
+  ext x
+  simp only [Finset.mem_filter, Finset.mem_image]
+  constructor
+  · rintro ⟨hs, hps⟩
+    obtain ⟨left, right⟩ := hps
+    obtain ⟨left, right_1⟩ := left
+    subst right
+    simp_all only [and_true]
+    exact ⟨_, left, rfl⟩
+  · intro a
+    obtain ⟨left, right⟩ := a
+    obtain ⟨w, h⟩ := left
+    obtain ⟨left, right_1⟩ := h
+    subst right_1
+    exact ⟨w, ⟨left, right⟩, rfl⟩
+
+lemma card_of_image_filter_of_inj_on
+  {α β : Type} [DecidableEq α] [DecidableEq β]
+  (s : Finset α) (f : α → β) (p : α → Prop) [DecidablePred p]
+  (hf : Set.InjOn f (s.filter p)) :
+  ((s.filter p).image f).card = (s.filter p).card :=
+by
+  exact card_image_iff.mpr hf
+
+lemma card_filter_image_eq
+  {α β : Type} [DecidableEq α] [DecidableEq β]
+  (S₀ : Finset α) (φ : α → β) (P : β → Prop)
+  [DecidablePred P]
+  (hφ : Set.InjOn φ (S₀.filter (fun x => P (φ x)))) :
+  (S₀.filter (fun x => P (φ x))).card = ((S₀.image φ).filter P).card :=
+by
+  let cif := card_of_image_filter_of_inj_on S₀ φ
+  simp_all only [coe_filter]
+  rw [filter_image]
+  simp_all only [coe_filter, cif]
+
+lemma setoid_ideal_injection_card
+  (s : Setup_spo α) (q : Quotient s.setoid) (hm : isMaximal_spo s q) :
+  #(filter (fun ss => (spo_closuresystem s).sets (Finset.image Subtype.val ss)) s.V.attach.powerset) =
+  #(filter (fun s_1 => (spo_closuresystem s).sets s_1) (spo_closuresystem s).ground.powerset) :=
+by
+  let S₀ := s.V.attach.powerset                       -- Finset s.V の部分集合たち
+  let φ : Finset s.V → Finset α := fun ss => ss.image Subtype.val
+  let S₁ := (spo_closuresystem s).ground.powerset     -- Finset α 上の部分集合
+  let P := (spo_closuresystem s).sets                 -- closure system の性質
+
+  change #(S₀.filter (fun s => P (φ s))) = #(S₁.filter P)
+
+  let cfi := card_filter_image_eq S₀ φ P
+  have : InjOn φ ↑(filter (fun x => P (φ x)) S₀) := by
+    sorry
+  specialize cfi this
+
+  convert cfi
+  dsimp [S₀, S₁, φ, P]
+  have :s.V = (spo_closuresystem s).ground := by  dsimp [spo_closuresystem]
+  rw [←this]
+  simp_all only [coe_filter, Finset.mem_powerset, S₀, φ, S₁, P]
+
+lemma setoid_ideal_number_of_hyperedges (s : Setup_spo α)(q : Quotient s.setoid ):
+  (setoid_ideal_injection_domain s q).card + (setoid_ideal_injection_codomain s q).card =
+  (spo_closuresystem s).number_of_hyperedges := by
+  dsimp [setoid_ideal_injection_domain, setoid_ideal_injection_codomain]
+  dsimp [SetFamily.number_of_hyperedges]
+  let A := fun (ss:Finset s.V) => (spo_closuresystem s).sets (ss.image Subtype.val)
+  let p := fun ss => classOf s q ⊆ ss
+  let powerset := s.V.attach.powerset
+
+  have h_part :
+    (powerset.filter (fun ss => A ss ∧ p ss)).card +
+    (powerset.filter (fun ss => A ss ∧ ¬p ss)).card =
+    (powerset.filter A).card := by
+    exact Eq.symm (add_compl_card powerset A p)
+
+  dsimp [A, p, powerset] at h_part
+  simp at h_part
+  norm_cast
+  rw [h_part]
+
+
+  let f := fun (ss : Finset s.V) => ss.image Subtype.val
+
+  -- A を使って書き換えたフィルター条件
+  let filtered := powerset.filter A
+
+  -- f が inj_on であることを証明
+  have f_inj : Set.InjOn f filtered := by
+    intros x hx y hy h_eq
+    apply Finset.ext
+    · intro a
+      simp_all only [coe_filter, Finset.mem_powerset, mem_setOf_eq, and_true, A, p, powerset, filtered, f]
+      --obtain ⟨val, property⟩ := a
+      --obtain ⟨left, right⟩ := hy
+      apply Iff.intro
+      · intro ha
+        have : a.val ∈ y.image Subtype.val := by rw [← h_eq]; exact Finset.mem_image_of_mem _ ha
+        obtain ⟨a', ha', hval⟩ := Finset.mem_image.mp this
+        -- a.val = a'.val ⇒ a = a' （Subtype ext）
+        simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, Subtype.coe_eta, coe_mem,
+          exists_const, A, p, powerset, filtered, f]
+
+      · intro a
+        search_proof
+
+  --haveI : DecidableEq (Subtype fun x => x ∈ s.V) := inferInstance
+  haveI : DecidablePred (spo_closuresystem s).sets := inferInstance
+  let _inst : DecidablePred (fun x : α => x ∈ s.V) := by infer_instance --subtype_decidable_eq--Finset.decidableMem s.V;
+  have cfi := @card_filter_image_image_eq_filter {x // x ∈ s.V} α inferInstance inferInstance s.V.attach Subtype.val (spo_closuresystem s).sets
+
+  haveI : DecidablePred (spo_closuresystem s).sets := inferInstance
+
+  have fss := filter_set_of_set_comp_eq_image_filter
+        s.V.attach.powerset
+        (fun (ss : Finset {x // x ∈ s.V}) => ss.image Subtype.val)
+        (spo_closuresystem s).sets
+
+  have fss2 :  (s.V.attach.powerset.filter (fun ss => (spo_closuresystem s).sets (ss.image Subtype.val))).image (fun ss => ss.image Subtype.val)
+  =
+  (s.V.attach.powerset.image (fun ss => ss.image Subtype.val)).filter (spo_closuresystem s).sets
+  := filter_set_of_set_comp_eq_image_filter
+        s.V.attach.powerset
+        (fun ss => ss.image Subtype.val)
+        (spo_closuresystem s).sets
+
+  have fss_card := congrArg Finset.card fss
+  #check Finset.card_image_of_injOn
+  have h_card := Finset.card_image_of_injOn f_inj
+
+  rw [← h_card]
+  dsimp [filtered]
+  dsimp [f]
+  dsimp [A]
+  simp at fss_card
+  convert fss_card
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  /- have fss_card :
+   (filter (fun ss => (spo_closuresystem s).sets (ss.image Subtype.val)) s.V.attach.powerset).card =
+    ((s.V.attach.powerset.image (fun ss => ss.image Subtype.val)).filter (spo_closuresystem s).sets).card :=
+  by
+  -/
+  --have :s.V = (spo_closuresystem s).ground := by  dsimp [spo_closuresystem]
+
+
 
 theorem setoid_ideal_rare (s : Setup_spo2 α)(q : Quotient (s.toSetup_spo).setoid )(hm: isMaximal_spo s.toSetup_spo q) :
   ∀ (x : classOf s.toSetup_spo q), (spo_closuresystem s.toSetup_spo).toSetFamily.is_rare x := by
-sorry
+
+  dsimp [SetFamily.is_rare]
+  sorry
