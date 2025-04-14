@@ -24,10 +24,12 @@ import rooted.functionalTreeIdeal
 
 open Finset Set Classical
 
+set_option maxHeartbeats 2000000
+
 variable {α : Type} [Fintype α] [DecidableEq α]
 
 instance subtype_decidable_eq {p : α → Prop} [DecidablePred p] : DecidableEq (Subtype p) :=
-  fun ⟨a, ha⟩ ⟨b, hb⟩ =>
+  fun ⟨a, _⟩ ⟨b, _⟩ =>
     if h : a = b then isTrue (Subtype.ext h)
     else isFalse (fun H => absurd (congrArg Subtype.val H) h)
 
@@ -486,7 +488,7 @@ lemma powerset_image_attach {α : Type*} [DecidableEq α] (V : Finset α) :
     exact ⟨ss, hss, hS⟩
 
 lemma setoid_ideal_injection_card
-  (s : Setup_spo α) (q : Quotient s.setoid)  :
+  (s : Setup_spo α):-- (q : Quotient s.setoid)  :
   #(filter (fun ss => (spo_closuresystem s).sets (Finset.image Subtype.val ss)) s.V.attach.powerset) =
   #(filter (fun s_1 => (spo_closuresystem s).sets s_1) (spo_closuresystem s).ground.powerset) :=
 by
@@ -535,7 +537,7 @@ lemma setoid_ideal_number_of_hyperedges (s : Setup_spo α)(q : Quotient s.setoid
   simp at h_part
   norm_cast
   rw [h_part]
-  let siic := setoid_ideal_injection_card s q
+  let siic := setoid_ideal_injection_card s
   exact siic
 
 lemma setoid_ideal_domain_codomain (s : Setup_spo α)(q : Quotient s.setoid ) (hm: isMaximal_spo s q) :
@@ -560,8 +562,8 @@ by
   dsimp [SetFamily.degree]
   dsimp [classOf]
   simp
-  have :s.V = (spo_closuresystem s).ground := by  dsimp [spo_closuresystem]
-  rw [←this]
+  have svg:s.V = (spo_closuresystem s).ground := by  dsimp [spo_closuresystem]
+  rw [←svg]
   --補題を示していく。中身が等しいわけではない。片方はsubtypeで片方はそうでない。
   /-
   have :filter (fun s_1 => (spo_closuresystem s).sets s_1 ∧ ↑↑x ∈ s_1) (spo_closuresystem s).ground.powerset
@@ -575,50 +577,277 @@ by
   -- filter (fun s_1 => (spo_closuresystem s).sets s_1 ∧ ↑↑x ∈ s_1) (spo_closuresystem s).ground.powerset
   --からFinset.filter (fun (ss: Finset {x//x ∈ s.V}) => (spo_closuresystem s).sets (Finset.image Subtype.val ss) ∧ filter (fun a => Quotient.mk'' a = q) s.V.attach ⊆ ss)
   --への全単射を作る。
-  let domain := filter (fun s_1 => (spo_closuresystem s).sets s_1 ∧ ↑↑x ∈ s_1) (spo_closuresystem s).ground.powerset
-  let codomain := Finset.filter (fun (ss: Finset {x//x ∈ s.V}) => (spo_closuresystem s).sets (Finset.image Subtype.val ss) ∧ filter (fun a => Quotient.mk'' a = q) s.V.attach ⊆ ss)
-  --xを含むhyperedgeは、qの同値類の元だし、逆も言えるので、本来は簡単なはず。上は、subtypeでなく、下はsubtypeであることに注意。
-  let i : ∀ (a : Finset α), a ∈ domain → Finset {x // x ∈ s.V} :=
-    fun a ha => s.V.attach.filter (fun ss =>  Quotient.mk'' a = q) --これは違う。aはhyperedgeで、qを含むもの。
 
-  have H₁ : ∀ a ha, i a ha ∈ t := by
-    -- i a ha が定義通りに t の条件を満たすことを示す
+  let domain := filter (fun s_1 => (spo_closuresystem s).sets s_1 ∧ ↑↑x ∈ s_1) (spo_closuresystem s).ground.powerset
+
+  --Finset.filter (fun (ss: Finset {x//x ∈ s.V}) => (spo_closuresystem s).sets (Finset.image Subtype.val ss) ∧ filter (fun a => Quotient.mk'' a = q) s.V.attach ⊆ ss)
+  --xを含むhyperedgeは、qの同値類の元だし、逆も言えるので、本来は簡単なはず。上は、subtypeでなく、下はsubtypeであることに注意。
+  have equiv: ∀ ss:Finset α, ss ∈ domain ↔ (s.V.attach.filter (fun (t: {x//x ∈ s.V}) => t.val ∈ ss)) ∈ (setoid_ideal_injection_domain s q) ∧ ss ⊆ s.V := by
+    --言明がおかしい可能性。右辺から、ss subseteq s.Vがいえない。右辺の条件に、ssがs.Vの部分集合である条件を足すか。forallを変えるか？
+    --使っているのは、equiv2なので、そっちの原名はあっているのかも。
+    intro ss
+    dsimp [domain]
+    dsimp [setoid_ideal_injection_domain]
+    dsimp [classOf]
+    apply Iff.intro
+    · intro hss
+      simp_all only [Finset.mem_filter, Finset.mem_powerset]
+      obtain ⟨left, right⟩ := hss
+      obtain ⟨left1, right⟩ := right
+      have ssV: ss ⊆ s.V := by
+        exact left
+      have fslem:(Finset.image Subtype.val (filter (fun t => ↑t ∈ ss) s.V.attach)) = ss := by
+        ext sss
+        simp_all only [Finset.mem_image, mem_filter, mem_attach, true_and, Subtype.exists, exists_and_left,
+          exists_prop, exists_eq_right_right, and_iff_left_iff_imp, domain]
+        intro a
+        rw [←svg]
+        simp_all only [domain]
+        obtain ⟨val, property⟩ := x
+        obtain ⟨val, property⟩ := val
+        simp_all only
+        exact left a
+        --ssがs.Vの部分集合であることはどこからいえるか。
+      constructor
+      ·
+        constructor
+        · simp_all only [filter_subset, domain]
+        · constructor
+          · rw [fslem]
+            exact left1
+          · intro sss hss
+            rw [Finset.mem_filter]
+            rw [Finset.mem_filter] at hss
+            constructor
+            · exact mem_attach s.V sss
+            · --Quotient.mk'' sss = q
+              --↑↑x ∈ ss
+              --x : { x // x ∈ classOf s q }
+              let xp := x.property
+              dsimp [classOf] at xp
+              rw [Finset.mem_filter] at xp
+              have sr:s.setoid.r x sss := by
+                simp_all only [mem_attach, true_and, domain]
+                subst hss
+                simp_all only [Quotient.eq]
+              have : x.val.val ∈ ss := by
+                simp_all only [mem_attach, true_and, domain]
+              --ssに入っているかどうかは、同値であれば、一致すると言う補題を作る。
+              let sce := spo_closuresystem_equiv s x.val sss sr left1
+              simp_all only [mem_attach, true_and, domain, sce]
+
+      · simp_all only [domain]
+    · intro hss
+      simp_all only [Finset.mem_filter, Finset.mem_powerset]
+      obtain ⟨left, right⟩ := hss
+      have ss_filter:Finset.image Subtype.val (filter (fun t => ↑t ∈ ss) s.V.attach) = ss := by
+        ext sss
+        simp_all only [Finset.mem_image, mem_filter, mem_attach, true_and, Subtype.exists, exists_and_left,
+          exists_prop, exists_eq_right_right, and_iff_left_iff_imp, domain]
+        intro a
+        rw [←svg]
+        simp_all only [filter_subset, true_and, domain]
+        obtain ⟨val, property⟩ := x
+        obtain ⟨left, right_1⟩ := left
+        obtain ⟨val, property⟩ := val
+        exact right a
+        --ssがs.Vの部分集合であることはどこからいえるか。
+
+      constructor
+      · --simp_all only [filter_subset, domain]
+        exact trivial
+      · constructor
+        · simp_all only [filter_subset, domain]
+        · obtain ⟨left, left1, right1⟩ := left
+          show ↑↑x ∈ ss
+          let xp := x.property
+          dsimp [classOf] at xp
+          rw [Finset.mem_filter] at xp
+          have :(classOf s q).image Subtype.val ⊆ ss := by
+            dsimp [classOf]
+            --right1からいえるはず。
+            intro xx hxx
+            rw [Finset.mem_image] at hxx
+            simp at hxx
+            obtain ⟨hh, h⟩ := hxx
+            have :⟨xx,hh⟩ ∈ filter (fun a => Quotient.mk'' a = q) s.V.attach := by
+              subst h
+              simp_all only [filter_subset, Quotient.eq, mem_attach, true_and, mem_filter]
+              obtain ⟨val, property⟩ := x
+              obtain ⟨val, property⟩ := val
+              simp_all only
+              rfl
+            have :⟨xx,hh⟩ ∈ filter (fun t => ↑t ∈ ss) s.V.attach := by
+              exact right1 this
+            simp at this
+            exact this
+          simp_all only [filter_subset, mem_attach, true_and, domain]
+          obtain ⟨val, property⟩ := x
+          obtain ⟨val, property⟩ := val
+          simp_all only
+          subst xp
+          simp_all only [Quotient.eq]
+          apply this
+          simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, exists_prop, and_true]
+          rename_i property_1
+          exact property_1
+
+  let i : ∀(a : Finset α), (ha : a ∈ domain) → Finset {x // x ∈ s.V} :=
+    fun a ha => s.V.attach.filter (fun ss =>  ss.val ∈ a)
+
+  have equiv2 : ∀ ss : Finset α,
+  ss ∈ domain ↔ ∃ (h : ss ∈ domain), i ss h ∈ setoid_ideal_injection_domain s q
+  := by
+    intro ss
+    constructor
+    · intro hss
+      use hss
+      -- i ss hss = s.V.attach.filter (fun t => t.val ∈ ss)
+      -- よって i ss hss ∈ codomain は equiv から直接従う
+      simp_all only [mem_filter, Finset.mem_powerset, domain, i]
+      simp_all only [mem_filter, Finset.mem_powerset, domain]
+    · rintro ⟨hss, hi⟩
+      -- これは ss ∈ domain をそのまま取り出すだけ
+      exact hss
+
+  have H₁ : ∀ a ha, i a ha ∈ (setoid_ideal_injection_domain s q) := by
+    intro a ha
+    let ea := (equiv2 a).mp ha
+    obtain ⟨h, ea⟩ := ea
+    exact ea
 
   have H₂ : ∀ a₁ ha₁ a₂ ha₂, i a₁ ha₁ = i a₂ ha₂ → a₁ = a₂ := by
     -- attach と filter の injectivity に基づいて証明
+    dsimp [i]
+    intro a₁ ha₁ a₂ ha₂ h_eq
+    --simp only [Finset.mem_image, Finset.mem_filter]
+    dsimp [domain] at ha₁
+    rw [Finset.mem_filter] at ha₁
+    obtain ⟨ha11, ha12 , ha13⟩ := ha₁
+    have a1inV:a₁ ⊆ s.V:=
+    by
+      dsimp [spo_closuresystem] at ha11
+      rw [Finset.mem_powerset] at ha11
+      exact ha11
+    dsimp [domain] at ha₂
+    rw [Finset.mem_filter] at ha₂
+    obtain ⟨ha21, ha22 , ha23⟩ := ha₂
+    have a2inV:a₂ ⊆ s.V:=
+    by
+      dsimp [spo_closuresystem] at ha21
+      rw [Finset.mem_powerset] at ha21
+      exact ha21
+    ext ss
+    constructor
+    · intro h
+      have : ⟨x, by simp [h]⟩ ∈ s.V.attach.filter (fun x => ↑x ∈ a₁) :=
+      by
+        rw [Finset.mem_filter]
+        have xvv:x.val.val ∈ s.V := by
+            exact coe_mem x.val
 
-  have H₃ : ∀ b ∈ t, ∃ a ha, i a ha = b := by
+        constructor
+        ·
+          apply mem_attach s.V
+        ·
+          exact ha13
+
+      have hss: ss ∈ s.V := by
+        exact a1inV h
+      have hss1: ⟨ss,hss⟩ ∈ s.V.attach.filter (fun x => ↑x ∈ a₁) := by
+        rw [Finset.mem_filter]
+        constructor
+        · apply mem_attach s.V
+        · exact h
+      have hss2: ⟨ss, hss⟩ ∈ s.V.attach.filter (fun x => ↑x ∈ a₂) := by
+        rw [h_eq] at hss1
+        exact hss1
+      rw [Finset.mem_filter] at hss2
+      exact hss2.2
+
+    · intro h
+      have hss2: ⟨x, by simp [h]⟩ ∈ s.V.attach.filter (fun x => ↑x ∈ a₂) :=
+      by
+        rw [Finset.mem_filter]
+        have xvv:x.val.val ∈ s.V := by
+            exact coe_mem x.val
+        constructor
+        ·
+          apply mem_attach s.V
+        ·
+          exact ha23
+      have hss: ss ∈ s.V := by
+        exact a2inV h
+      have hss2: ⟨ss, hss⟩ ∈ s.V.attach.filter (fun x => ↑x ∈ a₂) := by
+        rw [Finset.mem_filter]
+        constructor
+        · apply mem_attach s.V
+        · exact h
+      have hss1: ⟨ss, hss⟩ ∈ s.V.attach.filter (fun x => ↑x ∈ a₁) := by
+        rw [←h_eq] at hss2
+        exact hss2
+      rw [Finset.mem_filter] at hss1
+      exact hss1.2
+
+  have H₃ : ∀ b ∈ (setoid_ideal_injection_domain s q), ∃ a ha, i a ha = b := by
     -- 任意の b ∈ t に対して、もとの ground.powerset の元 a を再構成する
+    intro b hb
+    use b.image Subtype.val
+    have fsv: Finset.image Subtype.val b ∈ domain :=
+    by
+      dsimp [domain]
+      dsimp [setoid_ideal_injection_domain] at hb
+      rw [Finset.mem_filter] at hb
+      rw [Finset.mem_filter]
+      constructor
+      · dsimp [spo_closuresystem]
+        let hb1 := hb.1
+        apply Finset.mem_powerset.mpr
+        intro x hx
+        rw [Finset.mem_image] at hx
+        obtain ⟨x', hx', rfl⟩ := hx
+        -- x' : {x // x ∈ s.V}, x = x'.val
+        -- hx' : x' ∈ b
+        -- hb1 : b ⊆ s.V.attach
+        exact coe_mem x'
+      · obtain ⟨hb1,hb2,hb3⟩ := hb
+        constructor
+        · exact hb2
+        · dsimp [classOf]
+          let xp := x.property
+          --hb3とxpだけで証明できるか。
+          --have : x.val ∈ b := by
+          --  exact hb3 xp
+          exact Finset.mem_image_of_mem Subtype.val (hb3 xp)
 
+    let ea := (equiv2 (b.image Subtype.val)).mpr
+    have :(∃ (h : Finset.image Subtype.val b ∈ domain), i (Finset.image Subtype.val b) h ∈ setoid_ideal_injection_domain s q) :=
+    by
+      use fsv
+
+      exact H₁ (Finset.image Subtype.val b) fsv
+    specialize ea this
+    use ea
+    dsimp [i]
+    simp
+    have :i (Finset.image Subtype.val b) fsv = b := by
+      dsimp [i]
+      rw [Finset.mem_filter] at fsv
+      simp
+      ext y
+      constructor
+      · intro h
+        rw [Finset.mem_filter] at h
+        exact h.2
+      · intro h
+        rw [Finset.mem_filter]
+        constructor
+        · exact mem_attach s.V y
+        · exact h
+    dsimp [i] at this
+    simp at this
+    exact this
   exact Finset.card_bij i H₁ H₂ H₃
-
-  let φ (ss : Finset α) : Finset {x // x ∈ s.V} := s.V.attach.filter (fun a => ↑a ∈ ss)
-
-  have h_inj : Set.InjOn φ domain := by
-    intro ss₁ h₁ ss₂ h₂ h_eq
-    sorry
-    -- φ ss₁ = φ ss₂ → ss₁ = ss₂ を示す（filter と injectivity）
-
-  have h_card : domain.card = (domain.image φ).card := Finset.card_image_of_injOn φ h_inj
-
-  have : domain.image φ = setoid_ideal_injection_domain s q := by
-    sorry
-
-  -- φ ss が domain の定義と一致していることを示す
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 theorem setoid_ideal_rare (s : Setup_spo2 α)(q : Quotient (s.toSetup_spo).setoid )(hm: isMaximal_spo s.toSetup_spo q) :
   ∀ (x : classOf s.toSetup_spo q), (spo_closuresystem s.toSetup_spo).toSetFamily.is_rare x := by
@@ -626,15 +855,6 @@ theorem setoid_ideal_rare (s : Setup_spo2 α)(q : Quotient (s.toSetup_spo).setoi
   dsimp [SetFamily.is_rare]
   rw [←setoid_ideal_number_of_hyperedges s.toSetup_spo q]
   let sid := setoid_ideal_domain_codomain s.toSetup_spo q hm
-  /-
-  obtain ⟨x, hx⟩ := Quotient.exists_rep q
-  have :x ∈ classOf s.toSetup_spo q := by
-    subst hx
-    obtain ⟨val, property⟩ := x
-    rw [classOf]
-    simp_all only [Quotient.eq, mem_filter, mem_attach, true_and]
-    rfl
-  -/
 
   intro x_1
   simp

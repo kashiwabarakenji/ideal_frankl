@@ -575,6 +575,30 @@ theorem Setup_spo_eq_PartialOrder (s: Setup2 α)  :
               · exact a
               · congr
 
+lemma spo_closuresystem_equiv (s : Setup_spo α) (x y: s.V) (h: s.setoid.r x y) (hs: (spo_closuresystem s).sets ss):
+  x.val ∈ ss ↔ y.val ∈ ss := by
+    obtain ⟨left, right⟩ := hs
+    obtain ⟨left_1, right⟩ := right
+    obtain ⟨left_2, right⟩ := right
+    specialize right left_2
+    obtain ⟨left_3, right⟩ := right
+    apply Iff.intro
+    · intro hss
+      let q := Quotient.mk s.setoid x
+      have : q ∈  left := by
+        simp_all only [Subtype.coe_eta, Subtype.forall, q]
+      specialize right q this
+      specialize right y
+      apply right
+      exact Quotient.sound (id (Setoid.symm' s.setoid h))
+    · intro hss
+      let q := Quotient.mk s.setoid y
+      have : q ∈  left := by
+        simp_all only [Subtype.coe_eta, Subtype.forall, q]
+      specialize right q this
+      specialize right x
+      apply right
+      exact Quotient.sound h
 
 --証明すべき内容。
 -- setup_spo2をtraceしたもののidealがidealとしてtraceしたものと一致すること。
