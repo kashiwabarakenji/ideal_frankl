@@ -179,3 +179,19 @@ lemma exists_mem_of_ne_empty {α : Type} [DecidableEq α] (s : Finset α) (h : s
 by
   rw [←Finset.nonempty_iff_ne_empty] at h
   exact h
+
+lemma card_subtype_le_original
+  {α : Type} [DecidableEq α] {V : Finset α} (X : Finset {x // x ∈ V}) :
+  X.card ≤ V.card := by
+  let f : {x // x ∈ V} → α := Subtype.val
+  have hf : Function.Injective f := Subtype.val_injective
+  let Y := X.map ⟨f, hf⟩
+  have hY : Y ⊆ V := by
+    intro a ha
+    rcases Finset.mem_map.mp ha with ⟨⟨x, hx⟩, _, rfl⟩
+    exact hx
+  have hcard : Y.card = X.card := by
+    simp_all only [Finset.card_map, Y, f]
+  show X.card ≤ V.card
+  rw [←hcard]
+  exact Finset.card_le_card hY
