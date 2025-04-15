@@ -173,21 +173,69 @@ theorem trace_ideal_lem (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo 
 noncomputable def spo_equiv_x_sub (s : Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).card ≥ 2) : Finset s.V :=
   (classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).erase x
 
+--xと同値だけど、xそのものはふくまない定義。
 noncomputable def spo_equiv_x (s : Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).card ≥ 2) : Finset α :=
   ((classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).erase x).image Subtype.val
+
+noncomputable def spo_equiv_x_with (s : Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).card ≥ 2) : Finset α :=
+  ((classOf s.toSetup_spo (@Quotient.mk _ s.setoid x))).image Subtype.val
 
   --s.toSetup_spo.spo.le x (spo_equiv_x s x hx) := by
 
 --制限されたあとのhyperedgeから制限される前の世界に戻す定理。
 theorem trace_ideal_lem_rev (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
 )).card ≥ 2) :
-  ∀ ss:Finset α, (spo_closuresystem (setup_trace_spo2 s x hx).toSetup_spo).sets ss → ((spo_equiv_x s x hx) ∩ ss).Nonempty  → (spo_closuresystem s.toSetup_spo).sets (ss ∪ {x.val}):= by
+  ∀ ss:Finset α, (spo_closuresystem (setup_trace_spo2 s x hx).toSetup_spo).sets ss → ((spo_equiv_x_with s x hx) ∩ ss).Nonempty  → (spo_closuresystem s.toSetup_spo).sets (ss ∪ {x.val}):= by
   sorry
   --証明の流れとしては、Nonemptyの要素を取り出して、それに映る要素がもともとの世界のhyperedge内にあって、xと同値なので、xもhyperedgeに含まれるという流れになる。
 
+lemma new_lem_notx (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
+)).card ≥ 2) :
+  ∀ x_1: s.V.erase x.val, (h:x_1.val ∉ (spo_equiv_x_with s x hx)) → toNew s.toSetup_spo x hx (@Quotient.mk _ s.setoid ⟨x_1.val,by
+  obtain ⟨val, property⟩ := x
+  obtain ⟨val_1, property_1⟩ := x_1
+  simp_all only
+  simp_all only [mem_erase, ne_eq]⟩) = @Quotient.mk _ (restrictedSetoid s.toSetup_spo x) x_1 :=
+by
+  intro x_1 h
+  dsimp [toNew]
+  dsimp [spo_equiv_x_with] at h
+  dsimp [classOf] at h
+  dsimp [toErased]
+  split
+  · have :(setup_trace_spo2 s x hx).toSetup_spo.setoid.r (representativeNeSelf s.toSetup_spo x hx) x_1 := by
+      rename_i h_1
+      simp_all only [ge_iff_le, Quotient.eq, Subtype.val_injective, image_erase, mem_erase, ne_eq, Finset.mem_image,
+        mem_filter, mem_attach, true_and, Subtype.exists, exists_and_right, exists_eq_right, exists_prop, not_and,
+        Function.const_apply]
+      --obtain ⟨val, property⟩ := x
+      obtain ⟨val_1, property_1⟩ := x_1
+      simp_all only [Subtype.mk.injEq, not_true_eq_false, forall_const, IsEmpty.forall_iff]
+      --subst h_1
+      dsimp [setup_trace_spo2]
+      dsimp [restrictedSetoid]
+      let rmc := representativeNeSelf_mem_classOf s.toSetup_spo x hx
+      obtain ⟨val, property⟩ := x
+      simp_all only [Subtype.mk.injEq, not_true_eq_false, forall_const, IsEmpty.forall_iff]
+      subst h_1
+      dsimp [representativeNeSelf]
+      simp_all only
+      exfalso
+      simp_all only [mem_erase, ne_eq, not_true_eq_false, and_true]
+
+
+    rename_i h_1
+    simp_all only [Quotient.eq, Subtype.val_injective, image_erase, mem_erase, ne_eq, Finset.mem_image, mem_filter,
+      mem_attach, true_and, Subtype.exists, exists_and_right, exists_eq_right, exists_prop, not_and,
+      Function.const_apply, Subtype.coe_eta]
+
+  · simp_all only [ge_iff_le, Quotient.eq, Subtype.val_injective, image_erase, mem_erase, ne_eq, Finset.mem_image,
+    mem_filter, mem_attach, true_and, Subtype.exists, exists_and_right, exists_eq_right, not_and, not_exists,
+    Subtype.coe_eta]
+
 theorem trace_ideal_lem_rev2 (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
 )).card ≥ 2) :
-  ∀ ss:Finset α, (spo_closuresystem (setup_trace_spo2 s x hx).toSetup_spo).sets ss → (spo_equiv_x s x hx) ∩ ss =∅ → (spo_closuresystem s.toSetup_spo).sets ss := by
+  ∀ ss:Finset α, (spo_closuresystem (setup_trace_spo2 s x hx).toSetup_spo).sets ss → (spo_equiv_x_with s x hx) ∩ ss =∅ → (spo_closuresystem s.toSetup_spo).sets ss := by
 
 
   --証明の流れとしては、ssのもとになるhyperedgeが、xと同値であるものがないので、xを含む同値類の部分を持たずに、制限前でもそのままであることを示す。
@@ -205,7 +253,9 @@ theorem trace_ideal_lem_rev2 (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup
   specialize hI3 hI2
   obtain ⟨hI3, hI4⟩ := hI3
   let I' := I.image (toOld s.toSetup_spo x)
-  use I'
+  use I' --もとの言明があっていて、後半の証明が破綻しているとすると、ここが間違っている可能性がある。
+  --spo_closuresystemが間違っているかもしれないし、setup_trace_spo2が間違っているかもしれないし、trace_ideal_lem_rev2の言明が間違っているかもしれない。
+  --ここで、ゴールの3番目の部分が成り立たない可能性。x=xxのとき。
   constructor
   · intro q hq q' hq'
     let newq := toNew s.toSetup_spo x hx q
@@ -255,6 +305,8 @@ theorem trace_ideal_lem_rev2 (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup
         exact And.symm ⟨rfl, hI3 x1 hx1⟩
 
       · intro q hq xx hxx --I'に入っているqは、その要素は、ssの要素であることを示す。hI4は使いそう。
+        show ↑xx ∈ ss --xx=xのときは、ゴールが証明できないのでは。
+
         --hI4を使って証明か？
         let newq := toNew s.toSetup_spo x hx q
         specialize hI4 newq
@@ -267,36 +319,92 @@ theorem trace_ideal_lem_rev2 (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup
           rw [no]
           exact hqq
         specialize hI4 this
-        have :xx.val ∈ s.V.erase ↑x  := by
-          rw [@mem_erase]
-          constructor
-          · sorry
-          · exact coe_mem xx
+        by_cases hnx: xx = x
+        case pos =>
+          subst hnx
+          --これは成り立たない。矛盾じゃなくて、ゴールが証明できない。
+          sorry
+        case neg =>
+          --xxがxと一致する場合は、ssに入る。
+          /-
+          have : x.val ∈ ss := by
+            dsimp [ss]
+            rw [@mem_erase]
+            constructor
+            · exact ne_of_mem_erase (hI2 hx)
+            · simp_all only [Subtype.coe_eta, Subtype.forall, mem_erase, ne_eq, I']
+          exact this
+          -/
+          have :xx.val ∈ s.V.erase ↑x  := by
+            rw [@mem_erase]
+            constructor
+            · exact Subtype.coe_ne_coe.mpr hnx
+            ·
+              subst hxx
+              simp_all only [Subtype.coe_eta, Finset.mem_image, Subtype.forall, mem_erase, ne_eq, coe_mem, I', newq]
 
-        specialize hI4 ⟨xx.val, this⟩
-        apply hI4
-        simp
-        --show  ⟦⟨↑xx, ⋯⟩⟧ = newq
-        dsimp [newq]
-        --dsimp [toNew]
-        --dsimp [toErased]
-        --rw [←hxx]
-        have :q = toOld s.toSetup_spo x newq := by
-          exact Eq.symm (NewOld_id s.toSetup_spo x hx q)
-        rw [this]
-        rw [OldNew_id s.toSetup_spo x hx newq]
-        --dsimp [newq]
-        --show ⟦⟨↑xx, ⋯⟩⟧ = newq
-        --(spo_equiv_x s x hx) ∩ ss =∅を使って、toNewが恒等写像であることを示せば良いか。補題にする。
-        --Quotient xx neq  Quotient xであるときは、toNewは、恒等写像。
+           --· exact coe_mem xx
 
-        -- ここでtoNewが恒等写像であることを示すための証明を続ける。
+          specialize hI4 ⟨xx.val, this⟩
+          apply hI4
+          simp
+          --show  ⟦⟨↑xx, ⋯⟩⟧ = newq
+          dsimp [newq]
+          --dsimp [toNew]
+          --dsimp [toErased]
+          --rw [←hxx]
+          have :q = toOld s.toSetup_spo x newq := by
+            exact Eq.symm (NewOld_id s.toSetup_spo x hx q)
+          rw [this]
+          rw [OldNew_id s.toSetup_spo x hx newq]
+          rename_i h_1
+          let nln := new_lem_notx s x hx ⟨xx.val, h_1⟩
+          have : xx.val ∉ spo_equiv_x_with s x hx := by
+            dsimp [spo_equiv_x_with]
+            --thisからqは、newqは対応。
+            --hxxからxxもqに対応。
+            --hnがメインの条件。
+            by_contra h_contra
+            have : xx.val ∈ ss := by
+              apply hI4
+              --⟦⟨↑⟨↑xx, h_1⟩, ⋯⟩⟧ = newq
+              dsimp [newq]
+              rw [←hxx]
+              simp
+              dsimp [toNew]
+              dsimp [toErased]
+              split
+              · let rmc := representativeNeSelf_mem_classOf s.toSetup_spo x hx
+                --obtain ⟨val, property⟩ := x
+                --obtain ⟨val_1, property_1⟩ := xx
+                simp_all only [mem_erase, ne_eq]
+                rename_i h_2
+                rw [h_2] at h_1
+                have : (restrictedSetoid s.toSetup_spo x).r (representativeNeSelf s.toSetup_spo x hx) ⟨x.val, h_1⟩ := by
+                  simp_all only [ge_iff_le, Quotient.eq, Subtype.val_injective, image_erase, mem_erase, ne_eq,
+                    Finset.mem_image, mem_filter, mem_attach, true_and, Subtype.exists, exists_and_right,
+                    exists_eq_right, exists_prop, not_and, Function.const_apply]
+                simp at this
+                simp
+                exact Quotient.sound (id (Setoid.symm' (restrictedSetoid s.toSetup_spo x) this))
 
-        sorry
+              · exact rfl
+            have :xx.val ∈ spo_equiv_x_with s x hx ∩ ss := by
+              dsimp [spo_equiv_x_with]
+              apply mem_inter_of_mem-- h_contra this
+              exact h_contra
+              exact this
+            rw [hn] at this
+            contradiction
 
-
-
-
+          specialize nln this
+          dsimp [newq]
+          symm
+          rw [←hxx]
+          simp at nln
+          simp
+          rw [nln]
+          exact rfl
 
 
 
@@ -377,6 +485,7 @@ theorem trace_ideal_lem_rev2 (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup
         · sorry
   -/
 
+
 theorem trace_ideal (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
 )).card ≥ 2) :
   ∀ ss:Finset α,  (spo_closuresystem (setup_trace_spo2 s x hx).toSetup_spo).sets ss ↔ ((spo_closuresystem s.toSetup_spo).toSetFamily.trace x.val (by simp_all only [ge_iff_le,
@@ -417,13 +526,13 @@ theorem trace_ideal (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Qu
         --これがもとの親のhyperedgeで、それからxを引いたものがもとのssになる。
         show (spo_closuresystem s.toSetup_spo).sets ss ∨ (spo_closuresystem s.toSetup_spo).sets (ss ∪ {↑x})
         --分類するのは、xがssにはいっているかではない。ssはxを含み得ない。ssがxと同値な要素を含んでいるかどうかで分類。
-        by_cases hn:((spo_equiv_x s x hx) ∩ ss).Nonempty
+        by_cases hn:((spo_equiv_x_with s x hx) ∩ ss).Nonempty
         case pos =>
           let tilr := trace_ideal_lem_rev s x hx ss
           specialize tilr h  hn
           exact Or.inr tilr
         case neg =>
-          have :spo_equiv_x s x hx ∩ ss = ∅ := by
+          have :spo_equiv_x_with s x hx ∩ ss = ∅ := by
             exact Finset.not_nonempty_iff_eq_empty.mp hn
           --このときは、xと関係がないssであるとき。補題を作るか。
           let tilr2 := trace_ideal_lem_rev2 s x hx ss
