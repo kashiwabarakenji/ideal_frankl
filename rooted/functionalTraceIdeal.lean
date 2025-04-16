@@ -184,7 +184,216 @@ noncomputable def spo_equiv_x_with (s : Setup_spo2 α) (x: s.V)  (hx:(classOf s.
 theorem trace_ideal_lem_rev (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
 )).card ≥ 2) :
   ∀ ss:Finset α, (spo_closuresystem (setup_trace_spo2 s x hx).toSetup_spo).sets ss → ((spo_equiv_x_with s x hx) ∩ ss).Nonempty  → (spo_closuresystem s.toSetup_spo).sets (ss ∪ {x.val}):= by
-  sorry
+  intro ss
+  intro h hn
+  dsimp [setup_trace_spo2] at h
+  dsimp [spo_closuresystem] at h
+  obtain ⟨I,hI⟩ := h
+  dsimp [spo_closuresystem]
+  obtain ⟨hI1,hI2,hI3⟩ := hI
+  specialize hI3 hI2
+  obtain ⟨hI3, hI4⟩ := hI3
+  let I' := I.image (toOld s.toSetup_spo x)
+  use I'
+  constructor
+  · intro q hq q' hq'
+    dsimp [I'] at hq
+    dsimp [I']
+    rw [Finset.mem_image]
+    let newq' := toNew s.toSetup_spo x hx q'
+    let newq := toNew s.toSetup_spo x hx q
+    use newq'
+    constructor
+    · have : newq ∈ I := by
+        dsimp [newq]
+        rw [Finset.mem_image] at hq
+        obtain ⟨qq, hqq, hqq1⟩ := hq
+        rw [←hqq1]
+        let no := OldNew_id s.toSetup_spo x hx qq
+        rw [no]
+        exact hqq
+
+      specialize hI1 newq this
+      have : (setup_trace_spo2 s x hx).toSetup_spo.spo.le newq' newq := by
+        let stl := setup_trace_spo_le s.toSetup_spo x hx newq' newq
+        apply stl.mpr
+        rw [NewOld_id s.toSetup_spo x hx q']
+        rw [NewOld_id s.toSetup_spo x hx q]
+        exact hq'
+      simp_all only [Subtype.coe_eta, Subtype.forall, mem_erase, ne_eq, Finset.mem_image, le_refl, I', newq, newq']
+    · dsimp [newq']
+      exact NewOld_id s.toSetup_spo x hx q'
+  · constructor
+    · have ssinV: ss ⊆ s.V := by
+        rw [@subset_erase] at hI2
+        let xp := x.property
+        obtain ⟨hI2, _⟩ := hI2
+        exact hI2
+      have xinV: x.val ∈ s.V := by
+        obtain ⟨val, property⟩ := x
+        exact property
+      simp [Finset.union_subset_iff]
+      simp_all only [and_self]
+
+    · intro hs
+      constructor
+      · intro x1 hx1
+        --goal ⟦⟨x1, ⋯⟩⟧ ∈ I'
+        dsimp [I']
+        rw [Finset.mem_image]
+
+        by_cases hx1x: x1 = x
+        case pos => --x1 = xのとき。
+          subst hx1x
+          --x1=xのときは、hxを使って、xでないxxxを持ってきて、それがssに入ることを示せば、hnの仮定に矛盾。
+          let xxx := representativeNeSelf s.toSetup_spo x hx
+          let rmc := representativeNeSelf_mem_classOf s.toSetup_spo x hx
+          have xxxsv: xxx.val ∈ s.V := by
+            exact coe_mem (Classical.choose (representativeNeSelf.proof_1 s.toSetup_spo x hx))
+          have xxxSve:xxx.val ∈ s.V.erase x.val := by
+            simp_all only [Subtype.coe_eta, Finset.mem_image, Subtype.forall, mem_erase, ne_eq, coe_mem, I', xxx]
+          let q := @Quotient.mk _ (restrictedSetoid s.toSetup_spo x) ⟨xxx.val, xxxSve⟩
+          --qは制限された世界。
+
+          let oldq := toOld s.toSetup_spo x q
+
+          specialize hI4 q
+
+          obtain ⟨xxxx, hxxxxss⟩ := hn
+
+          have xxxxss:xxxx ∈ ss := by
+            --hI4を使うべきか？これを証明するのと、q ∈ Iを証明するのが循環している。hI4とhI3の結論と前提が逆。
+            --よって、hI4を使いのは難しい。hnを使うべき。
+            simp_all only [Finset.mem_union, Finset.mem_singleton, or_true, Subtype.coe_eta, Quotient.eq,
+              Subtype.forall, mem_erase, ne_eq, Finset.mem_inter, I', xxx, q]
+          have xxxxsv:xxxx∈ s.V := by
+            exact mem_of_mem_erase (hI2 xxxxss)
+          have xxxxsve: xxxx ∈ s.V.erase x.val := by
+            exact hI2 xxxxss
+
+          specialize hI3 xxxx
+          specialize hI3 xxxxss
+          let rmc := representativeNeSelf_mem_classOf2 s.toSetup_spo x hx
+          have :s.setoid.r ⟨xxxx, xxxxsv⟩ x := by
+            dsimp [xxx]
+            dsimp [spo_equiv_x_with] at hxxxxss
+            rw [@Finset.mem_inter] at hxxxxss
+            rw [Finset.mem_image] at hxxxxss
+            obtain ⟨qq, hqq, hqq1⟩ := hxxxxss.1
+            have : s.toSetup_spo.setoid.r qq x:= by
+              simp_all only [Quotient.eq]
+              dsimp [classOf] at hqq
+              rw [Finset.mem_filter] at hqq
+              subst hqq1
+              simp_all only [Finset.mem_union, Finset.mem_singleton, or_true, Subtype.coe_eta, Quotient.eq,
+                Subtype.forall, mem_erase, ne_eq, mem_attach, true_and, Subtype.exists, exists_and_right,
+                exists_eq_right, exists_const, and_true, coe_mem, I', q, xxx]
+            subst hqq1
+            simp_all only [Finset.mem_union, Finset.mem_singleton, or_true, Subtype.coe_eta, Quotient.eq,
+              Subtype.forall, mem_erase, ne_eq, Subtype.exists, exists_and_right, exists_eq_right, exists_const,
+              and_self, and_true, I', q, xxx]
+
+          have ssr:s.setoid.r ⟨xxxx, xxxxsv⟩ ⟨xxx, xxxsv⟩ := by
+            exact Setoid.trans' s.setoid this (id (Setoid.symm' s.setoid rmc))
+          have oqs:oldq = @Quotient.mk _ s.setoid ⟨xxxx, xxxxsv⟩:= by
+            dsimp [oldq]
+            apply Quotient.sound
+            symm
+            exact ssr
+
+          have : q = toNew s.toSetup_spo x hx (@Quotient.mk _ s.setoid ⟨xxxx, xxxxsv⟩) := by
+            dsimp [q]
+            rw [←oqs]
+            dsimp [oldq]
+            exact Eq.symm (OldNew_id s.toSetup_spo x hx q)
+          --have :newq = @Quotient.mk _ s.setoid ⟨xxxx, xxxxsv⟩ := by
+          --  dsimp [q]
+          --  exact Quotient.sound (hI3 xxxxss)
+          have h3Irewrite: @Quotient.mk _ (restrictedSetoid s.toSetup_spo x) ⟨xxxx, xxxxsve⟩ ∈ I := by
+            exact hI3
+          have : q = @Quotient.mk _ (restrictedSetoid s.toSetup_spo x) ⟨xxxx, xxxxsve⟩:= by
+            dsimp [q]
+            dsimp [restrictedSetoid]
+            exact Quotient.sound (id (Setoid.symm' s.setoid ssr))
+
+          have qinI:q ∈ I := by
+            rw [this]
+            exact hI3
+
+          specialize hI4 qinI
+          use q
+          constructor
+          · dsimp [q]
+            exact qinI
+            --exact hI3 (hI4 ⟦⟨↑xxx, hI2 this⟩⟧ (hI3 this) xxx rfl)
+          · have : oldq = @Quotient.mk _ s.setoid x :=
+            by
+              dsimp [oldq]
+              have : s.setoid.r ⟨xxx.val, xxxsv⟩ x := by
+                dsimp [xxx]
+                exact representativeNeSelf_mem_classOf2 s.toSetup_spo x hx
+              simp_all [I', oldq, q, xxx]
+
+            simp_all only [Subtype.coe_eta, Subtype.forall, mem_erase, ne_eq, coe_mem, q, I', oldq, xxx]
+          /-
+
+          have :x1 ∈ spo_equiv_x_with s x hx := by
+            dsimp [spo_equiv_x_with]
+            simp_all only [this]
+          have :x1 ∈ ss ∩ spo_equiv_x_with s x hx := by
+            dsimp [spo_equiv_x_with]
+            apply mem_inter_of_mem-- this this
+            exact this
+          rw [hn] at this
+          contradiction
+          sorry
+          -/
+
+        case neg =>
+          have :x1 ∈ s.V.erase x.val := by
+            rw [@mem_erase]
+            constructor
+            · exact hx1x
+            · apply hs
+              simp_all only [Finset.mem_union, Finset.mem_singleton, or_false]
+          let q' := @Quotient.mk _ (restrictedSetoid s.toSetup_spo x) ⟨x1,this⟩
+          use q'
+          let oldq' := toOld s.toSetup_spo x q'
+          let xxx := representativeNeSelf s.toSetup_spo x hx
+          have :xxx.val ∈ s.V.erase x.val := by
+            simp_all only [Subtype.coe_eta, Subtype.forall, mem_erase, ne_eq, Finset.mem_union, Finset.mem_singleton,
+              coe_mem, I', xxx]
+          let q := @Quotient.mk _ (restrictedSetoid s.toSetup_spo x) ⟨xxx,this⟩
+          let oldq := toOld s.toSetup_spo x q
+          --このように定義しても、qとq'に大小関係があるわけではないので、意味があるか不明。
+          --やはり、x1とxが等しいかどうかで場合分けするのが良さそう。段階で分けるのがいいのか。
+          --have : s.setoid.r ⟨x1, this⟩ ⟨xxx.val, this⟩ := by
+          --  dsimp [xxx]
+          --  exact representativeNeSelf_mem_classOf2 s.toSetup_spo x hx
+
+
+          constructor
+          · --hI1を使うのだろうか。その場合は、qとしてなにをとればいいのか。I'は定義されているが、現状では登場してない。ゴールを展開して、useを使うのか。
+            --hI3のほうが使えそう。その場合は、x1 neq xが必要かも。
+            /-have : q ∈ I := by
+              dsimp [q]
+              rw [Finset.mem_image] at hq
+              obtain ⟨qq, hqq, hqq1⟩ := hq
+              rw [←hqq1]
+              let no := OldNew_id s.toSetup_spo x hx qq
+              rw [no]
+              exact hqq
+            -/
+            simp_all only [Subtype.coe_eta, Subtype.forall, mem_erase, ne_eq, Finset.mem_union, Finset.mem_singleton,
+              or_false, I', xxx, q']
+          ·
+            simp_all [I', q']
+            obtain ⟨val, property⟩ := x
+            simp_all only
+            rfl
+      · intro q hq x1 hx1
+        sorry
+
   --証明の流れとしては、Nonemptyの要素を取り出して、それに映る要素がもともとの世界のhyperedge内にあって、xと同値なので、xもhyperedgeに含まれるという流れになる。
 
 lemma new_lem_notx (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
