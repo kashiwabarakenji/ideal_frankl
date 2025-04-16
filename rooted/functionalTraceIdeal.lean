@@ -157,25 +157,24 @@ theorem trace_ideal_lem (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo 
 
           rw [←hqold]
 
-          -- ⟦⟨x2, ⋯⟩⟧ = qをしめしたい。
-          -- hqold:q = toOld s.toSetup_spo x q1
-          -- hq1 : toNew s.toSetup_spo x hx q = q1
-          --などが成り立っていて、qとq1は対応するもの。
-          --hx3 : ⟦⟨x2, ⋯⟩⟧ = q1が成り立っている。
+
           rw [←hq1] at hx3
           let ca := congrArg (toOld  s.toSetup_spo x) hx3
           rw [NewOld_id s.toSetup_spo x hx q] at ca
           rw [←ca]
           dsimp [toOld]
 
-noncomputable def spo_equiv_x_sub (s : Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).card ≥ 2) : Finset s.V :=
+--(hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).card ≥ 2)
+noncomputable def spo_equiv_x_sub (s : Setup_spo2 α) (x: s.V)  : Finset s.V :=
   (classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).erase x
 
 --xと同値だけど、xそのものはふくまない定義。
-noncomputable def spo_equiv_x (s : Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).card ≥ 2) : Finset α :=
+--(hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).card ≥ 2)
+noncomputable def spo_equiv_x (s : Setup_spo2 α) (x: s.V)   : Finset α :=
   ((classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).erase x).image Subtype.val
 
-noncomputable def spo_equiv_x_with (s : Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).card ≥ 2) : Finset α :=
+-- (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).card ≥ 2)
+noncomputable def spo_equiv_x_with (s : Setup_spo2 α) (x: s.V)  : Finset α :=
   ((classOf s.toSetup_spo (@Quotient.mk _ s.setoid x))).image Subtype.val
 
   --s.toSetup_spo.spo.le x (spo_equiv_x s x hx) := by
@@ -183,7 +182,7 @@ noncomputable def spo_equiv_x_with (s : Setup_spo2 α) (x: s.V)  (hx:(classOf s.
 --制限されたあとのhyperedgeから制限される前の世界に戻す定理。
 theorem trace_ideal_lem_rev (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
 )).card ≥ 2) :
-  ∀ ss:Finset α, (spo_closuresystem (setup_trace_spo2 s x hx).toSetup_spo).sets ss → ((spo_equiv_x_with s x hx) ∩ ss).Nonempty  → (spo_closuresystem s.toSetup_spo).sets (ss ∪ {x.val}):= by
+  ∀ ss:Finset α, (spo_closuresystem (setup_trace_spo2 s x hx).toSetup_spo).sets ss → ((spo_equiv_x_with s x) ∩ ss).Nonempty  → (spo_closuresystem s.toSetup_spo).sets (ss ∪ {x.val}):= by
   intro ss
   intro h hn
   dsimp [setup_trace_spo2] at h
@@ -306,9 +305,7 @@ theorem trace_ideal_lem_rev (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_
             rw [←oqs]
             dsimp [oldq]
             exact Eq.symm (OldNew_id s.toSetup_spo x hx q)
-          --have :newq = @Quotient.mk _ s.setoid ⟨xxxx, xxxxsv⟩ := by
-          --  dsimp [q]
-          --  exact Quotient.sound (hI3 xxxxss)
+
           have h3Irewrite: @Quotient.mk _ (restrictedSetoid s.toSetup_spo x) ⟨xxxx, xxxxsve⟩ ∈ I := by
             exact hI3
           have : q = @Quotient.mk _ (restrictedSetoid s.toSetup_spo x) ⟨xxxx, xxxxsve⟩:= by
@@ -335,19 +332,6 @@ theorem trace_ideal_lem_rev (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_
               simp_all [I', oldq, q, xxx]
 
             simp_all only [Subtype.coe_eta, Subtype.forall, mem_erase, ne_eq, coe_mem, q, I', oldq, xxx]
-          /-
-
-          have :x1 ∈ spo_equiv_x_with s x hx := by
-            dsimp [spo_equiv_x_with]
-            simp_all only [this]
-          have :x1 ∈ ss ∩ spo_equiv_x_with s x hx := by
-            dsimp [spo_equiv_x_with]
-            apply mem_inter_of_mem-- this this
-            exact this
-          rw [hn] at this
-          contradiction
-          sorry
-          -/
 
         case neg =>
           have :x1 ∈ s.V.erase x.val := by
@@ -365,26 +349,9 @@ theorem trace_ideal_lem_rev (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_
               coe_mem, I', xxx]
           let q := @Quotient.mk _ (restrictedSetoid s.toSetup_spo x) ⟨xxx,this⟩
           let oldq := toOld s.toSetup_spo x q
-          --このように定義しても、qとq'に大小関係があるわけではないので、意味があるか不明。
-          --やはり、x1とxが等しいかどうかで場合分けするのが良さそう。段階で分けるのがいいのか。
-          --have : s.setoid.r ⟨x1, this⟩ ⟨xxx.val, this⟩ := by
-          --  dsimp [xxx]
-          --  exact representativeNeSelf_mem_classOf2 s.toSetup_spo x hx
-
 
           constructor
-          · --hI1を使うのだろうか。その場合は、qとしてなにをとればいいのか。I'は定義されているが、現状では登場してない。ゴールを展開して、useを使うのか。
-            --hI3のほうが使えそう。その場合は、x1 neq xが必要かも。
-            /-have : q ∈ I := by
-              dsimp [q]
-              rw [Finset.mem_image] at hq
-              obtain ⟨qq, hqq, hqq1⟩ := hq
-              rw [←hqq1]
-              let no := OldNew_id s.toSetup_spo x hx qq
-              rw [no]
-              exact hqq
-            -/
-            simp_all only [Subtype.coe_eta, Subtype.forall, mem_erase, ne_eq, Finset.mem_union, Finset.mem_singleton,
+          · simp_all only [Subtype.coe_eta, Subtype.forall, mem_erase, ne_eq, Finset.mem_union, Finset.mem_singleton,
               or_false, I', xxx, q']
           ·
             simp_all [I', q']
@@ -419,18 +386,36 @@ theorem trace_ideal_lem_rev (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_
             specialize hI4 ⟨x1.val,this⟩
             apply hI4
             simp
-            --⟦⟨↑x1, ⋯⟩⟧ = newqがゴール。
 
             have : @Quotient.mk _ (restrictedSetoid s.toSetup_spo x) ⟨x1.val, this⟩ = newq := by
               dsimp [newq]
-              dsimp [restrictedSetoid]
-              sorry
+              let tee := toErased_eq s.toSetup_spo x x1 x hx
+              dsimp [toErased] at tee
+              split at tee
+              case isTrue =>
+                rename_i h
+                subst h hx1
+                simp_all only [not_true_eq_false]
+              case isFalse =>
+                rename_i h
+                dsimp [toNew]
+                dsimp [toErased]
+                simp
+                subst hx1
+                simp_all only [not_false_eq_true, Quotient.eq, ↓reduceDIte, Subtype.coe_eta, Finset.mem_image,
+                  Quotient.lift_mk, I', newq]
+            subst hx1
+            simp_all only [Subtype.coe_eta, Finset.mem_image, forall_const, I', newq]
+          subst hx1
+          simp_all only [Subtype.coe_eta, Subtype.forall, mem_erase, ne_eq, Finset.mem_image, Finset.mem_union,
+            Finset.mem_singleton, true_or, I']
+
 
   --証明の流れとしては、Nonemptyの要素を取り出して、それに映る要素がもともとの世界のhyperedge内にあって、xと同値なので、xもhyperedgeに含まれるという流れになる。
 
 lemma new_lem_notx (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
 )).card ≥ 2) :
-  ∀ x_1: s.V.erase x.val, (h:x_1.val ∉ (spo_equiv_x_with s x hx)) → toNew s.toSetup_spo x hx (@Quotient.mk _ s.setoid ⟨x_1.val,by
+  ∀ x_1: s.V.erase x.val, (h:x_1.val ∉ (spo_equiv_x_with s x)) → toNew s.toSetup_spo x hx (@Quotient.mk _ s.setoid ⟨x_1.val,by
   obtain ⟨val, property⟩ := x
   obtain ⟨val_1, property_1⟩ := x_1
   simp_all only
@@ -474,11 +459,8 @@ by
 
 theorem trace_ideal_lem_rev2 (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
 )).card ≥ 2) :
-  ∀ ss:Finset α, (spo_closuresystem (setup_trace_spo2 s x hx).toSetup_spo).sets ss → (spo_equiv_x_with s x hx) ∩ ss =∅ → (spo_closuresystem s.toSetup_spo).sets ss := by
+  ∀ ss:Finset α, (spo_closuresystem (setup_trace_spo2 s x hx).toSetup_spo).sets ss → (spo_equiv_x_with s x) ∩ ss =∅ → (spo_closuresystem s.toSetup_spo).sets ss := by
 
-
-  --証明の流れとしては、ssのもとになるhyperedgeが、xと同値であるものがないので、xを含む同値類の部分を持たずに、制限前でもそのままであることを示す。
-  --ssの元になるhyperedgeはxを含まないことがわかる。
   intro ss
   intro h hn
   dsimp [setup_trace_spo2] at h
@@ -529,13 +511,13 @@ theorem trace_ideal_lem_rev2 (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup
     · intro hs
       constructor
       · intro x1 hx1
-        --goal ⟦⟨x1, ⋯⟩⟧ ∈ I'
+
         dsimp [I']
         rw [Finset.mem_image]
         have : x1 ∈ s.V := by
           exact hs hx1
         --show ∃ a ∈ I, toOld s.toSetup_spo x a = ⟦⟨x1, ⋯⟩⟧
-        --またnewq'を使うと思われる。
+
         have :x1 ∈ s.V.erase x := by
           rw [@mem_erase]
           constructor
@@ -546,7 +528,6 @@ theorem trace_ideal_lem_rev2 (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup
         exact And.symm ⟨rfl, hI3 x1 hx1⟩
 
       · intro q hq xx hxx --I'に入っているqは、その要素は、ssの要素であることを示す。hI4は使いそう。
-        --show ↑xx ∈ ss
 
         let newq := toNew s.toSetup_spo x hx q
         specialize hI4 newq
@@ -584,7 +565,7 @@ theorem trace_ideal_lem_rev2 (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup
             rw [this]
             rw [OldNew_id s.toSetup_spo xx hx newq]
             let nln := new_lem_notx s xx hx xxx
-            have : xxx.val ∉ spo_equiv_x_with s xx hx := by
+            have : xxx.val ∉ spo_equiv_x_with s xx := by
               dsimp [spo_equiv_x_with]
               by_contra h_contra
               have : xxx.val ∈ ss := by
@@ -603,7 +584,7 @@ theorem trace_ideal_lem_rev2 (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup
 
                 · rename_i h_2
                   exact False.elim (h_2 rfl)
-              have :xxx.val ∈ spo_equiv_x_with s xx hx ∩ ss := by
+              have :xxx.val ∈ spo_equiv_x_with s xx ∩ ss := by
                 dsimp [spo_equiv_x_with]
                 apply mem_inter_of_mem-- h_contra this
                 exact h_contra
@@ -647,13 +628,13 @@ theorem trace_ideal_lem_rev2 (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup
 
             exact id (Eq.symm this)
 
-          have :xxx.val ∈ spo_equiv_x_with s xx hx := by
+          have :xxx.val ∈ spo_equiv_x_with s xx := by
             dsimp [spo_equiv_x_with]
             simp
             use xxxsv
             exact mem_of_mem_erase rmc
 
-          have :xxx.val ∈ spo_equiv_x_with s xx hx ∩ ss := by
+          have :xxx.val ∈ spo_equiv_x_with s xx  ∩ ss := by
             dsimp [spo_equiv_x_with]
             apply mem_inter_of_mem
             exact this
@@ -663,15 +644,6 @@ theorem trace_ideal_lem_rev2 (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup
 
         case neg =>
           --xxがxと一致する場合は、ssに入る。
-          /-
-          have : x.val ∈ ss := by
-            dsimp [ss]
-            rw [@mem_erase]
-            constructor
-            · exact ne_of_mem_erase (hI2 hx)
-            · simp_all only [Subtype.coe_eta, Subtype.forall, mem_erase, ne_eq, I']
-          exact this
-          -/
           have :xx.val ∈ s.V.erase ↑x  := by
             rw [@mem_erase]
             constructor
@@ -696,7 +668,7 @@ theorem trace_ideal_lem_rev2 (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup
           rw [OldNew_id s.toSetup_spo x hx newq]
           rename_i h_1
           let nln := new_lem_notx s x hx ⟨xx.val, h_1⟩
-          have : xx.val ∉ spo_equiv_x_with s x hx := by
+          have : xx.val ∉ spo_equiv_x_with s x  := by
             dsimp [spo_equiv_x_with]
             --thisからqは、newqは対応。
             --hxxからxxもqに対応。
@@ -726,7 +698,7 @@ theorem trace_ideal_lem_rev2 (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup
                 exact Quotient.sound (id (Setoid.symm' (restrictedSetoid s.toSetup_spo x) this))
 
               · exact rfl
-            have :xx.val ∈ spo_equiv_x_with s x hx ∩ ss := by
+            have :xx.val ∈ spo_equiv_x_with s x ∩ ss := by
               dsimp [spo_equiv_x_with]
               apply mem_inter_of_mem-- h_contra this
               exact h_contra
@@ -742,86 +714,6 @@ theorem trace_ideal_lem_rev2 (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup
           simp
           rw [nln]
           exact rfl
-
-
-
-
-
-
-  /-古いもの 消す。
-  · intro h
-    dsimp [setup_trace_spo2] at h
-    dsimp [spo_closuresystem]
-    simp
-    dsimp [spo_closuresystem] at h
-    obtain ⟨I,hI⟩ := h
-    let I' := I.image (toOld s.toSetup_spo x )
-    use I'
-    --ssは、xを含む場合も含まない場合もどちらもある？場合分けしたほうがいい？
-    constructor
-    · --show ∀ q ∈ I', ∀ q' ≤ q, q' ∈ I'
-      intro q hq q' hq'
-      dsimp [I'] at hq
-      dsimp [I']
-      obtain ⟨hI1,hI2,hI3⟩ := hI
-      specialize hI3 hI2
-      obtain ⟨hI3, hI4⟩ := hI3
-      rw [Finset.mem_image]
-      let newq' := toNew s.toSetup_spo x hx q'
-      let newq := toNew s.toSetup_spo x hx q
-      use newq'
-      constructor
-      · --使うのは、hI1
-        have : newq ∈ I := by
-          dsimp [newq]
-          rw [Finset.mem_image] at hq
-          obtain ⟨qq, hqq, hqq1⟩ := hq
-          rw [←hqq1]
-          let no := OldNew_id s.toSetup_spo x hx qq
-          rw [no]
-          exact hqq
-        specialize hI1 newq this
-        have : (setup_trace_spo2 s x hx).toSetup_spo.spo.le newq' newq := by
-          dsimp [setup_trace_spo2]
-
-          let sts := (setup_trace_spo_le s.toSetup_spo x hx newq' newq).mpr
-          apply sts
-          dsimp [newq',newq]
-          rw [NewOld_id s.toSetup_spo x hx q']
-          rw [NewOld_id s.toSetup_spo x hx q]
-          exact hq'
-        simp_all only [Finset.mem_image, mem_erase, ne_eq, Subtype.coe_eta, Subtype.forall, not_false_eq_true, true_and,
-          le_refl, newq, I', newq']
-      · dsimp [newq']
-        exact NewOld_id s.toSetup_spo x hx q'
-    · obtain ⟨hI1,hI2,hI3⟩ := hI
-      specialize hI3 hI2
-      obtain ⟨hI3, hI4⟩ := hI3
-      have hss: ss ⊆ s.V:= by
-        rw [@subset_erase] at hI2
-        let xp := x.property
-        obtain ⟨hI2, _⟩ := hI2
-        exact (erase_subset_iff_of_mem xp).mp hI2
-      constructor
-      · exact hss
-        -- For example, you might want to assert properties of hI4 or use it in a proof
-
-      · intro hs
-        constructor
-        · --Iが制限された新しい世界。I'が制限されない古い世界。
-          intro x1 hx1
-          --goal ⟦⟨x1, ⋯⟩⟧ ∈ I'
-          dsimp [I']
-          rw [Finset.mem_image]
-          --x1がxに一致するケースと一致しないケースにわけたほうがいい？
-          have : x1 ∈ s.V.erase x := by --これがいえるのは、ssがxを含まないケースだけかも。
-            sorry
-          let q' := @Quotient.mk _ (restrictedSetoid s.toSetup_spo x) x1
-
-          let newq' := toNew s.toSetup_spo x hx           sorry
-        · sorry
-  -/
-
 
 theorem trace_ideal (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
 )).card ≥ 2) :
@@ -852,24 +744,16 @@ theorem trace_ideal (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Qu
         rw [@subset_erase] at this
         simp_all only [not_false_eq_true]
 
-      · --hyperedge(ideal) ssがxを含んでいたか、含んでなかったかで、場合分けする必要があるかも。
-        --dsimp [setup_trace_spo2] at h
-        --dsimp [restrictedSetoid] at h
-        --spo_closuresystemは展開する必要があるのかないのか。idealかどうかは順序を見る必要があるので、展開が必要ではないか。
-        --fqの議論は必要なのかどうか。親が一つであることは今回のには関係してなさそう。xの極大性もあまり関係してなくて、xを含む同値類が2以上であることが大事。
-        --二つが同じになるという前に、ともに元になる集合族がある。
-        --元々のideal ssがxを含む場合と含まない場合がある。xを含む同値類の大きさが2以上なので、xが極大になるが極大性は直接的には使わないかも。
-        --toOldを使って証明する必要があるか。ssの同値類をtoOldで写したofClassがsssとする。
-        --これがもとの親のhyperedgeで、それからxを引いたものがもとのssになる。
+      ·
         show (spo_closuresystem s.toSetup_spo).sets ss ∨ (spo_closuresystem s.toSetup_spo).sets (ss ∪ {↑x})
         --分類するのは、xがssにはいっているかではない。ssはxを含み得ない。ssがxと同値な要素を含んでいるかどうかで分類。
-        by_cases hn:((spo_equiv_x_with s x hx) ∩ ss).Nonempty
+        by_cases hn:((spo_equiv_x_with s x) ∩ ss).Nonempty
         case pos =>
           let tilr := trace_ideal_lem_rev s x hx ss
           specialize tilr h  hn
           exact Or.inr tilr
         case neg =>
-          have :spo_equiv_x_with s x hx ∩ ss = ∅ := by
+          have :spo_equiv_x_with s x ∩ ss = ∅ := by
             exact Finset.not_nonempty_iff_eq_empty.mp hn
           --このときは、xと関係がないssであるとき。補題を作るか。
           let tilr2 := trace_ideal_lem_rev2 s x hx ss
@@ -930,13 +814,6 @@ theorem trace_ideal (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Qu
             subst a_2
             simp_all only
 
-      --simp_all only [Subtype.coe_eta, Subtype.forall]
-        --obtain ⟨val, property⟩ := x
-        --obtain ⟨left, right⟩ := h
-        --simp_all only
-        --cases right with --さっきもこの場合分けを行ったのではないか？
-        --| inl h => --h:(spo_closuresystem s.toSetup_spo).sets ss
-          --このケースは、hxの仮定より起こり得ないことを示す。xがssに入っていれば、xの同値類の仲間も入っているはず。しかし、ssは、xを含まないので、xの仲間も含まない。
       obtain ⟨x1, hx1⟩ := hh --x1がxの同値類の仲間。
       have : s.setoid.r x1 x := by
         have : x1 ∈ (classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)) := by
@@ -947,29 +824,12 @@ theorem trace_ideal (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Qu
         simp_all only [mem_erase, ne_eq, mem_attach, true_and, eq]
       cases h.2
       case inl hl=>
-        --ssがxを含まないケース。(spo_closuresystem s.toSetup_spo).sets ss
-        --dsimp [spo_closuresystem]
-        --dsimp [spo_closuresystem] at hl
-        --obtain ⟨I,hI⟩ := hl --この分解は自動的にdsimp spo_closuresystemを行ってるみたい。
-        --obtain ⟨hI1,hI2,hI3⟩ := hI
-        --specialize hI3 hI2
-        --obtain ⟨hI3, hI4⟩ := hI3
-        --use I --expected Finset (Quotient (restrictedSetoid s.toSetup_spo x))
-        --use I はだめ。Iを加工する必要があるのか。同値類を変換する必要がある。xを含むところだけ削ったものを作る必要がある。
-        --新たにdefを作るのがいいのか。setoidの変換で、xを削ったもの。すでにあるのか。
 
-
-        --have : x1.val ∈ (ss ∪ {x.val}) := by
-        --thisと、(spo_closuresystem s.toSetup_spo).sets ssから、言えるはず。
         let sce := @spo_closuresystem_equiv _ _ _ ss s.toSetup_spo x1 x this
         specialize sce hl
         have :x1.val ∉ ss:= by
           exact (iff_false_right h.1).mp sce
 
-          --have :x.val ∉ ss := by
-           --x1は、classOfから持ってきたので、x1が含まれている時は含まれている。
-          --  simp_all only [mem_erase, ne_eq, not_false_eq_true]
-          --矛盾が導きたかったけど、うまく導けず。
         let til := trace_ideal_lem s x hx ss
         simp at til
         have rwss2: (ss.erase ↑x) = ss := by
