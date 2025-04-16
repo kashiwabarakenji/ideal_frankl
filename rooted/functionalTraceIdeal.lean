@@ -392,7 +392,39 @@ theorem trace_ideal_lem_rev (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_
             simp_all only
             rfl
       · intro q hq x1 hx1
-        sorry
+        by_cases hnx: x1 = x
+        case pos =>
+          rw [hnx]
+          simp
+        case neg =>
+          have : x1.val ∈ ss := by
+            let newq := toNew s.toSetup_spo x hx q
+            have : newq ∈ I := by
+              dsimp [newq]
+              rw [Finset.mem_image] at hq
+              obtain ⟨qq, hqq, hqq1⟩ := hq
+              rw [←hqq1]
+              let no := OldNew_id s.toSetup_spo x hx qq
+              rw [no]
+              exact hqq
+            specialize hI4 newq this
+            have : x1.val ∈ s.V.erase x.val := by
+              subst hx1
+              simp_all [I', newq]
+              obtain ⟨val, property⟩ := x
+              obtain ⟨val_1, property_1⟩ := x1
+              obtain ⟨w, h⟩ := hq
+              obtain ⟨left, right⟩ := h
+              simp_all only [Subtype.mk.injEq, not_false_eq_true]
+            specialize hI4 ⟨x1.val,this⟩
+            apply hI4
+            simp
+            --⟦⟨↑x1, ⋯⟩⟧ = newqがゴール。
+
+            have : @Quotient.mk _ (restrictedSetoid s.toSetup_spo x) ⟨x1.val, this⟩ = newq := by
+              dsimp [newq]
+              dsimp [restrictedSetoid]
+              sorry
 
   --証明の流れとしては、Nonemptyの要素を取り出して、それに映る要素がもともとの世界のhyperedge内にあって、xと同値なので、xもhyperedgeに含まれるという流れになる。
 
