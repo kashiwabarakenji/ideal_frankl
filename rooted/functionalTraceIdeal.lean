@@ -845,3 +845,39 @@ theorem trace_ideal (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Qu
         apply til
         --ssがxを含むケース。
         exact hr
+
+theorem normalized_degree_sum_congr {α : Type} [DecidableEq α] [Fintype α]
+  (F G : SetFamily α)
+  [DecidablePred F.sets] [DecidablePred G.sets]
+  (h_sets   : F.sets = G.sets)
+  (h_ground : F.ground = G.ground) :
+  F.normalized_degree_sum = G.normalized_degree_sum := by
+
+  -- 定義を展開
+  dsimp [ SetFamily.normalized_degree_sum
+        , SetFamily.total_size_of_hyperedges
+        , SetFamily.number_of_hyperedges ]
+
+  -- 便宜上，powerset を s と置く
+  let s := F.ground.powerset
+
+  -- filter の中身（F.sets）を書き換え
+  have h_filter : s.filter F.sets = s.filter G.sets :=
+    filter_congr (by intros x _; simp [h_sets])
+
+  -- フィルターされた集合族の要素数が等しい ⇒ Int.ofNat したものも等しい
+  have h_card_nat : (s.filter F.sets).card = (s.filter G.sets).card :=
+    congrArg Finset.card h_filter
+  let h_card := congrArg Int.ofNat h_card_nat
+
+  -- フィルターされた集合族の「大きさの合計」も同様に等しい
+  have h_sum_nat : (s.filter F.sets).sum Finset.card = (s.filter G.sets).sum Finset.card :=
+  by
+    let ca := @congrArg (Finset (Finset α)) Nat (s.filter F.sets) (s.filter G.sets)  (fun S:Finset (Finset α) => S.sum Finset.card) h_filter
+    exact ca
+  let h_sum := congrArg Int.ofNat h_sum_nat
+
+  -- 最後に normalized_degree_sum の本体を書き換える
+  simp [h_card, h_sum]
+  rw [h_ground]
+  simp_all only [s]
