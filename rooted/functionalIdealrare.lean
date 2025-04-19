@@ -860,3 +860,31 @@ theorem setoid_ideal_rare (s : Setup_spo2 α)(q : Quotient (s.toSetup_spo).setoi
   simp
   let dls := degree_le_setoid_ideal_injection_domain_card s.toSetup_spo q x_1
   linarith
+
+
+--functionalIdealrare.lean: maximalの頂点はrare。
+--theorem setoid_ideal_rare (s : Setup_spo2 α)(q : Quotient (s.toSetup_spo).setoid )(hm: isMaximal_spo s.toSetup_spo q) :
+--  ∀ (x : classOf s.toSetup_spo q), (spo_closuresystem s.toSetup_spo).toSet
+
+--ある同値類がサイズ2以上であった場合に、その頂点はrareになる。
+-- spo2のsingleton_if_not_maximalで極大要素出ない場合は、サイズが1。
+-- よって、サイズ2以上の同値類は、rareなvertexになる。
+
+lemma spo2_rare (s : Setup_spo2 α) (q: Quotient s.setoid) (hx:(classOf s.toSetup_spo q).card ≥ 2) :
+  ∀ (y : s.V), @Quotient.mk _ s.toSetup_spo.setoid y = q → (spo_closuresystem s.toSetup_spo).is_rare y :=
+by
+  intro y hq
+  have hm: isMaximal_spo s.toSetup_spo q :=
+  by
+    exact s.singleton_if_not_maximal q hx
+  let sir := setoid_ideal_rare s q hm
+  have : y ∈ classOf s.toSetup_spo q := by
+    subst hq
+    simp_all only [ge_iff_le]
+    obtain ⟨val, property⟩ := y
+    simp [classOf]
+    rfl
+
+  specialize sir ⟨y,this⟩
+  subst hq
+  simp_all only [ge_iff_le]

@@ -68,11 +68,17 @@ def isMaximal_spo (s: Setup_spo α) (x : Quotient s.setoid) : Prop :=
   ∀ y : Quotient s.setoid,
   s.spo.le x y → s.spo.le y x
 
+--Quotientに対するそれに属する。頂点の集合。
 def classOf (s : Setup_spo α) (q : Quotient s.setoid) [DecidableEq (Quotient s.setoid)]  : Finset {x // x ∈ s.V} :=
   Finset.filter (fun (a : {x // x ∈ s.V}) => @Quotient.mk'' _ s.setoid a = q) s.V.attach
 --以下とほぼ同じ
 --noncomputable def eqClass_setup (s: Setup α) (x : {x : α // x ∈ s.V}) : Finset {x // x ∈ s.V} :=
 --  s.V.attach.filter (fun y => s.setoid.r x y)
+
+--要素にひとつに対するそれと同値な頂点全体がclassOf。
+noncomputable def classOfx (s : Setup_spo α) (x : {x : α // x ∈ s.V}) :
+  Finset {x : α // x ∈ s.V} :=
+  classOf s (@Quotient.mk _ s.setoid x)
 
 lemma classOf_nonempty (s : Setup_spo α) (q : Quotient s.setoid) :
   (classOf s q).Nonempty := by
@@ -84,7 +90,7 @@ lemma classOf_nonempty (s : Setup_spo α) (q : Quotient s.setoid) :
   · exact mem_attach s.V a
   · exact Quotient.out_eq q
 
---わざわざ定義するまでもないかも。
+--わざわざ定義するまでもないかも。頂点集合に対して、それに対応するQuotientの集合。
 noncomputable def QuotientOf (s: Setup_spo α) (xx : Finset {x : α // x ∈ s.V}) :
   Finset (Quotient s.setoid) :=
   xx.image (@Quotient.mk _ s.setoid)
@@ -222,7 +228,7 @@ def setup_setupspo (s: Setup2 α) : Setup_spo α :=
   h_spo := rfl
 }
 
---eqClassとclassOfは同じもの。
+--eqClassとclassOfは同じもの。classOfは、setupspoから定義されるところが違う。
 lemma eqClass_Class_of (s: Setup2 α) (x : {x : α // x ∈ s.V}) :
   (eqClass_setup s.toSetup) x = classOf (setup_setupspo s) (@Quotient.mk' _ s.setoid x) := by
   dsimp [classOf]
@@ -382,6 +388,17 @@ noncomputable def representativeNeSelf
     simp only [Finset.mem_erase]
     exact ⟨Subtype.coe_ne_coe.mpr hb.right, b.property⟩⟩
 
+--もとの世界のsubtypeにも属する。
+noncomputable def representativeNeSelf2
+  (s : Setup_spo α) (x : {x : α // x ∈ s.V})
+  (hx : (classOf s ⟦x⟧).card ≥ 2) :
+    { y // y ∈ s.V } :=
+  ⟨
+    (representativeNeSelf s x hx).val, by
+    obtain ⟨val, property⟩ := x
+    simp_all only
+    simp [representativeNeSelf]⟩
+
 lemma representativeNeSelf_mem_classOf
   (s : Setup_spo α) (x : {x // x ∈ s.V}) (hx : 2 ≤ (classOf s ⟦x⟧).card) :
   ⟨(representativeNeSelf s x hx).val, Finset.mem_of_mem_erase (representativeNeSelf s x hx).property⟩ ∈ (classOf s (@Quotient.mk _ s.setoid x)).erase x :=
@@ -448,6 +465,7 @@ by
   simp_all only [Quotient.eq]
 -/
 -- yとzが同じ同値類であれば、移り先も同じ同値類。
+--逆方向は、toErased_eqx
 lemma toErased_eq
   (s : Setup_spo α) (x y z : {x : α // x ∈ s.V})
   (hx : 2 ≤ (classOf s ⟦x⟧).card)
@@ -602,6 +620,48 @@ by
       simp_all only [Quotient.eq]
       exact q_eq
 
+--上の命題の逆方向。xの移り先の同値類に入った時は、もともとxと同値だった。
+lemma toErased_eqx
+  (s : Setup_spo α) (x : {xx : α // xx ∈ s.V}) (y z : {xx : α // xx ∈ s.V.erase x.val})
+  -- (hx : 2 ≤ (classOf s ⟦x⟧).card)
+  (equivyz: (restrictedSetoid s x).r y z) :
+  s.setoid.r ⟨y.val, by
+    have : s.V.erase x.val ⊆ s.V := by
+      exact Finset.erase_subset _ _
+    obtain ⟨val_1, property_1⟩ := y
+    exact this property_1
+  ⟩
+  ⟨z.val, by
+    have : s.V.erase x.val ⊆ s.V := by
+      exact Finset.erase_subset _ _
+    obtain ⟨val_1, property_1⟩ := z
+    exact this property_1
+  ⟩
+  :=
+  by
+    exact equivyz
+
+--setoidで同値なことと、classOfの関係
+lemma classOf_setoid
+  (s : Setup_spo α) (y z: {x : α // x ∈ s.V}) :
+  s.setoid.r y z ↔ y ∈ (classOf s ⟦z⟧)  :=
+by
+  apply Iff.intro
+  · intro h
+    dsimp [classOf]
+    rw [Finset.mem_filter]
+    constructor
+    · simp_all only [mem_attach]
+    · dsimp [classOf]
+      simp_all only [Quotient.eq]
+  · intro h
+    dsimp [classOf] at h
+    rw [Finset.mem_filter] at h
+    simp_all only [mem_attach, Quotient.eq, true_and]
+
+-------------
+---同値類の対応
+
 --古い同値類から新しい同値類への対応。
 noncomputable def toNew (s : Setup_spo α) (x : {x : α // x ∈ s.V})
   (hx : (classOf s (@Quotient.mk _ s.setoid x)).card ≥ 2)
@@ -700,6 +760,7 @@ by
 --toNewやtoOldで順序が保存されることを示す必要があるのか。そのためには、新しい同値類の構造で順序が導入されている必要があるが。
 --段階的に導入するのがいいのか。そのためには、setup_spoになることをまず証明するか。
 --fqまでで、まだloopも定義されていない。setup_spo0みたいなものを作った方がいいかも。
+
 
 
 

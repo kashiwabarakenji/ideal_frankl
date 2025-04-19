@@ -15,12 +15,15 @@ import rooted.Preorder
 import rooted.Dominant
 import rooted.FamilyLemma
 import rooted.StemSizeOne
+import rooted.Parallel
 import rooted.functionalCommon
 --import rooted.functionalTreePreorder
 import rooted.functionalTreePartialorder
 import rooted.functionalSPO
 import rooted.functionalSPO2
 import rooted.functionalTreeIdeal
+import rooted.functionalIdealrare
+
 
 open Finset Set Classical
 
@@ -881,3 +884,198 @@ theorem normalized_degree_sum_congr {α : Type} [DecidableEq α] [Fintype α]
   simp [h_card, h_sum]
   rw [h_ground]
   simp_all only [s]
+
+--集合族が等しければ、ndsも等しい。
+theorem trace_ideal_nds (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
+)).card ≥ 2) :
+  (spo_closuresystem (setup_trace_spo2 s x hx).toSetup_spo).normalized_degree_sum = ((spo_closuresystem s.toSetup_spo).toSetFamily.trace x.val (by simp_all only [ge_iff_le,
+    coe_mem] ) (by
+  have :s.V = (spo_closuresystem s.toSetup_spo).ground := by
+    simp_all only [ge_iff_le]
+    obtain ⟨val, property⟩ := x
+    rfl
+  have : s.V.card ≥ 2:= by
+    let csl := card_subtype_le_original  (classOf s.toSetup_spo ⟦x⟧)
+    linarith
+  exact this
+    )).normalized_degree_sum := by
+
+  apply normalized_degree_sum_congr
+  · let ti := trace_ideal s x hx
+    obtain ⟨val, property⟩ := x
+    simp_all only
+    ext x : 2
+    simp_all only [ti]
+  · rfl
+
+--次の定理は、ある同値類qがあって、(classOf s.toSetup_spo q).card ≥ 2)のときには、
+--そこからxを持ってきて、traceすることにより、一つ台集合が小さくて、ndsが等しいか大きい集合族を作ることができる。
+--2以上の同値類の大きさの過剰分は、1減っている。
+--過剰分の定義
+
+noncomputable def excess (s: Setup_spo2 α)  : ℕ :=
+  ∑ q in (Finset.univ : Finset (Quotient s.setoid)),
+    ((classOf s.toSetup_spo q).card - 1)
+      --traceすることで、excessはひとつ減る。
+
+--traceすることで、excessはひとつ減る。
+lemma trace_excess_decrease (s: Setup_spo2 α) (x: s.V) (hx: (classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).card ≥ 2) :
+  excess (setup_trace_spo2 s x hx) = excess s - 1 := by
+  have : (classOfx s.toSetup_spo x).image Subtype.val = (classOf (setup_trace_spo2 s x hx).toSetup_spo (toNew s.toSetup_spo x hx (@Quotient.mk _ s.toSetup_spo.setoid x))).image Subtype.val ∪ ({x.val}:Finset α):=
+  by
+    ext y
+    apply Iff.intro
+    · intro h
+      rw [Finset.mem_image] at h
+      simp at h
+      obtain ⟨qq, hqq⟩ := h
+      dsimp [classOfx] at hqq
+      dsimp [classOf] at hqq
+      rw [Finset.mem_filter] at hqq
+      simp
+      by_cases y = x.val
+      case pos =>
+        subst y
+        simp_all only [Finset.mem_singleton, or_true, Subtype.coe_eta, Quotient.eq, Subtype.forall, mem_erase,
+          ne_eq, Subtype.exists, exists_and_right, exists_eq_right, exists_const, and_true, coe_mem]
+      case neg =>
+        left
+        have yinsV : y ∈ s.V := by
+          simp_all only [ge_iff_le, mem_attach, Quotient.eq, true_and]
+        have yinsV2:y ∈ (setup_trace_spo2 s x hx).V :=
+        by
+          simp_all only [mem_attach, Quotient.eq, true_and]
+          obtain ⟨val, property⟩ := x
+          simp_all only
+          rw [setup_trace_spo2]
+          simp_all only [mem_erase, ne_eq, not_false_eq_true, and_self]
+        use yinsV2
+        dsimp [classOf]
+        rw [Finset.mem_filter]
+        have toErased_id: toErased s.toSetup_spo x hx ⟨y,yinsV⟩ = ⟨y,yinsV2⟩ := by
+          dsimp [toNew]
+          dsimp [toErased]
+          simp_all only [mem_attach, Quotient.eq, true_and, Subtype.coe_eta]
+          obtain ⟨val, property⟩ := x
+          simp_all only [Subtype.mk.injEq, ↓reduceDIte]
+        have equiv_yx: s.setoid.r ⟨y,yinsV⟩ x := by
+          simp_all only [mem_attach, Quotient.eq, true_and]
+        constructor
+        · simp_all only [mem_attach, Quotient.eq, true_and]
+        · dsimp [toNew]
+          dsimp [toErased]
+          dsimp [setup_trace_spo2]
+          split
+          · let rnsm := representativeNeSelf_mem_classOf s.toSetup_spo x hx
+            obtain ⟨hqq1, hqq2⟩ := hqq
+            let rnsm2 := representativeNeSelf_mem_classOf2 s.toSetup_spo x hx
+            have : s.setoid.r (representativeNeSelf2 s.toSetup_spo x hx) x := by
+              exact rnsm2
+            have :s.setoid.r ⟨y,yinsV⟩ (representativeNeSelf2 s.toSetup_spo x hx):= by
+              exact Setoid.trans' s.setoid equiv_yx (id (Setoid.symm' s.setoid rnsm2))
+
+            have : (setup_trace_spo2 s x hx).setoid.r (representativeNeSelf s.toSetup_spo x hx) ⟨y,yinsV2⟩ :=
+            by
+              --使うのは、rnsmとhqq2とtoErasedで同値なものは同値なところに移るという定理。
+              dsimp [classOf]
+              dsimp [setup_trace_spo2]
+              dsimp [restrictedSetoid]
+              exact id (Setoid.symm' s.setoid this)
+            rename_i this_3
+            simp_all only [mem_attach, Quotient.eq, Subtype.coe_eta]
+            simp_all only
+            obtain ⟨val, property⟩ := x
+            simp_all only
+            exact this_3
+          ·
+            simp_all only [mem_attach, Quotient.eq, and_self]
+            simp_all only
+            obtain ⟨val, property⟩ := x
+            simp_all only
+            exact equiv_yx
+
+    · intro h
+      rw [Finset.mem_image]
+      rw [@Finset.mem_union] at h
+
+      cases h with
+      | inl h =>
+        have yinsV : y ∈ s.V := by
+          sorry
+        have yinsV2:y ∈ (setup_trace_spo2 s x hx).V := by
+          simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right]
+          obtain ⟨w, h⟩ := h
+          simp_all only
+        use ⟨y, yinsV⟩
+        simp
+        let rnsm2 := representativeNeSelf_mem_classOf2 s.toSetup_spo x hx
+        dsimp [classOfx]
+        let rnsm := representativeNeSelf_mem_classOf s.toSetup_spo x hx
+        have :s.setoid.r ⟨y, yinsV⟩ x := by
+          rw [Finset.mem_image] at h
+          simp at h
+          obtain ⟨h1, h2⟩ := h
+          --h2で、yは、xが写った先の同値類に入っていることがわかった。
+          --よって、もともとのyもxと同値になる。
+          let teeqx := toErased_eqx s.toSetup_spo x ⟨y, yinsV2⟩ (representativeNeSelf s.toSetup_spo x hx)
+          have :(restrictedSetoid s.toSetup_spo x) ⟨y, yinsV2⟩ (representativeNeSelf s.toSetup_spo x hx) :=
+          by
+            --dsimp [restrictedSetoid]
+            --h2を使う必要あり。
+            dsimp [toNew] at h2
+            have :y ∈ (setup_trace_spo2 s x hx).V := by
+              simp_all only
+
+            let cs := (classOf_setoid (setup_trace_spo2 s x hx).toSetup_spo) ⟨y,this⟩ (representativeNeSelf s.toSetup_spo x hx)
+
+            simp at cs
+            apply cs.mpr
+
+            have :⟨y, yinsV2⟩ ∈ classOf (setup_trace_spo2 s x hx).toSetup_spo  x := by
+              dsimp [classOf]
+              rw [Finset.mem_filter]
+              sorry
+              --constructor
+              --· exact yinsV2
+              --· exact h2
+
+            simp_all only [Function.const_apply]
+            obtain ⟨val, property⟩ := x
+            simp_all only
+            convert h2
+            simp_all only [mem_erase, ne_eq]
+            simp [toErased]
+
+
+          specialize teeqx this
+          exact Setoid.trans' s.setoid this rnsm2
+        exact (classOf_setoid s.toSetup_spo ⟨y, yinsV⟩ x).mp this
+
+      | inr h =>
+        --obtain ⟨xval, xproperty⟩ := x
+        --dsimp [classOf] at h
+        simp
+        have : y ∈ s.V := by
+          simp_all only [ge_iff_le, mem_attach, Quotient.eq, true_and]
+          simp_all only [Finset.mem_singleton]
+          subst h
+          simp_all only [coe_mem]
+        use this
+        have : s.setoid.r ⟨y, this⟩ x := by
+          simp_all only [ge_iff_le, Finset.mem_singleton, Subtype.coe_eta]
+          subst h
+          simp_all only [coe_mem]
+          obtain ⟨val, property⟩ := x
+          rfl
+        have : x.val = y := by
+          simp_all only [ge_iff_le, Finset.mem_singleton, Subtype.coe_eta]
+        dsimp [classOfx]
+        dsimp [classOf]
+        rw [Finset.mem_filter]
+        constructor
+        ·
+          subst this
+          simp_all only [ge_iff_le, Finset.mem_singleton, Subtype.coe_eta, mem_attach]
+        ·
+          subst this
+          simp_all only [ge_iff_le, Finset.mem_singleton, Subtype.coe_eta]

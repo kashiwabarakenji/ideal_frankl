@@ -9,10 +9,11 @@ open Classical
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 
+--vertexorderの半順序から定義した同値類。
 def vertex_equiv (SF:ClosureSystem α)[DecidablePred SF.sets] : {x // x ∈ SF.ground} → {x // x ∈ SF.ground} → Prop :=
   fun x y => vertexorder SF x y ∧ vertexorder SF y x
 
--- Preorder構造のある型での例
+-- Preorder構造のある型。vertex_equivは、同値類になる。
 lemma vetex_equiv_is_equivalence (SF:ClosureSystem α)[DecidablePred SF.sets]:
   Equivalence (vertex_equiv SF) :=
 {
@@ -43,6 +44,7 @@ lemma vetex_equiv_is_equivalence (SF:ClosureSystem α)[DecidablePred SF.sets]:
     · exact (dominated SF).le_trans _ _ _ b.2 a.2
 }
 
+--同じvertex_equivのときは、次数が等しくなる。
 lemma vertex_equiv_degree (SF:ClosureSystem α)[DecidablePred SF.sets]:
   ∀ (x y:SF.ground), (vertex_equiv SF) x y →  SF.degree x.val = SF.degree y.val :=
 by
@@ -61,6 +63,7 @@ by
   · intro a_1
     simp_all only
 
+--vertex_equivが成り立つ頂点x yは同じhyperedgeに含まれる。
 --ほぼ、定義そのままだが、使うので示しておく。
 lemma vertex_equiv_hyperedge (SF:ClosureSystem α)[DecidablePred SF.sets]:
   ∀ (x y:SF.ground), (vertex_equiv SF) x y → ∀ (s:Finset α), SF.sets s →  (x.val ∈ s ↔ y.val ∈ s) :=
@@ -78,6 +81,7 @@ by
   · intro a
     simp_all only
 
+--同じ同値類は、次数が等しくなる。
 lemma parallel_same_degree (SF: ClosureSystem α) [DecidablePred SF.sets] (x y:α) (p:parallel SF x y):
   SF.degree x = SF.degree y :=
 by
@@ -158,6 +162,7 @@ by
   rw [Finset.card_attach] at bi
   rw [bi]
 
+--自分とは異なるパラレルな要素をもてば、台集合の大きさは2以上。
 lemma ground_card_ge_two (SF : ClosureSystem α)  [DecidablePred SF.sets]
   (x : α) (hx : x ∈ SF.ground) (p:(∃ y: α, x ≠ y ∧ parallel SF x y)) :
   SF.ground.card ≥ 2 :=
@@ -187,7 +192,7 @@ by
   simp_all only [ne_eq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem, Finset.card_singleton,
     Nat.reduceAdd, ge_iff_le]
 
---パラレルの1つの頂点をtraceしても、hyperedgeの数は変わらない。4時間ぐらい。number_of_hyperedgesが入った定理名のほうがよいか。
+--パラレルの1つの頂点をtraceしても、hyperedgeの数は変わらない。証明にに4時間ぐらい。number_of_hyperedgesが入った定理名のほうがよいか。
 lemma trace_parallel_vertex_num (SF: ClosureSystem α) [DecidablePred SF.sets] (x:α) (hx: x ∈ SF.ground):
   (p:(∃ y: α, x ≠ y ∧ parallel SF x y)) →
  SF.number_of_hyperedges = (SF.toSetFamily.trace x hx (ground_card_ge_two SF x hx p)).number_of_hyperedges :=
@@ -735,6 +740,7 @@ by
     simp_all only [Finset.mem_filter, Finset.mem_powerset]
     simp
 
+--パラレルな頂点をtraceしても、rareな頂点を持つかどうかは変わらない。
 lemma trace_parallel_vertex_rare (SF: ClosureSystem α) [DecidablePred SF.sets] (x:α) (hx: x ∈ SF.ground):
   (p:(∃ y: α, x ≠ y ∧ parallel SF x y)) →
   ((∃ z:α, z ∈ SF.ground ∧ SF.toSetFamily.is_rare z) ↔ ∃ z:α, (z ∈ SF.ground \ {x}) ∧ (SF.toSetFamily.trace x hx (ground_card_ge_two SF x hx p)).is_rare z) :=
@@ -820,6 +826,7 @@ def P  {α :Type} [DecidableEq α][Fintype α] (n : Nat) : Prop :=
 def PP {α :Type} [DecidableEq α][Fintype α] (n : Nat) : Prop :=
    (∀ (F : ClosureSystem α)[DecidablePred F.sets], F.ground.card = n → isParallelFree F → ∃ (v :α), v ∈ F.ground ∧ F.is_rare v ∧ isParallelFree F)
 
+--フランクルの予想には、パラレルを持たない集合族だけを考えると十分だということの証明。
 theorem parallel_free_theorem  {α :Type} [Fintype α] [DecidableEq α] :
   (∀ (n:Nat), @P α _ _ n) ↔ (∀ (n:Nat), @PP α _ _ n) :=
 by
