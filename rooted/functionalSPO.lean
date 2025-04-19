@@ -351,6 +351,13 @@ lemma eqClass_Maximal (s: Setup2 α) (q : Quotient s.setoid) :
   subst hy hx
   simp_all only [Subtype.forall, ge_iff_le, Subtype.coe_eta, implies_true, Quotient.out_eq]
 
+--わざわざ定理にする必要はなくて、Quotient.eqとおなじだった。
+lemma setroid_quotient (s: Setup_spo α) (y z: {x : α // x ∈ s.V}) :
+  (@Quotient.mk _ s.setoid y) = (@Quotient.mk _ s.setoid z)
+  ↔ s.setoid.r y z := by
+  simp_all only [Quotient.eq]
+
+--ここから1点制限の話。
 --Setup_spo2から得られるideal全体の集合族において、同値類の大きさが2以上のときに、1元traceしても、またSetup2になる。
 --同値類の要素は、パラレルであることは事前に示した方がいいのか。
 
@@ -658,6 +665,15 @@ by
     dsimp [classOf] at h
     rw [Finset.mem_filter] at h
     simp_all only [mem_attach, Quotient.eq, true_and]
+
+lemma classOf_self
+  (s : Setup_spo α) (x : {x : α // x ∈ s.V}) :
+  x ∈ (classOf s ⟦x⟧) := by
+  dsimp [classOf]
+  rw [Finset.mem_filter]
+  constructor
+  · exact mem_attach s.V x
+  · dsimp [classOf]
 
 -------------
 ---同値類の対応

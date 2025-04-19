@@ -921,6 +921,7 @@ noncomputable def excess (s: Setup_spo2 α)  : ℕ :=
 --traceすることで、excessはひとつ減る。
 lemma trace_excess_decrease (s: Setup_spo2 α) (x: s.V) (hx: (classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).card ≥ 2) :
   excess (setup_trace_spo2 s x hx) = excess s - 1 := by
+  --まずは、xを含んでいる部分の同値類が一個減るということを示す。
   have : (classOfx s.toSetup_spo x).image Subtype.val = (classOf (setup_trace_spo2 s x hx).toSetup_spo (toNew s.toSetup_spo x hx (@Quotient.mk _ s.toSetup_spo.setoid x))).image Subtype.val ∪ ({x.val}:Finset α):=
   by
     ext y
@@ -1000,60 +1001,123 @@ lemma trace_excess_decrease (s: Setup_spo2 α) (x: s.V) (hx: (classOf s.toSetup_
 
       cases h with
       | inl h =>
-        have yinsV : y ∈ s.V := by
-          sorry
+
         have yinsV2:y ∈ (setup_trace_spo2 s x hx).V := by
           simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right]
           obtain ⟨w, h⟩ := h
           simp_all only
+        have yinsV : y ∈ s.V := by
+          exact mem_of_mem_erase yinsV2
         use ⟨y, yinsV⟩
         simp
         let rnsm2 := representativeNeSelf_mem_classOf2 s.toSetup_spo x hx
         dsimp [classOfx]
         let rnsm := representativeNeSelf_mem_classOf s.toSetup_spo x hx
-        have :s.setoid.r ⟨y, yinsV⟩ x := by
+        by_cases hy : y = x.val
+        case pos =>
+          subst hy
+          simp_all only [Finset.mem_singleton, Subtype.coe_eta, Quotient.eq, Subtype.forall, mem_erase,
+            ne_eq, Subtype.exists, exists_and_right, exists_eq_right, exists_const, and_true, coe_mem]
+          obtain ⟨val, property⟩ := x
+          dsimp [classOf] at h
+          exact classOf_self s.toSetup_spo ⟨val, property⟩
+          --xとyが同じときは、xの同値類の大きさは、1減る。
+
+        case neg =>
+          --yはxと同じではない。
+          --yは、xの同値類の中にいる。
+        have :s.setoid.r ⟨y, yinsV⟩ x := by --証明に使うメインの条件は、h
           rw [Finset.mem_image] at h
           simp at h
-          obtain ⟨h1, h2⟩ := h
+          obtain ⟨h1, h2⟩ := h --条件はh1とh2に引き継がれる。特にh2
           --h2で、yは、xが写った先の同値類に入っていることがわかった。
           --よって、もともとのyもxと同値になる。
           let teeqx := toErased_eqx s.toSetup_spo x ⟨y, yinsV2⟩ (representativeNeSelf s.toSetup_spo x hx)
           have :(restrictedSetoid s.toSetup_spo x) ⟨y, yinsV2⟩ (representativeNeSelf s.toSetup_spo x hx) :=
           by
-            --dsimp [restrictedSetoid]
             --h2を使う必要あり。
+            let q:= @Quotient.mk _ (setup_trace_spo2 s x hx).setoid (representativeNeSelf s.toSetup_spo x hx)
+            let cos := classOf_setoid (setup_trace_spo2 s x hx).toSetup_spo ⟨y, yinsV2⟩ (representativeNeSelf s.toSetup_spo x hx)
+
             dsimp [toNew] at h2
+
+            have :(setup_trace_spo2 s x hx).setoid = restrictedSetoid s.toSetup_spo x := by
+              dsimp [setup_trace_spo2]
+
+            rw [←this]
+            rw [cos]
+
             have :y ∈ (setup_trace_spo2 s x hx).V := by
               simp_all only
 
-            let cs := (classOf_setoid (setup_trace_spo2 s x hx).toSetup_spo) ⟨y,this⟩ (representativeNeSelf s.toSetup_spo x hx)
+            --let cs := (classOf_setoid (setup_trace_spo2 s x hx).toSetup_spo) ⟨y,this⟩ (representativeNeSelf s.toSetup_spo x hx)
 
-            simp at cs
-            apply cs.mpr
+            convert h2
+            dsimp [toErased]
+            split
+            · simp_all only [mem_erase, ne_eq, Subtype.coe_eta]
+            ·
+              simp_all only [mem_erase, ne_eq]
+              obtain ⟨val, property⟩ := x
+              simp_all only
+              ext : 1
+              simp_all only
+              simp_all only [not_true_eq_false]
 
-            have :⟨y, yinsV2⟩ ∈ classOf (setup_trace_spo2 s x hx).toSetup_spo  x := by
+
+            /- 消す。
+            --simp at cs
+            --apply cs.mpr
+            have :⟨y, yinsV2⟩ ∈ classOf (setup_trace_spo2 s x hx).toSetup_spo q := by
               dsimp [classOf]
               rw [Finset.mem_filter]
-              sorry
-              --constructor
-              --· exact yinsV2
-              --· exact h2
+              dsimp [setup_trace_spo2]
+              constructor
+              · simp_all only [mem_attach]
+              ·
+                simp [q]
+                let rsm := representativeNeSelf_mem_classOf s.toSetup_spo x hx
+                dsimp [classOf] at rsm
+                simp at rsm
+                obtain ⟨rsm1, rsm2⟩ := rsm
+                let tee := toErased_eq s.toSetup_spo x ⟨y, yinsV⟩ (representativeNeSelf2 s.toSetup_spo x hx)
+                let rsm2 := representativeNeSelf_mem_classOf2 s.toSetup_spo x hx
+                specialize tee hx
+                dsimp [toErased] at tee
+                have :s.setoid.r (representativeNeSelf2 s.toSetup_spo x hx) x := by
+                  simp_all only [Quotient.eq, Subtype.coe_eta, q, rnsm2]
+                  obtain ⟨val, property⟩ := x
+                  simp_all only [Subtype.mk.injEq, ↓reduceDIte]
+                  simp_all only [not_false_eq_true]
+                  exact rnsm2
 
-            simp_all only [Function.const_apply]
-            obtain ⟨val, property⟩ := x
-            simp_all only
-            convert h2
-            simp_all only [mem_erase, ne_eq]
-            simp [toErased]
+                have : @Quotient.mk _ s.setoid ⟨y, yinsV⟩ = @Quotient.mk _ s.setoid (representativeNeSelf2 s.toSetup_spo x hx)  :=
+                by
+                  apply Quotient.eq.mpr
+                  exact teeqx (teeqx (teeqx (teeqx (id (Setoid.symm' s.setoid this)))))
 
+                specialize tee this
+                simp_all only [Quotient.eq, Subtype.coe_eta, q, rnsm2]
+                obtain ⟨val, property⟩ := x
+                simp_all only [Subtype.mk.injEq, ↓reduceDIte]
+                simp_all only [not_false_eq_true]
+                split at tee
+                next h =>
+                  simp_all only [cs]
+                  simp_all only
+                  apply Quotient.sound
+                  apply teeqx
+                  simp_all only [cs]
+                next h => exact Quotient.sound this
+
+            simp_all only [q]
+            -/
 
           specialize teeqx this
           exact Setoid.trans' s.setoid this rnsm2
         exact (classOf_setoid s.toSetup_spo ⟨y, yinsV⟩ x).mp this
 
       | inr h =>
-        --obtain ⟨xval, xproperty⟩ := x
-        --dsimp [classOf] at h
         simp
         have : y ∈ s.V := by
           simp_all only [ge_iff_le, mem_attach, Quotient.eq, true_and]
@@ -1079,3 +1143,6 @@ lemma trace_excess_decrease (s: Setup_spo2 α) (x: s.V) (hx: (classOf s.toSetup_
         ·
           subst this
           simp_all only [ge_iff_le, Finset.mem_singleton, Subtype.coe_eta]
+  --xを含まない部分は不変であることを示す必要がある。
+  dsimp [excess]
+  simp at this
