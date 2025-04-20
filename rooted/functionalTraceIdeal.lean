@@ -1064,55 +1064,6 @@ lemma trace_excess_decrease (s: Setup_spo2 α) (x: s.V) (hx: (classOf s.toSetup_
               simp_all only
               simp_all only [not_true_eq_false]
 
-
-            /- 消す。
-            --simp at cs
-            --apply cs.mpr
-            have :⟨y, yinsV2⟩ ∈ classOf (setup_trace_spo2 s x hx).toSetup_spo q := by
-              dsimp [classOf]
-              rw [Finset.mem_filter]
-              dsimp [setup_trace_spo2]
-              constructor
-              · simp_all only [mem_attach]
-              ·
-                simp [q]
-                let rsm := representativeNeSelf_mem_classOf s.toSetup_spo x hx
-                dsimp [classOf] at rsm
-                simp at rsm
-                obtain ⟨rsm1, rsm2⟩ := rsm
-                let tee := toErased_eq s.toSetup_spo x ⟨y, yinsV⟩ (representativeNeSelf2 s.toSetup_spo x hx)
-                let rsm2 := representativeNeSelf_mem_classOf2 s.toSetup_spo x hx
-                specialize tee hx
-                dsimp [toErased] at tee
-                have :s.setoid.r (representativeNeSelf2 s.toSetup_spo x hx) x := by
-                  simp_all only [Quotient.eq, Subtype.coe_eta, q, rnsm2]
-                  obtain ⟨val, property⟩ := x
-                  simp_all only [Subtype.mk.injEq, ↓reduceDIte]
-                  simp_all only [not_false_eq_true]
-                  exact rnsm2
-
-                have : @Quotient.mk _ s.setoid ⟨y, yinsV⟩ = @Quotient.mk _ s.setoid (representativeNeSelf2 s.toSetup_spo x hx)  :=
-                by
-                  apply Quotient.eq.mpr
-                  exact teeqx (teeqx (teeqx (teeqx (id (Setoid.symm' s.setoid this)))))
-
-                specialize tee this
-                simp_all only [Quotient.eq, Subtype.coe_eta, q, rnsm2]
-                obtain ⟨val, property⟩ := x
-                simp_all only [Subtype.mk.injEq, ↓reduceDIte]
-                simp_all only [not_false_eq_true]
-                split at tee
-                next h =>
-                  simp_all only [cs]
-                  simp_all only
-                  apply Quotient.sound
-                  apply teeqx
-                  simp_all only [cs]
-                next h => exact Quotient.sound this
-
-            simp_all only [q]
-            -/
-
           specialize teeqx this
           exact Setoid.trans' s.setoid this rnsm2
         exact (classOf_setoid s.toSetup_spo ⟨y, yinsV⟩ x).mp this
@@ -1143,6 +1094,7 @@ lemma trace_excess_decrease (s: Setup_spo2 α) (x: s.V) (hx: (classOf s.toSetup_
         ·
           subst this
           simp_all only [ge_iff_le, Finset.mem_singleton, Subtype.coe_eta]
-  --xを含まない部分は不変であることを示す必要がある。
+  --xを含まない同値類に対しては、xのtraceで不変であることを示す必要がある。
+
   dsimp [excess]
   simp at this

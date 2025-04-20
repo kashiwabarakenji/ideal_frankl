@@ -430,6 +430,13 @@ by
   obtain ⟨h11,h12⟩ := h1
   exact Quotient.eq''.mp h12
 
+lemma representativeNeSelf_mem_classOf3
+  (s : Setup_spo α) (x : {x // x ∈ s.V}) (hx : 2 ≤ (classOf s ⟦x⟧).card) :
+  s.setoid.r (representativeNeSelf2 s x hx) x :=
+by
+  dsimp [representativeNeSelf2]
+  exact representativeNeSelf_mem_classOf2 s x hx
+
 --s.Vからs.V.erase xへの要素の対応。
 noncomputable def toErased (s : Setup_spo α)
   (x : {x : α // x ∈ s.V})
@@ -472,7 +479,7 @@ by
   simp_all only [Quotient.eq]
 -/
 -- yとzが同じ同値類であれば、移り先も同じ同値類。
---逆方向は、toErased_eqx
+--逆方向は、toErased_eqxやtoErased_eq_lemmaを使う。
 lemma toErased_eq
   (s : Setup_spo α) (x y z : {x : α // x ∈ s.V})
   (hx : 2 ≤ (classOf s ⟦x⟧).card)
@@ -666,6 +673,7 @@ by
     rw [Finset.mem_filter] at h
     simp_all only [mem_attach, Quotient.eq, true_and]
 
+--自分自身も、同値類に入る。
 lemma classOf_self
   (s : Setup_spo α) (x : {x : α // x ∈ s.V}) :
   x ∈ (classOf s ⟦x⟧) := by

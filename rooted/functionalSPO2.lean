@@ -153,6 +153,7 @@ lemma card_of_image_subset (V1 V2: Finset α) (A : Finset V1)(B:Finset V2)
   simp_all only [ge_iff_le]
   linarith
 
+--新しく写って同値類が大きくなることはない。
 noncomputable def toNew_card (s : Setup_spo α) (x : {x : α // x ∈ s.V})
   (q: Quotient s.setoid)
    (hx:(classOf s (@Quotient.mk _ s.setoid x)).card ≥ 2):
@@ -244,6 +245,203 @@ by
           rw [setup_trace]
           simp_all only [mem_erase, ne_eq, not_false_eq_true, and_self]
 -/
+lemma toErased_eq_lem (s : Setup_spo α) (x : {x : α // x ∈ s.V})
+  (y z: {y : α // y ∈ s.V}) (hx:(classOf s (@Quotient.mk _ s.setoid x)).card ≥ 2)
+   (ree: restrictedSetoid s x (toErased s x hx y) (toErased s x hx z)) :
+   s.setoid.r y z :=
+by
+  dsimp [restrictedSetoid] at ree
+  dsimp [toErased] at ree
+  by_cases hy: y = x
+  case pos =>
+    simp_all only [Finset.mem_image, mem_filter, mem_attach, true_and, Subtype.exists, exists_and_right,
+      exists_eq_right, exists_true_left]
+    by_cases hz: z = x
+    case pos =>
+      subst hz
+      subst hy
+      simp_all only [↓reduceDIte, Subtype.coe_eta]
+      simp_all only
+      obtain ⟨val, property⟩ := y
+      simp_all only
+      rfl
+    case neg =>
+      simp at ree
+      subst hy
+      simp [dif_neg hz] at ree
+      set rnsm := representativeNeSelf_mem_classOf s y hx
+      have : s.setoid.r (representativeNeSelf2 s y hx) z := by
+        dsimp [toErased]
+        simp_all only [Finset.mem_image, mem_filter, mem_attach, true_and, Subtype.exists, exists_and_right,
+          exists_eq_right, exists_true_left]
+        obtain ⟨val, property⟩ := y
+        obtain ⟨val_1, property_1⟩ := z
+        simp_all only
+        exact ree
+      have : s.setoid.r (representativeNeSelf2 s y hx) y := by
+        exact representativeNeSelf_mem_classOf3 s y hx
+      exact Setoid.trans' s.setoid (id (Setoid.symm' s.setoid this)) ree
+  case neg =>
+    by_cases hz: z = x
+    case pos =>
+      --subst hz
+      simp at ree
+      simp [dif_neg hy] at ree
+      set rnsm := representativeNeSelf_mem_classOf3 s x hx
+      rw [hz]
+      simp [dif_pos hz] at ree
+
+      have : s.setoid.r (representativeNeSelf2 s x hx) y := by
+        apply id (Setoid.symm' )
+        subst hz
+        obtain ⟨val, property⟩ := y
+        obtain ⟨val_1, property_1⟩ := z
+        simp_all only
+        exact ree
+
+      have : s.setoid.r (representativeNeSelf2 s x hx) x := by
+        exact representativeNeSelf_mem_classOf3 s x hx
+      exact Setoid.trans' s.setoid ree rnsm
+
+    case neg =>
+      simp_all only [↓reduceDIte]
+      simp_all only [ge_iff_le, not_false_eq_true]
+      obtain ⟨val, property⟩ := x
+      obtain ⟨val_1, property_1⟩ := y
+      obtain ⟨val_2, property_2⟩ := z
+      simp_all only
+      exact ree
+
+--xと違う同値類は、恒等写像。excessの議論で使う。
+lemma toNew_card_eq (s : Setup_spo α) (x : {x : α // x ∈ s.V})
+  (q: Quotient s.setoid)
+   (hx:(classOf s (@Quotient.mk _ s.setoid x)).card ≥ 2)
+   (nq:  q ≠ @Quotient.mk _ s.setoid x) :
+  (classOf s q).image Subtype.val = (classOf (setup_trace s x hx) (toNew s x hx q)).image Subtype.val :=
+by
+  ext y
+
+  dsimp [setup_trace]
+  constructor
+  · intro h
+    simp at h
+    obtain ⟨w, h⟩ := h
+    rw [Finset.mem_image]
+    dsimp [classOf]
+    simp
+    dsimp [classOf] at h
+    simp at h
+    have yinsV:y ∈ s.V :=
+    by
+      simp_all only
+    have ynotx:¬y = x.val  := by
+      by_contra h_contra
+      have :x = ⟨y, yinsV⟩ := by
+        simp_all only [Finset.mem_image, mem_filter, mem_attach, true_and, Subtype.exists, exists_and_right,
+          exists_eq_right, exists_true_left]
+      rw [this] at nq
+      rw [←h] at nq
+      contradiction
+    have : ¬y = ↑x ∧ y ∈ s.V := by
+      constructor
+      · exact ynotx
+      · exact yinsV
+    use this
+    dsimp [toNew ]
+    subst h
+    simp_all only [not_false_eq_true, ne_eq, Quotient.eq, Quotient.lift_mk]
+    obtain ⟨val, property⟩ := x
+    obtain ⟨left, right⟩ := this
+    simp_all only
+    dsimp [toErased]
+    simp_all only [Subtype.mk.injEq, ↓reduceDIte]
+    simp_all only [ge_iff_le]
+    rfl
+
+  · intro h
+    rw [Finset.mem_image] at h
+    rw [Finset.mem_image]
+    obtain ⟨w, h⟩ := h
+    have winsV:w.val ∈ s.V :=
+    by
+      let wp := w.property
+      rw [Finset.mem_erase] at wp
+      exact wp.2
+    use ⟨w.val, winsV⟩
+    dsimp [classOf] at h
+    constructor
+    · dsimp [classOf]
+      rw [Finset.mem_filter]
+      constructor
+      · simp_all only [ne_eq, mem_filter, mem_attach, true_and]
+      · rw [Finset.mem_filter] at h
+        obtain ⟨⟨h1, h2⟩, h⟩ := h
+
+        have yinsV:y ∈ s.V :=
+        by
+          subst h
+          simp_all only [ne_eq, mem_attach]
+        have ynotx:¬y = x.val  := by
+          by_contra h_contra
+          have :x = ⟨y, yinsV⟩ := by
+            simp_all only [Finset.mem_image, mem_filter, mem_attach, true_and, Subtype.exists, exists_and_right,
+              exists_eq_right, exists_true_left]
+          /-
+          rw [this] at nq
+          --xとyが同じであれば、yはtoNewで、恒等写像ではない。
+          --hでwとyが同じであり、h2で、qとwが同じところに移るのに、nqで等しくないといっているので矛盾
+          have nq': q ≠ @Quotient.mk _ s.setoid ⟨y, yinsV⟩ := by
+            exact nq
+          have hqq: @Quotient.mk _ s.setoid ⟨w.val, winsV⟩ = @Quotient.mk _ s.setoid ⟨y, yinsV⟩ := by
+            cases h
+            exact rfl
+          have : q ≠ @Quotient.mk _ s.setoid ⟨w.val, winsV⟩ := by
+            exact Ne.symm (ne_of_eq_of_ne hqq (id (Ne.symm nq)))
+          -/
+          have : w.val = x.val := by
+            subst h
+            exact h_contra
+          let wp := w.property
+          rw [Finset.mem_erase] at wp
+          let wp1 := wp.1
+          contradiction
+        let teen := toErased_eq_ne s x ⟨y, yinsV⟩ hx
+        have :⟨y, yinsV⟩ ≠ x := by
+          subst h
+          simp_all only [ne_eq, mem_attach]
+          obtain ⟨val, property⟩ := x
+          obtain ⟨val_1, property_1⟩ := w
+          simp_all only [Subtype.mk.injEq, not_false_eq_true]
+        specialize teen this
+        dsimp [toNew]  at h2
+        --h2は新しい制限された世界での式。証明すべきは、制限されない世界。
+        --しかし、teenによると、この対応は恒等写像。hによるとwとyは同じ。
+        let  teenw := toErased_eq_ne s x ⟨w, winsV⟩ hx
+        have :⟨w, winsV⟩ ≠ x := by
+          subst h
+          simp_all only [ne_eq, mem_attach]
+          obtain ⟨val, property⟩ := x
+          obtain ⟨val_1, property_1⟩ := w
+          simp_all only [Subtype.mk.injEq, not_false_eq_true]
+        specialize teenw this
+        obtain ⟨z, rfl⟩ := Quot.exists_rep q
+        simp at h2
+        have : (restrictedSetoid s x) (toErased s x hx ⟨w.val,winsV⟩) (toErased s x hx z) :=
+        by
+          subst h
+          simp_all only [mem_attach, Subtype.coe_eta, ne_eq]
+
+        let tel := toErased_eq_lem s x ⟨w.val,winsV⟩ z hx this
+        have : @Quotient.mk _ s.setoid ⟨↑w, winsV⟩ = @Quotient.mk _ s.setoid z :=
+        by
+          subst h
+          simp_all only [mem_attach, Subtype.coe_eta, ne_eq, Quotient.eq, tel]
+        subst h
+        simp_all only [mem_attach, Subtype.coe_eta, ne_eq, Quotient.eq, tel]
+        simp_all only [ne_eq, not_false_eq_true]
+        exact Quotient.sound tel
+
+    · simp_all only [ne_eq, mem_filter, mem_attach, true_and]
 
 lemma setup_trace_spo_le (s : Setup_spo α) (x: s.V) (hx:(classOf s (@Quotient.mk _ s.setoid x
 )).card ≥ 2) (q1 q2 : Quotient (restrictedSetoid s x)) :
