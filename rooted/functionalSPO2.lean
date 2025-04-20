@@ -1,4 +1,5 @@
 import Mathlib.Data.Finset.Basic
+import Mathlib.Data.Finset.Card
 import Mathlib.Data.Finset.Powerset
 import Mathlib.Data.Set.Function
 import Mathlib.Data.Fintype.Basic
@@ -542,3 +543,150 @@ noncomputable def setup_trace_spo2 (s : Setup_spo2 α)(x: s.V) (hx:(classOf s.to
     --古い世界と新しい世界の大小関係は一致しているので、新しい世界でも極大元。}
 
 }
+
+lemma toNew_classOf (s : Setup_spo2 α) (x : {x : α // x ∈ s.V})
+  (hx : (classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).card ≥ 2)
+  (cls : Quotient s.setoid) :
+   cls ≠ (@Quotient.mk _ s.setoid x) →
+    (classOf s.toSetup_spo cls).card  = (classOf (setup_trace_spo2 s x hx).toSetup_spo (toNew s.toSetup_spo x hx cls)).card :=
+by
+  intro h
+  dsimp [setup_trace_spo2]
+  dsimp [toNew]
+  dsimp [classOf]
+  --bij_cardで証明するのがいいか。
+
+  let src := filter (fun a : {y // y ∈ s.V} => Quotient.mk'' a = cls) s.V.attach
+  let tgt := filter (fun a : {y // y ∈ s.V.erase x} =>
+      Quotient.mk'' a = cls.liftOn (fun z => ⟦toErased s.toSetup_spo x hx z⟧)
+        (by
+          intro a b hab
+          show Quotient.mk'' (toErased s.toSetup_spo x hx a) = Quotient.mk'' (toErased s.toSetup_spo x hx b)
+          have : s.setoid.r a b :=
+          by
+            exact hab
+          let tee := toErased_eq s.toSetup_spo x a b hx
+          apply tee
+          simp_all only [ne_eq, Quotient.eq]
+        )
+    ) (s.V.erase x).attach
+
+  let f : src → tgt := fun a =>
+
+    -- a.val を使って s.V.erase x に属する元を構成する
+    let a_val := a.val
+
+    have h_ne : a_val ≠ x := by --hと矛盾することからいえるのか。
+      intro hax
+      --have : @Quotient.mk'' _ s.setoid a_val = ⟦x⟧ := by simp [hax, Quotient.mk'']
+      have : cls = @Quotient.mk'' _ s.setoid x := by
+        subst hax
+        simp_all [a_val, src]
+        obtain ⟨val, property⟩ := a
+        obtain ⟨val, property⟩ := val
+        obtain ⟨val_1, property_1⟩ := a_val
+        simp_all only [mem_filter, mem_attach, true_and, not_true_eq_false, src]
+        simp_all only [mem_filter, mem_attach, true_and, not_true_eq_false, src]
+      rw [this] at h
+      contradiction
+
+    have h_mem : a_val.val ∈ s.V.erase x := by
+      simp_all only [ne_eq, mem_erase, coe_mem, and_true, src, a_val]
+      obtain ⟨val, property⟩ := x
+      obtain ⟨val_1, property_1⟩ := a
+      obtain ⟨val_1, property_1⟩ := val_1
+      simp_all only [Subtype.mk.injEq, not_false_eq_true, src]
+
+    let a' : {y // y ∈ s.V.erase x} := ⟨a_val, h_mem⟩
+
+    let q_cls := cls.liftOn (fun z => ⟦toErased s.toSetup_spo x hx z⟧)
+      (by
+        intro a b hab
+
+        --show Quotient.mk'' (toErased s.toSetup_spo x hx a) = Quotient.mk'' (toErased s.toSetup_spo x hx b)
+        have : s.setoid.r a b :=
+        by
+          exact hab
+        have : @Quotient.mk'' _ (restrictedSetoid s.toSetup_spo x) (toErased s.toSetup_spo x hx a) = @Quotient.mk'' _ (restrictedSetoid s.toSetup_spo x) (toErased s.toSetup_spo x hx b) :=
+        by
+          let tee := toErased_eq s.toSetup_spo x a b hx
+          simp_all only [ne_eq, Quotient.eq, src, a_val, tee]
+        exact this
+      )
+
+    have h_image : Quotient.mk'' a' = q_cls := by
+      dsimp [q_cls]
+      let teen := toErased_eq_ne s.toSetup_spo x a hx h_ne
+      have : a' = toErased s.toSetup_spo x hx a := by
+        dsimp [toErased]
+        simp_all only [ne_eq, Quotient.eq, src, a_val]
+        obtain ⟨val, property⟩ := x
+        obtain ⟨val_1, property_1⟩ := a
+        obtain ⟨val_1, property_1⟩ := val_1
+        simp_all only [mem_filter, mem_attach, true_and, not_true_eq_false, src]
+        simp_all only [↓reduceDIte, src, a', a_val]
+      rw [this]
+      rw [teen]
+      let apro := a.property
+      dsimp [src] at apro
+      rw [Finset.mem_filter] at apro
+      obtain ⟨h1, h2⟩ := apro
+      simp_all only [ne_eq, mem_attach, src, a_val, q_cls, a', teen]
+      simp [← h2]
+      simp_all only [src, a_val, q_cls, teen]
+      rfl
+      --simp only [toErased_eq_of_ne s.toSetup_spo x a hx h_ne]
+      --rfl
+
+    have :a' ∈ tgt := by
+      simp_all only [ne_eq, mem_filter, mem_attach, and_self, src, a_val, q_cls, a', tgt]
+
+    ⟨a', this⟩
+
+  have hf_inj : ∀ a₁ a₂ : src, f a₁ = f a₂ → a₁ = a₂ := by
+    sorry
+    /-
+    intros a₁ ha₁ a₂ ha₂ h_eq
+    simp at h_eq
+    simp [Subtype.mk.injEq] at h_eq
+    exact Subtype.ext h_eq
+    -/
+
+  /-
+  let g := fun b : {y // y ∈ s.V.erase x} =>
+    ⟨⟨b.val, by
+      have : b.val ∈ s.V := by simpa using b.property
+    ⟩, by
+      simp only [toErased_eq_of_ne]
+      split
+      · exact (hcls rfl).elim
+      · rfl
+    ⟩
+  -/
+
+  have hg_surj : ∀ b ∈ tgt, ∃ a ∈ src, f a = b := by
+    intro b hb
+    let a : {y // y ∈ s.V} := ⟨b.val, by
+      have : b.val ∈ s.V := by
+        have : b ∈ (s.V.erase x).attach := hb
+        simpa using Finset.mem_of_mem_attach this
+      exact this⟩
+    have ha : Quotient.mk'' a = cls := by
+      simp only [toErased_eq_of_ne] at hb
+      exact hb
+    use a
+    constructor
+    · exact ha
+    · simp only [f]
+      simp [toErased_eq_of_ne s.toSetup_spo x a hx]
+      congr
+
+  have hf_mem : ∀ a ∈ src, f a ∈ tgt := by
+    intro a ha
+    simp only [f]
+    simp [toErased_eq_of_ne s.toSetup_spo x a hx (by
+      intro h
+      have : cls = ⟦x⟧ := by simpa [h] using ha
+      exact hcls this)]
+
+  apply Finset.card_congr f hf_inj hg_surj hf_mem

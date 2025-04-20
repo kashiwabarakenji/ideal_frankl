@@ -786,8 +786,6 @@ by
 --fqまでで、まだloopも定義されていない。setup_spo0みたいなものを作った方がいいかも。
 
 
-
-
 noncomputable def setup_trace_base (s : Setup_spo α)(x: s.V) (hx:(classOf s (@Quotient.mk _ s.setoid x
 )).card ≥ 2): Setup_spo_base α :=
 {

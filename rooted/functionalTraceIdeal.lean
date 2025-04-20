@@ -1095,6 +1095,17 @@ lemma trace_excess_decrease (s: Setup_spo2 α) (x: s.V) (hx: (classOf s.toSetup_
           subst this
           simp_all only [ge_iff_le, Finset.mem_singleton, Subtype.coe_eta]
   --xを含まない同値類に対しては、xのtraceで不変であることを示す必要がある。
+  --toErasedの写像は、xと異なる場合は、恒等写像。
+--lemma toErased_eq_ne
+--  (s : Setup_spo α) (x z : {x // x ∈ s.V})
+--  (hx : 2 ≤ (classOf s ⟦x⟧).card)
+--  (h : z ≠ x) :
+--  toErased s x hx z = ⟨z.val, by
+--    simp [Finset.mem_erase]
+--    exact Subtype.coe_ne_coe.mpr h⟩ :=
 
   dsimp [excess]
   simp at this
+
+  have : ∀ q : Quotient s.setoid, q ≠ (@Quotient.mk _ s.setoid x) →
+    (classOf s.toSetup_spo q).card  = (classOf (setup_trace_spo2 s x hx).toSetup_spo (toNew s.toSetup_spo x hx q)).card := by
