@@ -479,7 +479,7 @@ by
   simp_all only [Quotient.eq]
 -/
 -- yとzが同じ同値類であれば、移り先も同じ同値類。
---逆方向は、toErased_eqxやtoErased_eq_lemmaを使う。
+--逆方向は、toErased_eqxやtoErased_eq_lemを使う。
 lemma toErased_eq
   (s : Setup_spo α) (x y z : {x : α // x ∈ s.V})
   (hx : 2 ≤ (classOf s ⟦x⟧).card)
@@ -672,6 +672,24 @@ by
     dsimp [classOf] at h
     rw [Finset.mem_filter] at h
     simp_all only [mem_attach, Quotient.eq, true_and]
+
+--定義から自明かもしれないが。
+lemma classOf_quotient
+  (s : Setup_spo α) (y : {x : α // x ∈ s.V}) (q:Quotient s.setoid) :
+  q = @Quotient.mk' _ s.setoid y ↔ y ∈ (classOf s q) := by
+  dsimp [classOf]
+  rw [Finset.mem_filter]
+  constructor
+  ·
+    intro a
+    subst a
+    simp_all only [mem_attach, true_and]
+    obtain ⟨val, property⟩ := y
+    rfl
+  · dsimp [classOf]
+    intro h
+    symm
+    exact h.2
 
 --自分自身も、同値類に入る。
 lemma classOf_self

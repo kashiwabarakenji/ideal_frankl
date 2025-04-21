@@ -544,6 +544,7 @@ noncomputable def setup_trace_spo2 (s : Setup_spo2 α)(x: s.V) (hx:(classOf s.to
 
 }
 
+--xに関わらない同値類の場合は、cardの大きさは変わらない。
 lemma toNew_classOf (s : Setup_spo2 α) (x : {x : α // x ∈ s.V})
   (hx : (classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).card ≥ 2)
   (cls : Quotient s.setoid) :
@@ -622,7 +623,35 @@ by
         · exact w
       use this
       --have : (restrictedSetoid s.toSetup_spo x).r
-      sorry
+      have yinsVe:y ∈ (setup_trace_spo2 s x hx).V := by
+        dsimp [setup_trace_spo2]
+        simp_all only [mem_erase, ne_eq, not_false_eq_true, and_self]
+      let cq := (classOf_quotient  (setup_trace_spo2 s x hx).toSetup_spo ⟨y,yinsVe⟩ (toNew s.toSetup_spo x hx cls)).mp
+      apply cq
+      --h:Quotient.mk'' ⟨y, ⋯⟩ = clsを使って証明。
+      have : toNew s.toSetup_spo x hx (@Quotient.mk _ s.setoid ⟨y,w⟩) = @Quotient.mk _ (restrictedSetoid s.toSetup_spo x) ⟨y, yinsVe⟩ := by
+        dsimp [toNew]
+        dsimp [restrictedSetoid]
+
+        simp_all only [mem_erase, ne_eq, not_false_eq_true, and_self]
+        dsimp [toErased]
+        split
+        · let rnsm := representativeNeSelf_mem_classOf s.toSetup_spo x hx
+          rename_i h_2
+          subst h h_2
+          simp_all only [not_true_eq_false, and_true]
+        ·
+          subst h
+          simp_all only [and_true, Quotient.lift_mk, Quotient.eq, mem_filter, mem_attach, true_and, Finset.mem_image,
+            Subtype.exists, mem_erase, ne_eq, exists_and_right, exists_eq_right, not_true_eq_false, coe_mem,
+            IsEmpty.exists_iff, not_false_eq_true, tgt, src]
+      subst h
+      simp_all only [and_true, Quotient.lift_mk, Quotient.eq, mem_filter, mem_attach, true_and, Finset.mem_image,
+        Subtype.exists, mem_erase, ne_eq, exists_and_right, exists_eq_right, not_true_eq_false, coe_mem,
+        IsEmpty.exists_iff, not_false_eq_true, tgt, src]
+      obtain ⟨val, property⟩ := x
+      simp_all only
+      rfl
 
     · intro h
 
@@ -630,7 +659,49 @@ by
       obtain ⟨w, h⟩ := h
       rw [Finset.mem_image]
       simp
-      sorry
+      use w.2
+      have yinsVe:y ∈ (setup_trace_spo2 s x hx).V := by
+        dsimp [setup_trace_spo2]
+        simp_all only [mem_erase, ne_eq, not_false_eq_true, and_self]
+      let cq := (classOf_quotient (setup_trace_spo2 s x hx).toSetup_spo ⟨y, yinsVe⟩ (toNew s.toSetup_spo x hx cls)).mpr
+      have tnqlem: toNew s.toSetup_spo x hx (@Quotient.mk _ s.setoid ⟨y,w.2⟩) = @Quotient.mk _ (restrictedSetoid s.toSetup_spo x) ⟨y, yinsVe⟩ := by
+        dsimp [toNew]
+        dsimp [restrictedSetoid]
+        simp_all only [mem_erase, ne_eq, not_false_eq_true, and_self]
+        dsimp [toErased]
+        split
+        · let rnsm := representativeNeSelf_mem_classOf s.toSetup_spo x hx
+          rename_i h_2
+          simp_all only [mem_filter, mem_attach, true_and, Finset.mem_image, Subtype.exists, mem_erase, ne_eq,
+            exists_and_right, exists_eq_right, not_true_eq_false, coe_mem, and_true, IsEmpty.exists_iff,
+            not_false_eq_true, Subtype.coe_eta, Quotient.eq, tgt, src]
+          obtain ⟨val, property⟩ := x
+          obtain ⟨left, right⟩ := w
+          simp_all only [Subtype.mk.injEq, src]
+        ·
+          simp_all only [mem_filter, mem_attach, true_and, Finset.mem_image, Subtype.exists, mem_erase, ne_eq,
+            exists_and_right, exists_eq_right, not_true_eq_false, coe_mem, and_true, IsEmpty.exists_iff,
+            not_false_eq_true, tgt, src]
+      have yinco:⟨y, yinsVe⟩ ∈ classOf (setup_trace_spo2 s x hx).toSetup_spo (toNew s.toSetup_spo x hx cls) :=
+      by
+        simp_all only [mem_filter, mem_attach, true_and, Finset.mem_image, Subtype.exists, mem_erase, ne_eq,
+          exists_and_right, exists_eq_right, not_true_eq_false, coe_mem, and_true, IsEmpty.exists_iff,
+          not_false_eq_true, tgt, src]
+      specialize cq yinco
+      have :toNew s.toSetup_spo x hx (@Quotient.mk _ s.setoid ⟨y,w.2⟩) = toNew s.toSetup_spo x hx cls :=
+      by
+        simp_all only [mem_filter, mem_attach, true_and, Finset.mem_image, Subtype.exists, mem_erase, ne_eq,
+          exists_and_right, exists_eq_right, not_true_eq_false, coe_mem, and_true, IsEmpty.exists_iff,
+          not_false_eq_true, tgt, src]
+        obtain ⟨val, property⟩ := x
+        obtain ⟨left, right⟩ := w
+        simp_all only [src]
+        rfl
+      let ca := congrArg (toOld s.toSetup_spo x ) this
+      rw [NewOld_id s.toSetup_spo x hx] at ca
+      rw [NewOld_id s.toSetup_spo x hx] at ca
+      exact ca
+
   have : src.card = tgt.card := by
     --dsimp [src]
     --dsimp [tgt]
@@ -658,190 +729,3 @@ by
 
   simp_all only [mem_filter, mem_attach, true_and, Finset.mem_image, Subtype.exists, mem_erase, ne_eq, exists_and_right,
     exists_eq_right, not_true_eq_false, coe_mem, and_true, IsEmpty.exists_iff, not_false_eq_true, tgt, src]
-
-  /- 上のsorryが埋まったら、消してもいいかも。
-  let f : src → tgt := fun a =>
-
-    -- a.val を使って s.V.erase x に属する元を構成する
-    let a_val := a.val
-
-    have h_ne : a_val ≠ x := by --hと矛盾することからいえるのか。
-      intro hax
-      --have : @Quotient.mk'' _ s.setoid a_val = ⟦x⟧ := by simp [hax, Quotient.mk'']
-      have : cls = @Quotient.mk'' _ s.setoid x := by
-        subst hax
-        simp_all [a_val]--ここから背理法に？
-        --どこで矛盾かよくわからず。hとpropertyとsrcの定義か。
-      rw [this] at h
-      contradiction
-
-
-    have h_mem : a_val.val ∈ s.V.erase x := by
-      simp_all only [ne_eq, mem_erase, coe_mem, and_true, src, a_val]
-      obtain ⟨val, property⟩ := x
-      obtain ⟨val_1, property_1⟩ := a
-      obtain ⟨val_1, property_1⟩ := val_1
-      simp_all only [Subtype.mk.injEq, not_false_eq_true, src]
-
-    let a' : {y // y ∈ s.V.erase x} := ⟨a_val, h_mem⟩
-
-    let q_cls := cls.liftOn (fun z => ⟦toErased s.toSetup_spo x hx z⟧)
-      (by
-        intro a b hab
-
-        --show Quotient.mk'' (toErased s.toSetup_spo x hx a) = Quotient.mk'' (toErased s.toSetup_spo x hx b)
-        have : s.setoid.r a b :=
-        by
-          exact hab
-        have : @Quotient.mk'' _ (restrictedSetoid s.toSetup_spo x) (toErased s.toSetup_spo x hx a) = @Quotient.mk'' _ (restrictedSetoid s.toSetup_spo x) (toErased s.toSetup_spo x hx b) :=
-        by
-          let tee := toErased_eq s.toSetup_spo x a b hx
-          simp_all only [ne_eq, Quotient.eq, src, a_val, tee]
-        exact this
-      )
-
-    have h_image : Quotient.mk'' a' = q_cls := by
-      dsimp [q_cls]
-      let teen := toErased_eq_ne s.toSetup_spo x a hx h_ne
-      have : a' = toErased s.toSetup_spo x hx a := by
-        dsimp [toErased]
-        simp_all only [ne_eq, Quotient.eq, src, a_val]
-        obtain ⟨val, property⟩ := x
-        obtain ⟨val_1, property_1⟩ := a
-        obtain ⟨val_1, property_1⟩ := val_1
-        simp_all only [mem_filter, mem_attach, true_and, not_true_eq_false, src]
-        simp_all only [↓reduceDIte, src, a', a_val]
-      rw [this]
-      rw [teen]
-      let apro := a.property
-      dsimp [src] at apro
-      rw [Finset.mem_filter] at apro
-      obtain ⟨h1, h2⟩ := apro
-      simp_all only [ne_eq, mem_attach, src, a_val, q_cls, a', teen]
-      simp [← h2]
-      simp_all only [src, a_val, q_cls, teen]
-      rfl
-      --simp only [toErased_eq_of_ne s.toSetup_spo x a hx h_ne]
-      --rfl
-
-    have :a' ∈ tgt := by
-      simp_all only [ne_eq, mem_filter, mem_attach, and_self, src, a_val, q_cls, a', tgt]
-      dsimp [classOf]
-      rw [Finset.mem_filter]
-      constructor
-      · simp_all only [true_and, Finset.mem_image, Subtype.exists, mem_erase, ne_eq, exists_and_right, exists_eq_right,
-        not_true_eq_false, coe_mem, and_true, IsEmpty.exists_iff, not_false_eq_true, mem_attach, src, a_val, a',
-        q_cls, tgt]
-      · simp_all only [true_and, Finset.mem_image, Subtype.exists, mem_erase, ne_eq, exists_and_right, exists_eq_right,
-          not_true_eq_false, coe_mem, and_true, IsEmpty.exists_iff, not_false_eq_true, src, a_val, a', q_cls, tgt]
-        exact h_image
-
-    ⟨a', this⟩
-
-  --fは恒等写像になると思われるが、型が難しい。a ∈ tgtも示す必要あり。aのゾウだから自動的に成り立つか？
-  --have : ∀ (hh:a ∈ src), f ⟨a,hh⟩ = a := by
-
-  have hf_inj : ∀ a₁ a₂ : src, f a₁ = f a₂ → a₁ = a₂ := by
-
-    intro ⟨a₁,ha₁⟩ ⟨a₂,ha₂⟩ h_eq
-    --simp at h_eq
-    simp_all only [Subtype.mk.injEq, tgt, f, src]
-    simp_all only [mem_filter, mem_attach, true_and, src]
-    subst ha₁
-    simp_all only [Quotient.eq]
-    obtain ⟨val_1, property_1⟩ := a₁
-    subst h_eq
-    simp_all only
-
-  /-
-  let g := fun b : {y // y ∈ s.V.erase x} =>
-    ⟨⟨b.val, by
-      have : b.val ∈ s.V := by simpa using b.property
-    ⟩, by
-      simp only [toErased_eq_of_ne]
-      split
-      · exact (hcls rfl).elim
-      · rfl
-    ⟩
-  -/
-
-  have hg_surj : ∀ b ∈ tgt, ∃ a : src, f a = b := by
-    intro b hb
-    have hb2: b ∈ tgt := by
-      exact hb
-    rw [tgt_classOf] at hb
-    have binsV: b.val ∈ s.V := by
-      have : b ∈ (s.V.erase x).attach := by
-        simp_all only [Subtype.mk.injEq, Subtype.forall, mem_filter, mem_attach, true_and, implies_true, src, tgt, f]
-      have : b.val ∈ (s.V.erase x) := by
-        exact coe_mem b
-      exact mem_of_mem_erase this
-
-    let a : {y // y ∈ s.V} := ⟨b.val, binsV⟩
-    dsimp [classOf] at hb
-    rw [Finset.mem_filter] at hb
-    obtain ⟨h1, h2⟩ := hb
-
-    --後ろの証明で使っている。
-    have ha : @Quotient.mk'' _ s.setoid a = cls := by
-      dsimp [a]
-      --hbを使うと思われる。
-      have hb': @Quotient.mk'' _ (restrictedSetoid s.toSetup_spo x) (toErased s.toSetup_spo x hx a) = toNew s.toSetup_spo x hx cls := by
-        --dsimp [toNew]
-        dsimp [a]
-        rw [← h2]
-        dsimp [restrictedSetoid]
-        dsimp [toErased]
-        simp
-        --have : ¬s.setoid.r ⟨b,binsV⟩ x := by
-        have : ⟨b.val,binsV⟩ ≠ x := by
-          --b in tgtだけど、x notin tgtなので、
-          let bp := b.property
-          rw [Finset.mem_erase] at bp
-          simp_all only [Subtype.mk.injEq, Subtype.forall, mem_filter, mem_attach, true_and, implies_true, ne_eq,
-            and_true, src, tgt, f, a]
-          obtain ⟨val, property⟩ := x
-          obtain ⟨val_1, property_1⟩ := b
-          obtain ⟨val_2, property_2⟩ := a
-          simp_all only [Subtype.mk.injEq, not_false_eq_true, src]
-        simp_all only [Subtype.mk.injEq, Subtype.forall, mem_filter, mem_attach, true_and, implies_true, ne_eq,
-          ↓reduceIte, src, tgt, f, a]
-        obtain ⟨val, property⟩ := x
-        obtain ⟨val_1, property_1⟩ := b
-        obtain ⟨val_2, property_2⟩ := a
-        simp_all only [Subtype.mk.injEq, src]
-        simp_all only [src]
-        dsimp [toNew]
-        rw [←hb2]
-        congr
-      --let xx := representativeNeSelf s.toSetup_spo x hx
-      let  teel := toErased_eq_lem s.toSetup_spo x x ⟨b,binsV⟩ hx --これではおかしい。clsはh2によっても、
-      simp [cls]
-
-
-
-      exact?
-      sorry
-
-    have :a ∈ src := by
-      simp only [src]
-      dsimp [src]
-      simp only [mem_filter, mem_attach, true_and, Subtype.exists, exists_and_right, exists_eq_right, exists_true_left]
-      obtain ⟨val, property⟩ := x
-      obtain ⟨val_1, property_1⟩ := a
-      simp_all only [Subtype.mk.injEq, not_false_eq_true]
-      --ここでhaを暗黙に使っている。
-
-    use ⟨a,this⟩
-
-
-  have hf_mem : ∀ a ∈ src, f a ∈ tgt := by
-    intro a ha
-    simp only [f]
-    simp [toErased_eq_of_ne s.toSetup_spo x a hx (by
-      intro h
-      have : cls = ⟦x⟧ := by simpa [h] using ha
-      exact hcls this)]
-
-  apply Finset.card_bij f hf_inj hg_surj hf_mem
--/
