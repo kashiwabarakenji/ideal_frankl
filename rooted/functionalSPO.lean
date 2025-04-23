@@ -95,8 +95,8 @@ noncomputable def QuotientOf (s: Setup_spo α) (xx : Finset {x : α // x ∈ s.V
   Finset (Quotient s.setoid) :=
   xx.image (@Quotient.mk _ s.setoid)
 
-lemma reach_leq (s : Setup_spo α) (x y : Quotient s.setoid) :
-  reach s.fq x y → s.spo.le x y := by
+lemma reach_leq (s : Setup_spo α) (q1 q2 : Quotient s.setoid) :
+  reach s.fq q1 q2 → s.spo.le q1 q2 := by
   --これはs.spo.leの定義な気もするが。
   intro h
   rw [s.h_spo]
@@ -104,8 +104,8 @@ lemma reach_leq (s : Setup_spo α) (x y : Quotient s.setoid) :
   exact h
 
 
-lemma reach_leq_rev (s : Setup_spo α) (x y : Quotient s.setoid) :
-  s.spo.le x y →  reach s.fq x y  := by
+lemma reach_leq_rev (s : Setup_spo α) (q1 q2 : Quotient s.setoid) :
+  s.spo.le q1 q2 →  reach s.fq q1 q2  := by
   intro h
   rw [s.h_spo] at h
   dsimp [partialOrderOfFq] at h

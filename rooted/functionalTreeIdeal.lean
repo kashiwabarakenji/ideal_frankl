@@ -575,6 +575,7 @@ theorem Setup_spo_eq_PartialOrder (s: Setup2 α)  :
               · exact a
               · congr
 
+--setoidで等しければ、parallelであることを表している。
 lemma spo_closuresystem_equiv (s : Setup_spo α) (x y: s.V) (h: s.setoid.r x y) (hs: (spo_closuresystem s).sets ss):
   x.val ∈ ss ↔ y.val ∈ ss := by
     obtain ⟨left, right⟩ := hs
@@ -599,6 +600,37 @@ lemma spo_closuresystem_equiv (s : Setup_spo α) (x y: s.V) (h: s.setoid.r x y) 
       specialize right x
       apply right
       exact Quotient.sound h
+
+lemma spo_closuresystem_equiv2 (s : Setup_spo α) (x y: s.V) (h: s.setoid.r x y) :
+  parallel (spo_closuresystem s) x y ∨ x = y:=
+by
+  dsimp [parallel]
+  by_cases hxy: x = y
+  · right
+    exact hxy
+  ·
+    constructor
+    · constructor
+      · simp_all only [coe_mem]
+      · constructor
+        · exact Subtype.coe_ne_coe.mpr hxy
+        · intro ss hss
+          exact spo_closuresystem_equiv s x y h hss
+
+ /- 証明する必要に迫られれば証明
+ lemma spo_closuresystem_equiv_rev (s: Setup_spo α) (x y: s.V) :
+(∀ ss :Finset α ,(spo_closuresystem s).sets ss → (x.val ∈ ss ↔ y.val ∈ ss))
+→ s.setoid.r x y := by
+  intro hs
+  contrapose hs
+  push_neg
+  --xとyのsetoidの同値類が異なる場合に、xだけかyだけに入るidealの要素が存在することを示す。これは、antisymmetryを使う。
+  --[x]に入っていれば必ず[y]に入る場合は、spo.le [y] [x]が成り立つ。補題にしたほうがよい。
+  --spo.le [x] [y]かつspo.le [y] [x]であれば、[x]=[y]が成り立つ。xとyは同じ同値類に入る。
+-/
+
+
+
 
 --証明すべき内容。
 -- setup_spo2をtraceしたもののidealがidealとしてtraceしたものと一致すること。

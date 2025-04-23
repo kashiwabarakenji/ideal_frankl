@@ -32,7 +32,7 @@ set_option maxHeartbeats 2000000
 variable {α : Type} [Fintype α] [DecidableEq α]
 
 --制限される前から、制限された世界への成り立つ定理。
-theorem trace_ideal_lem (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
+lemma trace_ideal_lem (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
 )).card ≥ 2) :
   ∀ ss:Finset α,  (spo_closuresystem s.toSetup_spo).sets ss → (spo_closuresystem (setup_trace_spo2 s x hx).toSetup_spo).sets (ss.erase x.val) := by
   --右から左は別の補題に分けた。
@@ -413,9 +413,6 @@ theorem trace_ideal_lem_rev (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_
           simp_all only [Subtype.coe_eta, Subtype.forall, mem_erase, ne_eq, Finset.mem_image, Finset.mem_union,
             Finset.mem_singleton, true_or, I']
 
-
-  --証明の流れとしては、Nonemptyの要素を取り出して、それに映る要素がもともとの世界のhyperedge内にあって、xと同値なので、xもhyperedgeに含まれるという流れになる。
-
 lemma new_lem_notx (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
 )).card ≥ 2) :
   ∀ x_1: s.V.erase x.val, (h:x_1.val ∉ (spo_equiv_x_with s x)) → toNew s.toSetup_spo x hx (@Quotient.mk _ s.setoid ⟨x_1.val,by
@@ -460,7 +457,7 @@ by
     mem_filter, mem_attach, true_and, Subtype.exists, exists_and_right, exists_eq_right, not_and, not_exists,
     Subtype.coe_eta]
 
-theorem trace_ideal_lem_rev2 (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
+lemma trace_ideal_lem_rev2 (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
 )).card ≥ 2) :
   ∀ ss:Finset α, (spo_closuresystem (setup_trace_spo2 s x hx).toSetup_spo).sets ss → (spo_equiv_x_with s x) ∩ ss =∅ → (spo_closuresystem s.toSetup_spo).sets ss := by
 
@@ -718,6 +715,7 @@ theorem trace_ideal_lem_rev2 (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup
           rw [nln]
           exact rfl
 
+--今までの補題をまとめたもの。
 theorem trace_ideal (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
 )).card ≥ 2) :
   ∀ ss:Finset α,  (spo_closuresystem (setup_trace_spo2 s x hx).toSetup_spo).sets ss ↔ ((spo_closuresystem s.toSetup_spo).toSetFamily.trace x.val (by simp_all only [ge_iff_le,
