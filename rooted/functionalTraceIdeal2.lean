@@ -264,88 +264,227 @@ noncomputable def po_ideal_system_from_allone_le {α : Type} [Fintype α] [Decid
 --hq1が成り立つ時は、同値類と要素が全単射が存在して、お互いのreachが対応していることも示すか。
 --最終的には大小関係が対応していることを示す。
 
+lemma equal_one (s: Setup_spo α) (hq1:∀ q: Quotient s.setoid, (classOf s q).card = 1) (x y: s.V) :
+  (@Quotient.mk s.V s.setoid x) = (@Quotient.mk s.V s.setoid y) ↔ x = y := by
+  constructor
+  · intro h
+    -- 1. 「x の同値類」は要素数 1．唯一の要素を取り出す
+    have hcard := hq1 ⟦x⟧
+    --rcases Finset.card_eq_one.mp hcard with
+    obtain ⟨z, hz_mem⟩ := Finset.card_eq_one.mp hcard
+    -- 2. まず `x` 自身がその Finset に入る
+    have hx_mem : (x : {a // a ∈ s.V}) ∈ classOf s ⟦x⟧ := by
+      exact classOf_self s x
+    -- 3. `y` も `hq_eq` により同じ同値類へ入る
+    have hy_mem :
+        (y : {a // a ∈ s.V}) ∈ classOf s ⟦x⟧ :=
+    by
+      -- `simp` へ渡すために `hq_eq` で書き換え
+      have : (Quotient.mk'' y : Quotient s.setoid) = ⟦x⟧ := by
+        exact id (Eq.symm h)
+      simp [classOf, this]           -- membership registered
+      simp_all only [Finset.card_singleton, Finset.mem_singleton, Quotient.eq]
+    -- 4. 同値類の要素は 1 つしかないので両者は等しい
+    have hxz : (x : {a // a ∈ s.V}) = z := by simp_all only [Quotient.eq, Finset.card_singleton, Finset.mem_singleton] --huniq _ hx_mem
+    have hyz : (y : {a // a ∈ s.V}) = z := by
+      subst hxz
+      simp_all only [Quotient.eq, Finset.card_singleton, Finset.mem_singleton] --huniq _ hy_mem
+    -- 5. 結果として x = y
+    subst hyz hxz
+    simp_all only [Finset.card_singleton, Finset.mem_singleton]
+  · intro h
+    subst h
+    simp_all only
+
+lemma equal_one2 (s: Setup_spo α) (hq1:∀ q: Quotient s.setoid, (classOf s q).card = 1) (x: s.V) :
+   (@Quotient.mk _ s.setoid x).out = x :=
+by
+  let q : Quotient s.setoid := ⟦x⟧
+
+  -- 1. その同値類の Finset はサイズ 1
+  have hcard : (classOf s q).card = 1 := hq1 q
+  --rcases (Finset.card_eq_one.mp hcard) with
+  obtain ⟨z, hz_mem⟩ := Finset.card_eq_one.mp hcard
+
+  -- 2. `x` 自身は必ずその Finset に入る
+  have hx_mem : (x : {a // a ∈ s.V}) ∈ classOf s q := by
+    unfold classOf q
+    simp [q]
+    simp_all [q]
+    obtain ⟨val, property⟩ := x
+    obtain ⟨val_1, property_1⟩ := z
+    rfl
+
+  -- 3. `(⟦x⟧.out)` も同じ同値類に属するので Finset に入る
+  have hout_mem :
+      ((@Quotient.mk _ s.setoid x).out) ∈ classOf s q := by
+    -- (a) 属していること
+    have hout_inV :
+        ((@Quotient.mk _ s.setoid x).out) ∈ s.V.attach :=
+    by
+      simp_all only [Finset.mem_singleton, mem_attach, q]
+    -- (b) `Quotient.mk'' out = ⟦x⟧`
+    have hquot :
+        (Quotient.mk'' ((@Quotient.mk _ s.setoid x).out)
+          : Quotient s.setoid) = q := by
+      -- `Quotient.out_eq` : `Quotient.mk'' (out q') = q'`
+      have : (Quotient.mk'' ((@Quotient.mk _ s.setoid x).out)
+                : Quotient s.setoid)
+              = (@Quotient.mk _ s.setoid x) :=
+      by
+        simp_all only [Finset.mem_singleton, mem_attach, Quotient.out_eq, q]
+
+
+      simp_all only [Finset.mem_singleton, mem_attach, Quotient.out_eq, q]
+    -- (c) まとめて membership
+    unfold classOf q
+    simp [hout_inV, hquot]
+    exact (setroid_quotient s ⟦x⟧.out x).mp hquot
+
+  -- 4. 要素が 1 つだけ ⇒ `x = z` かつ `out = z`
+  have hxz  : (x : {a // a ∈ s.V}) = z :=
+  by
+    simp_all only [Finset.mem_singleton, q]
+  have houtz : ((@Quotient.mk _ s.setoid x).out) = z :=
+  by
+    subst hxz
+    simp_all only [Finset.mem_singleton, q]
+
+  -- 5. 連鎖して `out = x`
+  subst hxz
+  simp_all only [q]
+
+lemma equal_one_f (s: Setup_spo α) (hq1:∀ q: Quotient s.setoid, (classOf s q).card = 1) (x y: s.V) :
+  s.fq (@Quotient.mk s.V s.setoid x) = (@Quotient.mk s.V s.setoid y) ↔ ((fun xx => s.fq (@Quotient.mk _ s.setoid xx)) x).out = y :=
+by
+  have h_eq₁ := equal_one s hq1 ((s.fq ⟦x⟧).out) y
+  -- 方向 ⇒
+  constructor
+  · intro hq               -- 仮定: `s.fq ⟦x⟧ = ⟦y⟧`
+    -- `Quotient.mk''` で両辺を代表元に戻す
+    have : (Quotient.mk'' (s.fq ⟦x⟧).out : Quotient s.setoid) =
+            (s.fq ⟦x⟧) := by
+      simp_all only [Quotient.out_eq, true_iff]
+    -- 代表元の等式を組み合わせて `⟦out⟧ = ⟦y⟧`
+    have hq' : (Quotient.mk'' (s.fq ⟦x⟧).out : Quotient s.setoid) = ⟦y⟧ := by
+      simpa [this] using hq
+    -- `equal_one` で要素の等式へ
+    have : (s.fq ⟦x⟧).out = (y : α) :=
+    by
+      simp_all only [Quotient.out_eq, true_iff]
+    simp_all only [Quotient.out_eq, true_iff]
+  -- 方向 ⇐
+  · intro hout               -- 仮定: `(s.fq ⟦x⟧).out = y`
+    -- `equal_one` の «←» 方向
+    have hout_q :
+        (Quotient.mk'' (s.fq ⟦x⟧).out : Quotient s.setoid)
+          = (⟦y⟧ : Quotient s.setoid) := by
+      exact (h_eq₁.mpr hout)
+    -- 代表元と `Quotient.out_eq` で `s.fq ⟦x⟧ = ⟦y⟧`
+    have : (Quotient.mk'' (s.fq ⟦x⟧).out : Quotient s.setoid)
+            = s.fq ⟦x⟧ :=
+    by
+      subst hout
+      simp_all only [Quotient.out_eq]
+    simpa [this] using hout_q
+
+lemma equal_one_setroid (s: Setup_spo α) (hq1:∀ q: Quotient s.setoid, (classOf s q).card = 1) (x y: s.V) :
+  s.setoid x y ↔ x = y :=
+by
+  let eo := equal_one s hq1 x y
+  constructor
+  · intro h
+    have : s.setoid x y := by
+      exact h
+    have : x = y := by
+      rw [←Quotient.eq] at this
+      exact (equal_one s hq1 x y).mp this
+    exact this
+  · intro h
+    subst h
+    exact (setroid_quotient s x x).mp rfl
+
+
 lemma po_ideal_system_from_allone_lem (α : Type) [Fintype α] [DecidableEq α] (s: Setup_spo α) (hq1:∀ q: Quotient s.setoid, (classOf s q).card = 1) (x y : s.V)(n:Nat):
- s.fq^[n] (@Quotient.mk s.V s.setoid x) = (@Quotient.mk s.V s.setoid y) ↔ (fun x => (s.fq ⟦x⟧).out)^[n] x = y:= by
-
-
+ s.fq^[n] (@Quotient.mk s.V s.setoid x) = (@Quotient.mk s.V s.setoid y) ↔ (fun x => (s.fq ⟦x⟧).out)^[n] x = y:=
+by
+  -- `g` は `(s.fq ⟦·⟧).out`
+  let g : s.V → s.V := fun xx => (s.fq ⟦xx⟧).out
+  -- 帰納法 on `n`
   induction n generalizing x y with
   | zero =>
-    simp
-    let hq := hq1 (@Quotient.mk _ s.setoid x)
-    dsimp [classOf] at hq
-    simp at hq
-    obtain ⟨z, hz_mem⟩ := Finset.card_eq_one.mp hq
+      -- 0 回の反復は恒等
+      simp [Function.iterate_zero, g]
+      -- `Quotient.mk` も `out` も恒等に化ける
+      have h := equal_one_f s hq1 x x
+      simp [g] at h
+      exact equal_one_setroid s hq1 x y
+  | succ k ih =>
+      -- 反復の再帰展開
+      show
+        s.fq^[k.succ] ⟦x⟧ = ⟦y⟧
+          ↔ (g^[k.succ]) x = y
+      -- `iterate_succ'` : f^[n+1] = f ∘ f^[n]
+      rw [Function.iterate_succ']
+      rw [Function.iterate_succ']
+      --simp [g] at *
+      -- 記号整理
+      set zq  := s.fq^[k] ⟦x⟧ with hzq
+      set z   := (g^[k]) x     with hz
+      -- 帰納仮定を zq,z へ適用
 
-    constructor
-    · intro h
-      have : z = x := by
-        simp_all only [Finset.mem_singleton, Quotient.eq]
-        have : x ∈ ({z}:Finset s.V) := by
-          rw [←hz_mem]
-          rw [Finset.mem_filter]
-          constructor
-          · exact mem_attach s.V x
-          · exact (setroid_quotient s x x).mp rfl
-        simp_all only [Finset.card_singleton, Finset.mem_singleton]
+      have ih' := (ih x z).trans (by
+        -- ih : fq^[k] ⟦x⟧ = ⟦z⟧ ↔ g^[k] x = z
+        -- rewrite hzq hz to `zq = ...`, `z = ...`
+        simp_all only [Subtype.coe_eta, true_iff, g, zq, z]
+        assumption
+        )
 
-      have : y = z := by
-        --simp_all only [Finset.mem_singleton, Quotient.eq]
-        have : y ∈ ({z}:Finset s.V) := by
-          rw [←hz_mem]
-          rw [Finset.mem_filter]
-          constructor
-          · exact mem_attach s.V y
-          · exact id (Setoid.symm' s.setoid h)
-        rename_i this_1
-        subst this_1
-        simp_all only [Finset.mem_singleton, Finset.card_singleton]
-      rename_i this_1
-      subst this this_1
-      simp_all only [Finset.card_singleton]
-    · intro h
-      subst h
-      simp_all only [Finset.card_singleton]
-      obtain ⟨val, property⟩ := x
-      obtain ⟨val_1, property_1⟩ := z
-      rfl
-  | succ n ih => --ih : s.fq^[n] ⟦x⟧ = ⟦y⟧ ↔ (fun x => (s.fq ⟦x⟧).out)^[n] x = y
-    constructor
-    · intro h --s.fq^[n + 1] ⟦x⟧ = ⟦y⟧
-      show (fun x => (s.fq ⟦x⟧).out)^[n + 1] x = y
-      have : s.fq^[n] (@Quotient.mk s.V s.setoid x) = (@Quotient.mk s.V s.setoid y) := by
-        sorry
+      -- `equal_one_f` で 1 段ぶん
+      have step :=
+        (equal_one_f s hq1 (x := z) (y := y)).symm
+      -- 結合
 
-      dsimp [classOf] at hq1
-      let hq1y := hq1 (@Quotient.mk s.V s.setoid y)
-      have : (classOf s ⟦y⟧).card = 1 := by
-        exact hq1y
+      constructor
+      · intro h
+        have : zq = @Quotient.mk _ s.setoid z := by
+          simp_all only [Subtype.forall, Subtype.coe_eta, Function.comp_apply, zq, g, z]
+        simp
+        simp at h
+        rw [←hz]
+        dsimp [g]
+        rw [←hzq] at h
+        rw [this] at h
+        exact (equal_one_f s hq1 z y).mp h
+      · intro h
+        -- `g^[k]` の定義を展開
+        have : g^[k] x = z := by
+          simp [g, hz]
 
-      obtain ⟨z, hz_mem⟩ := Finset.card_eq_one.mp this
+        -- `s.fq` の定義を展開
+        have : s.fq ⟦z⟧ = ⟦y⟧ := by
+          apply step.mp
+          simp
+          subst h
+          simp_all only [Subtype.forall, Subtype.coe_eta, Function.comp_apply, Quotient.out_eq, zq, g, z]
 
-      have : y = z := by
-        --simp_all only [Finset.mem_singleton, Quotient.eq]
-        have : y ∈ ({z}:Finset s.V) := by
-          rw [←hz_mem]
-          dsimp [classOf]
-          rw [Finset.mem_filter]
-          constructor
-          · exact mem_attach s.V y
-          · exact rfl
-        simp_all only [Finset.card_singleton, Finset.mem_singleton, true_iff, Function.iterate_succ,
-          Function.comp_apply]
-      rename_i this_1
-      show  (fun x => (s.fq ⟦x⟧).out)^[n + 1] x = y
-      sorry
-      --simp_all only [Finset.card_singleton]
+        -- `equal_one_f` で 1 段ぶん
+        have : (Quotient.mk'' (s.fq ⟦z⟧).out : Quotient s.setoid) = ⟦y⟧ := by
+          simp_all only [Quotient.out_eq, true_iff]
+        -- `equal_one` で要素の等式へ
+        have : (s.fq ⟦z⟧).out = y := by
+          simp_all only [Quotient.out_eq, true_iff]
+        -- 結合して完了
 
-    · intro h
-      subst h
-
-      obtain ⟨val, property⟩ := x
-      sorry
-
-
-  --帰納法を使う必要がありそう。
+        let eos := equal_one_setroid s hq1 z y
+        let eof := (equal_one_f s hq1 z y).mpr
+        --dsimp [z] at eof
+        rename_i this_2 this_3
+        rw [←this_2]
+        have : zq = @Quotient.mk _ s.setoid z := by
+          subst h
+          simp_all only [Subtype.coe_eta, Quotient.out_eq, zq, z, g]
+        exact congrArg s.fq this
 
 noncomputable def po_ideal_system_from_allone (α : Type) [Fintype α] [DecidableEq α] (s: Setup_spo α) (hq1:∀ q: Quotient s.setoid, (classOf s q).card = 1): Setup_po α :=
 { V := s.V,
@@ -359,9 +498,10 @@ noncomputable def po_ideal_system_from_allone (α : Type) [Fintype α] [Decidabl
     constructor
     · intro hxy
       have :s.spo.le (@Quotient.mk s.V s.setoid x) (s.fq (@Quotient.mk s.V s.setoid x)) := by
-        sorry
+        sorry  --上の補題を使う。
       have goal: s.spo.le (@Quotient.mk s.V s.setoid x) (@Quotient.mk s.V s.setoid y) := by
         apply reach_leq s (@Quotient.mk s.V s.setoid x) (@Quotient.mk s.V s.setoid y)
+        -- Add the necessary proof here
         sorry
       --have : Quotient.out (s.fq (@Quotient.mk _ s.setoid x)) = Quotient.out (s.fq (@Quotient.mk _ s.setoid y)) := by
       --  sorry
