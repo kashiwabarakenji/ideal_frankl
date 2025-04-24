@@ -487,7 +487,8 @@ by
         exact congrArg s.fq this
 
 noncomputable def po_ideal_system_from_allone (α : Type) [Fintype α] [DecidableEq α] (s: Setup_spo α) (hq1:∀ q: Quotient s.setoid, (classOf s q).card = 1): Setup_po α :=
-{ V := s.V,
+{
+  V := s.V,
   nonemp := by
     exact s.nonemp,
   f := fun x => Quotient.out (s.fq (@Quotient.mk _ s.setoid x)),
@@ -498,11 +499,19 @@ noncomputable def po_ideal_system_from_allone (α : Type) [Fintype α] [Decidabl
     constructor
     · intro hxy
       have :s.spo.le (@Quotient.mk s.V s.setoid x) (s.fq (@Quotient.mk s.V s.setoid x)) := by
-        sorry  --上の補題を使う。
+        apply reach_leq s (@Quotient.mk s.V s.setoid x) (s.fq (@Quotient.mk s.V s.setoid x))
+        dsimp [reach]
+        use 1
+        simp
+
       have goal: s.spo.le (@Quotient.mk s.V s.setoid x) (@Quotient.mk s.V s.setoid y) := by
         apply reach_leq s (@Quotient.mk s.V s.setoid x) (@Quotient.mk s.V s.setoid y)
         -- Add the necessary proof here
-        sorry
+        dsimp [reach]
+        dsimp [reach] at hxy
+        obtain ⟨n,hnl⟩ := hxy
+        use n
+        exact (po_ideal_system_from_allone_lem α s hq1 x y n).mpr hnl
       --have : Quotient.out (s.fq (@Quotient.mk _ s.setoid x)) = Quotient.out (s.fq (@Quotient.mk _ s.setoid y)) := by
       --  sorry
       exact goal
@@ -518,14 +527,4 @@ noncomputable def po_ideal_system_from_allone (α : Type) [Fintype α] [Decidabl
       use n
       let pisf := po_ideal_system_from_allone_lem α s hq1 x y n
       exact (po_ideal_system_from_allone_lem α s hq1 x y n).mp hnl
-
-      --帰納法を使う必要がありそう。
-
-
-
-
-
-
-
-
 }
