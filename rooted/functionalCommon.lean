@@ -187,7 +187,7 @@ by
   rfl
 
 --このときのRootedSetsのステムのサイズがすべて1であること。
-lemma rootesetset_from_setup_has_stem1 (s: Setup α) :
+lemma rootedsetset_from_setup_has_stem1 (s: Setup α) :
  ∀ p ∈ (rootedset_from_setup s).rootedsets, p.stem.card = 1 :=
 by
   dsimp [rootedset_from_setup]
@@ -281,13 +281,15 @@ by
     dsimp [rootedset_from_setup] at hxy
     exact hxy
 
+--ふたつの定義が同値であることを示す。本質的には、size_one_preorder_setで示したこと。
+--それに気がつくのが遅かったので、証明はもっと短くなるかも。
 lemma ideal_system_eq_lem (s : Setup α) :
    preorder_ideal_system s = preorder_ideal_system2 s :=
 by
   let sopl := size_one_preorder_lemma (rootedset_from_setup s)
   have :∀ p ∈ (rootedset_from_setup s).rootedsets, #p.stem = 1 :=
   by
-    exact fun p a => rootesetset_from_setup_has_stem1 s p a
+    exact fun p a => rootedsetset_from_setup_has_stem1 s p a
   specialize sopl this
   simp at sopl
   dsimp [preorder_ideal_system]
@@ -329,9 +331,7 @@ by
       dsimp [ss_attach]
       dsimp [preorder.S_R]
       dsimp [preorder.closedUnder]
-      --hからゴールを証明しないといけないが、遠くて証明できる気がしない。
-      --preorderをいろいろな方法で定義しすぎた。ゴールは、preorder.S_Rからのもの。
-      --っは、idealからの定義。
+
       simp at h
       rw [s.h_pre] at h
       dsimp [size_one_preorder] at h
@@ -397,9 +397,6 @@ by
       --   ss_attach ∈ preorder.S_R …
       ------------------------------------------------------------------
       have hS : ss_attach ∈ preorder.S_R (R_from_RS1 (rootedset_from_setup s)) := by
-        -- h.2 は「closedUnder R」で書かれているので，
-        --   そのまま型を合わせれば使える
-        --   (引数が subtype 付きかどうかの違いは `Subtype.val` で整合)
         dsimp [ss_attach]
         show Finset.subtype (fun x => x ∈ (rootedset_from_setup s).ground) ss ∈ preorder.S_R (R_from_RS1 (rootedset_from_setup s))
         --spolで変換したあとにhを使うと思われる。
@@ -410,19 +407,7 @@ by
            simpa [himg] using h
         exact (sopl ss_attach).mp hsets
 
-      ------------------------------------------------------------------
-      -- `sopl` の (mp) 方向で
-      --   (rootedsetToClosureSystem …).sets ss  を得る
-      ------------------------------------------------------------------
-      --これはhと同じでは。
-      --have hset : (rootedsetToClosureSystem (rootedset_from_setup s)).sets ss := by
-        -- `sopl` は  (sets ↔ S_R) なので S_R から sets へ
-      --  simp_all only [ss_attach]
-      ------------------------------------------------------------------
-      -- 以上より `preorder_ideal_system s` の 2 条件を満たす
-      ------------------------------------------------------------------
 
-      --simp_all only [attach_image_val, subset_refl, coe_mem, implies_true, imp_self, and_true, ss_attach]
       constructor
       · exact hsub
       · intro w1 hw1 w2 hw2
@@ -433,16 +418,7 @@ by
         by
           exact rfl
         obtain ⟨hS1,hS2⟩ := hS
-        /- すでに定義されていた。
-        have : ss_attach ∈ s.V.attach.powerset :=
-        by
-          simp_all only [Finset.mem_powerset, mem_subtype, Subtype.forall, ss_attach]
-          simp_all only [ss_attach]
-          obtain ⟨val, property⟩ := w1
-          obtain ⟨val_1, property_1⟩ := w2
-          simp_all only [ss_attach]
-          exact hS1
-        -/
+
         have hS2':  ∀ ⦃x y : { x // x ∈ s.V}⦄,
            R_from_RS1 (rootedset_from_setup s) x y → x ∈ ss_attach → y ∈ ss_attach :=
         by
@@ -450,21 +426,14 @@ by
           intro a a_1
           simp_all only [Finset.mem_powerset, mem_subtype, Subtype.forall, ss_attach]
           simp_all only [ss_attach]
-          obtain ⟨val, property⟩ := w1
-          obtain ⟨val_1, property_1⟩ := w2
           obtain ⟨val_2, property_2⟩ := x
           obtain ⟨val_3, property_3⟩ := y
-          simp_all only [ss_attach]
           tauto
-
-        -- 型合わせで `ground = s.V` を前もって書き換えておく
-        --simp [eq_ground] at ss_attach hS1 hS2'   -- ground ↔ s.V に揃える
 
         -- 1.  w2 ≤ w1  を  R_from_RS1 w1 w2  に変換
         have hR :  preorder.R_hat (R_from_RS1 (rootedset_from_setup s)) w1 w2 :=
         by
           exact (le_eq_R s w1 w2).mp hw2
-          --(le_eq_R s w2 w1).mpr hw2   -- 向きに注意：le_eq_R y x ↔ R x y
 
         -- 2.  w1 ∈ ss_attach
         have hw1_in : (w1 : {x // x ∈ s.V}) ∈ ss_attach := by
@@ -485,24 +454,12 @@ by
             -- 定義と `eq_ground` を展開すれば同型
             exact rfl
 
-          -- 目標を書き換えて `preorder_ideal … ss_attach = ss_attach`
-          --hS2'を使うはず。
-
-          /-
-          let piec := preorder_ideal_eq_of_closed
-              (RS       := rootedset_from_setup s)
-              (s        := ss_attach)
-              (closed   := hS2)      -- `hS2` が「R で閉じている」証明
-              (nonempty := hw1_in)   -- witness が一つあるので空でないext y
-                constructor
-                · intro hy
-          -/
           rw [←hsubs]
           show (preorder_ideal (rootedset_from_setup s)) ss_attach = ss_attach
-          --himgFinset.image Subtype.val ss_attach = ss
-          --と、(rootedsetToClosureSystem (rootedset_from_setup s)).sets ssを使う。
-          --ssはhyperedgeなので、closureをとっても、そのままという性質を使いたい。
-          sorry
+
+          rw [←himg] at h
+          let sops := size_one_preorder_set (rootedset_from_setup s) (rootedsetset_from_setup_has_stem1 s) ss_attach h
+          exact sops
 
         let RS := rootedset_from_setup s
         have : (w2 : α) ∈ ss := by
@@ -511,6 +468,7 @@ by
             -- 単に witness を w1 自身にすればよい
             have hw1_attach : w1 ∈ ss_attach := hw1_in
             have : (w1 : α) ∈ RS.ground := w1.property
+
             simp_all only [Finset.mem_powerset, mem_subtype, Subtype.forall, coe_mem, ss_attach, RS]
 
           -- 2. イデアル閉包で w2 も入る
@@ -522,79 +480,6 @@ by
           simp_all only [Finset.mem_powerset, mem_subtype, Subtype.forall, RS, ss_attach]
 
         exact this
-      /-
-      · intro hy_ss
-        -- y 自身を witness に取れば OK
-        have : (y : {z // z ∈ (rootedset_from_setup s).ground}) ∈ ss_attach := by
-          -- … 型変換は `Finset.mem_subtype` で
-          simpa [ss_attach, Finset.mem_subtype]
-        exact ⟨hsub hy_ss, y, this, relation_refl _⟩
-
-            have hRT : Relation.ReflTransGen (R_from_RS1 (rootedset_from_setup s)) w1 w2 :=
-              R_hat.to_ReflTransGen hR
-
-        --------------------------------------------------------------------------------
-        -- 2.  ss_attach が R で閉じていること (hS2) を使い，
-        --     hRT 上で帰納して  w2 ∈ ss_attach  を得る
-        --------------------------------------------------------------------------------
-        have hw2_in_attach : (w2 : {x // x ∈ s.V}) ∈ ss_attach := by
-          -- 帰納法
-          induction hRT with
-          | refl       =>                 -- 基底: w1 = w2
-              simpa using hw1_in
-          | tail hxy hRT ih =>            -- 帰納: R x y  ∧  x ∈ ss_attach → y ∈ ss_attach
-              exact hS2 hxy ih
-
-        --------------------------------------------------------------------------------
-        -- 3.  image Subtype.val ss_attach = ss  を利用して  w2 ∈ ss
-        --------------------------------------------------------------------------------
-        have hw2_in_ss : (w2 : α) ∈ ss := by
-          -- まず image 内にいることを示す
-          have : (w2 : α) ∈ Finset.image Subtype.val ss_attach := by
-            apply Finset.mem_image.mpr
-            exact ⟨w2, hw2_in_attach, rfl⟩
-          -- `himg : image … = ss` で書き換えて終了
-          simpa [himg] using this
-
-        exact hw2_in_ss      -- ゴール `↑w2 ∈ ss`
-
-
-
-        specialize hS2' w1 w1.property w2 w2.property --ここが間違いでhは一段階の<だけなので、帰納法を使う必要があるのかも。
-        dsimp [ss_attach] at hS2'
-        simp at hS2'
-        apply hS2'
-        · rw [s.h_pre] at hw2
-          dsimp [size_one_preorder] at hw2
-          dsimp [size_one_circuits_preorder] at hw2
-          sorry --R_hatがついているかどうかでこのままではなりたななさそう。
-        · simp_all only [Finset.mem_powerset, mem_subtype, Subtype.forall, forall_const, ss_attach]
-        -/
-        /-
-        have hw2_in : (w2 : {x // x ∈ s.V}) ∈ ss_attach :=
-        by
-          sorry
-          --hS2' hR hw1_in
-
-        -- 4.  subtype から元の Finset へ戻す
-        have hw2_in_ss : (w2 : α) ∈ ss := by
-          -- `Finset.mem_subtype` の逆向きと `himg`
-          have : (w2 : α) ∈ Finset.image Subtype.val ss_attach := by
-            -- `Finset.mem_image` に書き換え
-            have : (w2 : {x // x ∈ s.V}) ∈ ss_attach := hw2_in
-            simpa [Finset.mem_image] using this
-          -- `image Subtype.val … = ss` で書き換え
-          sorry
-          --simpa [himg] using this
-
-        exact hw2_in_ss      -- ゴール `↑w2 ∈ ss`--setupを与える形で書き直した。
-      -/
-    --setupの定義からClosure Systemを導入する部分。
-
-
-
-
-
 
 -------------
 --同値類の関係。

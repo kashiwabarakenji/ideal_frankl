@@ -939,6 +939,16 @@ by
     contradiction --直接矛盾を導く方がよい。
     --transitivityより、rootedpairで、一歩でその点からq.rootへ行ける。qの極小性と矛盾。
 
+lemma size_one_preorder_set {α : Type} [DecidableEq α] [Fintype α]
+  (RS : RootedSets α) [DecidablePred (rootedsetToClosureSystem RS).sets]
+  (h₁ : ∀ p ∈ RS.rootedsets, p.stem.card = 1) (ss : Finset RS.ground) (hset: (rootedsetToClosureSystem RS).sets (ss.image Subtype.val)) :
+   preorder_ideal RS ss = ss:=
+by
+  let sopc := size_one_preorder_closure RS h₁ ss
+  rw [←sopc]
+  let ifsf := idempotent_from_SF_finset_lem (rootedsetToClosureSystem RS) ss hset
+  exact ifsf
+
 --すべてのステムサイズが1であるという条件。前の定理もこれを使ってもよい。
 def is_size_one_circuit (RS : RootedSets α):Prop:=
   ∀ p, p ∈ (rootedcircuits_from_RS RS).rootedsets → p.stem.card = 1
