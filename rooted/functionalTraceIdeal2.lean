@@ -528,3 +528,7 @@ noncomputable def po_ideal_system_from_allone (α : Type) [Fintype α] [Decidabl
       let pisf := po_ideal_system_from_allone_lem α s hq1 x y n
       exact (po_ideal_system_from_allone_lem α s hq1 x y n).mp hnl
 }
+
+--(hq1:∀ q: Quotient s.setoid, (classOf s q).card = 1)のときに、Setup_spo2のidealのndsと、po_ideal_system_from_alloneで対応するpoのidealのndsと、が一致する。
+--これは、直接対応するので示す必要はなさそう。
+--示したいのは、poのidealのndsが常に非正であるときに、Setup_spo2のidealのndsも常に非正であることだが、上のことから自明。

@@ -90,6 +90,8 @@ variable {α : Type} [Fintype α] [DecidableEq α]
 --それぞれが平均rareなので、s1*2-h1*n1<=0, s2*2-h2*n2<=0であることからこれはいえる。
 --連結成分が3個以上の場合は、帰納法で証明することになる。
 
+--このfunctionalgraphのファイルは、Setupを使う前なので、古いファイルとして、importされない方向か。
+
 --Preorderを定義する前にClosureSystemを定義してしまったが、Preorderを導入してからそれのidealとして導入した方が良かったかも。
 def family_onestem_eachvertex (V: Finset α) (f : α → α) (nonemp:V.Nonempty): ClosureSystem α :=
 {

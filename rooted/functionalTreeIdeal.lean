@@ -630,7 +630,12 @@ by
 -/
 
 
+theorem spo_closuresystem_nds (s: Setup_spo α) :
+  (spo_closuresystem s).normalized_degree_sum ≥ 0 :=
+by
+  sorry
 
+  -- 証明の内容をここに追加する)
 
 --証明すべき内容。
 -- setup_spo2をtraceしたもののidealがidealとしてtraceしたものと一致すること。

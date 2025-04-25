@@ -858,6 +858,8 @@ lemma setup2_trace_fq_n (s : Setup_spo α) (x: s.V) (hx:(classOf s (@Quotient.mk
     let no := NewOld_id s x hx
     simp_all only [no]
 
+--theorem functional_spo_average_rare (s : Setup_spo α) :
+--  (rootedsetToClosureSystem (rootedset_onestem_eachvertex_V s.V f valid nonemp)).normalized_degree_sum ≤ 0 :=
 /-
   noLoop := by
     intro q1 q2 hxy hyx
