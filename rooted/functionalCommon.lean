@@ -12,6 +12,8 @@ import rooted.Dominant
 import rooted.FamilyLemma
 import rooted.StemSizeOne
 
+set_option maxHeartbeats 2000000
+
 open Finset Set Classical
 
 variable {α : Type} [Fintype α] [DecidableEq α]
@@ -445,7 +447,7 @@ by
 
         -- 3.  hS2' を使って w2 ∈ ss_attach
         dsimp [rootedset_from_setup] at hS2'
-        simp at hS2'
+        --simp at hS2'
         have ideal_eq_ss :preorder_ideal (rootedset_from_setup s) ss_attach = Finset.subtype (fun x => x ∈ s.V) ss :=
         by
           have hsubs : ss_attach =

@@ -1,18 +1,18 @@
 import Mathlib.Data.Finset.Basic
-import Mathlib.Data.Finset.Powerset
-import Mathlib.Data.Set.Function
-import Mathlib.Data.Fintype.Basic
-import Mathlib.Order.Defs.PartialOrder
-import Mathlib.Order.Cover
-import Mathlib.Tactic
+--import Mathlib.Data.Finset.Powerset
+--import Mathlib.Data.Set.Function
+--import Mathlib.Data.Fintype.Basic
+--import Mathlib.Order.Defs.PartialOrder
+--import Mathlib.Order.Cover
+--import Mathlib.Tactic
 import LeanCopilot
 import rooted.CommonDefinition
-import rooted.ClosureMinors
-import rooted.Dominant
-import rooted.FamilyLemma
-import rooted.StemSizeOne
+--import rooted.ClosureMinors
+--import rooted.Dominant
+--import rooted.FamilyLemma
 import rooted.functionalCommon
-import rooted.functionalPreorder
+--import rooted.StemSizeOne
+
 
 open Finset Set Classical
 
@@ -30,11 +30,7 @@ by
   set st := @setoid_preorder V pre with h_st
   let s := Setup.mk V nonemp f valid pre h_pre st h_st
   let sns := setup_nds s
-  --ndsを議論する前にpreorderidealsystemと(rootedsetToClosureSystem (rootedset_onestem_eachvertex_V V f valid nonemp))の関係の補題を作った方が良さそう。
-  sorry
-
-
-
-
-
-  let sun := setup_nds (rootedset_onestem_eachvertex_V V f valid nonemp)
+  rw [ideal_system_eq_lem] at sns
+  dsimp [preorder_ideal_system2] at sns
+  dsimp [rootedset_from_setup] at sns
+  exact sns
