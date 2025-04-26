@@ -95,6 +95,26 @@ by
   simp_all only [sum_eq_zero_iff, Finset.mem_univ, forall_const, le_refl, implies_true, Int.ofNat_eq_coe, Nat.cast_one,
     sub_self]
 
+lemma exists_q_card_ge_two_of_excess_pos {α : Type} [Fintype α] [DecidableEq α] (s : Setup_spo2 α)
+  (h : excess s > 0) :
+  ∃ q : Quotient s.setoid, (classOf s.toSetup_spo q).card ≥ 2 := by
+  -- 対偶法で示す
+  by_contra h'
+  -- もし ∀ q, (classOf q).card < 2 ならば各項 (card - 1) = 0 で和も 0 になる
+  have hz : excess s = 0 := by
+    dsimp [excess]
+    have zero_terms : ∀ q, (classOf s.toSetup_spo q).card - 1 = 0 := by
+      intro q
+      -- ¬ ∃ q, card ≥ 2 から ¬ (card ≥ 2) をまず得て，Nat.not_le.mp で card < 2 に，
+      -- さらに Nat.lt_succ_iff.mp で card ≤ 1 にし，Nat.sub_eq_zero_of_le で m - 1 = 0 を結論
+      apply Nat.sub_eq_zero_of_le
+      apply Nat.lt_succ_iff.mp
+      apply Nat.not_le.mp
+      exact not_exists.mp h' q
+    simp [zero_terms]
+  -- しかし h : excess s > 0 と矛盾
+  exact (Nat.ne_of_gt h) hz
+
 --trace_parallel_average_rare を使って大きさ2以上の同値類の頂点をtraceすると、normalized degree sumが下がらないことを証明する。
 --一般的な枠組みでは、trace_parallel_average_rareで証明済み。
 theorem trace_ideal_nds_increase (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
@@ -160,7 +180,8 @@ by
   specialize tpar this
   exact tpar
 
---ただのSetupと比較するとシンプルになっている。
+--親がたかだかひとつの半順序集合の構造
+--ただのSetupと比較するとシンプルになっている。preorderのときのような同値類を考える必要がない。
 structure Setup_po (α : Type) [Fintype α] [DecidableEq α] where
 (V : Finset α)
 (nonemp   : V.Nonempty)
@@ -168,7 +189,8 @@ structure Setup_po (α : Type) [Fintype α] [DecidableEq α] where
 (po : PartialOrder V)
 (order : ∀ x y : V, (reach f x y ↔ po.le x y)) --fからpo.leが決まる。
 
-def partialorder_ideal_system (α : Type) [Fintype α] [DecidableEq α] (s: Setup_po α) : ClosureSystem α :=
+--idealsystemとclosure systemの名称でどちらがいいか。
+def partialorder_ideal_system {α : Type} [Fintype α] [DecidableEq α] (s: Setup_po α) : ClosureSystem α :=
 { ground := s.V,
   sets := fun ss : Finset α => ss ⊆ s.V ∧(∀ v : s.V, v.val ∈ ss → (∀ w : s.V, s.po.le w v → w.val ∈ ss)),
   inc_ground := by
@@ -197,7 +219,7 @@ def partialorder_ideal_system (α : Type) [Fintype α] [DecidableEq α] (s: Setu
 --同値類の大きさが全部1のSetup_poに対して、対応するSetup_poを定義することができる。
 --そして、idealの集合族が一致する。
 
-theorem class_size_one_implies_eq (s: Setup_spo α) (x y: s.V) (ssl  : (⟦x⟧ : Quotient s.setoid) = ⟦y⟧) (hq1x :#(Finset.filter (fun a => @Quotient.mk'' _ s.setoid a = ⟦x⟧) s.V.attach) = 1) (hq1y :#(Finset.filter (fun a => @Quotient.mk'' _ s.setoid a = ⟦y⟧) s.V.attach) = 1) :
+lemma class_size_one_implies_eq (s: Setup_spo α) (x y: s.V) (ssl  : (⟦x⟧ : Quotient s.setoid) = ⟦y⟧) (hq1x :#(Finset.filter (fun a => @Quotient.mk'' _ s.setoid a = ⟦x⟧) s.V.attach) = 1) (hq1y :#(Finset.filter (fun a => @Quotient.mk'' _ s.setoid a = ⟦y⟧) s.V.attach) = 1) :
      (x : α) = y := by
   -- 同値類 `{ a | ⟦a⟧ = ⟦x⟧ }` のカードが 1 → その唯一元を取り出す
   have hcard :=
@@ -486,7 +508,7 @@ by
           simp_all only [Subtype.coe_eta, Quotient.out_eq, zq, z, g]
         exact congrArg s.fq this
 
-noncomputable def po_ideal_system_from_allone (α : Type) [Fintype α] [DecidableEq α] (s: Setup_spo α) (hq1:∀ q: Quotient s.setoid, (classOf s q).card = 1): Setup_po α :=
+noncomputable def po_ideal_system_from_allone {α : Type} [Fintype α] [DecidableEq α] (s: Setup_spo α) (hq1:∀ q: Quotient s.setoid, (classOf s q).card = 1): Setup_po α :=
 {
   V := s.V,
   nonemp := by
@@ -532,3 +554,45 @@ noncomputable def po_ideal_system_from_allone (α : Type) [Fintype α] [Decidabl
 --(hq1:∀ q: Quotient s.setoid, (classOf s q).card = 1)のときに、Setup_spo2のidealのndsと、po_ideal_system_from_alloneで対応するpoのidealのndsと、が一致する。
 --これは、直接対応するので示す必要はなさそう。
 --示したいのは、poのidealのndsが常に非正であるときに、Setup_spo2のidealのndsも常に非正であることだが、上のことから自明。
+
+lemma po_ideal_system_eq (s: Setup_spo α) (hq1:∀ q: Quotient s.setoid, (classOf s q).card = 1) :
+  partialorder_ideal_system (po_ideal_system_from_allone s hq1) = spo_closuresystem s:=
+by
+  dsimp [partialorder_ideal_system, po_ideal_system_from_allone]
+  dsimp [spo_closuresystem]
+  simp
+  ext ss
+  constructor
+  · intro h
+    obtain ⟨hss, h⟩ := h
+    --quotientをuseする必要あり。おそらくssを同値類に置き換えたもの。利用できる関数はあるか。
+    use QuotientOf s (ss.subtype (fun x => x ∈ s.V))
+    constructor
+    · intro q hq q' hq'
+      show q' ∈ QuotientOf s (Finset.subtype (fun x => x ∈ s.V) ss)
+      sorry
+    · constructor
+      · simp_all only
+      · sorry
+
+    /-
+    show ∃ I,
+    (∀ q ∈ I, ∀ q' ≤ q, q' ∈ I) ∧
+      ss ⊆ s.V ∧
+        ∀ (hs : ss ⊆ s.V),
+          (∀ (x : α) (h : x ∈ ss), ⟦⟨x, ⋯⟩⟧ ∈ I) ∧ ∀ q ∈ I, ∀ (a : α) (b : a ∈ s.V), ⟦⟨a, b⟩⟧ = q → a ∈ ss    · intro x hx
+    -/
+  · intro h
+    obtain ⟨q, hq⟩ := h
+    obtain ⟨hq1, hq2, hq3⟩ := hq
+    constructor
+    · simp_all only [forall_true_left]
+    · intro x1 hx1 hx2 x2 hx21 hx22
+      simp_all only [forall_true_left]
+      obtain ⟨left, right⟩ := hq3
+      apply right
+      · apply hq1
+        on_goal 2 => {exact hx22
+        }
+        · simp_all only
+      · rfl

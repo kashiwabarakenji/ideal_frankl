@@ -883,7 +883,7 @@ theorem normalized_degree_sum_congr {α : Type} [DecidableEq α] [Fintype α]
   rw [h_ground]
   simp_all only [s]
 
---集合族が等しければ、ndsも等しい。
+--traceしたものと、集合族が等しければ、ndsも等しい。
 theorem trace_ideal_nds (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
 )).card ≥ 2) :
   (spo_closuresystem (setup_trace_spo2 s x hx).toSetup_spo).normalized_degree_sum = ((spo_closuresystem s.toSetup_spo).toSetFamily.trace x.val (by simp_all only [ge_iff_le,

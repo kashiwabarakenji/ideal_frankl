@@ -113,7 +113,8 @@ noncomputable def spullback  (s: Setup α) (J : Finset (Quotient s.setoid)) : Fi
 noncomputable def spushforward  (s: Setup α) (I : Finset s.V) : Finset (Quotient s.setoid) :=
   Finset.univ.filter (fun q => ∃ a ∈ I, Quotient.mk s.setoid a = q)
 
---半順序を加えたSetup
+--同値類上の半順序を加えたSetup。仮定としての強さは、Setupと同じか。するとSetupからSetup2が定義できる。Setup_to_Setup2
+--分ける必要があった？証明上の理由？
 --上のinstanceは、s.po.leとは別物になってしまうので、instanceでなくてdefのほうがよい。
 structure Setup2 (α : Type) [Fintype α] [DecidableEq α] extends Setup α where
   (po       : PartialOrder (Quotient setoid))
@@ -121,6 +122,22 @@ structure Setup2 (α : Type) [Fintype α] [DecidableEq α] extends Setup α wher
 
 --前に定義していたquotient_partial_orderと内容的に被っている。
 instance (s : Setup2 α) : PartialOrder (Quotient s.setoid) := s.po
+
+def Setup_to_Setup2 (s : Setup α) : Setup2 α :=
+  {
+    nonemp := s.nonemp
+    valid := s.valid
+    h_pre := s.h_pre
+    h_setoid := s.h_setoid
+    po := partialOrder_from_preorder s
+    h_po := rfl
+  }
+
+--これは自明なのか。
+lemma setup_to_setup2_prop (s : Setup α) :
+ (Setup_to_Setup2 s).toSetup = s :=
+by
+  exact rfl
 
 --instを入れなくても、自動的にs.poのインスタンスを使ってくれている。
 lemma pullback_preorder_lemma (s : Setup2 α)-- [inst : PartialOrder (Quotient s.setoid)]
@@ -189,15 +206,19 @@ lemma isMaximal_iff (s: Setup2 α) (a : s.V) :
     apply pullback_preorder_lemma s ⟦b⟧ ⟦a⟧ b a rfl rfl
     simp_all only
 
-/--
+/-
 「元の前順序での極大元の集合」-
 「商集合上での極大元の集合」とが、商写像 `Quotient.mk` を通じて
 ちょうど同じものになる、ということを集合レベルでも示せます。
 -/
-noncomputable def MaxSet (s:Setup2 α) := ({ a : s.V | isMaximal s.toSetup a }:Finset s.V)
+/- 使ってなさそうなので、コメントアウト
+--なんでisMaximalQを使ってないのか？
+noncomputable def MaxSet (s:Setup α) := ({ a : s.V | isMaximal s a }:Finset s.V)
+--こっちはQを使っている。
 noncomputable def MaxQuotSet (s:Setup2 α) : Finset (Quotient (s.setoid)) :=
   { x : Quotient s.setoid | isMaximalQ s x }
 
+--同値類の話とV上の話の対応。使ってないかも。classOfなどの話に吸収されるかも。
 lemma MaxQuotSet_eq_image (s:Setup2 α) :
   MaxQuotSet s = Finset.image (Quotient.mk (s.setoid)) (MaxSet s) := by
   ext x
@@ -239,8 +260,10 @@ lemma MaxQuotSet_eq_image (s:Setup2 α) :
       rw [isMaximal_iff] at ha
       apply ha
       simp_all only
+-/
 
 /-- 有限の半順序集合において、任意の元 `x` に対し `x ≤ y` かつ `y` が極大な元 `y` が存在する -/
+--今のところ使ってない？
 theorem exists_max_ge_of_mem {s : Setup2 α} {q : Quotient s.setoid} :
   ∃ y : Quotient s.setoid, s.po.le q y ∧ ∀ z : Quotient s.setoid, s.po.le y z → z = y :=
 by
@@ -304,7 +327,7 @@ by
       exact hh h
 
 --同値類間の写像。
-/-
+/- Setupの中に組み込まれているから必要ないかも。
 def fq (s: Setup2 α) (q:(Finset.univ:Finset (Quotient s.setoid))):
   (Finset.univ:Finset (Quotient s.setoid)) :=
 by
@@ -324,11 +347,12 @@ by
 -/
 -------------------------------------------------------------
 --同じ同値類のfの行き先は、同値になることを示す必要がある。
+--順序は関係なさそうなので、Setup2からSetupに変更した。
 lemma f_on_equiv
-  (s: Setup2 α) (x y: s.V) (h: s.setoid.r x y) :
+  (s: Setup α) (x y: s.V) (h: s.setoid.r x y) :
   s.setoid.r (s.f x) (s.f y) :=
 by
-  have eqy: eqClass_setup s.toSetup x = eqClass_setup s.toSetup y := by
+  have eqy: eqClass_setup s x = eqClass_setup s y := by
       apply eqClass_eq
       · rw [s.h_setoid] at h
         rw [setoid_preorder] at h
@@ -338,7 +362,7 @@ by
         rw [setoid_preorder] at h
         simp [equiv_rel] at h
         simp_all only
-  have xineq: x∈ eqClass_setup s.toSetup x := by
+  have xineq: x∈ eqClass_setup s x := by
           simp_all only [eqClass_setup]
           simp
           rw [s.h_setoid]
@@ -349,7 +373,7 @@ by
           simp [equiv_rel] at h
           simp_all only [ge_iff_le, not_le, and_self]
 
-  have yineq: y ∈ eqClass_setup s.toSetup x := by
+  have yineq: y ∈ eqClass_setup s x := by
       simp_all only [eqClass_setup]
       rw [s.h_setoid] at h
       rw [setoid_preorder] at h
@@ -357,23 +381,23 @@ by
       simp_all only [mem_filter, mem_attach, true_and]
       rfl
 
-  by_cases h1: (eqClass_setup s.toSetup x).card ≥ 2;
+  by_cases h1: (eqClass_setup s x).card ≥ 2;
   case pos =>
-    let eqsx := eqClass_size_ge_two_implies_outside s.toSetup x h1
-    have : s.f x ∈ eqClass_setup s.toSetup x := by
+    let eqsx := eqClass_size_ge_two_implies_outside s x h1
+    have : s.f x ∈ eqClass_setup s x := by
       simp_all only [eqsx]
       rwa [← eqy]
-    have : s.f y ∈ eqClass_setup s.toSetup y := by
-      have :(eqClass_setup s.toSetup y).card ≥ 2 := by
+    have : s.f y ∈ eqClass_setup s y := by
+      have :(eqClass_setup s y).card ≥ 2 := by
         rw [←eqy]
         exact h1
-      exact eqClass_size_ge_two_implies_outside s.toSetup y this
+      exact eqClass_size_ge_two_implies_outside s y this
     rw [←eqy] at this
     rw [s.h_setoid]
     rw [setoid_preorder]
     simp
     dsimp [equiv_rel]
-    let eqe := (eqClass_eq_rev s.toSetup (s.f x) (s.f y) x)
+    let eqe := (eqClass_eq_rev s (s.f x) (s.f y) x)
     specialize eqe eqsx
     specialize eqe this
     constructor
@@ -382,15 +406,15 @@ by
   case neg =>
     --同値類の大きさが1のとき。
     --同値類の大きさが1であれば、同値のものは一致する。
-    have :(eqClass_setup s.toSetup x).card = 1 := by
+    have :(eqClass_setup s x).card = 1 := by
       --cardは1以上で2以上でないので、ちょうど1になる。
-      have geq1:(eqClass_setup s.toSetup x).card ≥ 1 := by
+      have geq1:(eqClass_setup s x).card ≥ 1 := by
 
-        have :(eqClass_setup s.toSetup x).Nonempty := by
+        have :(eqClass_setup s x).Nonempty := by
           simp_all only [ge_iff_le, not_le]
           exact ⟨_, xineq⟩
         exact Finset.card_pos.mpr this
-      have leq1: (eqClass_setup s.toSetup x).card  ≤ 1 := by
+      have leq1: (eqClass_setup s x).card  ≤ 1 := by
         simp_all only [ge_iff_le, not_le, one_le_card]
         omega
       exact Eq.symm (Nat.le_antisymm geq1 leq1)
@@ -414,7 +438,10 @@ lemma f_on_equiv_rev
 by
 -/
 
+--ここからはfqに関する定義や補題。Setup2が必要。
+
 --setoidの半順序の一つ上のQuotientを指すもの。
+--Setup2じゃなくて、Setupにすることもできるかもしれないが。
 def fq (s: Setup2 α) (q:(Quotient s.setoid)):
   (Quotient s.setoid) :=
  Quotient.lift (fun (x:s.V) => Quotient.mk s.setoid (s.f x))
@@ -427,12 +454,13 @@ def fq (s: Setup2 α) (q:(Quotient s.setoid)):
       have :s.setoid a b := by
         exact h
       rw [← @Quotient.eq_iff_equiv] at h
-      let foe := f_on_equiv s a b this
+      let foe := f_on_equiv s.toSetup a b this
       simp_all only [Quotient.eq]
       exact foe
     ) q
 
 --Quotientとってからfqを施しても、fをとってからQuotientを取っても同じ。
+--fqの引数がSetupでなくて、Setup2にする必要あり。
 lemma f_on_equiv_n
   (s: Setup2 α) (x : s.V) :
   ∀ n:Nat, Quotient.mk s.setoid (s.f^[n] x) = (fq s)^[n] (Quotient.mk s.setoid x) :=
@@ -451,9 +479,11 @@ by
     --obtain ⟨val, property⟩ := x
     congr 1
 
---引数に対応するFinsetで表した同値類。
+/-
+--引数に対応するFinsetで表した同値類。すぐ下で使っている。
 noncomputable def equiv_class_finset (s: Setup2 α)(a : s.V) : Finset s.V := { x : s.V | s.setoid.r a x}.toFinset
---Quotientを集合表現に。
+
+--Quotientを集合表現に。classOfと同じ？ただ、classOfは、Setup_spoの枠組みにのみ定義している。
 noncomputable def quotient_to_finset (s: Setup2 α) (q : Quotient (s.setoid )) : Finset s.V :=
   Quotient.liftOn q (fun a => equiv_class_finset s a)
     (by
@@ -478,7 +508,11 @@ noncomputable def quotient_to_finset (s: Setup2 α) (q : Quotient (s.setoid )) :
         · simp_all only
     )
 
---任意の同値類から要素を取れることも補題にする。
+-/
+
+--ここからは、po.leとfの関係に関する補題。
+
+--任意の同値類から要素を取れることも補題にする。Setupでも良さそうだが、ここでしか使わないので。
 lemma quotient_representative (s: Setup2 α) (q: Quotient s.setoid) :
   ∃ x : s.V, q = Quotient.mk s.setoid x :=
 by
@@ -588,110 +622,3 @@ by
     apply le_trans
     · exact this
     · simp_all only [Function.comp_apply]
-
---次やるべきことは、同値類の大小関係とfqの写像の関係。
-
-
---残った示すべきことは、半順序のほうで、
---各ノードに対して、唯一の極大元が存在するということがわかればよい。
---極大元の存在は比較的簡単。
---二つあったら一致することも証明できる。
---あと、setupを使って、ideal集合族が一致することを示す必要があるかも。
-
-/-
-多分古いもの。動くかどうかは未確認。
-noncomputable def eqClass {α : Type}  [DecidableEq α] [Setoid α] (V : Finset α) (x : α) : Finset α :=
-  V.filter (fun y => Setoid.r x y)
-
-theorem eqClass_card_ge_two_implies_maximal_nonsubtype
-    {α : Type} [Fintype α] [DecidableEq α]
-    (V : Finset α) (f : V → V)--言明には必要ない。
-    (valid : ∀ v : V, f v ≠ v) (nonemp : V.Nonempty)--言明には必要ない。
-    [Preorder {x // x ∈ V}] --これは言明に必要。
-    [Setoid α]--[Setoid {x // x ∈ V}] 言明に必要。後ろの方だとうまくいかない。
-    --(h_pre : Preorder {x // x ∈ V} = size_one_preorder V f valid nonemp)
-    --(h_setoid : Setoid {x // x ∈ V} )--= setoid_preorder)
-    --(s: Setup α)
-    (x : {x // x ∈ V})
-    (h : 2 ≤ (eqClass V x.1).card)
-  : ∀ y : {x // x ∈ V}, x ≤ y → y ≤ x := by
-  intro y h_xy
-  let RS := rootedset_onestem_eachvertex_V V f valid nonemp
-  let R := R_from_RS1 RS
-  --rw [h_pre, size_one_preorder, size_one_circuits_preorder] at h_xy ⊢
-
-  --dsimp [size_one_preorder] at h_xy ⊢
-  --simp only [preorder.R_hat] at h_xy ⊢
-  -- 同値類は x とその逆像
-  have h_eq_class : eqClass V x.val = Finset.image (λ v => v) {v | f v = x.val} ∪ ({x}:Finset V) := by
-    apply Finset.ext
-    intro z
-    simp [Quotient.mk, Setoid.r, h_setoid, equiv_rel]
-    constructor
-    · intro ⟨h_z_x, h_x_z⟩
-      by_cases h_z_x_eq : z = x
-      · simp [h_z_x_eq]
-      · have h_R_z_x : R z x := by
-          exists ⟨{z.val}, x.val, by simp [valid]; intro h; subst h; apply valid x.val; simp⟩
-          simp [RS, rootedset_onestem_eachvertex_V]
-          refine ⟨?_, rfl, rfl⟩
-          apply Finset.mem_image_of_mem (λ v => ValidPair.mk {f v.val} v (by simp [valid]))
-          simp [Finset.attach]
-          exact x.property
-        simp [R, R_from_RS1, RS, rootedset_onestem_eachvertex_V] at h_R_z_x
-        simp [h_R_z_x]
-    · intro h_z_in
-      simp at h_z_in
-      cases h_z_in <;> [subst h_z_in; simp]
-      · exact ⟨le_refl x, le_refl x⟩
-      · intro s hs_s h_x_s
-        simp [S_R, closedUnder] at hs_s
-        have h_R_z_x : R z x := by
-          exists ⟨{z.val}, x.val, by simp [valid]; intro h; subst h; apply valid x.val; simp⟩
-          simp [RS, rootedset_onestem_eachvertex_V]
-          refine ⟨?_, rfl, rfl⟩
-          apply Finset.mem_image_of_mem (λ v => ValidPair.mk {f v.val} v (by simp [valid]))
-          simp [Finset.attach]
-          exact x.property
-        exact hs_s h_R_z_x h_x_s
-      · exact ⟨by simp, by simp⟩
-  -- y は同値類内
-  have h_y_in : y ∈ Quotient.mk (Setoid.r) x := by
-    simp [Quotient.mk, Setoid.r, h_setoid, equiv_rel]
-    exact ⟨h_xy, h_xy⟩
-  rw [h_eq_class] at h_y_in
-  simp at h_y_in
-  cases h_y_in
-  · subst h_y_in
-    exact le_refl x
-  · intro s hs_s h_x_s
-    simp [S_R, closedUnder] at hs_s
-    have h_R_y_x : R y x := by
-      exists ⟨{y.val}, x.val, by simp [valid]; intro h; subst h; apply valid x.val; simp⟩
-      simp [RS, rootedset_onestem_eachvertex_V]
-      refine ⟨?_, rfl, rfl⟩
-      apply Finset.mem_image_of_mem (λ v => ValidPair.mk {f v.val} v (by simp [valid]))
-      simp [Finset.attach]
-      exact x.property
-    exact hs_s h_R_y_x h_x_s
--/
-/-
-theorem eqClass_card_ge_two_implies_maximal
-    {α : Type} [Fintype α] [DecidableEq α] [Setoid α]
-    (V : Finset α) (f : V → V)
-    (valid : ∀ v : V, f v ≠ v)
-    (nonemp : V.Nonempty)
-    [inst : Preorder {x // x ∈ V}]  -- size_one_preorder などを想定
-    (x : {x // x ∈ V})
-    (h : 2 ≤ (eqClass V x.1).card)
-  : ∀ y, x ≤ y → y ≤ x := by
--/
-
-
-/-
-「元の前順序で `a` が極大元である」ことと、
-「商集合上で `Quotient.mk a` が極大元である」ことは同値である、という主張を証明します。
--/
-
---def fiterate (s: Setup α) (x : α) (n : ℕ) : α :=
---  s.f^[n] x

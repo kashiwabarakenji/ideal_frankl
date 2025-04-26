@@ -162,6 +162,7 @@ lemma equiv_rel_equiv {α : Type}  [Preorder α]: Equivalence (@equiv_rel α _) 
 --preorderから定義するsetoidのインスタンス。setupの定義で用いる。instanceでなくて、defのほうがいいのかも。
 def setoid_preorder {α : Type}[Preorder α]: Setoid α := ⟨@equiv_rel α _, equiv_rel_equiv⟩
 
+--normalized degree sumが非正になる程度の強さはある。
 structure Setup (α : Type) [Fintype α] [DecidableEq α] where
   (V        : Finset α)
   (nonemp   : V.Nonempty)
@@ -200,7 +201,7 @@ by
   rw [←ha.2]
   simp
 
---setupを与える形で書き直した。
+--setupを与える形でClosureSystemの定義を書き直した。
 --次のpreorder_ideal_system2のように定義する方法もある。
 noncomputable def preorder_ideal_system (s:Setup α): ClosureSystem α :=
 {
@@ -246,6 +247,7 @@ noncomputable def preorder_ideal_system (s:Setup α): ClosureSystem α :=
       · tauto
 }
 
+--集合族をrootedcircircuits経由で別に定義。同値性は、ideal_system_eq_lemで示される。
 noncomputable def preorder_ideal_system2 (s:Setup α): ClosureSystem α :=
  rootedsetToClosureSystem (rootedset_from_setup s)
 --既存の関数を利用した形で定義されているが、rootedsetToClosureSystemが複雑なので簡単になってないかも。
@@ -259,6 +261,7 @@ noncomputable def preorder_ideal_system2 (s:Setup α): ClosureSystem α :=
 --  let SF := rootedsetToClosureSystem RS
 --  ∀ s : Finset RS.ground, SF.sets (s.image Subtype.val) ↔ (s ∈ (preorder.S_R (R_from_RS1 RS))) :=
 
+--後ろで使っている。
 lemma subtype_subset_attach {α : Type} (ss t : Finset α)  :
     Finset.subtype (fun x => x ∈ t) ss ⊆ t.attach :=
 by
@@ -432,7 +435,7 @@ by
           obtain ⟨val_3, property_3⟩ := y
           tauto
 
-        -- 1.  w2 ≤ w1  を  R_from_RS1 w1 w2  に変換
+        -- 1.  w2 ≤ w1  を  R_from_RS1 w1 w2  に変換。後ろで使っている。
         have hR :  preorder.R_hat (R_from_RS1 (rootedset_from_setup s)) w1 w2 :=
         by
           exact (le_eq_R s w1 w2).mp hw2
@@ -473,7 +476,7 @@ by
 
             simp_all only [Finset.mem_powerset, mem_subtype, Subtype.forall, coe_mem, ss_attach, RS]
 
-          -- 2. イデアル閉包で w2 も入る
+          -- 2. イデアル閉包で w2 も入る。simp_allで利用している。
           have hw2_ideal :=
             preorder_ideal_closed_lemma (RS := RS) (s := ss_attach)
               w1 w2 hR hw1_ideal

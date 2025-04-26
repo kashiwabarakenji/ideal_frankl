@@ -23,6 +23,7 @@ open Finset Set Classical
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 
+--これはSetupとは独立に一般に定義している。
 def reach {A : Type} (f : A → A) (x y : A) : Prop :=
   ∃ n : ℕ, f^[n] x = y
 
@@ -49,7 +50,7 @@ def partialOrderOfFq {A : Type} (f : A → A)
       exact noLoop x y hxy hyx
 }
 
---fqまで定義すれば同値類上の前順序が定まる。loopがないことまで証明して半順序。
+--fqまで定義すれば同値類上の前順序が定まる。fのループが許されているので仮定としては弱い。loopがないことまで証明して半順序。
 structure Setup_spo_base (α : Type) [Fintype α] [DecidableEq α] where
   (V : Finset α)
   (nonemp   : V.Nonempty)
@@ -59,6 +60,7 @@ structure Setup_spo_base (α : Type) [Fintype α] [DecidableEq α] where
 --ここでのfqはSetup_spo_baseのfq。
 structure Setup_spo (α : Type) [Fintype α] [DecidableEq α] extends Setup_spo_base α where
   -- antisymmetry を保証する仮定：ループがあれば自明なもののみ
+  --仮定としては、Setup_spoよりも弱く、normalized degree sumが非正とはいえない。
   (noLoop : ∀ x y : Quotient setoid,
     (reach fq x y → reach fq y x → x = y))
   (spo : PartialOrder (Quotient setoid))
@@ -162,7 +164,7 @@ by
   isMaximal s.toSetup a ↔ isMaximalQ s (Quotient.mk s.setoid a) := by
 -/
 
-
+--Setup2に対する対応するSetup_spoの要素。のちにSetup_spo2に拡張される。それがsetup2_induces_spo。
 def setup_setupspo (s: Setup2 α) : Setup_spo α :=
 {
   V := s.V,

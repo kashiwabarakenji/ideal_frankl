@@ -25,6 +25,7 @@ open Finset Set Classical
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 
+--Setup_spoよりも仮定としてはつよくなっている。大きさ2以上の同値類が極大なもののみ。
 structure Setup_spo2 (α : Type) [Fintype α] [DecidableEq α]
   extends Setup_spo α where
   -- 極大でない要素の同値類のサイズが 1
