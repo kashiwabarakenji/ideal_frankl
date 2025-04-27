@@ -1282,35 +1282,6 @@ lemma trace_excess_decrease (s: Setup_spo2 α) (x: s.V) (hx: (classOf s.toSetup_
   exact Eq.symm (Nat.add_sub_assoc h (∑ q ∈ Finset.univ.erase qx, (#(classOf s.toSetup_spo q) - 1)))
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /-ChatGPT 4o
   dsimp [excess]
   let Q := Quotient s.setoid

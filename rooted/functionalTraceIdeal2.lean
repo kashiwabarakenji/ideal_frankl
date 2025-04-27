@@ -25,7 +25,7 @@ set_option maxHeartbeats 2000000
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 
---excessが0であれば、同値類の大きさがすべて1。
+--excessが0であれば、同値類の大きさがすべて1。この部分は、TraceIdealに移動するか、excessの部分でまとめて1ファイルにするといいかも。
 lemma excess_zero (s: Setup_spo2 α) :
   excess s = 0 → ∀ q: Quotient s.setoid, (classOf s.toSetup_spo q).card = 1 :=
 by
@@ -180,8 +180,17 @@ by
   specialize tpar this
   exact tpar
 
---親がたかだかひとつの半順序集合の構造
---ただのSetupと比較するとシンプルになっている。preorderのときのような同値類を考える必要がない。
+--trace_ideal_nds_increaseよりはすっきりした形。
+theorem trace_ideal_nds_increase2 (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
+)).card ≥ 2) :
+(spo_closuresystem s.toSetup_spo).normalized_degree_sum ≤ (spo_closuresystem (setup_trace_spo2 s x hx).toSetup_spo).normalized_degree_sum :=
+by
+  rw [trace_ideal_nds]
+  exact trace_ideal_nds_increase s x hx
+
+--------------------------------------------------------
+
+  --ただのSetupと比較するとシンプルになっている。preorderのときのような同値類を考える必要がない。
 structure Setup_po (α : Type) [Fintype α] [DecidableEq α] where
 (V : Finset α)
 (nonemp   : V.Nonempty)
@@ -570,18 +579,99 @@ by
     constructor
     · intro q hq q' hq'
       show q' ∈ QuotientOf s (Finset.subtype (fun x => x ∈ s.V) ss)
-      sorry
+      let x:= q.out
+      let x':= q'.out
+      specialize h x x.property
+      have : x.val ∈ ss :=
+      by
+        dsimp [QuotientOf] at hq
+        rw [Finset.mem_image] at hq
+        simp at hq
+        obtain ⟨a,ha1,ha2⟩ := hq
+        obtain ⟨ha2,ha3⟩ := ha2
+        have : ⟨a,ha2⟩ = x :=
+        by
+          --equal_one
+          let eo := equal_one s hq1 ⟨a,ha2⟩ x
+          apply eo.mp
+          subst ha3
+          simp_all only [Subtype.coe_eta, Quotient.out_eq, x]
+        simp_all only [Subtype.coe_eta, Quotient.out_eq, coe_mem, le_refl, x]
+        obtain ⟨val, property⟩ := x
+        obtain ⟨val_1, property_1⟩ := x'
+        rwa [← this]
+      specialize h this
+      specialize h x' x'.property
+      have : (po_ideal_system_from_allone s hq1).po.le x' x :=
+      by
+        --hq'からいえるのだけど、補題があったほうがいいかも。reachを一旦挟む？
+        --po.leをfqに変換する方法は？
+        rw [←(po_ideal_system_from_allone s hq1).order]
+        dsimp [reach]
+        rw [s.h_spo] at hq'
+        dsimp [partialOrderOfFq] at hq'
+        dsimp [reach] at hq'
+        obtain ⟨n,hq'⟩ := hq'
+        use n
+        let pisfa := po_ideal_system_from_allone_lem α s hq1 x' x n
+        have :s.fq^[n] ⟦x'⟧ = ⟦x⟧ :=
+        by
+          subst hq'
+          simp_all only [Subtype.coe_eta, Quotient.out_eq, x, x']
+        let pis := pisfa.mp this
+        exact pis
+      specialize h this
+      dsimp [QuotientOf]
+      rw [Finset.image]
+      simp
+      use x'
+      constructor
+      · simp_all only [x, x']
+      · simp_all only [Subtype.coe_eta, Quotient.out_eq, coe_mem, exists_const, x, x']
+
     · constructor
       · simp_all only
-      · sorry
-
-    /-
-    show ∃ I,
-    (∀ q ∈ I, ∀ q' ≤ q, q' ∈ I) ∧
-      ss ⊆ s.V ∧
-        ∀ (hs : ss ⊆ s.V),
-          (∀ (x : α) (h : x ∈ ss), ⟦⟨x, ⋯⟩⟧ ∈ I) ∧ ∀ q ∈ I, ∀ (a : α) (b : a ∈ s.V), ⟦⟨a, b⟩⟧ = q → a ∈ ss    · intro x hx
-    -/
+      · intro hhs
+        constructor
+        · intro x hx
+          dsimp [QuotientOf]
+          rw [Finset.image]
+          simp
+          use x
+          use hx
+          have :x ∈ s.V :=
+          by
+            simp_all only
+            exact hhs hx
+          use this
+        · intro q hq --もしかして、この部分の証明はhの条件を使わないのかも。ゴールがふつつの頂点ではない。
+          --hqだけで証明できるかもしれない。
+          intro x hx hh
+          have xeqq: x = q.out :=
+          by
+            --上の定理のどれかでいえそう。
+            symm
+            let eo := equal_one2 s hq1 ⟨x,hx⟩
+            subst hh
+            simp_all only [eo]
+          dsimp [QuotientOf] at hq
+          rw [Finset.mem_image] at hq
+          simp at hq
+          obtain ⟨a,ha,ha2⟩ := hq
+          obtain ⟨ha2,ha3⟩ := ha2
+          have : x = a :=
+          by
+            have :@Quotient.mk _ s.setoid ⟨x,hx⟩ = @Quotient.mk _ s.setoid ⟨a,ha2⟩ :=
+            by
+              subst ha3 xeqq
+              simp_all only [Subtype.coe_eta, Quotient.out_eq]
+            let eo := equal_one s hq1 ⟨x,hx⟩ ⟨a,ha2⟩
+            subst ha3 xeqq
+            simp_all only [Subtype.coe_eta, Quotient.out_eq]
+            cases eo
+            simp_all only [Subtype.coe_eta, Quotient.out_eq, forall_const, imp_self]
+          rw [this]
+          exact ha
   · intro h
     obtain ⟨q, hq⟩ := h
     obtain ⟨hq1, hq2, hq3⟩ := hq
