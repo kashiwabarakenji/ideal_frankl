@@ -630,10 +630,10 @@ by
 -/
 
 
-theorem spo_closuresystem_nds (s: Setup_spo α) :
-  (spo_closuresystem s).normalized_degree_sum ≥ 0 :=
-by
-  sorry
+--theorem spo_closuresystem_nds (s: Setup_spo α) :
+--  (spo_closuresystem s).normalized_degree_sum ≥ 0 :=
+--by
+--  sorry
 
   -- 証明の内容をここに追加する)
 
