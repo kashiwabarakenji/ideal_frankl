@@ -655,3 +655,77 @@ by
     simp_all only [iterate_succ, comp_apply, Subtype.coe_eta, g, x]
 
   exact ⟨x, h_max, h_reach⟩
+
+lemma po_maximal_reachable_eq (s : Setup_po α) (y : s.V):
+ ∀ x1 x2, (po_maximal s x1 ∧ reach s.f y x1 ) →
+          (po_maximal s x2 ∧ reach s.f y x2) →
+          x1 = x2 :=
+by
+  intro x₁ x₂ h₁ h₂
+  rcases h₁ with ⟨hmax₁, ⟨k₁, hk₁⟩⟩
+  rcases h₂ with ⟨hmax₂, ⟨k₂, hk₂⟩⟩
+  -- 反復回数を比較
+  cases le_or_gt k₁ k₂ with
+  | inl hle =>
+      -- k₁ ≤ k₂ なら x₁ → x₂ に可達
+      have hreach : reach s.f x₁ x₂ := by
+        have : (s.f^[k₂ - k₁]) x₁ = x₂ := by
+          -- 書き換えに `iterate_add_apply`
+          have : (s.f^[k₁ + (k₂ - k₁)]) y = x₂ := by
+            simpa [Nat.add_sub_cancel' hle] using hk₂
+          have : (s.f^[k₂ - k₁]) ((s.f^[k₁]) y) = x₂ := by
+            rw [←iterate_add_apply]
+            have :k₂ - k₁ + k₁ = k₂ := by
+              exact Nat.sub_add_cancel hle
+            rw [this]
+            exact hk₂
+
+          simpa [hk₁] using this
+        exact ⟨k₂ - k₁, this⟩
+      -- 可達性 ↔ ≤ で比較
+      have hle₁₂ : s.po.le x₁ x₂ := (s.order _ _).1 hreach
+      -- 極大性から等号
+      exact (hmax₁ x₂ hle₁₂)
+  | inr hgt =>
+      -- 対称な場合 k₂ ≤ k₁
+      have hreach : reach s.f x₂ x₁ := by
+        have : (s.f^[k₁ - k₂]) x₂ = x₁ := by
+          have : (s.f^[k₂ + (k₁ - k₂)]) y = x₁ := by
+            simpa [Nat.add_sub_cancel' (Nat.le_of_lt hgt)] using hk₁
+          have : (s.f^[k₁ - k₂]) ((s.f^[k₂]) y) = x₁ := by
+            rw [←iterate_add_apply]
+            have :k₁ - k₂ + k₂ = k₁ := by
+              exact Nat.sub_add_cancel (Nat.le_of_lt hgt)
+            rw [this]
+            exact hk₁
+
+          simpa [hk₂] using this
+        exact ⟨k₁ - k₂, this⟩
+      have hle₂₁ : s.po.le x₂ x₁ := (s.order _ _).1 hreach
+      exact (hmax₂ x₁ hle₂₁).symm
+
+noncomputable def proj_max (s: Setup_po α) (v : {x : α // x ∈ s.V}) : {x : α // x ∈ s.V} :=
+  Classical.choose (po_maximal_reachable s v)
+
+def projr (s: Setup_po α)(v w : {x : α // x ∈ s.V}) : Prop := proj_max s v = proj_max s w
+
+instance proj_setoid (s: Setup_po α) : Setoid {x : α // x ∈ s.V} where
+  r  := projr s
+  iseqv :=
+    ⟨
+      -- refl: ∀ (v : {x : α // x ∈ s.V}), projr s v v
+      fun (v : {x : α // x ∈ s.V}) => rfl,
+      -- symm: ∀ (v w : {x : α // x ∈ s.V}), projr s v w → projr s w v
+      @fun (v w : {x : α // x ∈ s.V}) (h : projr s v w) => Eq.symm h,
+      -- trans: ∀ (v w u : {x : α // x ∈ s.V}), projr s v w → projr s w u → projr s v u
+      fun {v : {x : α // x ∈ s.V}} {w : {x : α // x ∈ s.V}} {u : {x : α // x ∈ s.V}}
+          (h₁ : projr s v w) (h₂ : projr s w u) => Eq.trans h₁ h₂
+    ⟩
+
+lemma proj_max_maximal (s: Setup_po α) (v : {x : α // x ∈ s.V}) :
+  po_maximal s (proj_max s v) := by
+  -- proj_max は po_maximal_reachable の選択肢の一つ
+  obtain ⟨x, hmax, _⟩ := Classical.choose_spec (po_maximal_reachable s v)
+  -- x = proj_max s v を示す
+  obtain ⟨val, property⟩ := v
+  exact x
