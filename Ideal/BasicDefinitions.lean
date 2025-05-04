@@ -2,8 +2,9 @@ import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Data.Finset.Powerset
+import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 --import Mathlib.Algebra.BigOperators.Basic
-import Mathlib.Algebra.BigOperators.Group.Finset
+--import Mathlib.Algebra.BigOperators.Group.Finset
 --import Mathlib.Init.Data.Nat.Lemmas
 --import Mathlib.Data.Bool.Basic
 --import Mathlib.Tactic
@@ -29,7 +30,7 @@ structure IdealFamily (α : Type) [DecidableEq α] [Fintype α] extends SetFamil
 
 --この関数のために、setsの値をBoolからPropに変換する。
 def total_size_of_hyperedges (F : SetFamily α)  [DecidablePred F.sets] : ℕ :=
-  ∑ x in ((Finset.powerset F.ground).filter F.sets), x.card
+  ∑ x ∈ ((Finset.powerset F.ground).filter F.sets), x.card
 
 --集合族のhyperedgeの個数
 def number_of_hyperedges (F : SetFamily α) [DecidablePred F.sets] : ℕ :=
