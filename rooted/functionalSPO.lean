@@ -27,6 +27,16 @@ variable {α : Type} [Fintype α] [DecidableEq α]
 def reach {A : Type} (f : A → A) (x y : A) : Prop :=
   ∃ n : ℕ, f^[n] x = y
 
+lemma reach_trans {A : Type} (f : A → A) {x y z : A}
+  (hxy : reach f x y) (hyz : reach f y z) :
+  reach f x z := by
+  obtain ⟨n, hn⟩ := hxy
+  obtain ⟨m, hm⟩ := hyz
+  exists (n + m)
+  subst hn hm
+  rw [←Function.iterate_add_apply]
+  rw [add_comm]
+
 def partialOrderOfFq {A : Type} (f : A → A)
   (noLoop : ∀ x y, reach f x y → reach f y x → x = y)
   : PartialOrder A :=

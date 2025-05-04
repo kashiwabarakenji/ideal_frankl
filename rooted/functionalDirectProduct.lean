@@ -253,13 +253,6 @@ private lemma comp_po_iter_val
     by
       simp_all only
 
-    --つかってないよう。消しても良い。
-    --let y : s.V := comp_po_to_sV s q (((comp_po_f s q)^[n]) x)
-    -- y.val = ((comp_po_f s q)^[n] x).val としておく
-    --have hy : y.val = (((comp_po_f s q)^[n]) x).val := rfl
-    --simp_all only [y]
-    --obtain ⟨val_1, property_1⟩ := y
-
     obtain ⟨val, property⟩ := x
     simp_all only
     simp only [SetupPoComponent.comp_po_f, h_eq]
@@ -271,18 +264,6 @@ private lemma comp_po_reach_equiv
   reach (comp_po_f s q) x y
     ↔ reach s.f ⟨x, comp_po_sub s q x.2⟩ ⟨y, comp_po_sub s q y.2⟩ :=
 by
-  -- 先の constructor/rintro の証明をここに
-  /-
-  have xin: x.val ∈ s.V := by
-    let xp := x.property
-    dsimp [SetupPoComponent.comp_po_V'] at xp
-    rw [Finset.mem_image] at xp
-    simp at xp
-    dsimp [compFinset] at xp
-    simp at xp
-    obtain ⟨w, hwf⟩ := xp
-    exact w
-  -/
 
   let sx : { a // a ∈ s.V } := ⟨x, comp_po_sub s q x.2⟩
   let sy : { a // a ∈ s.V } := ⟨y , comp_po_sub s q y.2⟩
@@ -320,6 +301,23 @@ private lemma comp_po_restrict_le_iff
   (restrict_order s q).le x y ↔ s.po.le ⟨x, comp_po_sub s q x.2⟩ ⟨y, comp_po_sub s q y.2⟩ := by
   simp [restrict_order]
 
+--qを除いた半順序の定義に使う部分。
+private noncomputable def exclFinset
+  (s : Setup_po α) (q : Quotient (proj_setoid s)) :
+  Finset {x // x ∈ s.V} :=
+  Finset.filter
+    (fun v ↦ @Quotient.mk _ (proj_setoid s) v ≠ q)
+    s.V.attach
+
+/-- 除外部分を **`α` の `Finset`** として取り出した頂点集合 -/
+private noncomputable def excl_po_V'
+  (s : Setup_po α) (q : Quotient (proj_setoid s)) : Finset α :=
+  (exclFinset s q).image Subtype.val
+
+private lemma excl_po_sub (s : Setup_po α) (q) :
+  excl_po_V' s q ⊆ s.V := by
+  dsimp [excl_po_V', exclFinset]; simp [Finset.image_subset_iff]
+
 end SetupPoComponent
 
 open SetupPoComponent
@@ -348,209 +346,185 @@ noncomputable def comp_po (s : Setup_po α) (q : Quotient (proj_setoid s))
     simpa [comp_po_restrict_le_iff s q, ← comp_po_reach_equiv s q x y]
       using (comp_po_reach_equiv s q x y).trans (s.order _ _) }
 
+private noncomputable def excl_po_f
+  (s : Setup_po α) (q) (v' : excl_po_V' s q) : excl_po_V' s q := by
+  -- ① もとの `s.V` へ
+  have hv : (v' : α) ∈ s.V := excl_po_sub s q v'.property
+  let fv : s.V := s.f ⟨v', hv⟩
+  let v  : s.V := ⟨v', hv⟩
 
-/- 書き直したので、決して良い。
+  let mk : s.V → Quotient (proj_setoid s) := @Quotient.mk s.V (proj_setoid s)
 
-/-- `Setup_po`をひとつの連結成分に制限する関数。 -/
-noncomputable def comp_po (s : Setup_po α) (q: Quotient (proj_setoid s)) : Setup_po α :=
-let V' := (compFinset s q).image Subtype.val
-have sub: V' ⊆ s.V := by
-      simp_all only [coe_mem, V']
-      rw [Finset.image_subset_iff]
-      intro x a
-      simp_all only [coe_mem, V']
-{ V := (compFinset s q).image Subtype.val,
-  po := restrict_order s q,
-  nonemp := by
-    -- q は連結成分なので非空
-    obtain ⟨v, hv⟩ := (Quot.exists_rep q)
-    refine ⟨Subtype.val v, ?_⟩
-    dsimp [compFinset]
-    subst hv
-    simp_all only [Finset.mem_image, mem_filter, mem_attach, true_and, Subtype.exists, exists_and_right,
-      exists_eq_right, Subtype.coe_eta, coe_mem, exists_const]
-    obtain ⟨val, property⟩ := v
-    rfl
+  let spec_fv := proj_max_spec s fv
 
-  f  := fun v' =>
-    have vin : v'.val ∈ s.V := by
-      exact sub v'.property
-    let fv : s.V := s.f ⟨v'.val, vin⟩
-        -- まず fv ∈ compFinset s q を示す
-    have hq :  q = Quotient.mk (proj_setoid s) fv := by
-          -- q = mk w かつ mk v' = q から，proj_max fv = proj_max v'
-      obtain ⟨w, hw⟩ := Quot.exists_rep q
+  -- (a) reach s.f v fv を立てる
+  have reach_v_fv : reach s.f v fv := by
+    -- 1 ステップで到達：f^[1] v = f v = fv
+    use 1
+    simp
+    simp_all only [v, fv]
+
+  -- (b) reach s.f v (proj_max s fv) を合成して得る
+  have reach_v_pm : reach s.f v (proj_max s fv) := by
+
+    -- reach.trans : reach f x y → reach f y z → reach f x z
+    let rsv := reach_maximal s v--reach_v_fv spec_fv.2
+    exact reach_trans s v fv (proj_max s fv) reach_v_fv rsv
+
+  -- (c) h1 : po_maximal ∧ reach for (proj_max s fv) と v
+  have h1 : po_maximal s (proj_max s fv) ∧ reach s.f v (proj_max s fv) :=
+    ⟨spec_fv.1, reach_v_pm⟩
+
+  -- (d) spec_v で得られる h2 : po_maximal s (proj_max s v) ∧ reach s.f v (proj_max s v)
+  let spec_v := proj_max_spec s v
+
+  -- (e) 同じ始点 v から両極大点に到達できるなら一意
+  let eq_pm := po_maximal_reachable_eq s v (proj_max s fv) (proj_max s v) h1 spec_v
+
+  -- (f) これで同値類不変を mk に反映
+  have cls : mk fv = mk v := by
+    apply Quot.sound; exact eq_pm
+  -- ② 同値類が変わらないので q とは異なる
+  /-
+  have v_neq_q : (Quotient.mk (proj_setoid s) v) ≠ q := by
+    -- v' ∈ exclFinset s q なので filter の第二条件が直接これ
+    let vp := v'.property
+    dsimp [SetupPoComponent.excl_po_V'] at vp
+    dsimp [exclFinset] at vp
+    rw [Finset.mem_image] at vp
+    simp at vp
+    obtain ⟨w, hwf⟩ := vp
+    exact hwf
+
+  -- ③ class preserving: mk fv = mk v
+  have cls : mk fv = mk v := by
+    -- 補題を取り出し
+    let spec_fv := proj_max_spec s fv
+    let spec_v  := proj_max_spec s v
+
+    -- (a) fv から proj_max s fv への到達
+    have reach_fv_pm : reach s.f fv (proj_max s fv) := spec_fv.2
+
+    -- (b) v から proj_max s fv への到達
+    have reach_v_pm : reach s.f v (proj_max s fv) := by
+      -- reach s.f v fv  が明らかなので、それと (a) をつなぐ
+      have : reach s.f v fv := by
+        dsimp [reach]; use 1; simp
+        exact rfl
+      rcases reach_fv_pm with ⟨n, hn⟩
+      dsimp [reach] at this
+
+      rcases this with ⟨1, rfl⟩
+      -- 合成して n+1 ステップで proj_max s fv に到達
+      use n + 1
       calc
-        q
-          = Quotient.mk _ w := Eq.symm hw
-        _ = Quotient.mk _ ⟨v'.1, vin⟩ := by
-          -- v' が filter に拾われているので mk v' = q
-          let vp := v'.property
-          dsimp [compFinset] at vp
-          rw [Finset.mem_image] at vp
-          simp at vp
-          obtain ⟨w, hwf⟩ := vp
-          rename_i w_1
-          subst hw
-          simp_all only [V']
-          rfl
-        _ = Quotient.mk _ fv := by
-          -- f preserves class: projr s fv v'
-          apply Quot.sound
-          dsimp [projr];
-          -- proj_max s (s.f v') = proj_max s v'
-          apply po_maximal_reachable_eq s ⟨v'.1, vin⟩-- (proj_max s v') (proj_max s fv)
-          · constructor
-            · -- reach s.f (s.f v') (proj_max s fv)
-              obtain ⟨x₀, hmp, ⟨k, hk⟩⟩ := po_maximal_reachable s fv
-              --dsimp [po_maximal]
-              intro y hy
-              have : po_maximal s (proj_max s ⟨↑v', vin⟩) :=
-              by
-                exact proj_max_maximal s ⟨↑v', vin⟩
-              dsimp [po_maximal] at this
-              specialize this y hy
-              exact this
+        (s.f^[n+1]) v
+            = (s.f^[n]) (s.f v) := rfl
+        _          = (s.f^[n]) fv := rfl
+        _          = proj_max s fv := hn
 
-            · -- reach s.f v' (proj_max s v')
-              obtain ⟨x₁, hmp₁, ⟨k, hk₁⟩⟩ := po_maximal_reachable s ⟨v'.1, vin⟩
-              dsimp [reach]
-              use k
-              rw [hk₁]
-              show  x₁ = proj_max s ⟨↑v', vin⟩
-              have :reach s.f ⟨↑v', vin⟩  x₁ :=
-              by
-                dsimp [reach]
-                use k
-              let pm := proj_max_unique s ⟨hmp₁, this⟩
-              symm
-              exact pm
-          · constructor
-            · -- proj_max s (s.f v') = proj_max s v'
-              obtain ⟨x₀, hmp, ⟨k, hk⟩⟩ := po_maximal_reachable s fv
-              dsimp [po_maximal] at hmp
-              exact proj_max_maximal s fv
+    -- (c) x1 = proj_max s fv, x2 = proj_max s v として
+    have h1 : po_maximal s (proj_max s fv) ∧ reach s.f v (proj_max s fv) := by
+      exact ⟨spec_fv.1, reach_v_pm⟩
 
-            · -- reach s.f v' (proj_max s v')
-              obtain ⟨x₁, hmp₁, ⟨k, hk₁⟩⟩ := po_maximal_reachable s ⟨v'.1, vin⟩
-              dsimp [reach]
-              use k
-              rw [hk₁]
-              have :reach s.f ⟨↑v', vin⟩  x₁ :=
-              by
-                dsimp [reach]
-                use k
-              have :reach s.f (s.f ⟨↑v', vin⟩)  x₁ :=
-              by
-                dsimp [reach]
-                use k-1
-                rw [←@Function.comp_apply _ _ _ s.f^[k - 1]  ]
-                rw [←Function.iterate_succ]
-                by_cases hk:k = 0
-                case pos =>
-                  rw [hk] at hk₁
-                  simp at hk₁
-                  rw [hk₁]
-                  rw [hk ]
-                  simp
-                  exact (po_maximal_lem s x₁).mp hmp₁
-                case neg =>
-                  have : (k - 1).succ = k := by
-                    exact Nat.succ_pred_eq_of_ne_zero hk
-                  subst hw hk₁
-                  simp_all only [Nat.succ_eq_add_one, V']
+    -- (d) spec_v そのまま (po_maximal s (proj_max s v) ∧ reach s.f v (proj_max s v))
+    have h2 := spec_v
 
-              let pm := proj_max_unique s ⟨hmp₁, this⟩
-              symm
-              dsimp [fv]
-              exact pm
+    -- (e) 同じ起点 v から両方到達できるなら一意
+    let pr := po_maximal_reachable_eq s v (proj_max s fv) (proj_max s v) h1 h2
 
-      -- この計算全体で mk fv = q
-    -- 以上で fv ∈ compFinset s q; 画像に落として Subtype 作成
+    -- ここで mk fv = mk v を得る
+    apply Quot.sound; exact pr
 
-    ⟨fv.1, by
-    simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, Subtype.coe_eta, coe_mem,
-      exists_const, V', fv]
-    simp [compFinset]
-    rfl⟩
+  have cls : (Quotient.mk (proj_setoid s) fv) = (Quotient.mk (proj_setoid s) v) := by
+    -- projr s fv v で同値類を示す
+    have pr : projr s fv v := by
+      dsimp [projr]
+      apply po_maximal_reachable_eq s
+      -- 左：po_maximal ∧ reach (fv から proj_max s fv)
+      obtain ⟨x₁, hmp₁, ⟨k₁, hk₁⟩⟩ := po_maximal_reachable s fv
+      constructor
+      · exact proj_max_maximal s fv
+      · dsimp [reach]; use k₁;
+        show s.f^[k₁] ?y = proj_max s fv
+        sorry
 
-  order := fun x y => by
-    -- unfold reach and restrict_order.le
-    dsimp [reach, restrict_order]
-    constructor
-    · -- (→) reach f' x y なら reach s.f x.val y.val
-      rintro ⟨n, h⟩
-      -- h : (f'^[n]) x = y
-      -- 反復の「f'^[k] x の .val = s.f^[k] x.val」を帰納で示す補題無しでいけます
-      induction n with
-      | zero =>
-        -- iterate_zero で h : x = y, つまり x.val = y.val
-        dsimp [Function.iterate_zero] at h
-        subst h
-        simp_all only [le_refl, V']
+      -- 右：po_maximal ∧ reach (v から proj_max s v)
+      obtain ⟨x₂, hmp₂, ⟨k₂, hk₂⟩⟩ := po_maximal_reachable s v
+      constructor
+      · exact proj_max_maximal s v
+      · dsimp [reach]; use k₂;
+        sorry
 
-      | succ k ih =>
-        -- h : f' (f'^[k] x) = y
-        have xin:x.val ∈ s.V :=
-        by
-          subst h
-          obtain ⟨val, property⟩ := x
-          simp_all only [V']
-          simp_all only [Function.iterate_succ, Function.comp_apply, V']
-          exact sub property
+      · simp_all only [coe_mem, not_false_eq_true, and_self, mem_attach, ne_eq]
+        simp_all only [v]
+        obtain ⟨val, property⟩ := v'
+        obtain ⟨val_1, property_1⟩ := fv
+        obtain ⟨val_2, property_2⟩ := v
+        simp_all only
+        tauto
 
-        have yin:y.val ∈ s.V :=
-        by
-          subst h
-          simp_all only [Function.iterate_succ, Function.comp_apply, V']
-          obtain ⟨val, property⟩ := x
-          simp_all only [V']
-          apply sub
-          simp_all only [coe_mem, V']
+    -- 以上で projr s fv v、よって
+    apply Quot.sound; exact pr
+  -/
 
-        dsimp [Function.iterate_succ] at h
-        -- 一歩目 f (f^[k] x) = y
+  have hneq : (Quotient.mk (proj_setoid s) fv) ≠ q := by
+    intro heq
+    -- 仮に mk fv = q とすると mk v = q by cls
+    have : (Quotient.mk _ v) = q := by calc
+      _ = _ := (cls.symm)
+      _ = _ := heq
+    exact (v_neq_q this)
 
-        injection h with _ hk
-        have IH := ih hk
-        -- 裏返すと s.f^[k] ↑x = ↑(f^[k] x)
-        simpa [Function.iterate_succ, *] using (by
-          use k + 1; exact congrArg (fun v => (v : s.V)) h)
-
-        have : (fun v' =>
-          have vin : v' ∈ s.V := by
-            apply sub
-            exact?
-            exact sub v'.property
-
-          ⟨s.f ⟨v',win⟩^[k] x) = y := by
-            -- underlying の hn を使って
-            refine congrArg (fun v' : α => ⟨v', sub _⟩) _; exact ih
-              exact this
-        injection h_n with _ h_k
-            -- reach f (f^[k] x) y
-        exact (s.order _ _).1 ⟨k+1, by
-        -- defeq で h_k : f^[k] x = y をそのまま使う
-          dsimp [Function.iterate_succ]; exact h_n⟩
+  -- ⑤ fv がフィルター後に残るので Subtype 化
+  have fv_in : fv ∈ exclFinset s q := by
+    dsimp [exclFinset]; simp [hneq]
+  refine ⟨fv.1, by simpa [excl_po_V'] using fv_in⟩
 
 
+private noncomputable def restrict_order_excl
+  (s : Setup_po α) (q) :
+  PartialOrder (excl_po_V' s q) :=
+restrict_order_core s (excl_po_V' s q) (excl_po_sub s q)
 
-    · -- (←) reach s.f x.val y.val なら reach f' x y
-      intro hle
-      obtain ⟨n, hn⟩ := (s.order _ _).2 hle
-      use n
-      induction n with
-      | zero =>
-        dsimp [Function.iterate_zero]; simp [hn]
-      | succ k ih =>
-        dsimp [Function.iterate_succ]
-        -- f' (f'^[k] x) = mk (s.f ( (s.f^[k]) x.val ))
-        -- and hn : s.f^[k+1] x.val = y.val
-        -- by defeq this is exactly f'^[k+1] x = y
-        congr 1
-        simpa using ih
-
+/--
+`comp_po` が「連結成分 `q` そのもの」を取るのに対し，
+`excl_po` は **その成分を丸ごと取り除いた残り**で `Setup_po` を作る。
+`hnonempty` は「残りが空でない」ことを仮定として与える。
 -/
+noncomputable def excl_po
+  (s : Setup_po α) (q : Quotient (proj_setoid s))
+  (hnonempty : (excl_po_V' s q).Nonempty) :
+  Setup_po α :=
+{ V       := excl_po_V' s q
+, nonemp  := hnonempty
+, f       := excl_po_f s q
+, po      := restrict_order_excl s q
+, order   := by
+    intro x y
+    -- 1) reach (excl_po_f) x y  ↔  reach s.f sx sy
+    --    （sx,sy は x,y を s.V に移したもの）
+    -- 2) reach s.f sx sy  ↔  s.po.le sx sy   （元の setup）
+    -- 3) `restrict_order_excl` の `le` は s.po.le と同値
+    --    → 以上を chain して証明
+    let sx : s.V := ⟨x, excl_po_sub s q x.property⟩
+    let sy : s.V := ⟨y, excl_po_sub s q y.property⟩
+
+    -- 補題①
+    have reach_equiv :
+      reach (excl_po_f s q) x y ↔ reach s.f sx sy := by
+      -- 反復値一致補題を `excl_po_iter_val` として同様に証明すれば
+      -- `comp_po_iter_val` と同じパターンで書ける
+      sorry
+
+    -- 補題②： restrict_order_excl.le ↔ s.po.le
+    have restr_iff :
+      (restrict_order_excl s q).le x y ↔ s.po.le sx sy := by
+      simp [restrict_order_excl]
+
+    simpa [restr_iff] using (reach_equiv.trans (s.order sx sy)) }
+
+
 /-
 -- ideal 系
 def IdealSys (s : Setup_po α) := partialorder_ideal_system s

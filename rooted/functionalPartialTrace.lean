@@ -729,3 +729,11 @@ lemma proj_max_maximal (s: Setup_po α) (v : {x : α // x ∈ s.V}) :
   -- x = proj_max s v を示す
   obtain ⟨val, property⟩ := v
   exact x
+
+lemma reach_maximal (s: Setup_po α) (v : {x : α // x ∈ s.V}) : reach s.f v (proj_max s v) := by
+  -- proof for reachability from v to proj_max s v
+  dsimp [proj_max]
+  --dsimp [po_maximal_reachable]
+  obtain ⟨x, n, hx⟩ := Classical.choose_spec (po_maximal_reachable s v)
+  dsimp [reach]
+  use n
