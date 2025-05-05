@@ -709,7 +709,7 @@ noncomputable def proj_max (s: Setup_po α) (v : {x : α // x ∈ s.V}) : {x : �
 
 def projr (s: Setup_po α)(v w : {x : α // x ∈ s.V}) : Prop := proj_max s v = proj_max s w
 
-instance proj_setoid (s: Setup_po α) : Setoid {x : α // x ∈ s.V} where
+instance proj_setoid {α : Type} [Fintype α] [DecidableEq α] (s: Setup_po α) [DecidableRel (projr s)]: Setoid {x : α // x ∈ s.V} where
   r  := projr s
   iseqv :=
     ⟨
@@ -729,6 +729,7 @@ lemma proj_max_maximal (s: Setup_po α) (v : {x : α // x ∈ s.V}) :
   -- x = proj_max s v を示す
   obtain ⟨val, property⟩ := v
   exact x
+
 
 lemma reach_maximal (s: Setup_po α) (v : {x : α // x ∈ s.V}) : reach s.f v (proj_max s v) := by
   -- proof for reachability from v to proj_max s v

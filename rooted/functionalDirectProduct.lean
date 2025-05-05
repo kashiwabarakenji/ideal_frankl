@@ -17,10 +17,6 @@ set_option maxHeartbeats 2000000
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 
---def classOf (s : Setup_spo α) (q : Quotient s.setoid) [DecidableEq (Quotient s.setoid)]  : Finset {x // x ∈ s.V} :=
---  Finset.filter (fun (a : {x // x ∈ s.V}) => @Quotient.mk'' _ s.setoid a = q) s.V.attach
-
-
 noncomputable def compFinset (s : Setup_po α) (q : Quotient (proj_setoid s))[DecidableEq (Quotient (proj_setoid s))] : Finset {x // x ∈ s.V} :=
   Finset.filter (fun (v:{x // x ∈ s.V}) => @Quotient.mk'' _ (proj_setoid s) v = q) s.V.attach
 
@@ -303,7 +299,7 @@ private lemma comp_po_restrict_le_iff
 
 --qを除いた半順序の定義に使う部分。
 private noncomputable def exclFinset
-  (s : Setup_po α) (q : Quotient (proj_setoid s)) :
+  (s : Setup_po α) (q : Quotient (proj_setoid s))[DecidableRel (projr s)]  :
   Finset {x // x ∈ s.V} :=
   Finset.filter
     (fun v ↦ @Quotient.mk _ (proj_setoid s) v ≠ q)
@@ -311,12 +307,47 @@ private noncomputable def exclFinset
 
 /-- 除外部分を **`α` の `Finset`** として取り出した頂点集合 -/
 private noncomputable def excl_po_V'
-  (s : Setup_po α) (q : Quotient (proj_setoid s)) : Finset α :=
+  (s : Setup_po α)
+  (q : Quotient (proj_setoid s))
+  [DecidableRel (projr s)]
+  [DecidableEq (Quotient (proj_setoid s))] :
+  Finset α :=
   (exclFinset s q).image Subtype.val
 
-private lemma excl_po_sub (s : Setup_po α) (q) :
+private lemma excl_po_sub
+  (s : Setup_po α) (q : Quotient (proj_setoid s))
+  [DecidableRel (projr s)]
+  [DecidableEq   (Quotient (proj_setoid s))] :
   excl_po_V' s q ⊆ s.V := by
-  dsimp [excl_po_V', exclFinset]; simp [Finset.image_subset_iff]
+  dsimp [excl_po_V', exclFinset]
+  -- Finset.image_subset_iff : image f s ⊆ t ↔ s ⊆ t.preimage f
+  simp only [Finset.image_subset_iff, Subtype.coe_mk]
+  intros x hx
+  -- hx : x ∈ exclFinset s q
+  -- exclFinset s q ⊆ s.V.attach なので x.1 ∈ s.V
+  exact coe_mem x
+
+noncomputable def restrict_order_core
+  (s : Setup_po α)
+  (V' : Finset α)
+  (sub : V' ⊆ s.V) :
+  PartialOrder (Subtype fun x => x ∈ V') :=
+{ le            := fun x y =>
+    -- compare via the original order on s.V
+    s.po.le ⟨x.1, sub x.2⟩ ⟨y.1, sub y.2⟩
+, le_refl       := fun x =>
+    -- reflexivity from the original order
+    s.po.le_refl _
+, le_trans      := fun {x y z} hxy hyz =>
+    -- transitivity from the original order
+    s.po.le_trans ⟨x.1, sub x.2⟩ ⟨y.1, sub y.2⟩ ⟨z.1, sub z.2⟩ hxy hyz
+, le_antisymm  := fun {x y} hxy hyx => by
+    -- antisymmetry from the original order, then Subtype.ext to lift to the subtype
+    let sp := s.po.le_antisymm ⟨x.1, sub x.2⟩ ⟨y.1, sub y.2⟩ hxy hyx
+    apply Subtype.ext
+    simpa using sp
+}
+
 
 end SetupPoComponent
 
@@ -346,8 +377,22 @@ noncomputable def comp_po (s : Setup_po α) (q : Quotient (proj_setoid s))
     simpa [comp_po_restrict_le_iff s q, ← comp_po_reach_equiv s q x y]
       using (comp_po_reach_equiv s q x y).trans (s.order _ _) }
 
+---  ここからqでない部分の半順序を与える議論
+def numClasses {α : Type _} (st : Setoid α)
+  [Fintype α] [DecidableEq (Quotient st)] : ℕ :=
+  (Finset.univ.image (Quot.mk st.r)).card
+
+
+
 private noncomputable def excl_po_f
-  (s : Setup_po α) (q) (v' : excl_po_V' s q) : excl_po_V' s q := by
+  (s : Setup_po α)
+  (q : Quotient (proj_setoid s))
+  [DecidableRel (projr s)]
+  [DecidableEq (Quotient (proj_setoid s))]
+  (v' : excl_po_V' s q) :
+  excl_po_V' s q := by
+--private noncomputable def excl_po_f
+--  (s : Setup_po α) (q) [DecidableEq (Quotient (proj_setoid s))] (v' : excl_po_V' s q) : excl_po_V' s q := by
   -- ① もとの `s.V` へ
   have hv : (v' : α) ∈ s.V := excl_po_sub s q v'.property
   let fv : s.V := s.f ⟨v', hv⟩
@@ -367,9 +412,9 @@ private noncomputable def excl_po_f
   -- (b) reach s.f v (proj_max s fv) を合成して得る
   have reach_v_pm : reach s.f v (proj_max s fv) := by
 
-    -- reach.trans : reach f x y → reach f y z → reach f x z
-    let rsv := reach_maximal s v--reach_v_fv spec_fv.2
-    exact reach_trans s v fv (proj_max s fv) reach_v_fv rsv
+    let rsv := reach_maximal s fv--reach_v_fv spec_fv.2
+    --rw [ this ]
+    exact reach_trans s.f reach_v_fv rsv
 
   -- (c) h1 : po_maximal ∧ reach for (proj_max s fv) と v
   have h1 : po_maximal s (proj_max s fv) ∧ reach s.f v (proj_max s fv) :=
@@ -385,7 +430,7 @@ private noncomputable def excl_po_f
   have cls : mk fv = mk v := by
     apply Quot.sound; exact eq_pm
   -- ② 同値類が変わらないので q とは異なる
-  /-
+
   have v_neq_q : (Quotient.mk (proj_setoid s) v) ≠ q := by
     -- v' ∈ exclFinset s q なので filter の第二条件が直接これ
     let vp := v'.property
@@ -396,84 +441,13 @@ private noncomputable def excl_po_f
     obtain ⟨w, hwf⟩ := vp
     exact hwf
 
-  -- ③ class preserving: mk fv = mk v
-  have cls : mk fv = mk v := by
-    -- 補題を取り出し
-    let spec_fv := proj_max_spec s fv
-    let spec_v  := proj_max_spec s v
-
-    -- (a) fv から proj_max s fv への到達
-    have reach_fv_pm : reach s.f fv (proj_max s fv) := spec_fv.2
-
-    -- (b) v から proj_max s fv への到達
-    have reach_v_pm : reach s.f v (proj_max s fv) := by
-      -- reach s.f v fv  が明らかなので、それと (a) をつなぐ
-      have : reach s.f v fv := by
-        dsimp [reach]; use 1; simp
-        exact rfl
-      rcases reach_fv_pm with ⟨n, hn⟩
-      dsimp [reach] at this
-
-      rcases this with ⟨1, rfl⟩
-      -- 合成して n+1 ステップで proj_max s fv に到達
-      use n + 1
-      calc
-        (s.f^[n+1]) v
-            = (s.f^[n]) (s.f v) := rfl
-        _          = (s.f^[n]) fv := rfl
-        _          = proj_max s fv := hn
-
-    -- (c) x1 = proj_max s fv, x2 = proj_max s v として
-    have h1 : po_maximal s (proj_max s fv) ∧ reach s.f v (proj_max s fv) := by
-      exact ⟨spec_fv.1, reach_v_pm⟩
-
-    -- (d) spec_v そのまま (po_maximal s (proj_max s v) ∧ reach s.f v (proj_max s v))
-    have h2 := spec_v
-
-    -- (e) 同じ起点 v から両方到達できるなら一意
-    let pr := po_maximal_reachable_eq s v (proj_max s fv) (proj_max s v) h1 h2
-
-    -- ここで mk fv = mk v を得る
-    apply Quot.sound; exact pr
-
-  have cls : (Quotient.mk (proj_setoid s) fv) = (Quotient.mk (proj_setoid s) v) := by
-    -- projr s fv v で同値類を示す
-    have pr : projr s fv v := by
-      dsimp [projr]
-      apply po_maximal_reachable_eq s
-      -- 左：po_maximal ∧ reach (fv から proj_max s fv)
-      obtain ⟨x₁, hmp₁, ⟨k₁, hk₁⟩⟩ := po_maximal_reachable s fv
-      constructor
-      · exact proj_max_maximal s fv
-      · dsimp [reach]; use k₁;
-        show s.f^[k₁] ?y = proj_max s fv
-        sorry
-
-      -- 右：po_maximal ∧ reach (v から proj_max s v)
-      obtain ⟨x₂, hmp₂, ⟨k₂, hk₂⟩⟩ := po_maximal_reachable s v
-      constructor
-      · exact proj_max_maximal s v
-      · dsimp [reach]; use k₂;
-        sorry
-
-      · simp_all only [coe_mem, not_false_eq_true, and_self, mem_attach, ne_eq]
-        simp_all only [v]
-        obtain ⟨val, property⟩ := v'
-        obtain ⟨val_1, property_1⟩ := fv
-        obtain ⟨val_2, property_2⟩ := v
-        simp_all only
-        tauto
-
-    -- 以上で projr s fv v、よって
-    apply Quot.sound; exact pr
-  -/
-
   have hneq : (Quotient.mk (proj_setoid s) fv) ≠ q := by
     intro heq
     -- 仮に mk fv = q とすると mk v = q by cls
     have : (Quotient.mk _ v) = q := by calc
       _ = _ := (cls.symm)
       _ = _ := heq
+
     exact (v_neq_q this)
 
   -- ⑤ fv がフィルター後に残るので Subtype 化
@@ -482,8 +456,150 @@ private noncomputable def excl_po_f
   refine ⟨fv.1, by simpa [excl_po_V'] using fv_in⟩
 
 
+
+private lemma excl_po_val_step
+  (s : Setup_po α) (q : Quotient (proj_setoid s))[DecidableRel (projr s)] [DecidableEq (Quotient (proj_setoid s))]
+  (v : excl_po_V' s q) :
+  (excl_po_f s q v).val
+    = s.f ⟨v.val, excl_po_sub s q v.property⟩ := by
+  -- excl_po_f は `fv : s.V := s.f ⟨v, _⟩` を作り
+  -- その .val をそのまま持ってくるだけなので reflexivity
+  dsimp [excl_po_f]      -- def を展開
+
+
+----------------------------------------------------------------
+-- 2. 反復値が一致する補題
+----------------------------------------------------------------
+
+private lemma excl_po_iter_val
+  (s : Setup_po α) (q : Quotient (proj_setoid s))
+  [DecidableRel (projr s)] [DecidableEq (Quotient (proj_setoid s))]
+  (x : excl_po_V' s q) :
+  ∀ n : ℕ,
+    ((excl_po_f s q)^[n] x).val
+      = (s.f^[n]) ⟨x.val, excl_po_sub s q x.property⟩ := by
+  intro n
+  induction n with
+  | zero =>
+      simp [Function.iterate_zero]
+  | succ n ih =>
+      -- 補題を内側点 `excl_po_f x` に適用した再帰呼び出し
+      --have ih' := excl_po_iter_val s q (excl_po_f s q x) n
+      -- あとは反復の展開と補題を代入すれば両辺が一致
+      simp [Function.iterate_succ,excl_po_val_step,ih]
+      have step : (excl_po_f s q ((excl_po_f s q)^[n] x)).val
+            = s.f ⟨((excl_po_f s q)^[n] x).val, excl_po_sub s q ((excl_po_f s q)^[n] x).property⟩ :=
+        excl_po_val_step _ _ _
+
+      -- 3) 帰納仮定から内部の .val の等号を取出す
+      have ih_val :
+        ((excl_po_f s q)^[n] x).val
+          = ((s.f^[n]) ⟨x.val, excl_po_sub s q x.property⟩).val :=
+      by
+        simp_all only [Subtype.coe_eta]
+      -- 4) calc でつなげる
+      calc
+        (((excl_po_f s q)^[n+1]) x).val
+            = (excl_po_f s q ((excl_po_f s q)^[n] x)).val :=
+        by
+          rw [Function.iterate_succ']
+          rw [Function.comp_apply]
+        _ = s.f ⟨((excl_po_f s q)^[n] x).val, _⟩               := step
+        _ = s.f ((s.f^[n]) ⟨x.val, _⟩)                         := by
+          -- `congr` でサブタイプ全体を同値にしつつ内部の .val を ih_val で置換
+          congr;
+        _ = (s.f^[n+1]) ⟨x.val, excl_po_sub s q x.property⟩    := by
+          rw [Function.iterate_succ']
+          rw [Function.comp_apply]
+
+----------------------------------------------------------------
+-- 3. reach の同値性
+----------------------------------------------------------------
+private lemma excl_po_reach_equiv
+  (s : Setup_po α) (q : Quotient (proj_setoid s))
+  [DecidableRel (projr s)] [DecidableEq (Quotient (proj_setoid s))]
+  (x y : excl_po_V' s q) :
+  reach (excl_po_f s q) x y
+    ↔
+  reach s.f
+        ⟨x.val, excl_po_sub s q x.property⟩
+        ⟨y.val, excl_po_sub s q y.property⟩ := by
+
+  -- 記号を短く
+  let sx : s.V := ⟨x.val, excl_po_sub s q x.property⟩
+  let sy : s.V := ⟨y.val, excl_po_sub s q y.property⟩
+
+  constructor
+  · ------------------------------------------------------------
+    -- 片方向：excl_po_f → s.f
+    ------------------------------------------------------------
+    rintro ⟨n, hn⟩
+    -- (val) に落として等式を作る
+    have h_val : ((excl_po_f s q)^[n] x).val = y.val :=
+      congrArg Subtype.val hn
+
+    -- 反復値補題で置き換え
+    have h_val' : (s.f^[n] sx).val = y.val := by
+      simpa [excl_po_iter_val s q x n] using h_val
+
+    -- Subtype.ext で .val = .val から等号復元
+    refine ⟨n, ?_⟩
+    apply Subtype.ext
+    exact h_val'
+  · ------------------------------------------------------------
+    -- 逆方向：s.f → excl_po_f
+    ------------------------------------------------------------
+    rintro ⟨n, hn⟩
+    -- .val = .val を取り出す
+    have h_val : (s.f^[n] sx).val = sy.val :=
+      congrArg Subtype.val hn
+
+    -- 反復値補題を使って excl_po 側に戻す
+    have h_val' :
+        ((excl_po_f s q)^[n] x).val = y.val := by
+      have := (excl_po_iter_val s q x n).symm
+      simp_all only [sx, sy]
+
+    -- Subtype.ext で復元
+    refine ⟨n, ?_⟩
+    apply Subtype.ext
+    exact h_val'
+
+
+theorem excl_po_V'_nonempty_of_classes_ge2
+  (s : Setup_po α) (q : Quotient (proj_setoid s))
+  [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]:
+  (s.V.attach.image (Quot.mk (proj_setoid s))).card ≥ 2 →
+  (excl_po_V' s q).Nonempty := by
+  -- Proof details here
+
+  intro h
+
+  -- 同値類の集合の要素数 ≥ 2 なら 1 < card
+  have h1 : 1 < (s.V.attach.image (Quot.mk (proj_setoid s))).card := by
+    simpa [Nat.succ_le_iff] using h
+
+  obtain ⟨c, hc_mem, hc_ne⟩ :=
+    exists_mem_ne h1 q
+
+  -- 以下は以前と同様
+  obtain ⟨v, hv_attach, rfl⟩ := Finset.mem_image.mp hc_mem
+  have v_ne : Quot.mk (proj_setoid s) v ≠ q := by simpa using hc_ne
+  have hv_filter : v ∈ s.V.attach.filter fun v => Quot.mk _ v ≠ q := by
+    dsimp [exclFinset]; simp [v_ne]
+  have : Subtype.val v ∈ excl_po_V' s q := by
+    dsimp [excl_po_V']; simp [hv_filter]
+    simp_all only [ge_iff_le, mem_attach, Finset.mem_image, true_and, exists_apply_eq_apply, ne_eq, not_false_eq_true,
+      mem_filter, and_self]
+    obtain ⟨val, property⟩ := v
+    simpa [SetupPoComponent.exclFinset]
+  exact ⟨v.val, this⟩
+
 private noncomputable def restrict_order_excl
-  (s : Setup_po α) (q) :
+  (s : Setup_po α)
+  (q : Quotient (proj_setoid s))
+  [DecidableRel (projr s)]
+  [DecidableEq   (Quotient (proj_setoid s))] :
   PartialOrder (excl_po_V' s q) :=
 restrict_order_core s (excl_po_V' s q) (excl_po_sub s q)
 
@@ -492,12 +608,18 @@ restrict_order_core s (excl_po_V' s q) (excl_po_sub s q)
 `excl_po` は **その成分を丸ごと取り除いた残り**で `Setup_po` を作る。
 `hnonempty` は「残りが空でない」ことを仮定として与える。
 -/
+--nonemptyの仮定は同値類が2つ以上という条件で置き換えるべき。
 noncomputable def excl_po
-  (s : Setup_po α) (q : Quotient (proj_setoid s))
-  (hnonempty : (excl_po_V' s q).Nonempty) :
+  (s : Setup_po α) (q : Quotient (proj_setoid s))[DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]
+  --(hnonempty : (excl_po_V' s q).Nonempty) :
+  (geq2quotient: (numClasses (proj_setoid s) ≥ 2)) :
   Setup_po α :=
 { V       := excl_po_V' s q
-, nonemp  := hnonempty
+, nonemp  := by
+    have :#(Finset.image (Quot.mk ⇑(proj_setoid s)) s.V.attach) ≥ 2 := by
+      dsimp [numClasses] at geq2quotient
+      exact geq2quotient
+    exact excl_po_V'_nonempty_of_classes_ge2 s q this
 , f       := excl_po_f s q
 , po      := restrict_order_excl s q
 , order   := by
@@ -515,17 +637,24 @@ noncomputable def excl_po
       reach (excl_po_f s q) x y ↔ reach s.f sx sy := by
       -- 反復値一致補題を `excl_po_iter_val` として同様に証明すれば
       -- `comp_po_iter_val` と同じパターンで書ける
-      sorry
+      exact excl_po_reach_equiv s q x y
 
     -- 補題②： restrict_order_excl.le ↔ s.po.le
     have restr_iff :
       (restrict_order_excl s q).le x y ↔ s.po.le sx sy := by
       simp [restrict_order_excl]
+      simp_all only [sx, sy]
+      obtain ⟨val, property⟩ := x
+      obtain ⟨val_1, property_1⟩ := y
+      obtain ⟨val_2, property_2⟩ := sx
+      obtain ⟨val_3, property_3⟩ := sy
+      simp_all only
+      rfl
 
     simpa [restr_iff] using (reach_equiv.trans (s.order sx sy)) }
 
 
-/-
+/-comp_poとexcl_poのidealの直和がもとのidealになることを示すための定義
 -- ideal 系
 def IdealSys (s : Setup_po α) := partialorder_ideal_system s
 def IdealComp (s : Setup_po α) (q) := partialorder_ideal_system (comp_po s q)
