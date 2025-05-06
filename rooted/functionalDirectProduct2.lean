@@ -116,7 +116,7 @@ by
           simp_all only [ge_iff_le, Finset.mem_union, Finset.mem_image, mem_filter, mem_attach, true_and,
             Subtype.exists, exists_and_right, exists_eq_right, exists_true_left, compq, eclq]
           exact Or.inr Q
-    have : compq ∩ eclq = ∅ := by
+    have disj: compq ∩ eclq = ∅ := by
       dsimp [compq, eclq]
       let dge := disjoint_ground_excl s q geq2quotient
       dsimp [comp_po, excl_po] at dge
@@ -163,7 +163,7 @@ by
         obtain ⟨w, h⟩ := hx
         simp_all only [eclq, compq]
 
-      have : ecl_s ⊆ eclq :=
+      have inc_ecl': ecl_s ⊆ eclq :=
       by
         dsimp [eclq]
         intro x hx
@@ -175,7 +175,7 @@ by
 
       have inc_ecl: ecl_s ⊆ s.V :=
       by
-        exact @subset_trans _ _ _ ecl_s eclq s.V this ecl1'
+        exact @subset_trans _ _ _ ecl_s eclq s.V inc_ecl' ecl1'
 
       constructor
       · intro v hv
@@ -231,10 +231,17 @@ by
               have comp_inc: comp_s ⊆ compq := by
                 exact comp1'
               have : ecl_s ⊆ eclq := by
-                sorry --下で証明しているはず。
+                exact inc_ecl'
+
               have : compq ∩ ecl_s = ∅ := by
                 --これは正しいのでAIに聞くと教えてくれそう。
-                sorry
+                have : compq ∩ ecl_s ⊆ compq ∩ eclq := by
+                  exact Finset.inter_subset_inter (fun ⦃a⦄ a => a) inc_ecl'
+                subst unions hvq
+                simp_all only [ge_iff_le, Quotient.eq, Finset.mem_union, Finset.mem_image, mem_filter, mem_attach,
+                  true_and, Subtype.exists, exists_and_right, exists_eq_right, exists_apply_eq_apply, subset_empty,
+                  compq, vq, eclq]
+
               show compq ∩ (comp_s ∪ ecl_s) = comp_s
               rw [@Finset.inter_union_distrib_left]
               rw [this]
@@ -287,7 +294,34 @@ by
           have vvinecl: vv ∈ ecl_s :=
           by
             show vv ∈ ecl_s
-            sorry --compの方の未解決問題vvincompに対応している。
+            have vvinecl: vv ∈ eclq := by
+              dsimp [compq]
+              rw [Finset.mem_image]
+              simp
+              use hvv
+            have : eclq ∩ ss = ecl_s :=
+            by
+              rw [unions]
+              have ecl_inc: ecl_s ⊆ eclq := by
+                exact inc_ecl'
+
+              have : comp_s ∩ eclq = ∅ := by
+                --これは正しいのでAIに聞くと教えてくれそう。
+                have : comp_s ∩ eclq ⊆ compq ∩ eclq := by
+                  exact Finset.inter_subset_inter comp1' fun ⦃a⦄ a => a
+                subst unions
+                simp_all only [ge_iff_le, Quotient.eq, Finset.mem_image, mem_filter, mem_attach, true_and,
+                  Subtype.exists, exists_and_right, exists_eq_right, not_false_eq_true, exists_const, subset_empty,
+                  Finset.mem_union, compq, vq, eclq]
+              show eclq ∩ (comp_s ∪ ecl_s) = ecl_s
+              rw [@Finset.inter_union_distrib_left]
+              rw [Finset.inter_comm] at this
+              rw [this]
+              simp
+              exact inc_ecl'
+            rw [←this]
+            exact mem_inter_of_mem vvinecl hvvs
+
           specialize ecl2 vvinecl
           specialize ecl2 v hv
           apply ecl2
@@ -299,51 +333,140 @@ by
           · exact ne_of_eq_of_ne (id (Eq.symm rel_equiv)) hvq
 
     · intro a_1
-      obtain ⟨a_11, a_1⟩ := a_1
-      constructor
+      obtain ⟨hss, a_1⟩ := a_1
+      use  ss ∩ compq
       · constructor
         · constructor
-          · exact fun ⦃a⦄ a => a
-          · intro a_2 a_3
-            intro a_4 a_5 a_6 ha_6 hh hhh
-            rw [Finset.mem_image]
-            simp
-            subst hh
-            simp_all only [ge_iff_le, Quotient.eq, Finset.mem_image, mem_filter, mem_attach, true_and, Subtype.exists,
-              exists_and_right, exists_eq_right, exists_true_left, exists_const]
+          ·
+            simp_all only [ge_iff_le, compq, eclq]
+            intro x hx
+            simp_all only [Finset.mem_inter, Finset.mem_image, mem_filter, mem_attach, true_and, Subtype.exists,
+              exists_and_right, exists_eq_right, compq, eclq]
+          · intro vv hvv
+            intro a_4 a_5 v hv hh hhh
+            subst a_4
+            simp_all only [ge_iff_le, Quotient.eq, Finset.mem_inter, Finset.mem_image, mem_filter, mem_attach,
+              true_and, Subtype.exists, exists_and_right, exists_eq_right, exists_true_left, compq, eclq]
+            obtain ⟨left, right⟩ := a_5
+            apply And.intro
+            · apply a_1
+              · exact left
+              · exact hhh
+            · simpa [right] using hh
 
-        · constructor
+        · use ss ∩ eclq
           · constructor
             · constructor
               ·
                 simp_all only [ge_iff_le]
-                rfl
+                simp_all only [compq, eclq]
+                intro x hx
+                simp_all only [Finset.mem_inter, Finset.mem_image, mem_filter, mem_attach, true_and, Subtype.exists,
+                  exists_and_right, exists_eq_right, compq, eclq]
+                obtain ⟨left, right⟩ := hx
+                obtain ⟨w, h⟩ := right
+                simp_all only [exists_true_left, compq, eclq]
+                exact h
               ·
                 intro a x h a_2 a_3 x_1 h_1 a_4
                 simp_all only [ge_iff_le, Finset.mem_image, mem_filter, mem_attach, true_and, Subtype.exists,
                   exists_and_right, exists_eq_right, not_false_eq_true, exists_const]
+                simp_all only [Finset.mem_inter, Finset.mem_image, mem_filter, mem_attach, true_and, Subtype.exists,
+                  exists_and_right, exists_eq_right, exists_true_left, compq, eclq]
+                obtain ⟨left, right⟩ := a_2
+                apply And.intro
+                · tauto
+                · exact h_1
             · --show ss = Finset.image Subtype.val (filter (fun v => Quotient.mk'' v = q) s.V.attach) ∪ ?right.h.mpr.h.right.w
-              ext x
+              ext x --この段階で、compとeclで最小でないので、右から左が言えない気がする。
               apply Iff.intro
               · intro a_2
                 simp at a_2
                 have :x ∈ s.V :=
                 by
                   simp_all only [ge_iff_le, compq, eclq]
-                  exact a_11 a_2
+                  exact hss a_2
                 rw [Finset.mem_union]
-                rw [Finset.mem_image]
-                rw [Finset.mem_image]
-                simp
-                simp_all only [ge_iff_le, exists_true_left, compq, eclq]
+                simp_all only [ge_iff_le, Finset.mem_inter, Finset.mem_image, mem_filter, mem_attach, true_and,
+                  Subtype.exists, exists_and_right, exists_eq_right, exists_true_left, compq, eclq]
                 simp_all only [compq, eclq]
                 tauto
               · intro a_2
                 --a_1やa2などを使うのか？まだ証明まで遠そう。
                 -- a_1 : ∀ (a : α) (b : a ∈ s.V), a ∈ ss → ∀ (a_4 : α) (b_1 : a_4 ∈ s.V), ⟨a_4, b_1⟩ ≤ ⟨a, b⟩ → a_4 ∈ ss
                 -- a_2 : x ∈ Finset.image Subtype.val (filter (fun v => Quotient.mk'' v = q) s.V.attach) ∪ Finset.image Subtype.val (filter (fun v => ¬⟦v⟧ = q) s.V.attach)
+                have xinsv: x ∈ s.V :=
+                by
+                  simp_all only [ge_iff_le, Finset.mem_union, Finset.mem_inter, Finset.mem_image, mem_filter,
+                    mem_attach, true_and, Subtype.exists, exists_and_right, exists_eq_right, compq, eclq]
+                  cases a_2 with
+                  | inl h =>
+                    obtain ⟨left, right⟩ := h
+                    obtain ⟨w, h⟩ := right
+                    subst h
+                    simp_all only [Quotient.eq]
+                  | inr h_1 =>
+                    obtain ⟨w, h⟩ := h_1
+                    obtain ⟨w_1, h⟩ := h
+                    simp_all only [compq, eclq]
                 show x ∈ ss
-                sorry
+                by_cases Q:x ∈ compq
+                case pos =>
+                  simp_all only [Finset.mem_union, Finset.mem_image, mem_filter, mem_attach, true_and,
+                    Subtype.exists, exists_and_right, exists_eq_right, exists_true_left]
+                  have : @Quotient.mk'' _ (proj_setoid s) ⟨x, xinsv⟩ = q :=
+                  by
+                    simp_all only [ge_iff_le, Finset.mem_inter, Finset.mem_image, mem_filter, mem_attach, true_and,
+                      Subtype.exists, exists_and_right, exists_eq_right, exists_true_left, and_true, compq, eclq]
+                    subst Q
+                    simp_all only [Quotient.eq]
+                    rfl
+                  subst this
+                  simp_all only [ge_iff_le, Finset.mem_inter, Finset.mem_image, mem_filter, mem_attach, true_and,
+                    Subtype.exists, exists_and_right, exists_eq_right, exists_apply_eq_apply, and_true,
+                    not_true_eq_false, or_false, compq, eclq]
+                  simp_all only [exists_true_left, compq, eclq]
+                  cases a_2 with
+                  | inl h => simp_all only [compq, eclq]
+                  | inr h_1 => simp_all only [compq, eclq]
+
+
+                case neg =>
+                  simp_all only [Finset.mem_union, Finset.mem_image, mem_filter, mem_attach, true_and,
+                    Subtype.exists, exists_and_right, exists_eq_right, exists_true_left]
+                  have : @Quotient.mk'' _ (proj_setoid s) ⟨x, xinsv⟩ ≠ q :=
+                  by
+                    simp_all only [ge_iff_le, Finset.mem_inter, Finset.mem_image, mem_filter, mem_attach, true_and,
+                      Subtype.exists, exists_and_right, exists_eq_right, exists_true_left, and_true, compq, eclq]
+                    simp_all only [and_false, false_or, ne_eq, not_false_eq_true, compq, eclq]
+                    simp_all only [and_true, compq, eclq]
+                    exact Q
+                  --a_2を使ったのでもう使わないかも。
+                  dsimp [compq] at a_2
+                  have : x ∉ Finset.image Subtype.val (filter (fun v => Quotient.mk'' v = q) s.V.attach) :=
+                  by
+                    simp_all only [Finset.mem_union, Finset.mem_image, mem_filter, mem_attach, true_and,
+                      Subtype.exists, exists_and_right, exists_eq_right, exists_true_left]
+                    simp_all only [ge_iff_le, Finset.mem_inter, Finset.mem_image, mem_filter, mem_attach, true_and,
+                      Subtype.exists, exists_and_right, exists_eq_right, exists_true_left, not_false_eq_true, or_true,
+                      ne_eq, compq, eclq]
+                  have xnotin: x ∉ ss ∩ Finset.image Subtype.val (filter (fun v => Quotient.mk'' v = q) s.V.attach) :=
+                  by
+                    simp_all only [ge_iff_le, Finset.mem_inter, and_false, not_false_eq_true, or_true, ne_eq,
+                      Finset.mem_image, mem_filter, mem_attach, true_and, Subtype.exists, exists_and_right,
+                      exists_eq_right, exists_true_left, exists_const, compq, eclq]
+                  --have : @Quotient.mk'' _ (proj_setoid s) ⟨x, xinsv⟩ ≠ q := 最初に証明ずみ。
+
+                  --どの条件を使うのか？
+                  --a_1を使うためには、aが必要。
+                  simp_all only [ge_iff_le, Finset.mem_inter, Finset.mem_image, mem_filter, mem_attach, true_and,
+                    Subtype.exists, exists_and_right, exists_eq_right, exists_true_left, false_or, not_false_eq_true,
+                    ne_eq, exists_const, and_false, compq, eclq]
+
+
+
+
+
 
 
 
