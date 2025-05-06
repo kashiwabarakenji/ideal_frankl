@@ -69,34 +69,23 @@ have sub: V ⊆ s.V := by
     exact s.po.le_trans ⟨x.val, xin⟩ ⟨y.val, yin⟩ ⟨z.val, zin⟩ hxy hyz
 }
 
-theorem proj_max_spec (s : Setup_po α) (y : s.V) :
-  po_maximal s (proj_max s y) ∧ reach s.f y (proj_max s y) :=
-  Classical.choose_spec (po_maximal_reachable s y)
-
-lemma proj_max_unique (s : Setup_po α) {y x : s.V}
-  (h : po_maximal s x ∧ reach s.f y x) :
-  proj_max s y = x := by
-  -- choose_spec で proj_max の性質を取り出し
-  have hy := proj_max_spec s y
-  -- 一意性の補題で同値写像
-  exact po_maximal_reachable_eq s y (proj_max s y) x hy h
 
 namespace SetupPoComponent
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 
 -- V' の定義をトップレベルに
-private noncomputable def comp_po_V' (s : Setup_po α) (q : Quotient (proj_setoid s)) : Finset α :=
+noncomputable def comp_po_V' (s : Setup_po α) (q : Quotient (proj_setoid s)) : Finset α :=
   (compFinset s q).image Subtype.val
 
 -- V' ⊆ s.V の証明をトップレベルに
-private lemma comp_po_sub (s : Setup_po α) (q : Quotient (proj_setoid s)) :
+lemma comp_po_sub (s : Setup_po α) (q : Quotient (proj_setoid s)) :
   comp_po_V' s q ⊆ s.V := by
   dsimp [comp_po_V'];
   simp [Finset.image_subset_iff]
 
 -- 新しい遷移関数 f をトップレベルに
-private noncomputable def comp_po_f
+noncomputable def comp_po_f
   (s : Setup_po α) (q : Quotient (proj_setoid s))
   (v' : comp_po_V' s q) : comp_po_V' s q := by
   -- ここに先の fun v' => … の本体を書く
@@ -217,7 +206,7 @@ def comp_po_to_sV
 ⟨ v'.val, comp_po_sub s q v'.2 ⟩
 
 -- 補題1: gⁿ x の .val が s.fⁿ と一致
-private lemma comp_po_iter_val
+lemma comp_po_iter_val
   (s : Setup_po α) (q : Quotient (proj_setoid s))
   (x : comp_po_V' s q) :
   ∀ n : ℕ, (((comp_po_f s q)^[n]) x).val = (s.f^[n]) ⟨x, comp_po_sub s q x.2⟩ := by
@@ -254,7 +243,7 @@ private lemma comp_po_iter_val
     simp only [SetupPoComponent.comp_po_f, h_eq]
 
 -- 補題2: reach g x y ↔ reach s.f sx sy
-private lemma comp_po_reach_equiv
+lemma comp_po_reach_equiv
   (s : Setup_po α) (q : Quotient (proj_setoid s))
   (x y : comp_po_V' s q) :
   reach (comp_po_f s q) x y
@@ -291,14 +280,14 @@ by
 
 -- 補題3: restrict_order.le の展開
 @[simp]
-private lemma comp_po_restrict_le_iff
+lemma comp_po_restrict_le_iff
   (s : Setup_po α) (q : Quotient (proj_setoid s))
   (x y : comp_po_V' s q) :
   (restrict_order s q).le x y ↔ s.po.le ⟨x, comp_po_sub s q x.2⟩ ⟨y, comp_po_sub s q y.2⟩ := by
   simp [restrict_order]
 
 --qを除いた半順序の定義に使う部分。
-private noncomputable def exclFinset
+noncomputable def exclFinset
   (s : Setup_po α) (q : Quotient (proj_setoid s))[DecidableRel (projr s)]  :
   Finset {x // x ∈ s.V} :=
   Finset.filter
@@ -306,7 +295,7 @@ private noncomputable def exclFinset
     s.V.attach
 
 /-- 除外部分を **`α` の `Finset`** として取り出した頂点集合 -/
-private noncomputable def excl_po_V'
+noncomputable def excl_po_V'
   (s : Setup_po α)
   (q : Quotient (proj_setoid s))
   [DecidableRel (projr s)]
@@ -314,7 +303,7 @@ private noncomputable def excl_po_V'
   Finset α :=
   (exclFinset s q).image Subtype.val
 
-private lemma excl_po_sub
+lemma excl_po_sub
   (s : Setup_po α) (q : Quotient (proj_setoid s))
   [DecidableRel (projr s)]
   [DecidableEq   (Quotient (proj_setoid s))] :
@@ -384,14 +373,14 @@ def numClasses {α : Type _} (st : Setoid α)
 
 
 
-private noncomputable def excl_po_f
+noncomputable def excl_po_f
   (s : Setup_po α)
   (q : Quotient (proj_setoid s))
   [DecidableRel (projr s)]
   [DecidableEq (Quotient (proj_setoid s))]
   (v' : excl_po_V' s q) :
   excl_po_V' s q := by
---private noncomputable def excl_po_f
+--noncomputable def excl_po_f
 --  (s : Setup_po α) (q) [DecidableEq (Quotient (proj_setoid s))] (v' : excl_po_V' s q) : excl_po_V' s q := by
   -- ① もとの `s.V` へ
   have hv : (v' : α) ∈ s.V := excl_po_sub s q v'.property
@@ -457,7 +446,7 @@ private noncomputable def excl_po_f
 
 
 
-private lemma excl_po_val_step
+lemma excl_po_val_step
   (s : Setup_po α) (q : Quotient (proj_setoid s))[DecidableRel (projr s)] [DecidableEq (Quotient (proj_setoid s))]
   (v : excl_po_V' s q) :
   (excl_po_f s q v).val
@@ -471,7 +460,7 @@ private lemma excl_po_val_step
 -- 2. 反復値が一致する補題
 ----------------------------------------------------------------
 
-private lemma excl_po_iter_val
+lemma excl_po_iter_val
   (s : Setup_po α) (q : Quotient (proj_setoid s))
   [DecidableRel (projr s)] [DecidableEq (Quotient (proj_setoid s))]
   (x : excl_po_V' s q) :
@@ -515,7 +504,7 @@ private lemma excl_po_iter_val
 ----------------------------------------------------------------
 -- 3. reach の同値性
 ----------------------------------------------------------------
-private lemma excl_po_reach_equiv
+lemma excl_po_reach_equiv
   (s : Setup_po α) (q : Quotient (proj_setoid s))
   [DecidableRel (projr s)] [DecidableEq (Quotient (proj_setoid s))]
   (x y : excl_po_V' s q) :
@@ -595,7 +584,7 @@ theorem excl_po_V'_nonempty_of_classes_ge2
     simpa [SetupPoComponent.exclFinset]
   exact ⟨v.val, this⟩
 
-private noncomputable def restrict_order_excl
+noncomputable def restrict_order_excl
   (s : Setup_po α)
   (q : Quotient (proj_setoid s))
   [DecidableRel (projr s)]

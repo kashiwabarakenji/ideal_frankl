@@ -738,3 +738,62 @@ lemma reach_maximal (s: Setup_po α) (v : {x : α // x ∈ s.V}) : reach s.f v (
   obtain ⟨x, n, hx⟩ := Classical.choose_spec (po_maximal_reachable s v)
   dsimp [reach]
   use n
+
+lemma proj_max_quotient (s: Setup_po α) (x y : {x : α // x ∈ s.V}) :
+  proj_max s x = proj_max s y ↔ Quotient.mk (proj_setoid s) x = Quotient.mk (proj_setoid s) y := by
+  -- proj_max は po_maximal_reachable の選択肢の一つ
+  apply Iff.intro
+  · intro h
+    dsimp [proj_max] at h
+    simp_all only [Quotient.eq]
+    obtain ⟨val, property⟩ := x
+    obtain ⟨val_1, property_1⟩ := y
+    exact h
+  · intro h
+    dsimp [proj_max]
+    obtain ⟨x, hmax, _⟩ := Classical.choose_spec (po_maximal_reachable s x)
+    obtain ⟨y, hmax, _⟩ := Classical.choose_spec (po_maximal_reachable s y)
+    rename_i x_1 y_1 hmax_1 h_1 h_2
+    simp_all only [Quotient.eq]
+    obtain ⟨val, property⟩ := x_1
+    obtain ⟨val_1, property_1⟩ := y_1
+    exact h
+
+theorem proj_max_spec (s : Setup_po α) (y : s.V) :
+  po_maximal s (proj_max s y) ∧ reach s.f y (proj_max s y) :=
+  Classical.choose_spec (po_maximal_reachable s y)
+
+lemma proj_max_unique (s : Setup_po α) {y x : s.V}
+  (h : po_maximal s x ∧ reach s.f y x) :
+  proj_max s y = x := by
+  -- choose_spec で proj_max の性質を取り出し
+  have hy := proj_max_spec s y
+  -- 一意性の補題で同値写像
+  exact po_maximal_reachable_eq s y (proj_max s y) x hy h
+
+
+lemma proj_max_order (s: Setup_po α) (x y : {x : α // x ∈ s.V})(od:s.po.le x y) :
+ proj_max s x = proj_max s y := by
+  -- proj_max は po_maximal_reachable の選択肢の一つ
+  dsimp [proj_max]
+  rw [←s.order x y] at od
+  obtain ⟨xm, hmax, hx⟩ := Classical.choose_spec (po_maximal_reachable s x)
+  obtain ⟨ym, hmax, hy⟩ := Classical.choose_spec (po_maximal_reachable s y)
+  have : reach s.f y (proj_max s y) := by
+    exact reach_maximal s y
+  have :reach s.f x (proj_max s y) := by
+    --reachのtransitivityの定理があるはず。
+    exact reach_trans s.f od this
+  apply proj_max_unique s
+  constructor
+  · simp_all only
+  · exact this
+
+lemma quotient_order (s: Setup_po α) (x y : {x : α // x ∈ s.V}) (od:s.po.le x y):
+  Quotient.mk (proj_setoid s) x = Quotient.mk (proj_setoid s) y := by
+  -- proj_max は po_maximal_reachable の選択肢の一つ
+  apply (proj_max_quotient s x y).mp
+  exact proj_max_order s x y od
+
+
+--end Setup_po
