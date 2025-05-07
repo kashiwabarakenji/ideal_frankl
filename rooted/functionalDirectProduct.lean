@@ -9,6 +9,7 @@ import rooted.Preorder
 import rooted.Dominant
 import rooted.FamilyLemma
 --import rooted.functionalTraceIdeal2
+import rooted.functionalPartialMaximal
 import rooted.functionalPartialTrace
 
 open Finset Set Classical
@@ -17,9 +18,13 @@ set_option maxHeartbeats 2000000
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 
+
+
+-- q側の頂点集合。これをsubtype化したものがcomp_po_V'
 noncomputable def compFinset (s : Setup_po α) (q : Quotient (proj_setoid s))[DecidableEq (Quotient (proj_setoid s))] : Finset {x // x ∈ s.V} :=
   Finset.filter (fun (v:{x // x ∈ s.V}) => @Quotient.mk'' _ (proj_setoid s) v = q) s.V.attach
 
+-- q側に制限した半順序
 noncomputable def restrict_order (s : Setup_po α) (q : Quotient (proj_setoid s)) : PartialOrder ((compFinset s q).image Subtype.val) :=
 let V := (compFinset s q).image Subtype.val
 have sub: V ⊆ s.V := by
@@ -69,12 +74,12 @@ have sub: V ⊆ s.V := by
     exact s.po.le_trans ⟨x.val, xin⟩ ⟨y.val, yin⟩ ⟨z.val, zin⟩ hxy hyz
 }
 
-
+-- namespaceは中途半端なのでなくしたほうがいいかも。
 namespace SetupPoComponent
 
-variable {α : Type} [Fintype α] [DecidableEq α]
+--variable {α : Type} [Fintype α] [DecidableEq α]
 
--- V' の定義をトップレベルに
+-- V' の定義をトップレベルに。compFinsetをsubtype化したもの。
 noncomputable def comp_po_V' (s : Setup_po α) (q : Quotient (proj_setoid s)) : Finset α :=
   (compFinset s q).image Subtype.val
 
@@ -84,7 +89,7 @@ lemma comp_po_sub (s : Setup_po α) (q : Quotient (proj_setoid s)) :
   dsimp [comp_po_V'];
   simp [Finset.image_subset_iff]
 
--- 新しい遷移関数 f をトップレベルに
+-- q内に制限した新しい遷移関数 f 。
 noncomputable def comp_po_f
   (s : Setup_po α) (q : Quotient (proj_setoid s))
   (v' : comp_po_V' s q) : comp_po_V' s q := by
@@ -200,12 +205,13 @@ noncomputable def comp_po_f
     simp [compFinset]
     rfl⟩
 
+--subtype化した点をs.Vに移す。
 def comp_po_to_sV
   (s : Setup_po α) (q : Quotient (proj_setoid s))
   (v' : comp_po_V' s q) : s.V :=
 ⟨ v'.val, comp_po_sub s q v'.2 ⟩
 
--- 補題1: gⁿ x の .val が s.fⁿ と一致
+-- 補題1: もともとのs.fと制限したcomp_po_fが一致する。
 lemma comp_po_iter_val
   (s : Setup_po α) (q : Quotient (proj_setoid s))
   (x : comp_po_V' s q) :
@@ -278,7 +284,7 @@ by
     -- 最後にサブタイプの等号へ戻す
     apply Subtype.ext; exact h₂
 
--- 補題3: restrict_order.le の展開
+-- 補題3: restrict_order.le の展開。もとの半順序と制限された半順序の関係
 @[simp]
 lemma comp_po_restrict_le_iff
   (s : Setup_po α) (q : Quotient (proj_setoid s))
@@ -286,7 +292,10 @@ lemma comp_po_restrict_le_iff
   (restrict_order s q).le x y ↔ s.po.le ⟨x, comp_po_sub s q x.2⟩ ⟨y, comp_po_sub s q y.2⟩ := by
   simp [restrict_order]
 
+------------------------------
 --qを除いた半順序の定義に使う部分。
+-------------------------------
+
 noncomputable def exclFinset
   (s : Setup_po α) (q : Quotient (proj_setoid s))[DecidableRel (projr s)]  :
   Finset {x // x ∈ s.V} :=
@@ -342,7 +351,7 @@ end SetupPoComponent
 
 open SetupPoComponent
 
--- そして comp_po 本体
+-- qに制限されたSetup_po の定義
 noncomputable def comp_po (s : Setup_po α) (q : Quotient (proj_setoid s))
   : Setup_po α :=
 { V      := comp_po_V' s q,
@@ -366,12 +375,19 @@ noncomputable def comp_po (s : Setup_po α) (q : Quotient (proj_setoid s))
     simpa [comp_po_restrict_le_iff s q, ← comp_po_reach_equiv s q x y]
       using (comp_po_reach_equiv s q x y).trans (s.order _ _) }
 
+--------------------------------------------
 ---  ここからqでない部分の半順序を与える議論
+
+
+---連結成分の数。でもこれはsetoidが与えた時のもの。
 def numClasses {α : Type _} (st : Setoid α)
   [Fintype α] [DecidableEq (Quotient st)] : ℕ :=
   (Finset.univ.image (Quot.mk st.r)).card
 
-
+-- 連結成分の数。setup_poに対して、定義する。numClassesと同じだが、必要であれば復活。
+--noncomputable def num_connected_components (s : Setup_po α) : ℕ :=
+--  (Finset.univ.image (Quot.mk (proj_setoid s))).card
+----numClasses (proj_setoid s)と定義しても良い。
 
 noncomputable def excl_po_f
   (s : Setup_po α)

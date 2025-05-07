@@ -10,6 +10,7 @@ import rooted.Dominant
 import rooted.FamilyLemma
 import rooted.DirectProduct
 import rooted.functionalPartialTrace
+import rooted.functionalPartialMaximal
 import rooted.functionalDirectProduct
 
 open Finset Set Classical SetupPoComponent
@@ -462,27 +463,6 @@ by
                   simp_all only [ge_iff_le, Finset.mem_inter, Finset.mem_image, mem_filter, mem_attach, true_and,
                     Subtype.exists, exists_and_right, exists_eq_right, exists_true_left, false_or, not_false_eq_true,
                     ne_eq, exists_const, and_false, compq, eclq]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /-
 example {A:Prop} {B:Prop} {C:Prop}:
    A∨B →  (A→C) → (B→C) → C :=

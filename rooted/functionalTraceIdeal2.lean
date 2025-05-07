@@ -191,6 +191,7 @@ by
 --------------------------------------------------------
 
   --ただのSetupと比較するとシンプルになっている。preorderのときのような同値類を考える必要がない。
+  --これは、次の枠組みの話なのでPartialMaximalに移動してもよい。
 structure Setup_po (α : Type) [Fintype α] [DecidableEq α] where
 (V : Finset α)
 (nonemp   : V.Nonempty)
