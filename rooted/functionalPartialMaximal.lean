@@ -244,7 +244,7 @@ instance proj_setoid {α : Type} [Fintype α] [DecidableEq α] (s: Setup_po α) 
   iseqv :=
     ⟨
       -- refl: ∀ (v : {x : α // x ∈ s.V}), projr s v v
-      fun (v : {x : α // x ∈ s.V}) => rfl,
+      fun (_ : {x : α // x ∈ s.V}) => rfl,
       -- symm: ∀ (v w : {x : α // x ∈ s.V}), projr s v w → projr s w v
       @fun (v w : {x : α // x ∈ s.V}) (h : projr s v w) => Eq.symm h,
       -- trans: ∀ (v w u : {x : α // x ∈ s.V}), projr s v w → projr s w u → projr s v u
@@ -357,4 +357,214 @@ lemma proj_max_eq_of_maximal
   · dsimp [reach]
     use 0
     simp
---end Setup_po
+
+/------------------------------------------------------------
+  1. principal ideal を Finset で定義
+------------------------------------------------------------/
+
+/-
+`s : Setup_po α` から得られる半順序 `s.po` 上で
+`x` が生成する principal ideal を Finset として取る
+-/
+noncomputable def principalIdeal (s : Setup_po α) (x : s.V) : Finset α :=
+  (s.V.attach.filter (fun y ↦ s.po.le y x)).image Subtype.val
+
+/------------------------------------------------------------
+  2. principalIdeal が injective
+------------------------------------------------------------/
+lemma principal_injective
+    (s : Setup_po α) :
+    Function.Injective (principalIdeal s) := by
+  intro x y hEq
+  -- x ≤ y:  x ∈ principalIdeal x  →  filter condition gives x ≤ x (trivial)
+  have hx_in : (x : α) ∈ principalIdeal s x := by
+    simp [principalIdeal, s.po.le_refl]
+  have hx_in_y : (x : α) ∈ principalIdeal s y := by
+    simpa [hEq] using hx_in
+  have x_le_y : s.po.le x y := by
+    -- from filter predicate
+    simp [principalIdeal] at hx_in_y
+    exact hx_in_y
+
+  -- y ≤ x も同様
+  have hy_in : (y : α) ∈ principalIdeal s y := by
+    simp [principalIdeal, s.po.le_refl]
+  have hy_in_x : (y : α) ∈ principalIdeal s x := by
+    simpa [hEq] using hy_in
+  have y_le_x : s.po.le y x := by
+    simp [principalIdeal] at hy_in_x
+    exact hy_in_x
+
+  -- 反対称性
+  exact s.po.le_antisymm x y x_le_y y_le_x
+
+
+/------------------------------------------------------------
+  3. 写像の像 ⊆ ideal 集合 & card 計算
+------------------------------------------------------------/
+-- 下方閉 (ideal) 述語
+def isIdeal (s : Setup_po α) (I : Finset α) : Prop :=
+  I ⊆ s.V ∧ ∀ {v w : s.V}, v.1 ∈ I → s.po.le w v → w.1 ∈ I
+
+--ssは、forallにしたほうがrwが使いやすいと思って変えた。
+lemma isIdeal_lem (s: Setup_po α) :--(ss : Finset α)(hss : ss ⊆ s.V) :
+  ∀ ss : Finset s.V, isIdeal s (ss.image Subtype.val) ↔ ∀ (v : s.V ), v ∈ ss → ∀ w :s.V, s.po.le  w v → w ∈ ss :=
+by
+  intro ss
+  constructor
+  · intro h v hv w hle
+    -- ss ⊆ s.V から v ∈ ss ならば w ∈ ss
+    have : v ∈ ss := by
+      simp_all only
+    -- ideal の定義から w ∈ ss
+    dsimp [isIdeal] at h
+    simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, Subtype.coe_eta, coe_mem,
+      exists_const, Subtype.forall]
+    tauto
+
+  · intro h
+    constructor
+    ·
+      simp_all only [Subtype.forall]
+      intro x hx
+      simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right]
+      obtain ⟨w, h_1⟩ := hx
+      simp_all only
+    · intro v w hv hle
+      -- ideal の定義から w ∈ ss
+      simp_all only [Subtype.forall, Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right,
+        Subtype.coe_eta, coe_mem, exists_const]
+      obtain ⟨val, property⟩ := v
+      obtain ⟨val_1, property_1⟩ := w
+      apply h
+      on_goal 2 => {exact hle
+      }
+      · simp_all only
+
+lemma isIdeal_lem2 (s: Setup_po α) :--(ss : Finset α)(hss : ss ⊆ s.V) :
+  ∀ ss : Finset α, ss ⊆ s.V → (isIdeal s ss ↔ (partialorder_ideal_system s).sets ss) :=
+by
+  intro ss hss
+  constructor
+  · intro h
+    -- ss ⊆ s.V から v ∈ ss ならば w ∈ ss
+    have : ∀ v : s.V, v.1 ∈ ss → ∀ w : s.V, s.po.le w v → w.1 ∈ ss := by
+      intro v hv w hle
+      -- ideal の定義から w ∈ ss
+      dsimp [isIdeal] at h
+      simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, Subtype.coe_eta, coe_mem,
+        exists_const, Subtype.forall]
+      tauto
+
+    -- ideal の定義から ss ⊆ s.V
+    constructor
+    · exact hss
+
+    · exact this
+
+  · intro h
+    constructor
+    · exact h.1
+
+    · intro v w hv hle
+      -- ideal の定義から w ∈ ss
+      dsimp [partialorder_ideal_system] at h
+      simp_all only [Subtype.forall]
+      obtain ⟨val, property⟩ := v
+      obtain ⟨val_1, property_1⟩ := w
+      obtain ⟨left, right⟩ := h
+      simp_all only
+      apply right
+      · exact hv
+      · assumption
+
+lemma principal_isIdeal (s : Setup_po α) (x : s.V) :
+    isIdeal s (principalIdeal s x) := by
+  -- 包含と下方閉を順に証明
+  constructor
+  · intro y hy
+    simp [principalIdeal] at hy
+    --obtain ⟨val, property⟩ := x
+    --obtain ⟨w, h⟩ := hy
+    obtain ⟨val, property⟩ := x
+    obtain ⟨w, h⟩ := hy
+    simp_all only
+
+  · intro v w hv hle
+    -- From hv we know that v ∈ principalIdeal s x; decompose it to obtain a witness.
+    dsimp [principalIdeal] at hv
+    dsimp [principalIdeal]
+    simp_all only [Finset.mem_image, mem_filter, mem_attach, true_and, Subtype.exists, exists_and_right,
+      exists_eq_right, Subtype.coe_eta, coe_mem, exists_const]
+    cases s
+    simp_all only
+    exact hle.trans hv
+
+
+/------------------------------------------------------------
+  4. ノード数 ≤ イデアル数
+------------------------------------------------------------/
+lemma nodes_le_ideals
+    (s : Setup_po α) :
+    s.V.card + 1 ≤
+      (s.V.powerset.filter (isIdeal s)).card := by
+  -- define the injection f : V → Ideals
+  let f : s.V → Finset α := principalIdeal s
+  have hf_inj : Function.Injective f := principal_injective s
+  -- f maps into the filter set
+  have hf_im :
+      ∀ x : s.V, f x ∈ (s.V.powerset.filter (isIdeal s)) := by
+    intro x
+    have hsub : f x ⊆ s.V := (principal_isIdeal s x).1
+    have hpow : f x ∈ s.V.powerset :=
+      Finset.mem_powerset.mpr hsub
+    have hideal : isIdeal s (f x) := principal_isIdeal s x
+    exact Finset.mem_filter.2 ⟨hpow, hideal⟩
+  -- Use Finset.card_le_of_inj_on
+  let Ideal' := s.V.powerset.filter (isIdeal s) \ {∅} --ここでisIdealからemptyを引いたものを考える。
+  have hf_maps :
+    ∀ a ∈ s.V.attach, f a ∈ (s.V.powerset.filter (isIdeal s)) := by
+    intro ⟨a, ha⟩ _
+    -- principal_isIdeal ですでに filter の要件は示してあるので
+    exact hf_im ⟨a, ha⟩
+  have hf_maps' :
+    ∀ a ∈ s.V.attach, f a ∈ Ideal' := by
+    intro ⟨a, ha⟩ _
+    -- principal_isIdeal ですでに filter の要件は示してあるので
+    dsimp [Ideal']
+    rw [@mem_sdiff]
+    constructor
+    · exact hf_im ⟨a, ha⟩
+    · simp
+      have : a ∈ f ⟨a, ha⟩ := by
+        dsimp [f]
+        dsimp [principalIdeal]
+        rw [Finset.mem_image]
+        simp
+        exact ha
+      rename_i a_1
+      simp_all [f, Ideal']
+      apply Aesop.BuiltinRules.not_intro
+      intro a_1
+      simp_all only [Finset.not_mem_empty, f, Ideal']
+  have hf_inj : InjOn f s.V.attach := by
+    intro a b hae hbe h
+    -- principal_injective でサブタイプまでさかのぼる
+    apply Subtype.ext
+    exact congrArg Subtype.val (hf_inj h)
+
+  let fcl := @Finset.card_le_card_of_injOn s.V (Finset α) s.V.attach _ f hf_maps hf_inj
+  simp_all only [mem_filter, Finset.mem_powerset, Subtype.forall, ge_iff_le, f]
+  apply le_trans
+  on_goal 2 => {exact fcl
+  }
+  · have : ∅ ∈ s.V.powerset.filter (isIdeal s) := by
+      simp [Finset.mem_filter, Finset.mem_powerset]
+      constructor
+      · exact Finset.empty_subset _
+      ·
+        intro v w a a_1
+        simp_all only [mem_attach, mem_sdiff, mem_filter, Finset.mem_powerset, and_self, Finset.mem_singleton, true_and,
+          forall_const, Finset.not_mem_empty, f, Ideal']
+    --空集合を除いて単射で、空集合も要素なので、1つ分多くなっている。定式化はo3の力を借りる。
+    sorry

@@ -725,6 +725,59 @@ by
   simp_all only [pn, pg]
   ring
 
+--princialIdealのtrace版。
+noncomputable
+def principalIdealTrace (s : Setup_po α) (x : s.V) (mx) (nontriv)
+    (v : (po_trace s x mx nontriv).V) : Finset α :=
+  principalIdeal (po_trace s x mx nontriv) v
+
+/-- principalIdealTrace は単射 使わないかもしれない。-/
+lemma inj_principalTrace
+    (s : Setup_po α) (x mx nontriv) :
+  Function.Injective (principalIdealTrace s x mx nontriv) := by
+  -- 同型を `principal_injective` に帰着
+  intro v w h
+  apply Subtype.ext
+  let pi := principal_injective (po_trace s x mx nontriv)
+  exact congrArg Subtype.val (pi h)
+
+  --simpa using principal_injective _ h
+
+--単射性だけだと1足りないが、空集合もhyperedgeで、princialIdealではないので、成り立つ。
+lemma normalized_degree_sum_lem
+  (s : Setup_po α)
+  --(conn  : numClasses (proj_setoid s) = 1)
+  (x : s.V) (mx : po_maximal s x)
+  (nontriv : s.V.card ≥ 2):
+(Int.ofNat s.V.card) ≤ (partialorder_ideal_system (po_trace s x mx nontriv)).number_of_hyperedges :=
+by
+  have :#(po_trace s x mx nontriv).V + 1 = Int.ofNat #s.V := by
+    dsimp [po_trace]
+    simp_all only [ge_iff_le, coe_mem, card_erase_of_mem]
+    obtain ⟨val, property⟩ := x
+    norm_cast
+    omega
+
+  rw [←this]
+
+  let nli := nodes_le_ideals (po_trace s x mx nontriv)
+
+  let iil2 :=isIdeal_lem2 (po_trace s x mx nontriv)
+
+  have :(filter (fun s_1 => (partialorder_ideal_system (po_trace s x mx nontriv)).sets s_1)) (po_trace s x mx nontriv).V.powerset =
+      (filter (isIdeal (po_trace s x mx nontriv)) (po_trace s x mx nontriv).V.powerset) :=
+  by
+    simp_all only [Int.ofNat_eq_coe]
+    obtain ⟨val, property⟩ := x
+    ext a : 1
+    simp_all only [mem_filter, Finset.mem_powerset, and_congr_right_iff, implies_true, iil2]
+
+  dsimp [SetFamily.number_of_hyperedges]
+
+  rw [←this] at nli
+
+  exact Int.toNat_le.mp nli
+
 lemma normalized_degree_sum_gt
   (s : Setup_po α)
   (conn  : numClasses (proj_setoid s) = 1)
@@ -733,7 +786,67 @@ lemma normalized_degree_sum_gt
   (partialorder_ideal_system s).toSetFamily.normalized_degree_sum
   ≤ (partialorder_ideal_system (po_trace s x mx nontriv)).toSetFamily.normalized_degree_sum :=
 by
+  --以下の証明は結構間違っているかも。
+  let ndst := normalized_degree_sum_trace s conn x mx nontriv
+  rw [ndst]
+
+  let ndsl := normalized_degree_sum_lem s x mx nontriv
+
+  simp_all only [Int.ofNat_eq_coe, add_le_iff_nonpos_right, tsub_le_iff_right, zero_add, ge_iff_le]
+  obtain ⟨val, property⟩ := x
+  exact ndsl
+
+  /-
+
+  --この条件をうまく使う必要がある。
+
+
+  have :#(filter (isIdeal s) s.V.powerset) = (partialorder_ideal_system (po_trace s x mx nontriv)).number_of_hyperedges + 1:= by
+
+    have h :
+      ( (po_trace s x mx nontriv).V.powerset.filter
+          (isIdeal (po_trace s x mx nontriv)) )
+        =
+      ( s.V.powerset.filter (isIdeal s) ).erase s.V :=
+    by
+      let iee := ideals_eq_erase s conn x mx nontriv
+      sorry
+
+    have h_card :  -- 以前のゴールだった個数の等式
+      ((po_trace s x mx nontriv).V.powerset.filter
+          (isIdeal (po_trace s x mx nontriv))).card
+      =
+      ((s.V.powerset.filter (isIdeal s)).erase s.V).card :=
+    by
+      simp_all only [Int.ofNat_eq_coe]
+
+    symm
+    dsimp [partialorder_ideal_system]
+    let iil :=isIdeal_lem s
+    sorry
+
   sorry
+  -/
+
+
+
+
+
+
+  --have :#(filter (isIdeal s) s.V.powerset) = (partialorder_ideal_system (po_trace s x mx nontriv)).number_of_hyperedges := by
+  --let iil := isIdeal_lem (po_trace s x mx nontriv)
+
+
+
+
+
+
+
+
+
+
+
+
   --((Int.ofNat s.V.card) - (partialorder_ideal_system (po_trace s x mx nontriv)).number_of_hyperedges)
   --の符号が重要。今はパラレルはないので、必ず非正になる。
 
