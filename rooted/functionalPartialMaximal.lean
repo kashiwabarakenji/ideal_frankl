@@ -18,8 +18,10 @@ set_option maxHeartbeats 2000000
 variable {α : Type} [Fintype α] [DecidableEq α]
 
 
--- ここから下は、traceに関係ないので移動したほうがいいかも。Setup_poの極大要素に関係がある。functionalPartialMaximalとかか。
+
 open Function Finset
+
+--Setup_poの極大要素に関係がある部分をfunctionalPartialMaximalとして独立させた。
 
 def po_maximal (s: Setup_po α) (x: s.V) : Prop := ∀ y, s.po.le x y → x = y
 
@@ -105,6 +107,7 @@ lemma exists_eq_iterate {α : Type u} [DecidableEq α] [Fintype α]
         simp [g, hEq]
         ⟩
 
+--かならず上に極大要素がある。
 lemma po_maximal_reachable (s : Setup_po α) (y : s.V):
  ∃ x, po_maximal s x ∧ reach s.f y x :=
 by
@@ -186,6 +189,7 @@ by
 
   exact ⟨x, h_max, h_reach⟩
 
+--任意の要素を極大要素は、ただ1つしかない。
 lemma po_maximal_reachable_eq (s : Setup_po α) (y : s.V):
  ∀ x1 x2, (po_maximal s x1 ∧ reach s.f y x1 ) →
           (po_maximal s x2 ∧ reach s.f y x2) →
@@ -234,11 +238,14 @@ by
       have hle₂₁ : s.po.le x₂ x₁ := (s.order _ _).1 hreach
       exact (hmax₂ x₁ hle₂₁).symm
 
+--ただ、ひとつしかない極大要素を与える関数
 noncomputable def proj_max (s: Setup_po α) (v : {x : α // x ∈ s.V}) : {x : α // x ∈ s.V} :=
   Classical.choose (po_maximal_reachable s v)
 
+--極大要素が一致する同値類の同値関係。連結成分の同値関係でもある。
 def projr (s: Setup_po α)(v w : {x : α // x ∈ s.V}) : Prop := proj_max s v = proj_max s w
 
+--極大要素が一致する同値類のsetoid。
 instance proj_setoid {α : Type} [Fintype α] [DecidableEq α] (s: Setup_po α) [DecidableRel (projr s)]: Setoid {x : α // x ∈ s.V} where
   r  := projr s
   iseqv :=
@@ -252,15 +259,16 @@ instance proj_setoid {α : Type} [Fintype α] [DecidableEq α] (s: Setup_po α) 
           (h₁ : projr s v w) (h₂ : projr s w u) => Eq.trans h₁ h₂
     ⟩
 
+--proj_maxは、本当に極大元になっていることの証明。
 lemma proj_max_maximal (s: Setup_po α) (v : {x : α // x ∈ s.V}) :
   po_maximal s (proj_max s v) := by
   -- proj_max は po_maximal_reachable の選択肢の一つ
   obtain ⟨x, hmax, _⟩ := Classical.choose_spec (po_maximal_reachable s v)
   -- x = proj_max s v を示す
-  obtain ⟨val, property⟩ := v
+  --obtain ⟨val, property⟩ := v
   exact x
 
-
+--proj_maxは、自分より上にあることの証明。
 lemma reach_maximal (s: Setup_po α) (v : {x : α // x ∈ s.V}) : reach s.f v (proj_max s v) := by
   -- proof for reachability from v to proj_max s v
   dsimp [proj_max]
@@ -269,7 +277,7 @@ lemma reach_maximal (s: Setup_po α) (v : {x : α // x ∈ s.V}) : reach s.f v (
   dsimp [reach]
   use n
 
---コンポーネントが等しいことと、極大要素が等しいことは同値。
+--setroidのコンポーネントが等しいことと、極大要素が等しいことは同値。
 lemma proj_max_quotient (s: Setup_po α) (x y : {x : α // x ∈ s.V}) :
   proj_max s x = proj_max s y ↔ Quotient.mk (proj_setoid s) x = Quotient.mk (proj_setoid s) y := by
   -- proj_max は po_maximal_reachable の選択肢の一つ
@@ -304,11 +312,12 @@ noncomputable def proj_max_of_quot
     (s : Setup_po α) (v : {x : α // x ∈ s.V}) :
   proj_max_of_quot s ⟦v⟧ = proj_max s v := rfl
 
---yの極大要素proj_maxが本当に極大要素で、上にあること。
-theorem proj_max_spec (s : Setup_po α) (y : s.V) :
+--yの極大要素proj_maxが本当に極大要素で、上にあること。proj_max_maximalとかぶっている。
+lemma proj_max_spec (s : Setup_po α) (y : s.V) :
   po_maximal s (proj_max s y) ∧ reach s.f y (proj_max s y) :=
   Classical.choose_spec (po_maximal_reachable s y)
 
+--極大でreachableであれば、proj_maxになること。
 lemma proj_max_unique (s : Setup_po α) {y x : s.V}
   (h : po_maximal s x ∧ reach s.f y x) :
   proj_max s y = x := by
@@ -317,7 +326,7 @@ lemma proj_max_unique (s : Setup_po α) {y x : s.V}
   -- 一意性の補題で同値写像
   exact po_maximal_reachable_eq s y (proj_max s y) x hy h
 
---大小関係がある場合は、対応する極大要素は等しい。
+--大小関係がある場合は、対応する極大要素proj_maxは等しい。
 lemma proj_max_order (s: Setup_po α) (x y : {x : α // x ∈ s.V})(od:s.po.le x y) :
  proj_max s x = proj_max s y := by
   -- proj_max は po_maximal_reachable の選択肢の一つ
@@ -342,11 +351,7 @@ lemma quotient_order (s: Setup_po α) (x y : {x : α // x ∈ s.V}) (od:s.po.le 
   apply (proj_max_quotient s x y).mp
   exact proj_max_order s x y od
 
-
-------------------------------------------------------------
--- 1.  補題：極大なら proj_max s x = x
-------------------------------------------------------------
-
+--極大要素のproj_maxは自分自身
 lemma proj_max_eq_of_maximal
     (s : Setup_po α) (x : s.V) (hmax : po_maximal s x) :
     proj_max s x = x := by
@@ -555,16 +560,67 @@ lemma nodes_le_ideals
 
   let fcl := @Finset.card_le_card_of_injOn s.V (Finset α) s.V.attach _ f hf_maps hf_inj
   simp_all only [mem_filter, Finset.mem_powerset, Subtype.forall, ge_iff_le, f]
-  apply le_trans
-  on_goal 2 => {exact fcl
-  }
-  · have : ∅ ∈ s.V.powerset.filter (isIdeal s) := by
-      simp [Finset.mem_filter, Finset.mem_powerset]
-      constructor
-      · exact Finset.empty_subset _
+  have cardneq: #s.V.attach ≤ #Ideal' := by
+      apply Finset.card_le_card_of_injOn
+      · exact fun a a_1 => hf_maps' (↑a) a.property a_1
       ·
-        intro v w a a_1
-        simp_all only [mem_attach, mem_sdiff, mem_filter, Finset.mem_powerset, and_self, Finset.mem_singleton, true_and,
-          forall_const, Finset.not_mem_empty, f, Ideal']
-    --空集合を除いて単射で、空集合も要素なので、1つ分多くなっている。定式化はo3の力を借りる。
-    sorry
+        rename_i hf_inj_1
+        exact hf_inj_1
+  have sveq: #s.V = #s.V.attach := by
+    exact Eq.symm card_attach
+
+  have :filter (isIdeal s) s.V.powerset = Ideal' ∪ {∅} := by
+    apply Finset.ext
+    intro ss
+    constructor
+    · intro h
+      simp_all only [Finset.mem_filter, Finset.mem_powerset, Subtype.forall, ge_iff_le, f]
+      dsimp [Ideal']
+      simp_all only [mem_attach, mem_sdiff, mem_filter, Finset.mem_powerset, and_self, Finset.mem_singleton, true_and,
+        forall_const, sdiff_union_self_eq_union, Finset.mem_union, true_or, Ideal', f]
+    · intro h
+      simp_all only [Finset.mem_filter, Finset.mem_powerset, Subtype.forall, ge_iff_le, f]
+      constructor
+      · dsimp [Ideal'] at h
+        rw [Finset.mem_union] at h
+        cases h
+        case inl h_1 =>
+          simp_all only [mem_attach, mem_sdiff, mem_filter, Finset.mem_powerset, and_self, Finset.mem_singleton, true_and,
+            forall_const, sdiff_union_self_eq_union, Finset.mem_union, true_or, Ideal', f]
+        case inr h_1 =>
+          simp at h_1
+          rw [h_1]
+          exact Finset.empty_subset s.V
+      · dsimp [Ideal'] at h
+        rw [Finset.mem_union] at h
+        cases h
+        case inl h_1 =>
+          simp_all only [mem_attach, mem_sdiff, mem_filter, Finset.mem_powerset, and_self, Finset.mem_singleton, true_and,
+            forall_const, sdiff_union_self_eq_union, Finset.mem_union, true_or, Ideal', f]
+        case inr h_1 =>
+          simp at h_1
+          rw [h_1]
+          dsimp [isIdeal]
+          constructor
+          · exact Finset.empty_subset s.V
+          ·
+            intro v w a a_1
+            simp_all only [mem_attach, mem_sdiff, mem_filter, Finset.mem_powerset, and_self, Finset.mem_singleton, true_and,
+              forall_const, Finset.not_mem_empty, f, Ideal']
+
+  have : #Ideal' + 1 = #(filter (isIdeal s) s.V.powerset) := by
+    rw [this]
+    show #Ideal' + 1 = #(Ideal' ∪ {∅})
+    have :   Ideal' ∩ {∅} = ∅ := by
+      dsimp [Ideal']
+      exact sdiff_inter_self {∅} (filter (isIdeal s) s.V.powerset)
+    have : Disjoint {∅} Ideal' := by
+      exact Disjoint.symm sdiff_disjoint
+    let fcu := Finset.card_union_of_disjoint this
+    rw [union_comm {∅} Ideal'] at fcu
+    rw [fcu]
+    exact Nat.add_comm (#Ideal') 1
+
+  rw [←this]
+  rw [sveq]
+  exact Nat.add_le_add_right cardneq 1

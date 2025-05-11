@@ -15,15 +15,204 @@ import rooted.CommonDefinition
 import rooted.functionalCommon
 --import rooted.StemSizeOne
 import rooted.functionalTraceIdeal2
-
+import rooted.functionalPartialOne
+import rooted.functionalDirectProduct2
 
 open Finset Set Classical
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 
-lemma setup_po_average_rare (s:Setup_po α): (partialorder_ideal_system s).normalized_degree_sum ≤ 0 :=
+lemma setup_po_average_rare (s_orig:Setup_po α): (partialorder_ideal_system s_orig).normalized_degree_sum ≤ 0 :=
 by
-  sorry
+  let P : ℕ → Prop := fun n =>
+    ∀ t : Setup_po α,
+      t.V.card = n →
+      (partialorder_ideal_system t).toSetFamily.normalized_degree_sum ≤ 0
+
+  ------------------------------------------------------------------
+  --  P n をすべての n について示す
+  ------------------------------------------------------------------
+  have hP : ∀ n, P n := by
+    intro n
+    -- strong recursion on `n`
+    induction' n using Nat.strongRec with n ih
+    intro t ht_card
+
+    by_cases h_le_one : t.V.card ≤ 1
+    · -- baseケース。証明を外に出しても良い。
+      have h_le_one : t.V.card ≥ 1 := by
+        let tn := t.nonemp
+        exact one_le_card.mpr tn
+      have card1: t.V.card = 1 := by
+        subst ht_card
+        simp_all only [ge_iff_le, one_le_card, P]
+        rw [le_antisymm_iff]
+        simp_all only [one_le_card, and_self]
+
+      let ceo := (@card_eq_one _ t.V).mp card1
+      obtain ⟨x, hx⟩ := ceo
+      dsimp [SetFamily.normalized_degree_sum]
+      --dsimp [partialorder_ideal_system]
+      simp
+      have : ∀ ss : Finset α, (partialorder_ideal_system t).sets ss ↔ ss = ∅ ∨ ss = t.V:= by
+        intro ss
+        constructor
+        · intro h
+          have : ss ⊆ t.V := by
+            dsimp [partialorder_ideal_system]
+            dsimp [partialorder_ideal_system] at h
+            exact h.1
+          have : ss = ∅ ∨ ss = t.V := by
+            subst ht_card
+            simp_all only [Finset.card_singleton, le_refl, ge_iff_le, Finset.subset_singleton_iff, Nat.lt_one_iff,
+              card_eq_zero, forall_eq, P]
+          exact this
+        · intro h
+          cases h
+          case inl hl=>
+            rw [hl]
+            dsimp [partialorder_ideal_system]
+            simp at hl
+            subst hl ht_card
+            simp_all only [Finset.card_singleton, le_refl, ge_iff_le, Nat.lt_one_iff, card_eq_zero, forall_eq,
+              Finset.subset_singleton_iff, true_or, Finset.not_mem_empty, implies_true, and_self, P]
+            --空集合がhyperedgeであることを示す。
+
+          case inr hr=>
+            rw [hr]
+            subst hr ht_card
+            simp_all only [Finset.card_singleton, le_refl, ge_iff_le, Nat.lt_one_iff, card_eq_zero, forall_eq, P]
+            simp [partialorder_ideal_system]
+            simp_all only [Finset.mem_singleton, le_refl, imp_self, implies_true, and_self, P]
+
+
+      have htt: (partialorder_ideal_system t).total_size_of_hyperedges = 1 :=
+      by
+        dsimp [partialorder_ideal_system]
+        dsimp [partialorder_ideal_system] at this
+        simp_all only [Finset.card_singleton, le_refl, ge_iff_le, Nat.lt_one_iff, card_eq_zero, forall_eq,
+          Finset.subset_singleton_iff, Nat.succ_le_of_lt, P]
+        dsimp [SetFamily.total_size_of_hyperedges]
+        simp
+        have h :
+          filter (fun t => t = ∅ ∨ t = {x}) ({x} : Finset α).powerset = {∅, {x}} := by
+            subst ht_card
+            simp_all only [Finset.subset_singleton_iff, Subtype.forall, Finset.mem_singleton, le_refl, imp_self,
+              implies_true, and_true, Nat.lt_one_iff, card_eq_zero, forall_eq, P]
+            ext a : 1
+            simp_all only [mem_filter, Finset.mem_powerset, Finset.subset_singleton_iff, and_self, Finset.mem_insert,
+              Finset.mem_singleton, P]
+        rw [h]
+        exact rfl
+
+      have hnh: (partialorder_ideal_system t).number_of_hyperedges = 2 := by
+        dsimp [SetFamily.number_of_hyperedges]
+        have :(partialorder_ideal_system t).ground.powerset = {∅, {x}} := by
+          dsimp [partialorder_ideal_system]
+          dsimp [partialorder_ideal_system] at this
+          simp_all only [Finset.card_singleton, le_refl, ge_iff_le, Nat.lt_one_iff, card_eq_zero, forall_eq,
+            Finset.subset_singleton_iff, Nat.succ_le_of_lt, P]
+          subst ht_card
+          simp_all [P]
+          rfl
+        rw [this]
+        dsimp [partialorder_ideal_system]
+
+        have h:filter (fun ss => ss ⊆ t.V ∧ ∀ (v : { x // x ∈ t.V }), v.val ∈ ss → ∀ w : { x // x ∈ t.V }, t.po.le w  v → w.val ∈ ss) {∅, {x}} = {∅, {x}} :=
+
+        by
+          subst ht_card
+          simp_all only [Finset.card_singleton, le_refl, ge_iff_le, Nat.lt_one_iff, card_eq_zero, forall_eq,
+            Finset.subset_singleton_iff, Subtype.forall, Finset.mem_singleton, imp_self, implies_true, and_true, P]
+          simp [filter_true_of_mem]
+
+
+        subst ht_card
+        simp_all only [Finset.card_singleton, le_refl, ge_iff_le, Finset.subset_singleton_iff, Subtype.forall,
+          Finset.mem_singleton, imp_self, implies_true, and_true, Nat.lt_one_iff, card_eq_zero, forall_eq, P]
+        rfl
+
+      rw [htt, hnh]
+      apply Int.ge_of_eq
+      apply congrArg (HMul.hMul 2)
+      apply congrArg Nat.cast
+      exact card1
+
+    ----------------------------------------------------------------
+    -- 帰納ケース  |V| ≥ 2
+    ----------------------------------------------------------------
+    · have nontriv : 2 ≤ t.V.card := Nat.succ_le_of_lt (Nat.lt_of_not_ge h_le_one)
+
+      -- quotient のクラス数で場合分け
+      by_cases h_one : numClasses (proj_setoid t) = 1
+
+      --------------------------------------------------------------
+      --  (1) クラス数 = 1  ― Trace で ground を減らす
+      --------------------------------------------------------------
+      · -- 最大元を 1 つ取る
+        obtain ⟨x, hx⟩ := t.nonemp --quotient_exists t   -- プロジェクト側の補題名に合わせて調整
+        let mx := proj_max t ⟨x, hx⟩
+        have hmx : po_maximal t mx := by
+          exact proj_max_maximal t ⟨x, hx⟩
+
+        -- nds の比較
+        have h_nds_le_trace :=
+          normalized_degree_sum_gt t h_one mx hmx nontriv
+        -- ground が 1 減る
+        have h_card_lt :
+            (po_trace t mx hmx nontriv).V.card < t.V.card :=
+          trace_one_ground_card t mx hmx nontriv
+        -- 強い帰納法の仮定で trace 側の nds ≤ 0
+        have h_nds_trace :=
+          ih _ (by
+                have : (po_trace t mx hmx nontriv).V.card < n := by
+                  -- `ht_card : t.V.card = n` を使って < n に変形
+                  have := h_card_lt
+                  simpa [ht_card] using this
+                exact this) _ (by
+                  -- trace の card = card,  reflexive rewrite
+                  rfl)
+        -- 連鎖律で結論
+        exact h_nds_le_trace.trans h_nds_trace
+
+      --------------------------------------------------------------
+      --  (2) クラス数 ≥ 2 ― comp/excl で分割
+      --------------------------------------------------------------
+      · -- ≥ 2 に昇格させる
+        have h_ge_two : numClasses (proj_setoid t) ≥ 2 := by
+          -- 1 ではない & 正  →  2 以上
+          have h_pos : 0 < numClasses (proj_setoid t) := numClasses_pos t
+          have : 1 ≤ numClasses (proj_setoid t) := Nat.succ_le_of_lt h_pos
+          apply Nat.succ_le_of_lt
+          exact Nat.lt_of_le_of_ne h_pos fun a => h_one (id (Eq.symm a))
+
+        -- 適当なクラス q を 1 つ取る（存在はクラシカルに）
+        obtain  ⟨q : Quotient (proj_setoid t)⟩ := quotient_exists t
+
+        -- ground が確かに減る
+        have h_comp_card :=
+          directProduct_comp_excel_ground_c t q h_ge_two
+        have h_excl_card :=
+          directProduct_comp_excel_ground_e t q h_ge_two
+
+        -- IH を comp と excl に適用
+        have h_nds_comp :
+            (partialorder_ideal_system (comp_po t q)).toSetFamily.normalized_degree_sum ≤ 0 := by
+          have h_lt : (comp_po t q).V.card < n := by
+            have : (comp_po t q).V.card < t.V.card := h_comp_card
+            simpa [ht_card] using this
+          exact (ih _ h_lt) _ rfl
+
+        have h_nds_excl :
+            (partialorder_ideal_system (excl_po t q h_ge_two)).toSetFamily.normalized_degree_sum ≤ 0 := by
+          have h_lt : (excl_po t q h_ge_two).V.card < n := by
+            have : (excl_po t q h_ge_two).V.card < t.V.card := h_excl_card
+            simpa [ht_card] using this
+          exact (ih _ h_lt) _ rfl
+
+        -- comp/excl を貼り合わせて元の nds ≤ 0
+        exact directProduct_nds t q h_ge_two h_nds_comp h_nds_excl
+  exact hP (#s_orig.V) s_orig rfl
 
 --ここだけsじゃなくてs₀をつかっているので注意。
 lemma setup_spo2_average_rare (s₀ :Setup_spo2 α): (spo_closuresystem s₀.toSetup_spo).normalized_degree_sum ≤ 0 :=

@@ -51,6 +51,7 @@ by
   obtain ⟨val, property⟩ := v1
   contradiction
 
+--成分ごとに分解した集合族の直積がもとの集合族に一致すること。
 theorem directProduct_comp_excel  (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]
   (geq2quotient: (numClasses (proj_setoid s) ≥ 2)) :
   DirectProduct (partialorder_ideal_system (comp_po s q)).toSetFamily (partialorder_ideal_system (excl_po s q geq2quotient)).toSetFamily =
@@ -463,6 +464,167 @@ by
                   simp_all only [ge_iff_le, Finset.mem_inter, Finset.mem_image, mem_filter, mem_attach, true_and,
                     Subtype.exists, exists_and_right, exists_eq_right, exists_true_left, false_or, not_false_eq_true,
                     ne_eq, exists_const, and_false, compq, eclq]
+
+lemma directProduct_comp_excel_ground (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]
+  (geq2quotient: (numClasses (proj_setoid s) ≥ 2)) :
+  (partialorder_ideal_system (comp_po s q)).ground ∪ (partialorder_ideal_system (excl_po s q geq2quotient)).ground =
+  (partialorder_ideal_system s).toSetFamily.ground :=
+by
+  rw [← directProduct_comp_excel s q geq2quotient]
+  dsimp [DirectProduct]
+
+lemma directProduct_comp_excel_ground_card (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]
+  (geq2quotient: (numClasses (proj_setoid s) ≥ 2)) :
+  (partialorder_ideal_system (comp_po s q)).toSetFamily.ground.card +
+    (partialorder_ideal_system (excl_po s q geq2quotient)).toSetFamily.ground.card =
+  (partialorder_ideal_system s).toSetFamily.ground.card :=
+by
+  rw [← directProduct_comp_excel s q geq2quotient]
+  dsimp [DirectProduct]
+  have : (partialorder_ideal_system (comp_po s q)).toSetFamily.ground ∩
+    (partialorder_ideal_system (excl_po s q geq2quotient)).toSetFamily.ground = ∅ :=
+  by
+    dsimp [partialorder_ideal_system]
+    exact disjoint_ground_excl s q geq2quotient
+  have : Disjoint
+    (partialorder_ideal_system (comp_po s q)).toSetFamily.ground
+    (partialorder_ideal_system (excl_po s q geq2quotient)).toSetFamily.ground :=
+  by
+    exact Finset.disjoint_iff_inter_eq_empty.mpr this
+
+  rw [Finset.card_union_of_disjoint this]
+
+lemma directProduct_comp_ground_card (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]  :
+ ((partialorder_ideal_system (comp_po s q))).toSetFamily.ground.card ≥ 1 :=
+by
+  dsimp [partialorder_ideal_system]
+  dsimp [comp_po, excl_po]
+  dsimp [comp_po_V', excl_po_V']
+  dsimp [compFinset, exclFinset]
+  simp
+  let x := Quot.out q
+  use x
+  simp
+  exact Quotient.mk_eq_iff_out.mpr rfl
+
+lemma directProduct_excl_ground_card (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]
+  (geq2quotient: (numClasses (proj_setoid s) ≥ 2)) :
+ ((partialorder_ideal_system (excl_po s q geq2quotient))).toSetFamily.ground.card ≥ 1 :=
+by
+  dsimp [partialorder_ideal_system]
+  dsimp [comp_po, excl_po]
+  dsimp [comp_po_V', excl_po_V']
+  dsimp [compFinset, exclFinset]
+  let epv := excl_po_V'_nonempty_of_classes_ge2 s q geq2quotient
+  exact one_le_card.mpr epv
+
+lemma directProduct_comp_excel_ground_c (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]
+  (geq2quotient: (numClasses (proj_setoid s) ≥ 2)) :
+  (partialorder_ideal_system (comp_po s q)).toSetFamily.ground.card <
+  (partialorder_ideal_system s).toSetFamily.ground.card :=
+by
+  have:(partialorder_ideal_system (comp_po s q)).toSetFamily.ground.card +
+    (partialorder_ideal_system (excl_po s q geq2quotient)).toSetFamily.ground.card ≤
+  (partialorder_ideal_system s).toSetFamily.ground.card :=
+  by
+    let dpc := directProduct_comp_excel_ground_card s q geq2quotient
+    exact Nat.le_of_eq dpc
+  let degc := directProduct_excl_ground_card s q geq2quotient
+  exact Mathlib.Tactic.LinearCombination.lt_of_lt degc this
+
+lemma directProduct_comp_excel_ground_e (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]
+  (geq2quotient: (numClasses (proj_setoid s) ≥ 2)) :
+  ((partialorder_ideal_system (excl_po s q geq2quotient))).toSetFamily.ground.card <
+  (partialorder_ideal_system s).toSetFamily.ground.card :=
+by
+  have:(partialorder_ideal_system (comp_po s q)).toSetFamily.ground.card +
+    (partialorder_ideal_system (excl_po s q geq2quotient)).toSetFamily.ground.card ≤
+  (partialorder_ideal_system s).toSetFamily.ground.card :=
+  by
+    let dpc := directProduct_comp_excel_ground_card s q geq2quotient
+    exact Nat.le_of_eq dpc
+  let dcgc := directProduct_comp_ground_card s q
+  apply Mathlib.Tactic.LinearCombination.lt_of_lt dcgc
+  simp
+  rw [add_comm]
+  exact this
+
+theorem directProduct_nds  (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]
+  (geq2quotient: (numClasses (proj_setoid s) ≥ 2)) :
+  (partialorder_ideal_system (comp_po s q)).toSetFamily.normalized_degree_sum ≤ 0 →
+  (partialorder_ideal_system (excl_po s q geq2quotient)).toSetFamily.normalized_degree_sum ≤ 0 →
+  (partialorder_ideal_system s).toSetFamily.normalized_degree_sum ≤ 0 :=
+by
+  intro nds1 nds2
+  rw [← directProduct_comp_excel s q geq2quotient]
+  let dge := disjoint_ground_excl s q geq2quotient
+  let dpn := direct_Product_normalized_degree_sum (partialorder_ideal_system (comp_po s q)).toSetFamily (partialorder_ideal_system (excl_po s q geq2quotient)).toSetFamily
+  specialize dpn dge
+  have hnc: (partialorder_ideal_system (comp_po s q)).normalized_degree_sum ≤ 0 :=
+  by
+    simp_all only [ge_iff_le]
+  have hhc: (partialorder_ideal_system (excl_po s q geq2quotient)).number_of_hyperedges ≥ 0 :=
+  by
+    dsimp [SetFamily.number_of_hyperedges]
+    exact
+      Int.le.intro_sub
+        (#(filter (fun s_1 => (partialorder_ideal_system (excl_po s q geq2quotient)).sets s_1)
+              (partialorder_ideal_system (excl_po s q geq2quotient)).ground.powerset) +
+          0)
+        rfl
+
+  have hec:(partialorder_ideal_system (excl_po s q geq2quotient)).number_of_hyperedges *
+        (partialorder_ideal_system (comp_po s q)).normalized_degree_sum ≤ 0 :=
+  by
+    exact Int.mul_nonpos_of_nonneg_of_nonpos hhc nds1
+
+  have hhe: (partialorder_ideal_system (comp_po s q)).number_of_hyperedges ≥ 0 :=
+  by
+    dsimp [SetFamily.number_of_hyperedges]
+    exact
+      Int.le.intro_sub
+        (#(filter (fun s_1 => (partialorder_ideal_system (comp_po s q)).sets s_1)
+              (partialorder_ideal_system (comp_po s q)).ground.powerset) +
+          0)
+        rfl
+  have hne:(partialorder_ideal_system (excl_po s q geq2quotient)).normalized_degree_sum ≤ 0 :=
+  by
+    simp_all only [ge_iff_le]
+
+
+  have : (partialorder_ideal_system (comp_po s q)).number_of_hyperedges *
+        (partialorder_ideal_system (excl_po s q geq2quotient)).normalized_degree_sum ≤ 0 :=
+  by
+    rw [mul_comm]
+    apply mul_nonpos_of_nonpos_of_nonneg
+    · exact hne
+    · exact hhe
+
+  have : (partialorder_ideal_system (excl_po s q geq2quotient)).number_of_hyperedges *
+        (partialorder_ideal_system (comp_po s q)).normalized_degree_sum
+        + (partialorder_ideal_system (comp_po s q)).number_of_hyperedges *
+        (partialorder_ideal_system (excl_po s q geq2quotient)).normalized_degree_sum ≤ 0 :=
+  by
+    exact Int.add_nonpos hec this
+
+  rw [←dpn] at this
+  set ili :=
+      (2 *
+          (filter
+                (DirectProduct (partialorder_ideal_system (comp_po s q)).toSetFamily
+                    (partialorder_ideal_system (excl_po s q geq2quotient)).toSetFamily).sets
+                (DirectProduct (partialorder_ideal_system (comp_po s q)).toSetFamily
+                      (partialorder_ideal_system
+                          (excl_po s q geq2quotient)).toSetFamily).ground.powerset).sum
+            card ) with hili
+  have goal:(DirectProduct (partialorder_ideal_system (comp_po s q)).toSetFamily
+        (partialorder_ideal_system (excl_po s q geq2quotient)).toSetFamily).normalized_degree_sum ≤ 0 :=
+  by
+    simp_all only [ge_iff_le, ili]
+
+  convert goal
+
+
 /-
 example {A:Prop} {B:Prop} {C:Prop}:
    A∨B →  (A→C) → (B→C) → C :=

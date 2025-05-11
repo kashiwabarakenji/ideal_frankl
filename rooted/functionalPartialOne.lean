@@ -731,7 +731,7 @@ def principalIdealTrace (s : Setup_po α) (x : s.V) (mx) (nontriv)
     (v : (po_trace s x mx nontriv).V) : Finset α :=
   principalIdeal (po_trace s x mx nontriv) v
 
-/-- principalIdealTrace は単射 使わないかもしれない。-/
+/-- principalIdealTrace は単射。 現在は使ってない。-/
 lemma inj_principalTrace
     (s : Setup_po α) (x mx nontriv) :
   Function.Injective (principalIdealTrace s x mx nontriv) := by
@@ -795,6 +795,21 @@ by
   simp_all only [Int.ofNat_eq_coe, add_le_iff_nonpos_right, tsub_le_iff_right, zero_add, ge_iff_le]
   obtain ⟨val, property⟩ := x
   exact ndsl
+
+lemma trace_one_ground_card
+  (s : Setup_po α)
+  (x : s.V) (mx : po_maximal s x)
+  (nontriv : s.V.card ≥ 2) :
+  (partialorder_ideal_system s).ground.card
+  > (partialorder_ideal_system (po_trace s x mx nontriv)).ground.card :=
+by
+  dsimp [partialorder_ideal_system]
+  dsimp [po_trace]
+  simp_all only [ge_iff_le, coe_mem, card_erase_of_mem, gt_iff_lt, tsub_lt_self_iff, card_pos, Nat.lt_one_iff,
+    pos_of_gt, and_true]
+  obtain ⟨val, property⟩ := x
+  exact ⟨val, property⟩
+
 
   /-
 

@@ -658,6 +658,32 @@ noncomputable def excl_po
 
     simpa [restr_iff] using (reach_equiv.trans (s.order sx sy)) }
 
+lemma numClasses_pos (s : Setup_po α) :
+  (numClasses (proj_setoid s)) > 0 := by
+  -- numClasses の定義を展開して `Finset.card` を使う
+  dsimp [numClasses]
+  -- `Finset.card` の定義を展開して `Finset.nonempty` を使う
+  have h1 : Fintype.card (Quotient (proj_setoid s)) ≥ 1 := by
+    --apply Fintype.card_pos_iff.2
+    --refine (nonempty_quotient_iff s).mpr ?_
+    let qx := Quot.mk (proj_setoid s)
+    obtain ⟨x, h_nonemp⟩ := Setup_po.nonemp s
+    specialize qx ⟨x, h_nonemp⟩
+    simp_all only [ge_iff_le]
+    apply Fintype.card_pos_iff.mpr
+    exact Nonempty.intro qx
+
+  simp_all only [ge_iff_le, gt_iff_lt, card_pos, Finset.image_nonempty, attach_nonempty_iff]
+  cases s
+  simp_all only
+
+lemma quotient_exists (s : Setup_po α) :
+Nonempty (Quotient (proj_setoid s)) := by
+  -- s.V.attach は空でないので同値類も空でない
+  obtain ⟨v, hv⟩ := Setup_po.nonemp s
+  -- `Quotient.mk` を使って同値類を作る
+  let x := Quotient.mk (proj_setoid s) ⟨v, hv⟩
+  use x
 
 /-comp_poとexcl_poのidealの直和がもとのidealになることを示すための定義
 -- ideal 系
