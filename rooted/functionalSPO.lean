@@ -143,7 +143,7 @@ lemma reach_leq2 (s : Setup2 α) (x y : Quotient s.setoid) :
   convert fql
   rw [s.h_po]
 
---fq_lemmaと内容が被っている。
+--fq_lemmaと内容が被っている。こっちは、reachで書き換えたもの。
 lemma reach_leq2_rev (s : Setup2 α) (q1 q2 : Quotient s.setoid) :
   s.po.le q1 q2 → reach (fq s) q1 q2 :=
 by
@@ -271,6 +271,7 @@ by
   congr
   simp [Quotient.mk']
 
+--Setup2の順序がspoの順序に拡張できること。
 lemma spole_iff_po (s: Setup2 α) (x y : Quotient s.setoid) :
   s.po.le x y ↔ (setup_setupspo s).spo.le x y := by
   dsimp [setup_setupspo]
@@ -369,7 +370,8 @@ lemma setroid_quotient (s: Setup_spo α) (y z: {x : α // x ∈ s.V}) :
   ↔ s.setoid.r y z := by
   simp_all only [Quotient.eq]
 
---ここから1点制限の話。
+-----------------------------------
+--ここから1点制限traceの話。
 --Setup_spo2から得られるideal全体の集合族において、同値類の大きさが2以上のときに、1元traceしても、またSetup2になる。
 --同値類の要素は、パラレルであることは事前に示した方がいいのか。
 

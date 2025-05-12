@@ -19,7 +19,9 @@ import rooted.functionalCommon
 import rooted.functionalTreePartialorder
 import rooted.functionalSPO
 
-
+--Setup2の前提のうち、ClosureSystemが出てくるものを集めた。
+--後半にSetup_spo前提のものもある。
+--traceが絡んだものは、TraceIdealのほうを参照のこと。
 
 open Finset Set Classical
 

@@ -25,7 +25,15 @@ open Finset Set Classical
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 
---Setup_spoよりも仮定としてはつよくなっている。大きさ2以上の同値類が極大なもののみ。
+--ここからSetup_spo2が前提。
+--maximal以外は、singletonというsingleton_if_not_maximal の仮定が付け加わっている。
+--この仮定が必要なのは、rareな頂点を示すときぐらい。
+--一部にSetup_spoが前提の話も入っている。Setup_spo2の前提になっていても、本当は必要ないものが多そう。
+--ー定理の中には、singleton_if_not_maximalの仮定が必要なものは見つからない。仮定はidealrareのところで利用される。
+--Setup_spo2が出てくるのは、setup_trace_spo2までない。
+--Setup_SPOtraceとして新たなファイルを作って、Setup_SPOのtrace部分と一緒にするとよさそう。
+
+--Setup_spoよりも仮定としてはつよくなっている。大きさ2以上の同値類が極大なもののみという仮定が付け加わる。
 structure Setup_spo2 (α : Type) [Fintype α] [DecidableEq α]
   extends Setup_spo α where
   -- 極大でない要素の同値類のサイズが 1
@@ -34,7 +42,8 @@ structure Setup_spo2 (α : Type) [Fintype α] [DecidableEq α]
     (classOf toSetup_spo q).card ≥ 2 →
     isMaximal_spo toSetup_spo q
 
-
+--Setup2からSetup_spo2への埋め込み。
+--functionalMainのaverage_rareのところで使っている。
 def setup2_induces_spo (s : Setup2 α) : Setup_spo2 α :=
 {
   V := s.V,
@@ -63,6 +72,7 @@ def setup2_induces_spo (s : Setup2 α) : Setup_spo2 α :=
     exact csm
 }
 
+--すぐしたのsetup_trace_noLoopで使う。
 lemma setup_trace_reach (s : Setup_spo α) (x: s.V) (hx:(classOf s (@Quotient.mk _ s.setoid x
 )).card ≥ 2) (q1 q2 : Quotient (restrictedSetoid s x)) :
   reach (setup_trace_base s x hx).fq q1 q2 ↔
@@ -93,6 +103,7 @@ by
     rw [h]
     exact OldNew_id s x hx q2
 
+--setup_traceやsetup_trace_spo2で使う。
 lemma setup_trace_noLoop (s : Setup_spo α) (x: s.V) (hx:(classOf s (@Quotient.mk _ s.setoid x
 )).card ≥ 2) (q1 q2 : Quotient (restrictedSetoid s x)) :
   reach (fun q => toNew s x hx (s.fq (toOld s x q))) q1 q2 →
@@ -114,6 +125,7 @@ by
   rw [OldNew_id s x hx q2] at this
   exact this
 
+--traceで、こちらは、Setup_spo2ではなく、Setup_spoの前提。独立したファイルに移してもよい。
 noncomputable def setup_trace (s : Setup_spo α)(x: s.V) (hx:(classOf s (@Quotient.mk _ s.setoid x
 )).card ≥ 2): Setup_spo α :=
 {
@@ -141,6 +153,7 @@ noncomputable def setup_trace (s : Setup_spo α)(x: s.V) (hx:(classOf s (@Quotie
     rfl
 }
 
+--すぐ下で利用。
 omit [Fintype α] in
 lemma card_of_image_subset (V1 V2: Finset α) (A : Finset V1)(B:Finset V2)
   (h : A.image Subtype.val ⊆ B.image Subtype.val) :
@@ -155,7 +168,7 @@ lemma card_of_image_subset (V1 V2: Finset α) (A : Finset V1)(B:Finset V2)
   simp_all only [ge_iff_le]
   linarith
 
---新しく写って同値類が大きくなることはない。
+--新しく写って同値類が大きくなることはない。前提は、Setup_spoだが、setup_trace_spo2で利用。
 noncomputable def toNew_card (s : Setup_spo α) (x : {x : α // x ∈ s.V})
   (q: Quotient s.setoid)
    (hx:(classOf s (@Quotient.mk _ s.setoid x)).card ≥ 2):
@@ -247,6 +260,8 @@ by
           rw [setup_trace]
           simp_all only [mem_erase, ne_eq, not_false_eq_true, and_self]
 -/
+
+--toErased_eqの証明で使う。
 lemma toErased_eq_lem (s : Setup_spo α) (x : {x : α // x ∈ s.V})
   (y z: {y : α // y ∈ s.V}) (hx:(classOf s (@Quotient.mk _ s.setoid x)).card ≥ 2)
    (ree: restrictedSetoid s x (toErased s x hx y) (toErased s x hx z)) :
@@ -314,7 +329,7 @@ by
       simp_all only
       exact ree
 
---xと違う同値類は、恒等写像。excessの議論で使う。
+--xと違う同値類は、恒等写像。toNew_classOfなどexcessの議論で使う。SPO2前提ではないので、移動の余地あり。
 lemma toNew_card_eq (s : Setup_spo α) (x : {x : α // x ∈ s.V})
   (q: Quotient s.setoid)
    (hx:(classOf s (@Quotient.mk _ s.setoid x)).card ≥ 2)
@@ -445,6 +460,7 @@ by
 
     · simp_all only [ne_eq, mem_filter, mem_attach, true_and]
 
+--Setup_spo2前提ではないが、setup_trace_spo2の証明で利用。
 lemma setup_trace_spo_le (s : Setup_spo α) (x: s.V) (hx:(classOf s (@Quotient.mk _ s.setoid x
 )).card ≥ 2) (q1 q2 : Quotient (restrictedSetoid s x)) :
   (setup_trace s x hx).spo.le q1 q2 ↔ s.spo.le (toOld s x q1) (toOld s x q2) :=
@@ -477,6 +493,8 @@ by
     simp_all only
     exact this
 
+--setup2_induces_spoなどと違って、traceをとっている。
+--結構いろいろなところで使われているが、実際は、setup_traceの定義で十分なところが多そう。
 noncomputable def setup_trace_spo2 (s : Setup_spo2 α)(x: s.V) (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
 )).card ≥ 2): Setup_spo2 α :=
 {
@@ -536,17 +554,209 @@ noncomputable def setup_trace_spo2 (s : Setup_spo2 α)(x: s.V) (hx:(classOf s.to
        rw [hqq'] at this
        exact this
     exact this
-
-    --hqの条件より、あたらしい世界での同値類の大きさは2以上。条件hx。
-    --ということは、古い世界ではそれよりも小さくなることはないので、同値類の大きさは2以上。
-    --s.singleton_if_not_maximal q hqを利用する必要あり。
-    --ということは、古い世界では極大元。
-    --古い世界と新しい世界の大小関係は一致しているので、新しい世界でも極大元。}
-
 }
 
---xに関わらない同値類の場合は、cardの大きさは変わらない。
-lemma toNew_classOf (s : Setup_spo2 α) (x : {x : α // x ∈ s.V})
+--特に使ってないが、setup_trace_spo2の立ち位置をはっきりさせるため。
+lemma setup_trace_spo2_lem (s : Setup_spo2 α)(x: s.V) (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).card ≥ 2):
+  (setup_trace_spo2 s x hx).toSetup_spo = setup_trace s.toSetup_spo x hx := by
+  dsimp [setup_trace_spo2]
+  dsimp [setup_trace]
+
+  --hqの条件より、あたらしい世界での同値類の大きさは2以上。条件hx。
+  --ということは、古い世界ではそれよりも小さくなることはないので、同値類の大きさは2以上。
+  --s.singleton_if_not_maximal q hqを利用する必要あり。
+  --ということは、古い世界では極大元。
+  --古い世界と新しい世界の大小関係は一致しているので、新しい世界でも極大元。
+--trace_excess_decreaseで利用。Setup_spo2の前提は必要でないので移動の余地あり。
+lemma toNew_classOf (s : Setup_spo α) (x : {x : α // x ∈ s.V})
+  (hx : (classOf s (@Quotient.mk _ s.setoid x)).card ≥ 2)
+  (cls : Quotient s.setoid) :
+   cls ≠ (@Quotient.mk _ s.setoid x) →
+    (classOf s cls).card  = (classOf (setup_trace s x hx) (toNew s x hx cls)).card :=
+by
+  intro h
+  dsimp [setup_trace]
+  dsimp [toNew]
+  dsimp [classOf]
+  --bij_cardで証明するのがいいか。
+  let tce := toNew_card_eq s x cls hx h
+  --tceと、ゴールの関係を探る。
+
+  let src := filter (fun a : {y // y ∈ s.V} => Quotient.mk'' a = cls) s.V.attach
+  let tgt := filter (fun a : {y // y ∈ s.V.erase x} =>
+      Quotient.mk'' a = cls.liftOn (fun z => ⟦toErased s
+       x hx z⟧)
+        (by
+          intro a b hab
+          show Quotient.mk'' (toErased s x hx a) = Quotient.mk'' (toErased s x hx b)
+          have : s.setoid.r a b :=
+          by
+            exact hab
+          let tee := toErased_eq s x a b hx
+          apply tee
+          simp_all only [ne_eq, Quotient.eq]
+        )
+    ) (s.V.erase x).attach
+  --tgtの定義の仕方はこれでよかったのか。toNewとclassOfで定義する方法もあったと思う。
+  have tgt_classOf : tgt = classOf (setup_trace s x hx) (toNew s x hx cls) := by
+    dsimp [tgt]
+    dsimp [classOf]
+    dsimp [setup_trace]
+    dsimp [toNew]
+
+  have xnotinsrc: x ∉ src := by
+    intro h
+    dsimp [src] at h
+    simp at h
+    obtain ⟨val, property⟩ := x
+    simp_all only [mem_attach, mem_filter, not_true_eq_false, src]
+    rename_i h_1
+    subst h
+    simp_all only [Quotient.lift_mk, Quotient.eq, tgt]
+    apply h_1
+    simp_all only
+
+  have xnotintgt: x.val ∉ tgt.image Subtype.val := by
+    intro h
+    dsimp [tgt] at h
+    simp at h
+
+  --これを証明すれば、定理の証明が終わる。
+  have : src.image Subtype.val = tgt.image Subtype.val := by
+    dsimp [src]
+    --dsimp [tgt]  -- tgt_classOfを使うてもある。
+    rw [tgt_classOf]
+    ext y
+    constructor
+    · intro h
+      rw [Finset.mem_image] at h
+      rw [Finset.mem_image]
+      simp at h
+      obtain ⟨w, h⟩ := h
+      simp
+      have : ¬y = x.val ∧ y ∈ s.V := by
+        constructor
+        · intro h_contra
+          subst h h_contra
+          simp_all only [Subtype.coe_eta, Quotient.lift_mk, Quotient.eq, mem_filter, mem_attach, true_and,
+            Finset.mem_image, Subtype.exists, mem_erase, ne_eq, exists_and_right, exists_eq_right, not_true_eq_false,
+            and_true, IsEmpty.exists_iff, not_false_eq_true, tgt, src]
+          obtain ⟨val, property⟩ := x
+          simp_all only
+          contradiction
+        · exact w
+      use this
+      --have : (restrictedSetoid s.toSetup_spo x).r
+      have yinsVe:y ∈ (setup_trace s x hx).V := by
+        dsimp [setup_trace]
+        simp_all only [mem_erase, ne_eq, not_false_eq_true, and_self]
+      let cq := (classOf_quotient  (setup_trace s x hx) ⟨y,yinsVe⟩ (toNew s x hx cls)).mp
+      apply cq
+      --h:Quotient.mk'' ⟨y, ⋯⟩ = clsを使って証明。
+      have : toNew s x hx (@Quotient.mk _ s.setoid ⟨y,w⟩) = @Quotient.mk _ (restrictedSetoid s x) ⟨y, yinsVe⟩ := by
+        dsimp [toNew]
+        dsimp [restrictedSetoid]
+
+        simp_all only [mem_erase, ne_eq, not_false_eq_true, and_self]
+        dsimp [toErased]
+        split
+        · let rnsm := representativeNeSelf_mem_classOf s x hx
+          rename_i h_2
+          subst h h_2
+          simp_all only [not_true_eq_false, and_true]
+        ·
+          subst h
+          simp_all only [and_true, Quotient.lift_mk, Quotient.eq, mem_filter, mem_attach, true_and, Finset.mem_image,
+            Subtype.exists, mem_erase, ne_eq, exists_and_right, exists_eq_right, not_true_eq_false, coe_mem,
+            IsEmpty.exists_iff, not_false_eq_true, tgt, src]
+      subst h
+      simp_all only [and_true, Quotient.lift_mk, Quotient.eq, mem_filter, mem_attach, true_and, Finset.mem_image,
+        Subtype.exists, mem_erase, ne_eq, exists_and_right, exists_eq_right, not_true_eq_false, coe_mem,
+        IsEmpty.exists_iff, not_false_eq_true, tgt, src]
+      obtain ⟨val, property⟩ := x
+      simp_all only
+      rfl
+
+    · intro h
+
+      simp at h
+      obtain ⟨w, h⟩ := h
+      rw [Finset.mem_image]
+      simp
+      use w.2
+      have yinsVe:y ∈ (setup_trace s x hx).V := by
+        dsimp [setup_trace]
+        simp_all only [mem_erase, ne_eq, not_false_eq_true, and_self]
+      let cq := (classOf_quotient (setup_trace s x hx) ⟨y, yinsVe⟩ (toNew s x hx cls)).mpr
+      have tnqlem: toNew s x hx (@Quotient.mk _ s.setoid ⟨y,w.2⟩) = @Quotient.mk _ (restrictedSetoid s x) ⟨y, yinsVe⟩ := by
+        dsimp [toNew]
+        dsimp [restrictedSetoid]
+        simp_all only [mem_erase, ne_eq, not_false_eq_true, and_self]
+        dsimp [toErased]
+        split
+        · let rnsm := representativeNeSelf_mem_classOf s x hx
+          rename_i h_2
+          simp_all only [mem_filter, mem_attach, true_and, Finset.mem_image, Subtype.exists, mem_erase, ne_eq,
+            exists_and_right, exists_eq_right, not_true_eq_false, coe_mem, and_true, IsEmpty.exists_iff,
+            not_false_eq_true, Subtype.coe_eta, Quotient.eq, tgt, src]
+          obtain ⟨val, property⟩ := x
+          obtain ⟨left, right⟩ := w
+          simp_all only [Subtype.mk.injEq, src]
+        ·
+          simp_all only [mem_filter, mem_attach, true_and, Finset.mem_image, Subtype.exists, mem_erase, ne_eq,
+            exists_and_right, exists_eq_right, not_true_eq_false, coe_mem, and_true, IsEmpty.exists_iff,
+            not_false_eq_true, tgt, src]
+      have yinco:⟨y, yinsVe⟩ ∈ classOf (setup_trace s x hx) (toNew s x hx cls) :=
+      by
+        simp_all only [mem_filter, mem_attach, true_and, Finset.mem_image, Subtype.exists, mem_erase, ne_eq,
+          exists_and_right, exists_eq_right, not_true_eq_false, coe_mem, and_true, IsEmpty.exists_iff,
+          not_false_eq_true, tgt, src]
+      specialize cq yinco
+      have :toNew s x hx (@Quotient.mk _ s.setoid ⟨y,w.2⟩) = toNew s x hx cls :=
+      by
+        simp_all only [mem_filter, mem_attach, true_and, Finset.mem_image, Subtype.exists, mem_erase, ne_eq,
+          exists_and_right, exists_eq_right, not_true_eq_false, coe_mem, and_true, IsEmpty.exists_iff,
+          not_false_eq_true, tgt, src]
+        obtain ⟨val, property⟩ := x
+        obtain ⟨left, right⟩ := w
+        simp_all only [src]
+        rfl
+      let ca := congrArg (toOld s x ) this
+      rw [NewOld_id s x hx] at ca
+      rw [NewOld_id s x hx] at ca
+      exact ca
+
+  have : src.card = tgt.card := by
+    --dsimp [src]
+    --dsimp [tgt]
+    -- Subtype.val は injective なので
+    have h_inj_src : Set.InjOn Subtype.val src.toSet := by
+      intros a _ b _ hab
+      exact Subtype.ext hab
+
+    have h_inj_tgt : Set.InjOn Subtype.val tgt.toSet := by
+      intros a _ b _ hab
+      exact Subtype.ext hab
+
+    -- それぞれに card_image_iff を適用
+    have h_card_src : (Finset.image Subtype.val src).card = src.card :=
+      (Finset.card_image_iff.mpr h_inj_src)
+
+    have h_card_tgt : (Finset.image Subtype.val tgt).card = tgt.card :=
+      (Finset.card_image_iff.mpr h_inj_tgt)
+
+    -- そして this を使って等式を連結
+    have : src.card = tgt.card := by
+      rw [←h_card_src, this, h_card_tgt]
+
+    exact this
+
+  simp_all only [mem_filter, mem_attach, true_and, Finset.mem_image, Subtype.exists, mem_erase, ne_eq, exists_and_right,
+    exists_eq_right, not_true_eq_false, coe_mem, and_true, IsEmpty.exists_iff, not_false_eq_true, tgt, src]
+
+/- 消して良い。
+--Setup_spo2の仮定になっているが、Setup_spoの仮定でも成り立つのでtoNew_classOfとして書き換えた。
+lemma toNew_classOf2 (s : Setup_spo2 α) (x : {x : α // x ∈ s.V})
   (hx : (classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).card ≥ 2)
   (cls : Quotient s.setoid) :
    cls ≠ (@Quotient.mk _ s.setoid x) →
@@ -730,3 +940,5 @@ by
 
   simp_all only [mem_filter, mem_attach, true_and, Finset.mem_image, Subtype.exists, mem_erase, ne_eq, exists_and_right,
     exists_eq_right, not_true_eq_false, coe_mem, and_true, IsEmpty.exists_iff, not_false_eq_true, tgt, src]
+
+-/

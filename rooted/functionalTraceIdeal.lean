@@ -22,8 +22,12 @@ import rooted.functionalTreePartialorder
 import rooted.functionalSPO
 import rooted.functionalSPO2
 import rooted.functionalTreeIdeal
-import rooted.functionalIdealrare
+--import rooted.functionalIdealrare
 
+---前半がndsの話。
+--- だいたいSetup_spo2の仮定がついているが、ほとんどは、Setup_spoの仮定でOKと思われる。
+--面倒なのでわざわざ書き換えるほどでもないかも。でも、一斉置換でもなんとかなりそう。
+---後半がexcessの話。
 
 open Finset Set Classical
 
@@ -32,6 +36,7 @@ set_option maxHeartbeats 2000000
 variable {α : Type} [Fintype α] [DecidableEq α]
 
 --制限される前から、制限された世界への成り立つ定理。
+-- (spo_closuresystem (setup_trace_spo2 s x hx).toSetup_spo)となっているが、おそらく(spo_closuresystem (setup_trace s x hx)でOK。
 lemma trace_ideal_lem (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
 )).card ≥ 2) :
   ∀ ss:Finset α,  (spo_closuresystem s.toSetup_spo).sets ss → (spo_closuresystem (setup_trace_spo2 s x hx).toSetup_spo).sets (ss.erase x.val) := by
@@ -120,9 +125,9 @@ lemma trace_ideal_lem (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@
         · dsimp [toNew]
           dsimp [toErased]
           obtain ⟨val, property⟩ := x
-          obtain ⟨left, right⟩ := hI
-          obtain ⟨left_1, right_1⟩ := hx1
-          obtain ⟨left_2, right⟩ := right
+          --obtain ⟨left, right⟩ := hI
+          --obtain ⟨left_1, right_1⟩ := hx1
+          --obtain ⟨left_2, right⟩ := right
           simp_all only [forall_true_left]
           simp_all only [Subtype.coe_eta, Subtype.forall, Subtype.mk.injEq, ↓reduceDIte]
       · intro q1 hq1 x2 b hx3
@@ -716,6 +721,7 @@ lemma trace_ideal_lem_rev2 (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_s
           exact rfl
 
 --今までの補題をまとめたもの。
+--setup_trace_spo2は、setup_traceでよさそう。
 theorem trace_ideal (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
 )).card ≥ 2) :
   ∀ ss:Finset α,  (spo_closuresystem (setup_trace_spo2 s x hx).toSetup_spo).sets ss ↔ ((spo_closuresystem s.toSetup_spo).toSetFamily.trace x.val (by simp_all only [ge_iff_le,
@@ -762,7 +768,7 @@ theorem trace_ideal (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Qu
           exact Or.inl tilr2
 
     · intro h
-      --dsimp [setup_trace_spo2]
+
       dsimp [SetFamily.trace] at h
       have hh : ((classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).erase x).Nonempty := by
         have hhx : x∈ (classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)) := by
@@ -847,7 +853,7 @@ theorem trace_ideal (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Qu
         --ssがxを含むケース。
         exact hr
 
-theorem normalized_degree_sum_congr {α : Type} [DecidableEq α] [Fintype α]
+lemma normalized_degree_sum_congr {α : Type} [DecidableEq α] [Fintype α]
   (F G : SetFamily α)
   [DecidablePred F.sets] [DecidablePred G.sets]
   (h_sets   : F.sets = G.sets)
@@ -906,6 +912,7 @@ theorem trace_ideal_nds (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo 
     simp_all only [ti]
   · rfl
 
+------------------------------------------------------------
 --次の定理は、ある同値類qがあって、(classOf s.toSetup_spo q).card ≥ 2)のときには、
 --そこからxを持ってきて、traceすることにより、一つ台集合が小さくて、ndsが等しいか大きい集合族を作ることができる。
 --2以上の同値類の大きさの過剰分は、1減っている。
@@ -916,6 +923,7 @@ noncomputable def excess (s: Setup_spo2 α)  : ℕ :=
     ((classOf s.toSetup_spo q).card - 1)
       --traceすることで、excessはひとつ減る。
 
+--setup_trace_spo2は、setup_traceでよさそう。(setup_trace_spo2 s x hx).toSetup_spoをsetup_traceに。
 lemma trace_excess_decrease_lem_x (s: Setup_spo2 α) (x: s.V) (hx: (classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).card ≥ 2) :
  (classOfx s.toSetup_spo x).image Subtype.val = (classOf (setup_trace_spo2 s x hx).toSetup_spo (toNew s.toSetup_spo x hx (@Quotient.mk _ s.toSetup_spo.setoid x))).image Subtype.val ∪ ({x.val}:Finset α):=
 by
@@ -1045,8 +1053,6 @@ by
           have :y ∈ (setup_trace_spo2 s x hx).V := by
             simp_all only
 
-          --let cs := (classOf_setoid (setup_trace_spo2 s x hx).toSetup_spo) ⟨y,this⟩ (representativeNeSelf s.toSetup_spo x hx)
-
           convert h2
           dsimp [toErased]
           split
@@ -1168,7 +1174,7 @@ lemma trace_excess_decrease (s: Setup_spo2 α) (x: s.V) (hx: (classOf s.toSetup_
         f q = g (i q hq) := by
       intro q hq
       have hq_ne : q ≠ qx := Finset.mem_erase.mp hq |>.left
-      exact congrArg (fun n => n - 1) (toNew_classOf s x hx q hq_ne)
+      exact congrArg (fun n => n - 1) (toNew_classOf s.toSetup_spo x hx q hq_ne)
 
     -- ③ 単射性
     have hinj :
@@ -1280,79 +1286,3 @@ lemma trace_excess_decrease (s: Setup_spo2 α) (x: s.V) (hx: (classOf s.toSetup_
       exact hx
     exact Nat.le_sub_one_of_lt hx
   exact Eq.symm (Nat.add_sub_assoc h (∑ q ∈ Finset.univ.erase qx, (#(classOf s.toSetup_spo q) - 1)))
-
-
-/-ChatGPT 4o
-  dsimp [excess]
-  let Q := Quotient s.setoid
-  let Q' := Quotient (setup_trace_spo2 s x hx).setoid
-  let f : Q → ℕ := fun q => (classOf s.toSetup_spo q).card - 1
-  let g : Q' → ℕ := fun q' => (classOf (setup_trace_spo2 s x hx).toSetup_spo q').card - 1
-
-  -- 分離：q = ⟦x⟧ とそれ以外
-  have : ∑ q in Finset.univ, f q
-         = ∑ q in Finset.univ.erase ⟦x⟧, f q + f ⟦x⟧ := by
-    sorry
-    --apply Finset.sum_eq_add_sum_erase
-    --exact Finset.mem_univ ⟦x⟧
-
-  rw [this]
-  -- ⟦x⟧ 以外の部分は bijection で一致する
-  have h_bij : ∑ q in Finset.univ.erase ⟦x⟧, f q
-             = ∑ q' in Finset.univ, g q' := by
-
-    apply Finset.sum_bij (toNew s.toSetup_spo x hx)
-    · intro q hq
-      exact Finset.mem_univ _
-    · intro q hq
-      have hqx : q ≠ ⟦x⟧ := by simp_all only [Finset.mem_erase, Finset.mem_univ, true_and]
-      rw [toNew_classOf s.toSetup_spo x hx q hqx]
-      rfl
-    · intros q₁ q₂ _ _ h
-      exact toNew_injective s.toSetup_spo x hx q₁ q₂ h
-    · intro q' _
-      use toOld s.toSetup_spo x q'
-      constructor
-      · simp only [Finset.mem_erase, Finset.mem_univ, true_and]
-        intro contra
-        rw [contra]
-        have := OldNew_id s.toSetup_spo x hx q'
-        rw [←this]
-        contradiction
-      · exact OldNew_id s.toSetup_spo x hx q'
-
-  rw [h_bij]
-  -- 最後に f ⟦x⟧ = g (toNew ⟦x⟧) + 1 を使ってゴールを完成
-  have h_xclass :
-    f ⟦x⟧ = g (toNew s.toSetup_spo x hx ⟦x⟧) + 1 := by
-    -- classOf size equality from image union with singleton
-    rw [←Finset.card_union_eq]
-    have : Disjoint
-      ((classOf (setup_trace_spo2 s x hx).toSetup_spo (toNew s.toSetup_spo x hx ⟦x⟧)).image Subtype.val)
-      ({x.val} : Finset α) := by
-      apply Finset.disjoint_singleton_right.mpr
-      intro contra
-      rcases Finset.mem_image.mp contra with ⟨a, ha, ha_eq⟩
-      have h_in : a.val = x.val := by simp_all
-      have : a = x := by apply Subtype.eq; exact h_in
-      have notin : a ∈ s.V.erase x := by
-        have := (classOf (setup_trace_spo2 s x hx).toSetup_spo (toNew s.toSetup_spo x hx ⟦x⟧)).prop ha
-        exact this
-      simp_all only [Finset.mem_erase, not_true_eq_false] --at notin
-
-    rw [h_x]
-    apply Finset.card_disjoint_union this
-
-  -- 結論：左辺 = 和（他） + g(toNew ⟦x⟧) + 1 なので -1 して一致
-  rw [h_xclass]
-  rw [add_comm]
-  simp
--/
-
-
-
-/-  have : ∀ q : Quotient s.setoid, q ≠ (@Quotient.mk _ s.setoid x) →
-    (classOf s.toSetup_spo q).card  = (classOf (setup_trace_spo2 s x hx).toSetup_spo (toNew s.toSetup_spo x hx q)).card := by
-
-    #check Finset.sum_congr
--/

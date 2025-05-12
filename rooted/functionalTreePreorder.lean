@@ -1,3 +1,4 @@
+--前順序に関するpathの議論。PreorderPathとかにしてもよかった。
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Finset.Powerset
 import Mathlib.Data.Set.Function
@@ -20,9 +21,11 @@ set_option maxHeartbeats 500000
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 
---目標補題. function fから作られるpreorderから引き起こされるsetoidの同値類において、同値類の大きさが2以上であれば、極大要素になっているという定理を作りたい。
+--このファイルのメイン定理は、function fから作られるpreorderから引き起こされるsetoidの同値類において、同値類の大きさが2以上であれば、極大要素になっているという定理eqClass_size_ge_two_implies_inverse
 
 --Preorderのstar_implies_pathExistsでも同じことを証明している。大きい方から小さい方の鎖になっているような。
+--Setup前提ではないが、path_exists_setup_reverse やpath_exists_subtypeの証明で使っている。
+--最終的には、path_exists_setupに生かされる。
 lemma path_exists {α : Type} [Fintype α] (R : α → α → Prop) (x y : α) (h : Relation.ReflTransGen R x y) :
   ∃ (n : ℕ) (z : Fin (n + 1) → α), z 0 = x ∧ z n = y ∧ ∀ i : Fin n, R (z i.castSucc) (z i.succ) := by
   -- ReflTransGen の帰納法を適用
@@ -287,7 +290,7 @@ by
     intro s1 hs1
     exact preorder.ReflTransGen.to_R_hat h s1 hs1
 
---証明できたけど、写像が後ろから前にムカているので逆になっている。外からは使わないけど、次の補題で使っている。
+--証明できたけど、写像が後ろから前に向かっているので逆になっている。外からは使わないけど、次の補題で使っている。
 lemma path_exists_setup_reverse (s: Setup α) (x y : {x : α // x ∈ s.V}) :
   s.pre.le x y →
   ∃ (n : ℕ) (z : Fin (n + 1) → {x : α // x ∈ s.V}), z 0 = y ∧ z n = x ∧ ∀ i : Fin n, (z i.castSucc) = s.f (z i.succ) :=
@@ -311,9 +314,9 @@ by
     subst hzn hz₀
     simp_all only [Fin.natCast_eq_last, R]
 
---大小関係はfの繰り返しで書けること。こちらよりのちのiteratefのほうがすっきりしているかもしれない。
---setup用になっているのでこれを主に使えば良い。このなかでpath_exists_setup_reverseを使っている。
-lemma path_exists_setup (s: Setup α) (x y : {x : α // x ∈ s.V}) :
+--大小関係はfの繰り返しで書けること。Setup前提の重要補題。
+--このなかでpath_exists_setup_reverseを使っている。
+theorem path_exists_setup (s: Setup α) (x y : {x : α // x ∈ s.V}) :
   s.pre.le x y →
   ∃ (n : ℕ) (z : Fin (n + 1) → {x : α // x ∈ s.V}), z 0 = x ∧ z n = y ∧ ∀ i : Fin n, s.f (z i.castSucc) = (z i.succ) :=
 by
@@ -440,7 +443,7 @@ by
   simp_all only [Fin.val_zero, Nat.cast_zero, Fin.val_last, Fin.coe_eq_castSucc, Fin.coe_castSucc, Fin.val_succ,
     Nat.cast_add, Nat.cast_one, implies_true, and_self, z']
 
-
+--後ろで使っている。
 lemma path_implies_rear {α : Type} [Fintype α] [DecidableEq α] (s : Setup α) (b : {x // x ∈ s.V})
   (n : ℕ) (z : Fin (n + 1) → {x // x ∈ s.V})
   --(h0 : z 0 = a)
@@ -499,7 +502,7 @@ by
     Fin.natCast_eq_last, sub_add_cancel, Fin.coe_castSucc, Fin.val_succ, Nat.cast_add, Nat.cast_one, implies_true,
     and_self, z']
 
---補題。サイズ2以上の同値類は、fの行き先が同値類の外にでない。
+--補題。サイズ2以上の同値類は、fの行き先が同値類の外にでない。後ろで使っている。
 lemma eqClass_size_ge_two_implies_outside
     {α : Type} [Fintype α] [DecidableEq α]
     (s : Setup α):
@@ -693,14 +696,20 @@ by
     · simp_all only
     · simp_all only
 
---補題. サイズが2以上の同値類は、極大要素になること。
+----Setup前提の極大
+--Setup前提の極大の定義。
+def isMaximal (s: Setup α) (a : s.V) : Prop :=
+  ∀ b : s.V, s.pre.le a b → s.pre.le b a
+
+--このファイルのメイン定理. Setup前提。サイズが2以上の同値類は、極大要素になること。
 --サイズ2以上の同値類からいけるところは、同じ同値類内に必ずなる。このことは前の補題で示されている。
-lemma eqClass_size_ge_two_implies_inverse
+theorem eqClass_size_ge_two_implies_inverse
     {α : Type} [Fintype α] [DecidableEq α]
     (s : Setup α)
     (x : {x // x ∈ s.V})
     (h : 2 ≤ (eqClass_setup s x).card) :
-  ∀ y : {x // x ∈ s.V},  s.pre.le x y → s.pre.le y x := by
+    isMaximal s x := by
+  --∀ y : {x // x ∈ s.V},  s.pre.le x y → s.pre.le y x := by
   intro y h_xy
   obtain ⟨n,z,hz0,hz1,hz⟩ := path_exists_setup s x y h_xy --zはFin n+1で定義されている。
 
@@ -1046,6 +1055,7 @@ lemma eqClass_size_ge_two_implies_inverse
 
 -------ここからfの繰り返しに関する部分------
 
+--iterationは、functionalSPOでは、setup_spo前提だがreachと書かれていて、一部は利用されていて、一部は重複ている可能性がある。
 --iterationで辿り着くものには、大小関係がある。
 lemma iteratef_lemma (s: Setup α) (x : s.V):
   ∀ n, s.pre.le x (s.f^[n] x) := by
@@ -1269,8 +1279,7 @@ by
 
   use n1
 
-def isMaximal (s: Setup α) (a : s.V) : Prop :=
-  ∀ b : s.V, s.pre.le a b → s.pre.le b a
+
 
 lemma iteratef_size2m (s: Setup α) (x: s.V)  :
   ∀ (n : Nat), 2 ≤ (eqClass_setup s (s.f^[n] x)).card →
@@ -1280,7 +1289,7 @@ by
   dsimp [isMaximal]
   exact fun b a => eqClass_size_ge_two_implies_inverse s (s.f^[n] x) h b a
 
---ノードの上にサイズ2以上が2つあると、それらは一致する。
+--ノードの上にサイズ2以上が2つあると、それらは一致する。証明の中で極大の定義を使っている。
 lemma iteratef_size2_eq (s: Setup α) (x: s.V)  :
  ∀ (n1 n2 : Nat), 2 ≤ (eqClass_setup s (s.f^[n1] x)).card ∧ 2 ≤ (eqClass_setup s (s.f^[n2] x)).card
   → eqClass_setup s (s.f^[n1] x) = eqClass_setup s (s.f^[n2] x) :=
@@ -1327,6 +1336,100 @@ by
         (m2 (s.f^[n1] x) (m1 (s.f^[n2] x) (m2 (s.f^[n1] x) (m1 (s.f^[n2] x) le1))))
         (m1 (s.f^[n2] x) (m2 (s.f^[n1] x) (m1 (s.f^[n2] x) (m2 (s.f^[n1] x) le2))))
 
+
+-------------------------------------------------------------
+--同じ同値類のfの行き先は、同値になることを示す必要がある。
+--順序は関係なさそうなので、Setup2からSetupに変更した。場所も移動した。でもfには関係する。
+lemma f_on_equiv
+  (s: Setup α) (x y: s.V) (h: s.setoid.r x y) :
+  s.setoid.r (s.f x) (s.f y) :=
+by
+  have eqy: eqClass_setup s x = eqClass_setup s y := by
+      apply eqClass_eq
+      · rw [s.h_setoid] at h
+        rw [setoid_preorder] at h
+        simp [equiv_rel] at h
+        simp_all only
+      · rw [s.h_setoid] at h
+        rw [setoid_preorder] at h
+        simp [equiv_rel] at h
+        simp_all only
+  have xineq: x∈ eqClass_setup s x := by
+          simp_all only [eqClass_setup]
+          simp
+          rw [s.h_setoid]
+          rw [setoid_preorder]
+          simp [equiv_rel]
+          rw [s.h_setoid] at h
+          rw [setoid_preorder] at h
+          simp [equiv_rel] at h
+          simp_all only [ge_iff_le, not_le, and_self]
+
+  have yineq: y ∈ eqClass_setup s x := by
+      simp_all only [eqClass_setup]
+      rw [s.h_setoid] at h
+      rw [setoid_preorder] at h
+      simp [equiv_rel] at h
+      simp_all only [mem_filter, mem_attach, true_and]
+      rfl
+
+  by_cases h1: (eqClass_setup s x).card ≥ 2;
+  case pos =>
+    let eqsx := eqClass_size_ge_two_implies_outside s x h1
+    have : s.f x ∈ eqClass_setup s x := by
+      simp_all only [eqsx]
+      rwa [← eqy]
+    have : s.f y ∈ eqClass_setup s y := by
+      have :(eqClass_setup s y).card ≥ 2 := by
+        rw [←eqy]
+        exact h1
+      exact eqClass_size_ge_two_implies_outside s y this
+    rw [←eqy] at this
+    rw [s.h_setoid]
+    rw [setoid_preorder]
+    simp
+    dsimp [equiv_rel]
+    let eqe := (eqClass_eq_rev s (s.f x) (s.f y) x)
+    specialize eqe eqsx
+    specialize eqe this
+    constructor
+    · exact eqe.1
+    · exact eqe.2
+  case neg =>
+    --同値類の大きさが1のとき。
+    --同値類の大きさが1であれば、同値のものは一致する。
+    have :(eqClass_setup s x).card = 1 := by
+      --cardは1以上で2以上でないので、ちょうど1になる。
+      have geq1:(eqClass_setup s x).card ≥ 1 := by
+
+        have :(eqClass_setup s x).Nonempty := by
+          simp_all only [ge_iff_le, not_le]
+          exact ⟨_, xineq⟩
+        exact Finset.card_pos.mpr this
+      have leq1: (eqClass_setup s x).card  ≤ 1 := by
+        simp_all only [ge_iff_le, not_le, one_le_card]
+        omega
+      exact Eq.symm (Nat.le_antisymm geq1 leq1)
+
+    have :x = y := by
+      obtain ⟨xx,hxx⟩ := Finset.card_eq_one.mp this
+      rw [hxx] at yineq
+      rw [hxx] at xineq
+      simp at xineq
+      simp at yineq
+      rw [←yineq] at xineq
+      exact xineq
+    subst this
+    rfl
+
+
+/-
+--逆向き。今のところ使わなくても、示したいことは示せているかも。
+lemma f_on_equiv_rev
+  (s: Setup2 α) (x y: s.V) (h: s.setoid.r (s.f x) (s.f y)) :
+  s.setoid.r x y :=
+by
+-/
 --------------------
 ----今は使ってないもの。
 def finSub (n : ℕ) (i : Fin n) : Fin n :=
@@ -1421,7 +1524,9 @@ lemma path_exists2 {α : Type} [Fintype α] (R : α → α → Prop) (x y : α)
         simp_all only
         omega
 
+---使ってないもの。
 --補題. Subtype上における道の存在定理。後ろにpath_exists_setupがあるので、そちらを主に使うとよい。
+--こちらは使っていない。
 lemma path_exists_subtype {α : Type} [Fintype α] (V:Finset α) (R : V → V → Prop) (x y : V) (h : Relation.ReflTransGen R x y) :
   ∃ (n : ℕ) (z : Fin (n + 1) → V), z 0 = x ∧ z n = y ∧ ∀ i : Fin n, R (z i.castSucc) (z i.succ) := by
   -- スカラー版の R を定義：V 上の R を α 上に拡張

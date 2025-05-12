@@ -1,3 +1,4 @@
+--このファイルは、functionalの議論の基本的な定義を行う。Setupなど。
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Finset.Powerset
 import Mathlib.Data.Set.Function
@@ -96,6 +97,7 @@ variable {α : Type} [Fintype α] [DecidableEq α]
 --setupの定義に必要な部分。
 -----------------------
 
+--fからRootedSetを作る関数。
 --この形が一番良いか？alpha上のRootedSetsを与える。集合族を定義するのにこの形を利用している。
 noncomputable def rootedset_onestem_eachvertex_V {α : Type} [Fintype α] [DecidableEq α] (V: Finset α) (f : V → V) (valid:∀ v : V, f v ≠ v) (nonemp:Finset.Nonempty V): RootedSets α :=
 {
@@ -136,16 +138,12 @@ noncomputable def rootedset_onestem_eachvertex_V {α : Type} [Fintype α] [Decid
     simp_all only [ne_eq, Subtype.forall, attach_nonempty_iff]
   }
 
---preorderになるというlemmaの形ではうまくいかなかったので、instanceにしてみる。Preorderがサブタイプに定義されている。alphaには定義されてないので注意。
---noncomputable instance size_one_preorder {α : Type} [Fintype α] [DecidableEq α] (V: Finset α) (f : α → α) (valid:∀ v : { x : α // x ∈ V }, f v.val ∈ V \ {v.val}) (nonemp:V.Nonempty):
---  Preorder { x // x ∈ V } := size_one_circuits_preorder (rootedset_onestem_eachvertex V f valid nonemp)
-
---setupを定義する時に利用している。
+--setupを定義する時に利用している。fからpreorderを定義。
 noncomputable def size_one_preorder {α : Type} [Fintype α] [DecidableEq α] (V: Finset α) (f : V → V) (valid:∀ v : V, f v ≠ v) (nonemp:V.Nonempty):
   Preorder { x // x ∈ V } := size_one_circuits_preorder (rootedset_onestem_eachvertex_V V f valid nonemp)
 
 
---前順序が同値類を作り、それ上の半順序を作るという一般的な話の部分。setoidが導入されている。
+--前順序が同値類を作り、それ上の半順序を作るという一般的な話の部分。setoidが導入されている。Setupに利用される。
 def equiv_rel {α : Type} [Preorder α] (x y : α) : Prop := x ≤ y ∧ y ≤ x
 
 lemma equiv_rel_refl {α : Type} [Preorder α]  : Reflexive (@equiv_rel α _) := fun x => ⟨le_refl x, le_refl x⟩
@@ -201,7 +199,7 @@ by
   rw [←ha.2]
   simp
 
---setupを与える形でClosureSystemの定義を書き直した。
+--setupを与えたときのClosureSystemを与える関数。
 --次のpreorder_ideal_system2のように定義する方法もある。
 noncomputable def preorder_ideal_system (s:Setup α): ClosureSystem α :=
 {
@@ -487,13 +485,9 @@ by
         exact this
 
 -------------
---同値類の関係。
+--Setupに関する同値類の関係。SetupにはSetoidが導入されているのにsetoidを使ってないのは、それ以前に作ったものだからかも。
 
---Setupを使ってないものは今後は推奨しないかも。。使ってないかもしれない。
---noncomputable def eqClass_subtype {α : Type} [DecidableEq α] (V : Finset α) [Setoid {x : α // x ∈ V}] (x : {x : α // x ∈ V}) : Finset {x // x ∈ V} :=
---  V.attach.filter (fun y => Setoid.r x y)
-
---下で使っている。
+--下で使っている。同値な要素全体を与える。
 noncomputable def eqClass_setup (s: Setup α) (x : {x : α // x ∈ s.V}) : Finset {x // x ∈ s.V} :=
   s.V.attach.filter (fun y => s.setoid.r x y)
 
@@ -518,6 +512,7 @@ by
   obtain ⟨val_1, property_1⟩ := y
   exact h.2
 
+--逆に、前順序で同値ならば、eqClassでも同値。
 lemma eqClass_eq (s: Setup α) : (x y: {x : α // x ∈ s.V}) → s.pre.le x y →s.pre.le y x → eqClass_setup s x = eqClass_setup s y :=
 by
   intro x y hxy hyx
@@ -527,15 +522,12 @@ by
     simp [eqClass_setup]
     rw [s.h_setoid]
     simp_all only [AntisymmRel.setoid_r]
-    obtain ⟨xval, xproperty⟩ := x
-    obtain ⟨yval, yproperty⟩ := y
     dsimp [AntisymmRel]
     intro h
     constructor
-    ·
-      exact s.pre.le_trans ⟨yval, yproperty⟩ ⟨xval, xproperty⟩ z hyx h.1
-    ·
-      exact s.pre.le_trans z ⟨xval, xproperty⟩ ⟨yval, yproperty⟩ h.2 hxy
+    · exact LE.le.trans_antisymmRel hyx h
+
+    · exact AntisymmRel.trans_le (id (And.symm h)) hxy
   ·
     simp [eqClass_setup]
     rw [s.h_setoid]
@@ -550,7 +542,7 @@ by
     ·
       exact s.pre.le_trans z ⟨yval, yproperty⟩ ⟨xval, xproperty⟩ h.2 hyx
 
---必要に迫られて作った。
+--必要に迫られて作った。同値な要素は、前順序でも同値。
 lemma eqClass_eq_rev (s: Setup α) : (x y z: {x : α // x ∈ s.V}) → x ∈ eqClass_setup s z → y ∈ eqClass_setup s z → s.pre.le x y ∧ s.pre.le y x:=
 by
   intro x y z hx hy
@@ -559,10 +551,10 @@ by
     dsimp [eqClass_setup] at hy
     rw [s.h_setoid] at hx hy
     simp_all only [AntisymmRel.setoid_r]
-    obtain ⟨xval, xproperty⟩ := x
-    obtain ⟨yval, yproperty⟩ := y
+    --obtain ⟨xval, xproperty⟩ := x
+    --obtain ⟨yval, yproperty⟩ := y
     simp_all only [mem_filter, mem_attach, true_and]
-    obtain ⟨val, property⟩ := z
+    --obtain ⟨val, property⟩ := z
     rw [AntisymmRel] at hx hy
     obtain ⟨left, right⟩ := hx
     obtain ⟨left_1, right_1⟩ := hy
@@ -571,105 +563,13 @@ by
     dsimp [eqClass_setup] at hy
     rw [s.h_setoid] at hx hy
     simp_all only [AntisymmRel.setoid_r]
-    obtain ⟨xval, xproperty⟩ := x
-    obtain ⟨yval, yproperty⟩ := y
+    --obtain ⟨xval, xproperty⟩ := x
+    --obtain ⟨yval, yproperty⟩ := y
     simp_all only [mem_filter, mem_attach, true_and]
-    obtain ⟨val, property⟩ := z
+    --obtain ⟨val, property⟩ := z
     rw [AntisymmRel] at hx hy
     obtain ⟨left, right⟩ := hx
     obtain ⟨left_1, right_1⟩ := hy
     apply Preorder.le_trans
     assumption
     simp_all only
-
--------------------------------
----以下は、古いというか、初期のもの。
-
---Preorderを定義する前にClosureSystemを定義してしまったが、Preorderを導入してからそれのidealとして導入した方が良かったかも。
---現状使っていない。
-/-
-def  (V: Finset α) (f : α → α) (nonemp:V.Nonempty): ClosureSystem α :=
-{
-  ground := V,
-  sets := fun s : Finset α => s ⊆ V ∧ (∀ v ∈ V, f v ∈ s → v ∈ s)
-  inc_ground:= by
-    intro s a
-    exact a.1
-  nonempty_ground := by
-    exact nonemp
-  has_ground := by
-    simp_all only
-    constructor
-    · simp_all only [subset_refl]
-    · intro v a a_1
-      simp_all only
-  intersection_closed := by
-    intro s t a b
-    simp_all only
-    constructor
-    ·
-      obtain ⟨left, right⟩ := a
-      obtain ⟨left_1, right_1⟩ := b
-      intro v hv
-      simp_all only [Finset.mem_inter]
-      obtain ⟨left_2, right_2⟩ := hv
-      apply left_1
-      simp_all only
-    ·
-      intro v a_1 a_2
-      simp_all only [Finset.mem_inter, and_self]
-
-  }
-
---関数fからRootedSetsを導入してみた。これは、直接Closureを定義できるし、このアプローチのほうがいいかも。f:V ->Vのほうがよい。
-noncomputable def rootedset_onestem_eachvertex {α : Type} [Fintype α] [DecidableEq α] (V: Finset α) (f : α → α) (valid:∀ v : { x : α // x ∈ V }, f v.val ∈ V \ {v.val}) (nonemp:Finset.Nonempty V): RootedSets α :=
-{
-  ground := V,
-  rootedsets := V.attach.image (λ v => ValidPair.mk ({f v.val}) v.val (by
-     let vl := valid v
-     rw [@mem_sdiff] at vl
-     rw [@not_mem_singleton] at vl
-     exact not_mem_singleton.mpr (id (Ne.symm vl.right))))
-  inc_ground := by
-    intros p hp
-    specialize hp
-    constructor
-    · simp at hp
-      obtain ⟨v, ⟨hv, ⟨hv_in, hp_in⟩⟩⟩ := hp
-      simp
-      simp_all only [mem_sdiff, Finset.mem_singleton, Subtype.forall]
-    ·
-      simp_all only [Finset.mem_image, mem_attach, true_and, Subtype.exists]
-      obtain ⟨w, h⟩ := hp
-      obtain ⟨w_1, h⟩ := h
-      subst h
-      simp_all only
-  nonempty_ground := by
-     exact nonemp,
-}
-
---fの定義をV -> Vにしたので、validの条件が変わった。これは、f v ≠ vという条件になった。でもRootedSets alphaのほうが好ましい？
-noncomputable def rootedset_onestem_eachvertex_sub {α : Type} [Fintype α] [DecidableEq α] (V: Finset α) (f : V → V) (valid:∀ v : V, f v ≠ v) (nonemp:Finset.Nonempty V): RootedSets V :=
-{
-  ground := V.attach,
-  rootedsets := V.attach.image (λ v => ValidPair.mk ({(f v)}:Finset V) v (by
-     let vl := valid v
-     simp_all only [Finset.mem_singleton, ne_eq]
-     obtain ⟨val, property⟩ := v
-     apply Aesop.BuiltinRules.not_intro
-     intro a
-     exact valid ⟨val, property⟩ a.symm
-      ))
-  inc_ground := by
-    intros p hp
-    specialize hp
-    constructor
-    · simp at hp
-      obtain ⟨v, ⟨hv, ⟨hv_in, hp_in⟩⟩⟩ := hp
-      simp
-    ·
-      simp_all only [Finset.mem_image, mem_attach, true_and, Subtype.exists]
-  nonempty_ground := by
-    simp_all only [ne_eq, Subtype.forall, attach_nonempty_iff]
-  }
--/

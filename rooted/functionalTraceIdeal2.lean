@@ -21,11 +21,17 @@ import rooted.functionalTraceIdeal
 
 open Finset Set Classical
 
+--半順序の構造Setup_poとの橋渡しの部分。
+--同値類の大きさが全部1であれば、Setup_poとみなせるということを示すのがメイン。
+--前半のexcessの部分は、excessが0であれば同値類の大きさが全部1という形で繋がっている。
+--Idealはほとんど出てこないので、ファイル名をEqualOneなどに変えてもいいかも。
+
 set_option maxHeartbeats 2000000
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 
 --excessが0であれば、同値類の大きさがすべて1。この部分は、TraceIdealに移動するか、excessの部分でまとめて1ファイルにするといいかも。
+--Setup_spo2でなくて、Setup_spoの前提でも成り立ちそう。
 lemma excess_zero (s: Setup_spo2 α) :
   excess s = 0 → ∀ q: Quotient s.setoid, (classOf s.toSetup_spo q).card = 1 :=
 by
@@ -229,6 +235,7 @@ def partialorder_ideal_system {α : Type} [Fintype α] [DecidableEq α] (s: Setu
 --同値類の大きさが全部1のSetup_poに対して、対応するSetup_poを定義することができる。
 --そして、idealの集合族が一致する。
 
+--次の定義に利用。補題には、Setup_poは出てこない。ただ、同値類の個数が1という制約が特殊なので、ここでよいかも。
 lemma class_size_one_implies_eq (s: Setup_spo α) (x y: s.V) (ssl  : (⟦x⟧ : Quotient s.setoid) = ⟦y⟧) (hq1x :#(Finset.filter (fun a => @Quotient.mk'' _ s.setoid a = ⟦x⟧) s.V.attach) = 1) (hq1y :#(Finset.filter (fun a => @Quotient.mk'' _ s.setoid a = ⟦y⟧) s.V.attach) = 1) :
      (x : α) = y := by
   -- 同値類 `{ a | ⟦a⟧ = ⟦x⟧ }` のカードが 1 → その唯一元を取り出す
@@ -260,6 +267,7 @@ lemma class_size_one_implies_eq (s: Setup_spo α) (x y: s.V) (ssl  : (⟦x⟧ : 
   subst heq this
   simp_all only [Quotient.eq, Finset.mem_singleton, Finset.card_singleton]
 
+--traceを撮った時の半順序の定義。
 noncomputable def po_ideal_system_from_allone_le {α : Type} [Fintype α] [DecidableEq α] (s: Setup_spo α)  (hq1:∀ q: Quotient s.setoid, (classOf s q).card = 1): PartialOrder s.V :=
 {
   le := fun (x y:s.V) => s.spo.le (@Quotient.mk s.V s.setoid x) (@Quotient.mk s.V s.setoid y),
@@ -296,6 +304,7 @@ noncomputable def po_ideal_system_from_allone_le {α : Type} [Fintype α] [Decid
 --hq1が成り立つ時は、同値類と要素が全単射が存在して、お互いのreachが対応していることも示すか。
 --最終的には大小関係が対応していることを示す。
 
+-- 同値類の大きさが1のときに関する補題。
 lemma equal_one (s: Setup_spo α) (hq1:∀ q: Quotient s.setoid, (classOf s q).card = 1) (x y: s.V) :
   (@Quotient.mk s.V s.setoid x) = (@Quotient.mk s.V s.setoid y) ↔ x = y := by
   constructor
@@ -328,6 +337,7 @@ lemma equal_one (s: Setup_spo α) (hq1:∀ q: Quotient s.setoid, (classOf s q).c
     subst h
     simp_all only
 
+-- 同値類の大きさが1のときに関する補題。
 lemma equal_one2 (s: Setup_spo α) (hq1:∀ q: Quotient s.setoid, (classOf s q).card = 1) (x: s.V) :
    (@Quotient.mk _ s.setoid x).out = x :=
 by
@@ -386,6 +396,7 @@ by
   subst hxz
   simp_all only [q]
 
+--同値類の大きさが1のときに関する補題。
 lemma equal_one_f (s: Setup_spo α) (hq1:∀ q: Quotient s.setoid, (classOf s q).card = 1) (x y: s.V) :
   s.fq (@Quotient.mk s.V s.setoid x) = (@Quotient.mk s.V s.setoid y) ↔ ((fun xx => s.fq (@Quotient.mk _ s.setoid xx)) x).out = y :=
 by
@@ -420,6 +431,7 @@ by
       simp_all only [Quotient.out_eq]
     simpa [this] using hout_q
 
+--同値類の大きさが1のときに関する補題。
 lemma equal_one_setroid (s: Setup_spo α) (hq1:∀ q: Quotient s.setoid, (classOf s q).card = 1) (x y: s.V) :
   s.setoid x y ↔ x = y :=
 by
@@ -436,7 +448,7 @@ by
     subst h
     exact (setroid_quotient s x x).mp rfl
 
-
+--同値類の大きさが1のときに関する補題。
 lemma po_ideal_system_from_allone_lem (α : Type) [Fintype α] [DecidableEq α] (s: Setup_spo α) (hq1:∀ q: Quotient s.setoid, (classOf s q).card = 1) (x y : s.V)(n:Nat):
  s.fq^[n] (@Quotient.mk s.V s.setoid x) = (@Quotient.mk s.V s.setoid y) ↔ (fun x => (s.fq ⟦x⟧).out)^[n] x = y:=
 by
@@ -518,6 +530,7 @@ by
           simp_all only [Subtype.coe_eta, Quotient.out_eq, zq, z, g]
         exact congrArg s.fq this
 
+--すべての同値類の大きさが1のときに関して、対応するSetup_poを定義する。
 noncomputable def po_ideal_system_from_allone {α : Type} [Fintype α] [DecidableEq α] (s: Setup_spo α) (hq1:∀ q: Quotient s.setoid, (classOf s q).card = 1): Setup_po α :=
 {
   V := s.V,

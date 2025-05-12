@@ -1,19 +1,26 @@
+--functionalの議論の主定理が収められている。各段階の重要な定理もここが親。
+--functionalCommon.leanは、基本的な定義をまとめたもの。Setupもここで定義。
+--前順序Setupに関しては、functionalPreorderで議論。
+--Setup2は、Setupで導入されたsetoid上に半順序を導入したもの。functionalTreePartialOrderで定義。
+--前順序Setup2は、SetupとSetup2は仮定の強さは変わらない。
+--functionalTreeIdealは、閉集合族としてのSetup2の議論。
+--Setup_spoは、functionalSPOでの定義。前順序が出てきてないので、より抽象化している。
+--ただ、いまから考えると、もともとのfを同じ要素に移すことを許していれば、
+--SetupとSetup_spoの違いを考える必要がなかったのかも。
+--functionalIdealrareもSetup_spoの枠組み。
+--Setup_spo2は、親がひとつだということを考慮した枠組み。Setup_spoよりも少し強くなっている。
+--本来の条件は、Setup_spo2なのだか、もうちょっと弱くても成り立つ定理はSetup_spoで証明。
+--functionalTraceIdealは、traceすることで半順序の枠組みの定理に帰着させている。
+--functionalPartialのシリーズは、半順序の枠組みの定理。詳しくはそちらを参照。
+--Setupは、名前を変えるとするとSetup_preか？
+--Setup_spoは、名前を変えなくて良い。
+--Setup_poは、そのままでよい。
 import Mathlib.Data.Finset.Basic
---import Mathlib.Data.Finset.Powerset
---import Mathlib.Data.Set.Function
---import Mathlib.Data.Fintype.Basic
---import Mathlib.Order.Defs.PartialOrder
---import Mathlib.Order.Cover
---import Mathlib.Tactic
 import Init.WF
 import Mathlib.Order.WellFoundedSet
 import LeanCopilot
 import rooted.CommonDefinition
---import rooted.ClosureMinors
---import rooted.Dominant
---import rooted.FamilyLemma
 import rooted.functionalCommon
---import rooted.StemSizeOne
 import rooted.functionalTraceIdeal2
 import rooted.functionalPartialOne
 import rooted.functionalDirectProduct2
@@ -22,7 +29,131 @@ open Finset Set Classical
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 
-lemma setup_po_average_rare (s_orig:Setup_po α): (partialorder_ideal_system s_orig).normalized_degree_sum ≤ 0 :=
+--setup_po_average_rareの証明の中に書いてあったベースケースを補題として独立させた。
+--o4-mini-highで書き直したが短くはなってない。
+lemma setup_po_average_rare_card_one (t : Setup_po α) (card1 : t.V.card = 1) :
+  (partialorder_ideal_system t).toSetFamily.normalized_degree_sum ≤ 0 := by
+  let ceo := (@card_eq_one _ t.V).mp card1
+  obtain ⟨x, _hx⟩ := ceo
+
+  -- normalized_degree_sum の定義を展開して簡約
+  dsimp [ SetFamily.normalized_degree_sum]
+  simp
+
+  -- hyperedge の集合を ∅ と t.V に絞れる
+  have h_sets : ∀ ss : Finset α,
+      (partialorder_ideal_system t).sets ss ↔ ss = ∅ ∨ ss = t.V := by
+    intro ss
+    constructor
+    · intro h
+      have hsub : ss ⊆ t.V := by
+        dsimp [partialorder_ideal_system] at h
+        exact h.1
+      have : ss = ∅ ∨ ss = t.V := by
+        --subst card1
+        simp_all only
+          [Finset.card_singleton,
+           Finset.subset_singleton_iff,
+           Nat.lt_one_iff,
+           card_eq_zero,
+           card_eq_one]
+      exact this
+    · intro h
+      cases h
+      case inl hl =>
+        -- ss = ∅ の場合
+        rw [hl]
+        dsimp [partialorder_ideal_system]
+        simp
+      case inr hr =>
+        -- ss = {x} の場合
+        rw [hr]
+        simp_all only
+          [Finset.card_singleton,
+           Finset.subset_singleton_iff,
+           Nat.lt_one_iff,
+           card_eq_zero,
+           card_eq_one]
+        subst hr
+        simp [partialorder_ideal_system]
+        simp_all only [Finset.mem_singleton, le_refl, imp_self, implies_true, and_self]
+
+  -- total_size_of_hyperedges = 1
+  have h_total : (partialorder_ideal_system t).total_size_of_hyperedges = 1 := by
+    dsimp [partialorder_ideal_system] at h_sets
+    dsimp [SetFamily.total_size_of_hyperedges]
+    simp_all only [h_sets]
+    -- フィルタ結果が {∅, {x}} になる
+    have h :
+      filter (fun s => s = ∅ ∨ s = {x}) ({x} : Finset α).powerset = {∅, {x}} := by
+      simp_all only
+        [Finset.subset_singleton_iff,
+         Finset.mem_singleton,
+         Nat.lt_one_iff,
+         card_eq_zero,
+         card_eq_one]
+      simp_all only [singleton_inj, exists_eq', Subtype.forall, Finset.mem_singleton, le_refl, imp_self, implies_true,
+        and_true]
+      ext a : 1
+      simp_all only [mem_filter, Finset.mem_powerset, Finset.subset_singleton_iff, and_self, Finset.mem_insert,
+        Finset.mem_singleton]
+
+    dsimp [partialorder_ideal_system]
+    simp_all only [Finset.card_singleton, Finset.subset_singleton_iff, Subtype.forall, Finset.mem_singleton, le_refl,
+      imp_self, implies_true, and_true, Finset.card_empty, sum_insert_of_eq_zero_if_not_mem, sum_singleton,
+      Nat.cast_one]
+
+  -- number_of_hyperedges = 2
+  have h_num : (partialorder_ideal_system t).number_of_hyperedges = 2 := by
+    dsimp [SetFamily.number_of_hyperedges]
+    -- ground.powerset = {∅, {x}}
+    have : (partialorder_ideal_system t).ground.powerset = {∅, {x}} := by
+      dsimp [partialorder_ideal_system] at h_sets
+      simp_all only
+        [Finset.subset_singleton_iff,
+         Finset.mem_singleton,
+         Nat.lt_one_iff,
+         card_eq_zero,
+         card_eq_one]
+      dsimp [partialorder_ideal_system]
+      rw [_hx]
+      exact rfl
+    rw [this]
+    dsimp [partialorder_ideal_system]
+    -- フィルタ後も {∅, {x}}
+    have h :
+      filter
+        (fun ss =>
+          ss ⊆ t.V ∧
+          ∀ v : { x // x ∈ t.V }, v.val ∈ ss → ∀ w : { x // x ∈ t.V }, t.po.le w v → w.val ∈ ss)
+        ({∅, {x}} : Finset (Finset α)) = {∅, {x}} := by
+      simp_all only
+        [Finset.subset_singleton_iff,
+         Finset.mem_singleton,
+         Nat.lt_one_iff,
+         card_eq_zero,
+         card_eq_one]
+      simp [filter_true_of_mem]
+      simp_all only [singleton_inj, exists_eq', Finset.mem_singleton, le_refl, imp_self, implies_true, and_true]
+      simp [filter_true_of_mem]
+    simp_all only
+      [Finset.subset_singleton_iff,
+       Finset.mem_singleton,
+       Nat.lt_one_iff,
+       card_eq_zero,
+       card_eq_one]
+    rfl
+
+  -- 最後に元の通りに rw → Int.ge_of_eq で終わり
+  rw [h_total, h_num]
+  apply Int.ge_of_eq
+  apply congrArg (HMul.hMul 2)
+  apply congrArg Nat.cast
+  exact card1
+  -- 台集合が１要素なので，x を取る
+
+--半順序setup_poに関するnormalized_degree_sumが非正になる定理。
+theorem setup_po_average_rare (s_orig:Setup_po α): (partialorder_ideal_system s_orig).normalized_degree_sum ≤ 0 :=
 by
   let P : ℕ → Prop := fun n =>
     ∀ t : Setup_po α,
@@ -40,7 +171,13 @@ by
 
     by_cases h_le_one : t.V.card ≤ 1
     · -- baseケース。証明を外に出しても良い。
-      have h_le_one : t.V.card ≥ 1 := by
+      have : t.V.card = 1 :=
+      by
+        exact le_antisymm h_le_one (one_le_card.mpr t.nonemp)
+      exact setup_po_average_rare_card_one t this
+
+     --上に補題として独立させた。
+      /-have h_le_one : t.V.card ≥ 1 := by
         let tn := t.nonemp
         exact one_le_card.mpr tn
       have card1: t.V.card = 1 := by
@@ -138,6 +275,8 @@ by
       apply congrArg Nat.cast
       exact card1
 
+    -/
+
     ----------------------------------------------------------------
     -- 帰納ケース  |V| ≥ 2
     ----------------------------------------------------------------
@@ -214,8 +353,9 @@ by
         exact directProduct_nds t q h_ge_two h_nds_comp h_nds_excl
   exact hP (#s_orig.V) s_orig rfl
 
+--Setup_spo2の主定理。
 --ここだけsじゃなくてs₀をつかっているので注意。
-lemma setup_spo2_average_rare (s₀ :Setup_spo2 α): (spo_closuresystem s₀.toSetup_spo).normalized_degree_sum ≤ 0 :=
+theorem setup_spo2_average_rare (s₀ :Setup_spo2 α): (spo_closuresystem s₀.toSetup_spo).normalized_degree_sum ≤ 0 :=
 by
 
   --この定理の証明は、excessの値に関する帰納法。
@@ -320,7 +460,7 @@ by
   rw [Setup_spo_eq_PartialOrder s2]
   exact setup_spo2_average_rare s_spo
 
---主定理。setupを使わない形。
+--全体の主定理。setupを使わない形。
 theorem functional_family_average_rare (V: Finset α) (f : V → V) (valid:∀ v : V, f v ≠ v) (nonemp:V.Nonempty) :
   (rootedsetToClosureSystem (rootedset_onestem_eachvertex_V V f valid nonemp)).normalized_degree_sum ≤ 0 :=
 by
