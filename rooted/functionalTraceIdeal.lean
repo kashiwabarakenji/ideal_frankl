@@ -924,6 +924,7 @@ noncomputable def excess (s: Setup_spo2 α)  : ℕ :=
       --traceすることで、excessはひとつ減る。
 
 --setup_trace_spo2は、setup_traceでよさそう。(setup_trace_spo2 s x hx).toSetup_spoをsetup_traceに。
+--定理の前提もSetup_spoで十分かも。
 lemma trace_excess_decrease_lem_x (s: Setup_spo2 α) (x: s.V) (hx: (classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).card ≥ 2) :
  (classOfx s.toSetup_spo x).image Subtype.val = (classOf (setup_trace_spo2 s x hx).toSetup_spo (toNew s.toSetup_spo x hx (@Quotient.mk _ s.toSetup_spo.setoid x))).image Subtype.val ∪ ({x.val}:Finset α):=
 by

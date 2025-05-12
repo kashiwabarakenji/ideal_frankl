@@ -97,6 +97,8 @@ variable {α : Type} [Fintype α] [DecidableEq α]
 --setupの定義に必要な部分。
 -----------------------
 
+--Setupは、Preorderのところしか出てこないので、Setupに関する部分はPreorderのところに移動可能。
+
 --fからRootedSetを作る関数。
 --この形が一番良いか？alpha上のRootedSetsを与える。集合族を定義するのにこの形を利用している。
 noncomputable def rootedset_onestem_eachvertex_V {α : Type} [Fintype α] [DecidableEq α] (V: Finset α) (f : V → V) (valid:∀ v : V, f v ≠ v) (nonemp:Finset.Nonempty V): RootedSets α :=

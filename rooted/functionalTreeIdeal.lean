@@ -27,7 +27,7 @@ open Finset Set Classical
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 
---PreorderOldにある定理をSetup2用に書き換え。
+--名前をpre_closuresystemにしたほうがいいか？
 noncomputable def setoid_ideal_ClosureSystem (s: Setup2 α): ClosureSystem α :=
 {
     ground := s.V,
@@ -377,6 +377,7 @@ theorem Preorder_eq_PartialOrder (s: Setup2 α)  :
           exact aS this
         exact this
 
+--名前の統一問題がある。ideal_systemみたいな
 def spo_closuresystem (s: Setup_spo α) : ClosureSystem α :=
   -- Implement the closure system logic here
 {
@@ -518,7 +519,7 @@ theorem Setup_spo_eq_PartialOrder (s: Setup2 α)  :
         have :q' ∈ hs := by
           specialize hss1 q
           apply hss1 this
-          exact reach_leq2 s q' q hqq'
+          exact reach_po_leq s q' q hqq'
         subst hx hx'
         simp_all only [coe_mem]
       · constructor

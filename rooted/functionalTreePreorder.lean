@@ -29,6 +29,8 @@ variable {α : Type} [Fintype α] [DecidableEq α]
 --でも、fのiterationでないパスのアプローチは、初期のアプローチなので、全体からは浮いているかも。Setupも使ってないし。
 --パスが存在することと、fのiterationで到達できることが同値であるという命題は、iteratef_lemma_ref。
 --リファクタリングするとすると、reachを最初に定義して、iterationの議論で全て行う。
+--pathを完全にやめて、別ファイルに全部書き直して、ファイル名をPreorderReachにしてもよいかも。
+--o3の力で書き直すことは可能か？
 lemma path_exists {α : Type} [Fintype α] (R : α → α → Prop) (x y : α) (h : Relation.ReflTransGen R x y) :
   ∃ (n : ℕ) (z : Fin (n + 1) → α), z 0 = x ∧ z n = y ∧ ∀ i : Fin n, R (z i.castSucc) (z i.succ) := by
   -- ReflTransGen の帰納法を適用

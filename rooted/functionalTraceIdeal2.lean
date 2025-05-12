@@ -205,7 +205,7 @@ structure Setup_po (α : Type) [Fintype α] [DecidableEq α] where
 (po : PartialOrder V)
 (order : ∀ x y : V, (reach f x y ↔ po.le x y)) --fからpo.leが決まる。
 
---idealsystemとclosure systemの名称でどちらがいいか。
+--idealsystemとclosure systemの名称でどちらがいいか。定義名は、po_closuresystemという手もある。
 def partialorder_ideal_system {α : Type} [Fintype α] [DecidableEq α] (s: Setup_po α) : ClosureSystem α :=
 { ground := s.V,
   sets := fun ss : Finset α => ss ⊆ s.V ∧(∀ v : s.V, v.val ∈ ss → (∀ w : s.V, s.po.le w v → w.val ∈ ss)),

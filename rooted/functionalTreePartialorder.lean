@@ -333,7 +333,7 @@ by
   simp_all [y]
 
 --fqのiterationでいけるものは、大小関係がある。
---functionalSPOでreachを使って書き換えられるreach_leq2 のでそっちを使うと良い。
+--functionalSPOでreachを使って書き換えられるreach_leq のでそっちを使うと良い。
 --その証明にこれを使っている。
 --functionalSPOで使っている。
 lemma fq_lemma_rev (s: Setup2 α) (qx qy:Quotient s.setoid) :
