@@ -381,7 +381,7 @@ by
     -- (c) まとめて membership
     unfold classOf q
     simp [hout_inV, hquot]
-    exact (setroid_quotient s ⟦x⟧.out x).mp hquot
+    exact (@Quotient.eq _ s.setoid ⟦x⟧.out x).mp hquot
 
   -- 4. 要素が 1 つだけ ⇒ `x = z` かつ `out = z`
   have hxz  : (x : {a // a ∈ s.V}) = z :=
@@ -446,7 +446,7 @@ by
     exact this
   · intro h
     subst h
-    exact (setroid_quotient s x x).mp rfl
+    exact (@Quotient.eq _ s.setoid x x).mp rfl
 
 --同値類の大きさが1のときに関する補題。
 lemma po_ideal_system_from_allone_lem (α : Type) [Fintype α] [DecidableEq α] (s: Setup_spo α) (hq1:∀ q: Quotient s.setoid, (classOf s q).card = 1) (x y : s.V)(n:Nat):

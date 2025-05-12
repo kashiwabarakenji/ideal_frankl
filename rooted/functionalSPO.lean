@@ -23,42 +23,8 @@ open Finset Set Classical
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 
---これはSetupとは独立に一般に定義している。
-def reach {A : Type} (f : A → A) (x y : A) : Prop :=
-  ∃ n : ℕ, f^[n] x = y
 
-lemma reach_trans {A : Type} (f : A → A) {x y z : A}
-  (hxy : reach f x y) (hyz : reach f y z) :
-  reach f x z := by
-  obtain ⟨n, hn⟩ := hxy
-  obtain ⟨m, hm⟩ := hyz
-  exists (n + m)
-  subst hn hm
-  rw [←Function.iterate_add_apply]
-  rw [add_comm]
 
-def partialOrderOfFq {A : Type} (f : A → A)
-  (noLoop : ∀ x y, reach f x y → reach f y x → x = y)
-  : PartialOrder A :=
-{ le := reach f
-  le_refl := by
-    intro x
-    dsimp [reach]
-    use 0
-    simp_all only [Function.iterate_zero, id_eq]
-
-  le_trans := by
-      intro x y z ⟨n, hn⟩ ⟨m, hm⟩
-      exists (n + m)
-      subst hn hm
-      let fi := (Function.iterate_add_apply f m n x)
-      rw [add_comm] at fi
-      exact fi
-
-  , le_antisymm := by
-      intro x y hxy hyx
-      exact noLoop x y hxy hyx
-}
 
 --fqまで定義すれば同値類上の前順序が定まる。fのループが許されているので仮定としては弱い。loopがないことまで証明して半順序。
 structure Setup_spo_base (α : Type) [Fintype α] [DecidableEq α] where
@@ -103,6 +69,7 @@ lemma classOf_nonempty (s : Setup_spo α) (q : Quotient s.setoid) :
   · exact Quotient.out_eq q
 
 --わざわざ定義するまでもないかも。頂点集合に対して、それに対応するQuotientの集合。
+--何ヶ所かで使っている。
 noncomputable def QuotientOf (s: Setup_spo α) (xx : Finset {x : α // x ∈ s.V}) :
   Finset (Quotient s.setoid) :=
   xx.image (@Quotient.mk _ s.setoid)
@@ -115,7 +82,7 @@ lemma reach_leq (s : Setup_spo α) (q1 q2 : Quotient s.setoid) :
   dsimp [partialOrderOfFq] at *
   exact h
 
-
+--すぐ下で使っている。
 lemma reach_leq_rev (s : Setup_spo α) (q1 q2 : Quotient s.setoid) :
   s.spo.le q1 q2 →  reach s.fq q1 q2  := by
   intro h
@@ -161,18 +128,6 @@ by
 --3. Setup_spo2から得られるideal全体の集合族において、極大元の同値類に属する要素は、rareである。
 --4. 閉集合族において、パラレルな要素を持つrareな要素のtraceは、標準化次数和を上げる。
 --5. Setup2から得られる集合族の極大元に対応する同値類の大きさがすべて1であるときは、idealの集合族は、台集合上の半順序(setup_po)のideal集合族に一致する。
-
-/-
-  lemma eqClass_size_ge_two_implies_inverse
-    {α : Type} [Fintype α] [DecidableEq α]
-    (s : Setup α)
-    (x : {x // x ∈ s.V})
-    (h : 2 ≤ (eqClass_setup s x).card) :
-  ∀ y : {x // x ∈ s.V},  s.pre.le x y → s.pre.le y x := by
--/
-/-lemma isMaximal_iff (s: Setup2 α) (a : s.V) :
-  isMaximal s.toSetup a ↔ isMaximalQ s (Quotient.mk s.setoid a) := by
--/
 
 --Setup2に対する対応するSetup_spoの要素。のちにSetup_spo2に拡張される。それがsetup2_induces_spo。
 def setup_setupspo (s: Setup2 α) : Setup_spo α :=
@@ -240,7 +195,7 @@ def setup_setupspo (s: Setup2 α) : Setup_spo α :=
   h_spo := rfl
 }
 
---eqClassとclassOfは同じもの。classOfは、setupspoから定義されるところが違う。
+--eqClassとclassOfは同じもの。classOfは、setup_spoから定義されるところが違う。
 lemma eqClass_Class_of (s: Setup2 α) (x : {x : α // x ∈ s.V}) :
   (eqClass_setup s.toSetup) x = classOf (setup_setupspo s) (@Quotient.mk' _ s.setoid x) := by
   dsimp [classOf]
@@ -292,6 +247,8 @@ lemma spole_iff_po (s: Setup2 α) (x y : Quotient s.setoid) :
     let fql := fq_lemma_rev s x y this
     exact fql
 
+--ここから極大性の話。
+
 lemma isMaximal_spo_iff (s: Setup2 α) (q : Quotient s.setoid) :
   isMaximal_spo (setup_setupspo s) q ↔
   isMaximalQ s q :=
@@ -313,7 +270,9 @@ by
     rw [spole_iff_po] at hy
     exact hy
 
-lemma eqClass_Maximal (s: Setup2 α) (q : Quotient s.setoid) :
+--同値類の大きさが2以上であれば、同値類の極大性が成り立つ。
+--setup2_induces_spoで利用している。
+theorem eqClass_Maximal (s: Setup2 α) (q : Quotient s.setoid) :
   (classOf (setup_setupspo s) q).card ≥ 2 → isMaximalQ s q  := by
   intro h
   rw [←eqClass_Class_of2] at h
@@ -364,14 +323,16 @@ lemma eqClass_Maximal (s: Setup2 α) (q : Quotient s.setoid) :
   subst hy hx
   simp_all only [Subtype.forall, ge_iff_le, Subtype.coe_eta, implies_true, Quotient.out_eq]
 
---わざわざ定理にする必要はなくて、Quotient.eqとおなじだった。
+/-
+--わざわざ定理にする必要はなくて、Quotient.eqとおなじだった。でもTraceIdeal2などで使っている。なくした。
 lemma setroid_quotient (s: Setup_spo α) (y z: {x : α // x ∈ s.V}) :
   (@Quotient.mk _ s.setoid y) = (@Quotient.mk _ s.setoid z)
   ↔ s.setoid.r y z := by
   simp_all only [Quotient.eq]
+-/
 
 -----------------------------------
---ここから1点制限traceの話。
+--ここから1点制限traceの話。ファイルを独立させてもよい。
 --Setup_spo2から得られるideal全体の集合族において、同値類の大きさが2以上のときに、1元traceしても、またSetup2になる。
 --同値類の要素は、パラレルであることは事前に示した方がいいのか。
 

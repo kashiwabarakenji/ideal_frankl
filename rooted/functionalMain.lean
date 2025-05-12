@@ -1,6 +1,6 @@
 --functionalの議論の主定理が収められている。各段階の重要な定理もここが親。
 --functionalCommon.leanは、基本的な定義をまとめたもの。Setupもここで定義。
---前順序Setupに関しては、functionalPreorderで議論。
+--前順序Setupに関しては、functionalTreePreorderで議論。
 --Setup2は、Setupで導入されたsetoid上に半順序を導入したもの。functionalTreePartialOrderで定義。
 --前順序Setup2は、SetupとSetup2は仮定の強さは変わらない。
 --functionalTreeIdealは、閉集合族としてのSetup2の議論。
@@ -15,6 +15,9 @@
 --Setupは、名前を変えるとするとSetup_preか？
 --Setup_spoは、名前を変えなくて良い。
 --Setup_poは、そのままでよい。
+
+--リファクタリングをするとすると、最初のvalidの条件をなくして、定式化したほうがよい。
+--すると、Setup_spoがいらなくなるのでは。
 import Mathlib.Data.Finset.Basic
 import Init.WF
 import Mathlib.Order.WellFoundedSet

@@ -573,3 +573,42 @@ by
     apply Preorder.le_trans
     assumption
     simp_all only
+
+---
+--Setupに直接関係ない部分。より抽象化されている。
+
+def reach {A : Type} (f : A → A) (x y : A) : Prop :=
+  ∃ n : ℕ, f^[n] x = y
+
+lemma reach_trans {A : Type} (f : A → A) {x y z : A}
+  (hxy : reach f x y) (hyz : reach f y z) :
+  reach f x z := by
+  obtain ⟨n, hn⟩ := hxy
+  obtain ⟨m, hm⟩ := hyz
+  exists (n + m)
+  subst hn hm
+  rw [←Function.iterate_add_apply]
+  rw [add_comm]
+
+def partialOrderOfFq {A : Type} (f : A → A)
+  (noLoop : ∀ x y, reach f x y → reach f y x → x = y)
+  : PartialOrder A :=
+{ le := reach f
+  le_refl := by
+    intro x
+    dsimp [reach]
+    use 0
+    simp_all only [Function.iterate_zero, id_eq]
+
+  le_trans := by
+      intro x y z ⟨n, hn⟩ ⟨m, hm⟩
+      exists (n + m)
+      subst hn hm
+      let fi := (Function.iterate_add_apply f m n x)
+      rw [add_comm] at fi
+      exact fi
+
+  , le_antisymm := by
+      intro x y hxy hyx
+      exact noLoop x y hxy hyx
+}

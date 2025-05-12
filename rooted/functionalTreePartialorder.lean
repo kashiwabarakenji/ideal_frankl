@@ -22,8 +22,8 @@ import rooted.functionalTreePreorder
 open Finset Set Classical
 
 variable {α : Type} [Fintype α] [DecidableEq α]
---ここまでで、サイズが2以上の同値類は、極大なものしかないことを証明した。
---ここで定義するsetup2は、同値類setoid上の半順序に関するもの。
+
+--ここで定義するsetup2は、同値類setoid上の半順序に関するもの。s.poやs.fqが使える。
 --半順序で大小関係があったら、それをpullbackした前順序でも大小関係がある。
 --前順序で大小関係があったら、それをpushforwardした半順序でも大小関係がある。
 --preorderの大きさ2以上の同値類は、半順序の極大要素になる。
@@ -35,6 +35,8 @@ variable {α : Type} [Fintype α] [DecidableEq α]
 --------------------
 
 --quotient_partial_orderよりも証明が長いのは、preorderが間接的に定義されているから？
+-- Preorder_eq_PartialOrderでも利用されている。
+-- 直接この定義を利用しなくても、このファイルの補題を通じて利用している。
 def partialOrder_from_preorder (s : Setup α) : PartialOrder (Quotient s.setoid) where
   le := by
     exact Quotient.lift₂ (fun x y => s.pre.le x y)
@@ -103,6 +105,7 @@ noncomputable def spushforward  (s: Setup α) (I : Finset s.V) : Finset (Quotien
 -/
 
 --同値類上の半順序を加えたSetup。仮定としての強さは、Setupと同じか。するとSetupからSetup2が定義できる。Setup_to_Setup2
+--Setup2にすることで、s.poが使える。
 --分ける必要があった？証明上の理由？
 --上のinstanceは、s.po.leとは別物になってしまうので、instanceでなくてdefのほうがよい。
 structure Setup2 (α : Type) [Fintype α] [DecidableEq α] extends Setup α where
@@ -123,11 +126,17 @@ def Setup_to_Setup2 (s : Setup α) : Setup2 α :=
     h_po := rfl
   }
 
---これは自明なのか。
+/-
+--これは自明なのか。使ってないのでコメントアウト。
 lemma setup_to_setup2_prop (s : Setup α) :
  (Setup_to_Setup2 s).toSetup = s :=
 by
   exact rfl
+-/
+
+------------------------
+--s.preとs.poの関係を示す補題。
+---------------------------
 
 --同値類は、大小関係と両立する。
 --instを入れなくても、自動的にs.poのインスタンスを使ってくれている。
@@ -142,7 +151,8 @@ by
   subst h2 h1
   simp_all only [Quotient.lift_mk]
 
---要素の大小関係と、同値類の大小関係の関係。逆方向もある？
+--要素の大小関係と、同値類の大小関係の関係。逆方向は、上の補題？
+--Preorder_eq_PartialOrderなどで利用。
 lemma pushforward_preorder_lemma (s : Setup2 α) (x1 x2 : s.V) :
   s.pre.le x1 x2 → s.po.le (Quotient.mk s.setoid x1)  (Quotient.mk s.setoid x2) :=
 by
@@ -189,7 +199,170 @@ lemma isMaximal_iff (s: Setup2 α) (a : s.V) :
     apply pullback_preorder_lemma s ⟦b⟧ ⟦a⟧ b a rfl rfl
     simp_all only
 
-/-- 有限の半順序集合において、任意の元 `x` に対し `x ≤ y` かつ `y` が極大な元 `y` が存在する -/
+-------------------
+----fqに関係する補題。
+--------------------
+
+--setoidの半順序の一つ上のQuotientを指すもの。
+--Setup2じゃなくて、Setupにすることもできるかもしれないが。
+def fq (s: Setup2 α) (q:(Quotient s.setoid)):
+  (Quotient s.setoid) :=
+ Quotient.lift (fun (x:s.V) => Quotient.mk s.setoid (s.f x))
+    (by
+      intros a b h
+      -- まず setoid の定義を展開
+      dsimp [Quotient.lift]
+      rw [@Quotient.eq]
+      apply (Setoid.comap_rel s.f s.setoid a b).mp
+      have :s.setoid a b := by
+        exact h
+      rw [← @Quotient.eq_iff_equiv] at h
+      let foe := f_on_equiv s.toSetup a b this
+      simp_all only [Quotient.eq]
+      exact foe
+    ) q
+
+--Quotientとってからfqを施しても、fをとってからQuotientを取っても同じ。
+--fqの引数がSetupでなくて、Setup2にする必要あり。reachを使えそう。
+lemma f_on_equiv_n
+  (s: Setup2 α) (x : s.V) :
+  ∀ n:Nat, Quotient.mk s.setoid (s.f^[n] x) = (fq s)^[n] (Quotient.mk s.setoid x) :=
+by
+  intro n
+  induction n generalizing x
+  case zero =>
+    simp_all only [Finset.mem_univ, Quotient.lift_mk, Quotient.mk]
+    simp_all only [Function.iterate_zero, id_eq]
+  case succ n ih =>
+    simp_all only [Function.iterate_succ, Quotient.mk]
+    rw [@Function.comp_def]
+    rw [@Function.comp_def]
+    rw [ih (s.f x)]
+    simp_all only [Subtype.forall]
+    --obtain ⟨val, property⟩ := x
+    congr 1
+
+--任意の同値類から要素を取れることも補題にする。Setupでも良さそうだが、ここでしか使わないので。Quot.outでもよさそう。
+lemma quotient_representative (s: Setup2 α) (q: Quotient s.setoid) :
+  ∃ x : s.V, q = Quotient.mk s.setoid x :=
+by
+  simp_all only [Subtype.exists]
+  rcases q with ⟨x,hx⟩
+  exact ⟨x, hx, rfl⟩
+
+lemma pre_po_lemma (s: Setup2 α) (x y :s.V) :
+ s.pre.le x y ↔ s.po.le (Quotient.mk s.setoid x) (Quotient.mk s.setoid y) := by
+  constructor
+  · intro h
+    exact pushforward_preorder_lemma s x y h
+  · intro h
+    exact pullback_preorder_lemma s ⟦x⟧ ⟦y⟧ x y rfl rfl h
+
+--reachを使えそう。f_on_equiv_nと同じだった。
+lemma f_fq_lemma (s: Setup2 α) (x:s.V) :
+  ∀ n:Nat, Quotient.mk s.setoid (s.f^[n] x) = (fq s)^[n] (Quotient.mk s.setoid x) := by
+  intro n
+  exact f_on_equiv_n s x n
+  /-
+  induction n generalizing x
+  case zero =>
+    simp_all only [Finset.mem_univ, Quotient.lift_mk, Quotient.mk]
+    simp_all only [Function.iterate_zero, id_eq]
+
+  case succ n ih =>
+    simp_all only [Function.iterate_succ, Quotient.mk]
+    rw [@Function.comp_def]
+    rw [@Function.comp_def]
+    rw [ih (s.f x)]
+    simp_all only [Subtype.forall]
+    --obtain ⟨val, property⟩ := x
+    congr 1
+  -/
+
+--reachを使って書き直せる？逆は、fq_lemma_rev。
+lemma fq_lemma (s: Setup2 α) (qx:Quotient s.setoid) :
+  ∀ qy :(Quotient s.setoid), s.po.le qx qy → ∃ n:Nat, qy = ((fq s)^[n]) qx :=
+by
+  intro qy hqy
+  obtain ⟨x, hx⟩ := quotient_representative s qx
+  obtain ⟨y, hy⟩ := quotient_representative s qy
+  have : s.pre.le x y := by
+    rw [hx] at hqy
+    rw [hy] at hqy
+    apply pullback_preorder_lemma s qx qy x y
+    subst hx hy
+    simp_all only
+    subst hx hy
+    simp_all only
+    subst hx hy
+    simp_all only
+  let il := iteratef_lemma_ref s.toSetup x y this
+  obtain ⟨n, h⟩ := il
+  use n
+
+  let fone := f_on_equiv_n s x
+  rw [←hx] at fone
+  rw [←fone n]
+  rw [hy]
+  rw [←h]
+
+--poからfqの大小の方向。fq_lemma_revのbase caseに使う。
+--下で使っている。
+lemma fq_lemma_rev_one (s: Setup2 α) (qx :Quotient s.setoid) :
+  s.po.le qx ((fq s) qx) :=
+by
+  --pre_po_lemmaでs.preの議論に帰着する。
+  --qxや((fq s) qx)の代表元を持ってくる必要。
+  --そのあと、f_on_equiv_revを使う？
+
+  obtain ⟨x,hx⟩ := quotient_representative s qx
+
+  let y := s.f x
+  have hy: ((fq s) qx) = Quotient.mk s.setoid y := by --どこかで示したかも。
+    rw [@Setup.h_setoid] at qx
+    rw [setoid_preorder] at qx
+    simp_all only [Quotient.lift_mk]
+    subst hx
+    simp_all only [y]
+    rfl
+  let ppl := pre_po_lemma s x y
+  have : s.pre.le x y := by
+    dsimp [y]
+    exact f_and_pre s.toSetup x (s.f x) rfl
+  subst hx
+  simp_all [y]
+
+--fqのiterationでいけるものは、大小関係がある。
+--functionalSPOでreachを使って書き換えられるreach_leq2 のでそっちを使うと良い。
+--その証明にこれを使っている。
+--functionalSPOで使っている。
+lemma fq_lemma_rev (s: Setup2 α) (qx qy:Quotient s.setoid) :
+  (∃ n:Nat, qy = ((fq s)^[n]) qx) → s.po.le qx qy :=
+by
+  intro h
+
+  obtain ⟨n, h⟩ := h
+  rw [h]
+
+  induction n generalizing qx
+  case zero =>
+    subst h
+    simp_all only [Function.iterate_zero, id_eq, le_refl]
+  case succ n ih =>
+    subst h
+    simp_all only [Function.iterate_succ, Quotient.mk]
+    rw [@Function.comp_def]
+
+    simp_all only [Subtype.forall]
+
+    have : s.po.le qx ((fq s) qx) := by
+      apply fq_lemma_rev_one
+
+    let ihh := ih (fq s qx)
+    simp_all only [ge_iff_le]
+    apply le_trans
+    · exact this
+    · simp_all only [Function.comp_apply]
 
 /-
 --今のところ使ってない？
@@ -274,195 +447,4 @@ by
   obtain ⟨val, property⟩ := q
   --simp_all only [Finset.mem_univ]
   use val
--/
-
-
-
---ここからはfqに関する定義や補題。Setup2が必要。
-
---setoidの半順序の一つ上のQuotientを指すもの。
---Setup2じゃなくて、Setupにすることもできるかもしれないが。
-def fq (s: Setup2 α) (q:(Quotient s.setoid)):
-  (Quotient s.setoid) :=
- Quotient.lift (fun (x:s.V) => Quotient.mk s.setoid (s.f x))
-    (by
-      intros a b h
-      -- まず setoid の定義を展開
-      dsimp [Quotient.lift]
-      rw [@Quotient.eq]
-      apply (Setoid.comap_rel s.f s.setoid a b).mp
-      have :s.setoid a b := by
-        exact h
-      rw [← @Quotient.eq_iff_equiv] at h
-      let foe := f_on_equiv s.toSetup a b this
-      simp_all only [Quotient.eq]
-      exact foe
-    ) q
-
---Quotientとってからfqを施しても、fをとってからQuotientを取っても同じ。
---fqの引数がSetupでなくて、Setup2にする必要あり。
-lemma f_on_equiv_n
-  (s: Setup2 α) (x : s.V) :
-  ∀ n:Nat, Quotient.mk s.setoid (s.f^[n] x) = (fq s)^[n] (Quotient.mk s.setoid x) :=
-by
-  intro n
-  induction n generalizing x
-  case zero =>
-    simp_all only [Finset.mem_univ, Quotient.lift_mk, Quotient.mk]
-    simp_all only [Function.iterate_zero, id_eq]
-  case succ n ih =>
-    simp_all only [Function.iterate_succ, Quotient.mk]
-    rw [@Function.comp_def]
-    rw [@Function.comp_def]
-    rw [ih (s.f x)]
-    simp_all only [Subtype.forall]
-    --obtain ⟨val, property⟩ := x
-    congr 1
-
-
-
---ここからは、po.leとfの関係に関する補題。
-
---任意の同値類から要素を取れることも補題にする。Setupでも良さそうだが、ここでしか使わないので。Quot.outでもよさそう。
-lemma quotient_representative (s: Setup2 α) (q: Quotient s.setoid) :
-  ∃ x : s.V, q = Quotient.mk s.setoid x :=
-by
-  simp_all only [Subtype.exists]
-  rcases q with ⟨x,hx⟩
-  exact ⟨x, hx, rfl⟩
-
-lemma pre_po_lemma (s: Setup2 α) (x y :s.V) :
- s.pre.le x y ↔ s.po.le (Quotient.mk s.setoid x) (Quotient.mk s.setoid y) := by
-  constructor
-  · intro h
-    exact pushforward_preorder_lemma s x y h
-  · intro h
-    exact pullback_preorder_lemma s ⟦x⟧ ⟦y⟧ x y rfl rfl h
-
-lemma f_fq_lemma (s: Setup2 α) (x:s.V) :
-  ∀ n:Nat, Quotient.mk s.setoid (s.f^[n] x) = (fq s)^[n] (Quotient.mk s.setoid x) := by
-  intro n
-  induction n generalizing x
-  case zero =>
-    simp_all only [Finset.mem_univ, Quotient.lift_mk, Quotient.mk]
-    simp_all only [Function.iterate_zero, id_eq]
-
-  case succ n ih =>
-    simp_all only [Function.iterate_succ, Quotient.mk]
-    rw [@Function.comp_def]
-    rw [@Function.comp_def]
-    rw [ih (s.f x)]
-    simp_all only [Subtype.forall]
-    --obtain ⟨val, property⟩ := x
-    congr 1
-
-lemma fq_lemma (s: Setup2 α) (qx:Quotient s.setoid) :
-  ∀ qy :(Quotient s.setoid), s.po.le qx qy → ∃ n:Nat, qy = ((fq s)^[n]) qx :=
-by
-  intro qy hqy
-  obtain ⟨x, hx⟩ := quotient_representative s qx
-  obtain ⟨y, hy⟩ := quotient_representative s qy
-  have : s.pre.le x y := by
-    rw [hx] at hqy
-    rw [hy] at hqy
-    apply pullback_preorder_lemma s qx qy x y
-    subst hx hy
-    simp_all only
-    subst hx hy
-    simp_all only
-    subst hx hy
-    simp_all only
-  let il := iteratef_lemma_ref s.toSetup x y this
-  obtain ⟨n, h⟩ := il
-  use n
-
-  let fone := f_on_equiv_n s x
-  rw [←hx] at fone
-  rw [←fone n]
-  rw [hy]
-  rw [←h]
-
---poからfqの大小の方向。fq_lemma_revのbase caseに使う。これの逆向きも必要かも。
-lemma fq_lemma_rev_one (s: Setup2 α) (qx :Quotient s.setoid) :
-  s.po.le qx ((fq s) qx) :=
-by
-  --pre_po_lemmaでs.preの議論に帰着する。
-  --qxや((fq s) qx)の代表元を持ってくる必要。
-  --そのあと、f_on_equiv_revを使う？
-  obtain ⟨x,hx⟩ := quotient_representative s qx
-  --obtain ⟨y,hy⟩ := quotient_representative s ((fq s) qx)
-  let y := s.f x
-  have hy: ((fq s) qx) = Quotient.mk s.setoid y := by --どこかで示したかも。
-    rw [@Setup.h_setoid] at qx
-    rw [setoid_preorder] at qx
-    simp_all only [Quotient.lift_mk]
-    subst hx
-    simp_all only [y]
-    rfl
-  let ppl := pre_po_lemma s x y
-  have : s.pre.le x y := by
-    dsimp [y]
-    exact f_and_pre s.toSetup x (s.f x) rfl
-  subst hx
-  simp_all [y]
-
---fqのiterationでいけるものは、大小関係がある。
---functionalSPOでreachを使って書き換えられるreach_leq2 のでそっちを使うと良い。
-lemma fq_lemma_rev (s: Setup2 α) (qx qy:Quotient s.setoid) :
-  (∃ n:Nat, qy = ((fq s)^[n]) qx) → s.po.le qx qy :=
-by
-  intro h
-  obtain ⟨n, h⟩ := h
-  rw [h]
-  induction n generalizing qx
-  case zero =>
-    subst h
-    simp_all only [Function.iterate_zero, id_eq, le_refl]
-  case succ n ih =>
-    subst h
-    simp_all only [Function.iterate_succ, Quotient.mk]
-    rw [@Function.comp_def]
-    --rw [ih (s.f x)]
-    simp_all only [Subtype.forall]
-    --s.po qx (fq s qx)
-    --s.po (fq s qx) (fq s)^[n]
-    --を証明して、推移律か。
-    have : s.po.le qx ((fq s) qx) := by
-      apply fq_lemma_rev_one
-    --have : s.po.le ((fq s) qx) ((fq s)^[n] qx) := by
-    let ihh := ih (fq s qx)
-    simp_all only [ge_iff_le]
-    apply le_trans
-    · exact this
-    · simp_all only [Function.comp_apply]
-
-/-
---引数に対応するFinsetで表した同値類。
-noncomputable def equiv_class_finset (s: Setup2 α)(a : s.V) : Finset s.V := { x : s.V | s.setoid.r a x}.toFinset
-
---Quotientを集合表現に。classOfと同じ？ただ、classOfは、Setup_spoの枠組みにのみ定義している。
-noncomputable def quotient_to_finset (s: Setup2 α) (q : Quotient (s.setoid )) : Finset s.V :=
-  Quotient.liftOn q (fun a => equiv_class_finset s a)
-    (by
-      intros a b h
-      -- まず setoid の定義を展開
-      dsimp [Quotient.liftOn]
-      --let sc := (Setoid.comap_rel s.f s.setoid a b)
-      dsimp [equiv_class_finset]
-      ext x
-      constructor
-      · intro h1
-        simp
-        simp at h1
-        apply Setoid.trans' s.setoid
-        · exact id (s.setoid.symm h)
-        · simp_all only
-      · intro h1
-        simp
-        simp at h1
-        apply Setoid.trans' s.setoid
-        · exact h
-        · simp_all only
-    )
-
 -/

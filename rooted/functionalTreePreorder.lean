@@ -1,4 +1,4 @@
---前順序に関するpathの議論。PreorderPathとかにしてもよかった。
+--前順序に関するpathの議論。PreorderPathとかの名前にしてもよかった。
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Finset.Powerset
 import Mathlib.Data.Set.Function
@@ -24,8 +24,11 @@ variable {α : Type} [Fintype α] [DecidableEq α]
 --このファイルのメイン定理は、function fから作られるpreorderから引き起こされるsetoidの同値類において、同値類の大きさが2以上であれば、極大要素になっているという定理eqClass_size_ge_two_implies_inverse
 
 --Preorderのstar_implies_pathExistsでも同じことを証明している。大きい方から小さい方の鎖になっているような。
---Setup前提ではないが、path_exists_setup_reverse やpath_exists_subtypeの証明で使っている。
+--このあたりはSetup前提ではないが、Setup前提のpath_exists_setup_reverse やpath_exists_subtypeの証明で使っている。
 --最終的には、path_exists_setupに生かされる。
+--でも、fのiterationでないパスのアプローチは、初期のアプローチなので、全体からは浮いているかも。Setupも使ってないし。
+--パスが存在することと、fのiterationで到達できることが同値であるという命題は、iteratef_lemma_ref。
+--リファクタリングするとすると、reachを最初に定義して、iterationの議論で全て行う。
 lemma path_exists {α : Type} [Fintype α] (R : α → α → Prop) (x y : α) (h : Relation.ReflTransGen R x y) :
   ∃ (n : ℕ) (z : Fin (n + 1) → α), z 0 = x ∧ z n = y ∧ ∀ i : Fin n, R (z i.castSucc) (z i.succ) := by
   -- ReflTransGen の帰納法を適用
@@ -111,7 +114,7 @@ lemma path_exists {α : Type} [Fintype α] (R : α → α → Prop) (x y : α) (
         omega
 
 --fで直前関係になっていれば、a <= bとなること。自明かと思っていたけど、深く定義を追っていかないと証明できなかった。
---size_one_preorder_setup_step も参照。
+--path_implies_leもsize_one_preorder_setup_step もこの補題を参照。
 lemma f_and_pre (su: Setup α) (a b : {x // x ∈ su.V}) (sf : su.f a = b ) : su.pre.le a b := by
   rw [su.h_pre]
   dsimp [size_one_preorder]
@@ -222,7 +225,7 @@ by
         Fin.succ_last, Nat.succ_eq_add_one, Subtype.forall, Nat.cast_add, Nat.cast_one, b', z', a']
     exact this
 
---transitive closureを撮る前の一歩の場合の表現の違いに関する補題。
+--transitive closureを撮る前の一歩の場合の表現の違いに関する補題。Setup前提の形にした。
 lemma size_one_preorder_setup_step (s: Setup α) (x y : {x : α // x ∈ s.V}) :
   R_from_RS1 (rootedset_from_setup s) y x ↔ s.f x = y :=
 by
@@ -316,6 +319,10 @@ by
 
 --大小関係はfの繰り返しで書けること。Setup前提の重要補題。
 --このなかでpath_exists_setup_reverseを使っている。
+--fを使ってないアプローチなので浮いているかも。ファイル外からは参照されていない。
+--eqClass_size_ge_two_implies_outsideで参照されている。
+--大小関係があるときは、fの適用の繰り返してかけるというように書き直すことが可能。
+--リファクタリングのためには、reachで言明を書き換えたい。
 theorem path_exists_setup (s: Setup α) (x y : {x : α // x ∈ s.V}) :
   s.pre.le x y →
   ∃ (n : ℕ) (z : Fin (n + 1) → {x : α // x ∈ s.V}), z 0 = x ∧ z n = y ∧ ∀ i : Fin n, s.f (z i.castSucc) = (z i.succ) :=
@@ -503,6 +510,7 @@ by
     and_self, z']
 
 --補題。サイズ2以上の同値類は、fの行き先が同値類の外にでない。後ろで使っている。
+--iterationでなく、pathで証明されている。
 lemma eqClass_size_ge_two_implies_outside
     {α : Type} [Fintype α] [DecidableEq α]
     (s : Setup α):
@@ -697,12 +705,14 @@ by
     · simp_all only
 
 ----Setup前提の極大
---Setup前提の極大の定義。
+--Setup前提のs.Vの要素の極大の定義。
 def isMaximal (s: Setup α) (a : s.V) : Prop :=
   ∀ b : s.V, s.pre.le a b → s.pre.le b a
 
 --このファイルのメイン定理. Setup前提。サイズが2以上の同値類は、極大要素になること。
 --サイズ2以上の同値類からいけるところは、同じ同値類内に必ずなる。このことは前の補題で示されている。
+--pathexsits_setupを使っているが、パスの議論をやめて、fの繰り返しで書けることに書き換えた方がいいかも。
+--この定理は、eqClass_Maximalで使われる。それは、同値類の極大性の定理。
 theorem eqClass_size_ge_two_implies_inverse
     {α : Type} [Fintype α] [DecidableEq α]
     (s : Setup α)
@@ -1104,6 +1114,7 @@ lemma iteratef_lemma_ref (s: Setup α) (x y: s.V) (h: s.pre.le x y):
   simp
   congr
 
+--iterationの回数と大小関係。
 lemma iteratef_lemma_two (s: Setup α) (x: s.V) (n1 n2: Nat) :
   n1 < n2 → s.pre.le (s.f^[n1] x) (s.f^[n2] x) :=
 by
@@ -1279,7 +1290,7 @@ by
 
   use n1
 
-
+--サイズが2以上の同値類は、極大である。
 
 lemma iteratef_size2m (s: Setup α) (x: s.V)  :
   ∀ (n : Nat), 2 ≤ (eqClass_setup s (s.f^[n] x)).card →
@@ -1525,7 +1536,7 @@ lemma path_exists2 {α : Type} [Fintype α] (R : α → α → Prop) (x y : α)
         omega
 
 ---使ってないもの。
---補題. Subtype上における道の存在定理。後ろにpath_exists_setupがあるので、そちらを主に使うとよい。
+--補題. Subtype上における道の存在定理。後ろにがあるので、そちらを主に使うとよい。
 --こちらは使っていない。
 lemma path_exists_subtype {α : Type} [Fintype α] (V:Finset α) (R : V → V → Prop) (x y : V) (h : Relation.ReflTransGen R x y) :
   ∃ (n : ℕ) (z : Fin (n + 1) → V), z 0 = x ∧ z n = y ∧ ∀ i : Fin n, R (z i.castSucc) (z i.succ) := by

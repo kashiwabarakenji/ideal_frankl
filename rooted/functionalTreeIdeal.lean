@@ -132,6 +132,7 @@ noncomputable def setoid_ideal_ClosureSystem (s: Setup2 α): ClosureSystem α :=
 }
 
 --この定理は、preorderとpartialorderのidealの関係。spoとの関係はあとの定理。
+--functionalMainで利用している。
 theorem Preorder_eq_PartialOrder (s: Setup2 α)  :
   preorder_ideal_system s.toSetup = setoid_ideal_ClosureSystem s  := by
   --#check @setoid_ideal_ClosureSystem _ _ V nonemp (@setoid_preorder V _:Setoid V) _
@@ -452,11 +453,15 @@ def spo_closuresystem (s: Setup_spo α) : ClosureSystem α :=
           · congr
 }
 
---s Setup2のQuotientと、setup_setupspoのQuotientの対応の写像が必要。
+--Setup2のQuotientと、setup_setupspoのQuotientの対応の写像が必要。
+--使ってないかも。
+/-
 noncomputable def setup_setupspo_quotient (s: Setup2 α) (q: Quotient s.setoid) : Quotient (setup_setupspo s).setoid :=
   let rep : s.V := Quotient.out q
   Quotient.mk (setup_setupspo s).setoid ⟨rep, by simp⟩
+-/
 
+--下で使っている。
 lemma seteq_setupspo_eq  (s:Setup2 α) :
 s.setoid = (setup_setupspo s).setoid := by
   dsimp [setup_setupspo]
@@ -470,6 +475,7 @@ lemma setup_setupspo_quotient_lemma (s: Setup2 α) (q: Quotient s.setoid) :
 -/
 
 --時間がかかった上に、よくわからないまま証明された。
+--functionalMainで使っている。
 theorem Setup_spo_eq_PartialOrder (s: Setup2 α)  :
   setoid_ideal_ClosureSystem s = spo_closuresystem (setup_setupspo s)  := by
   ext ss --ssは集合族としてのideal
@@ -492,13 +498,7 @@ theorem Setup_spo_eq_PartialOrder (s: Setup2 α)  :
         --暗黙に使っているっぽい。
         have : s.V = (setup_setupspo s).V:= by
           exact rfl
-        --使ってないのかも。
-        --have :x'.val ∈ (setup_setupspo s).V := by
-        --  subst hx hx'
-        --  simp_all only [Subtype.forall, mem_filter, mem_attach, true_and, Subtype.exists, coe_mem]
-        --have : x'.val ∈ s.V := by
-        --  subst hx hx'
-        --  simp_all only [Subtype.forall, mem_filter, mem_attach, true_and, Subtype.exists, coe_mem]
+
         obtain ⟨hss1,hss2,hss3⟩ := hhs
         specialize hss3 hss2
         obtain ⟨hss31,hss32⟩ := hss3
