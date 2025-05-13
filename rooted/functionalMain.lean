@@ -1,4 +1,4 @@
---functionalの議論の主定理が収められている。各段階の重要な定理もここが親。
+--functionalの議論の主定理functional_family_average_rareが収められている。各段階の重要な定理もここが親。
 --functionalCommon.leanは、基本的な定義をまとめたもの。Setupもここで定義。
 --前順序Setupに関しては、functionalTreePreorderで議論。
 --Setup2は、Setupで導入されたsetoid上に半順序を導入したもの。functionalTreePartialOrderで定義。

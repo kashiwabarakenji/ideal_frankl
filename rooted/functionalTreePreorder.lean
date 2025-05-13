@@ -29,8 +29,10 @@ variable {α : Type} [Fintype α] [DecidableEq α]
 --でも、fのiterationでないパスのアプローチは、初期のアプローチなので、全体からは浮いているかも。Setupも使ってないし。
 --パスが存在することと、fのiterationで到達できることが同値であるという命題は、iteratef_lemma_ref。
 --リファクタリングするとすると、reachを最初に定義して、iterationの議論で全て行う。
---pathを完全にやめて、別ファイルに全部書き直して、ファイル名をPreorderReachにしてもよいかも。
+--pathを完全にやめて、別ファイルにReachを使って全部書き直して、ファイル名をPreorderReachにしてもよいかも。
 --o3の力で書き直すことは可能か？
+
+--この補題の参照は、このページ内のみ。
 lemma path_exists {α : Type} [Fintype α] (R : α → α → Prop) (x y : α) (h : Relation.ReflTransGen R x y) :
   ∃ (n : ℕ) (z : Fin (n + 1) → α), z 0 = x ∧ z n = y ∧ ∀ i : Fin n, R (z i.castSucc) (z i.succ) := by
   -- ReflTransGen の帰納法を適用
@@ -116,7 +118,8 @@ lemma path_exists {α : Type} [Fintype α] (R : α → α → Prop) (x y : α) (
         omega
 
 --fで直前関係になっていれば、a <= bとなること。自明かと思っていたけど、深く定義を追っていかないと証明できなかった。
---path_implies_leもsize_one_preorder_setup_step もこの補題を参照。
+--path_implies_leもsize_one_preorder_setup_step も、ファイル外のfq_lemma_rev_oneこの補題を参照。
+--これはcommonに移動させてもいいかも。
 lemma f_and_pre (su: Setup α) (a b : {x // x ∈ su.V}) (sf : su.f a = b ) : su.pre.le a b := by
   rw [su.h_pre]
   dsimp [size_one_preorder]
@@ -158,6 +161,7 @@ lemma f_and_pre (su: Setup α) (a b : {x // x ∈ su.V}) (sf : su.f a = b ) : su
   · exact hhs
 
 --補題 頂点aから頂点bにfのパスで辿れるときは、a <= bである。
+--外ファイルからの参照はない。
 lemma path_implies_le {α : Type} [Fintype α] [DecidableEq α] (s : Setup α) (a b : {x // x ∈ s.V}) :
   (∃ (n : ℕ) (z : Fin (n + 1) → {x // x ∈ s.V}), z 0 = a ∧ z n = b ∧ ∀ i : Fin n, s.f (z i.castSucc) = (z i.succ)) → s.pre.le a b :=
 by
@@ -228,6 +232,7 @@ by
     exact this
 
 --transitive closureを撮る前の一歩の場合の表現の違いに関する補題。Setup前提の形にした。
+--そのファイルからの参照はない。
 lemma size_one_preorder_setup_step (s: Setup α) (x y : {x : α // x ∈ s.V}) :
   R_from_RS1 (rootedset_from_setup s) y x ↔ s.f x = y :=
 by
@@ -278,6 +283,7 @@ by
       simp_all only [and_self, vp]
 
 --preorderは、rootedset_from_setupの繰り返しで作られている。
+--そとファイルからの参照なし。
 lemma size_one_preorder_setup_lemma (s: Setup α) (x y : {x : α // x ∈ s.V}) :
   s.pre.le x y ↔  @Relation.ReflTransGen s.V (R_from_RS1 (rootedset_from_setup s))  y x:=
 by
@@ -296,6 +302,7 @@ by
     exact preorder.ReflTransGen.to_R_hat h s1 hs1
 
 --証明できたけど、写像が後ろから前に向かっているので逆になっている。外からは使わないけど、次の補題で使っている。
+--外ファイルからの参照なし。
 lemma path_exists_setup_reverse (s: Setup α) (x y : {x : α // x ∈ s.V}) :
   s.pre.le x y →
   ∃ (n : ℕ) (z : Fin (n + 1) → {x : α // x ∈ s.V}), z 0 = y ∧ z n = x ∧ ∀ i : Fin n, (z i.castSucc) = s.f (z i.succ) :=
@@ -319,7 +326,9 @@ by
     subst hzn hz₀
     simp_all only [Fin.natCast_eq_last, R]
 
---大小関係はfの繰り返しで書けること。Setup前提の重要補題。
+--大小関係はfの繰り返しで書けること。
+--外からは参照なし。中からは使っている。
+--eqClass_size_ge_two_implies_outsideとiteratef_lemma_refで使っている。
 --このなかでpath_exists_setup_reverseを使っている。
 --fを使ってないアプローチなので浮いているかも。ファイル外からは参照されていない。
 --eqClass_size_ge_two_implies_outsideで参照されている。
@@ -404,6 +413,7 @@ by
       rfl
 
 --補題。上の補題は、途中のノードに対しても成り立つこと。
+--ファイル内から参照。eqClass_size_ge_two_implies_outsideから。
 lemma path_implies_front {α : Type} [Fintype α] [DecidableEq α] (s : Setup α) (a : {x // x ∈ s.V})
   (n : ℕ) (z : Fin (n + 1) → {x // x ∈ s.V})
   (h0 : z 0 = a) --(hn : z n = b)
@@ -452,7 +462,7 @@ by
   simp_all only [Fin.val_zero, Nat.cast_zero, Fin.val_last, Fin.coe_eq_castSucc, Fin.coe_castSucc, Fin.val_succ,
     Nat.cast_add, Nat.cast_one, implies_true, and_self, z']
 
---後ろで使っている。
+--後ろで使っている。eqClass_size_ge_two_implies_inverse
 lemma path_implies_rear {α : Type} [Fintype α] [DecidableEq α] (s : Setup α) (b : {x // x ∈ s.V})
   (n : ℕ) (z : Fin (n + 1) → {x // x ∈ s.V})
   --(h0 : z 0 = a)
@@ -511,8 +521,9 @@ by
     Fin.natCast_eq_last, sub_add_cancel, Fin.coe_castSucc, Fin.val_succ, Nat.cast_add, Nat.cast_one, implies_true,
     and_self, z']
 
---補題。サイズ2以上の同値類は、fの行き先が同値類の外にでない。後ろで使っている。
---iterationでなく、pathで証明されている。
+--補題。サイズ2以上の同値類は、fの行き先が同値類の外にでない。
+--後ろで使っている。f_on_equivなどで参照されている。外からは使っていない。
+--iterationでなく、pathで証明されている。この証明をPathを使わずに証明したい。
 lemma eqClass_size_ge_two_implies_outside
     {α : Type} [Fintype α] [DecidableEq α]
     (s : Setup α):
@@ -708,13 +719,14 @@ by
 
 ----Setup前提の極大
 --Setup前提のs.Vの要素の極大の定義。
+--これもCommonに移動してもよい。
 def isMaximal (s: Setup α) (a : s.V) : Prop :=
   ∀ b : s.V, s.pre.le a b → s.pre.le b a
 
 --このファイルのメイン定理. Setup前提。サイズが2以上の同値類は、極大要素になること。
 --サイズ2以上の同値類からいけるところは、同じ同値類内に必ずなる。このことは前の補題で示されている。
 --pathexsits_setupを使っているが、パスの議論をやめて、fの繰り返しで書けることに書き換えた方がいいかも。
---この定理は、eqClass_Maximalで使われる。それは、同値類の極大性の定理。
+--この定理は、functionalSPOのeqClass_Maximalで使われる。それは、同値類の極大性の定理。
 theorem eqClass_size_ge_two_implies_inverse
     {α : Type} [Fintype α] [DecidableEq α]
     (s : Setup α)
@@ -723,7 +735,7 @@ theorem eqClass_size_ge_two_implies_inverse
     isMaximal s x := by
   --∀ y : {x // x ∈ s.V},  s.pre.le x y → s.pre.le y x := by
   intro y h_xy
-  obtain ⟨n,z,hz0,hz1,hz⟩ := path_exists_setup s x y h_xy --zはFin n+1で定義されている。
+  obtain ⟨n,z,hz0,hz1,hz⟩ :=  path_exists_setup s x y h_xy --zはFin n+1で定義されている。
 
   induction n generalizing x
   case zero =>
@@ -1069,6 +1081,9 @@ theorem eqClass_size_ge_two_implies_inverse
 
 --iterationは、functionalSPOでは、setup_spo前提だがreachと書かれていて、一部は利用されていて、一部は重複ている可能性がある。
 --iterationで辿り着くものには、大小関係がある。
+
+--証明には f_and_preがけりようしている。
+--外からは参照されてないかも。iteratef_lemma_twoから参照されている。
 lemma iteratef_lemma (s: Setup α) (x : s.V):
   ∀ n, s.pre.le x (s.f^[n] x) := by
   intro n
@@ -1087,6 +1102,7 @@ lemma iteratef_lemma (s: Setup α) (x : s.V):
       exact s.pre.le_trans x (s.f x) (s.f^[n] (s.f x)) this ihh
 
 --大小関係があるとiterationで辿り着く。
+--この補題は、path_exists_setupを利用。利用しなくても直接帰納法で示せそう。
 lemma iteratef_lemma_ref (s: Setup α) (x y: s.V) (h: s.pre.le x y):
   ∃ n:Nat, (s.f^[n] x)=y := by
   let pes := path_exists_setup s x y h
@@ -1117,6 +1133,7 @@ lemma iteratef_lemma_ref (s: Setup α) (x y: s.V) (h: s.pre.le x y):
   congr
 
 --iterationの回数と大小関係。
+--pathの議論は使っていない。
 lemma iteratef_lemma_two (s: Setup α) (x: s.V) (n1 n2: Nat) :
   n1 < n2 → s.pre.le (s.f^[n1] x) (s.f^[n2] x) :=
 by
@@ -1137,6 +1154,7 @@ by
 
 --補題:fのiterationの全体は、重複しているものがある。
 --証明：鳩の巣原理。
+--pathの議論は使っていない。
 lemma iteratef_pegion (s: Setup α) (x: s.V)  : ∃ (n1 n2: Nat), n1 ≠ n2 ∧ (s.f^[n1] x) = s.f^[n2] x :=
 by
   let dom := (Finset.Icc 0 (s.V.card + 1)).image (fun i => (s.f^[i] x))
