@@ -328,8 +328,9 @@ by
         ≤ (spo_closuresystem s'.toSetup_spo).normalized_degree_sum :=
     by
       dsimp [s']
-      rw [trace_ideal_nds]
-
+      --let tin := trace_ideal_nds s.toSetup_spo q.out hq
+      rw [setup_trace_spo2_lem ]
+      rw [trace_ideal_nds s.toSetup_spo q.out hq]
       exact trace_ideal_nds_increase s q.out hq
 
     -- 6) s' < s（r s' s） を示す
@@ -354,15 +355,15 @@ by
 
 
 --setupを使った形の主定理。この定理は帰納法は必要なくて、直接証明可能。
-lemma setup_average_rare (s:Setup α): (preorder_ideal_system s).normalized_degree_sum ≤ 0 :=
+lemma setup_average_rare (s:Setup α): (pre_closuresystem s).normalized_degree_sum ≤ 0 :=
 by
   --spo2_average_rareから証明する。
   --setup2_induces_spoを使って、対応するSetup_spo2が得られる。spo2からclosuresystemを生成するには、spo_closuresystem
   --trace_ideal_ndsはidealがひとしければndsも等しいという定理。
-  --theorem Setup_spo_eq_PartialOrder (s: Setup2 α)  : setoid_ideal_ClosureSystem s = spo_closuresystem (setup_setupspo s)
+  --theorem Setup_spo_eq_PartialOrder (s: Setup2 α)  : pre2_closuresystem s = spo_closuresystem (setup_setupspo s)
   --が利用するメインの定理。
-  --setoid_ideal_ClosureSystem (s: Setup2 α): ClosureSystem となる。preorder_ideal_systemとの違いはSetup2のところか。
-  --theorem Preorder_eq_PartialOrder (s: Setup2 α)  :  preorder_ideal_system s.toSetup = setoid_ideal_ClosureSystem s  := by
+  --pre2_closuresystem (s: Setup2 α): ClosureSystem となる。pre_closuresystemとの違いはSetup2のところか。
+  --theorem Preorder_eq_PartialOrder (s: Setup2 α)  :  pre_closuresystem s.toSetup = pre2_closuresystem s  := by
   --という定理もあった。
   let s2 :=  (Setup_to_Setup2 s)
   let s_spo := setup2_induces_spo s2
@@ -383,7 +384,7 @@ by
   set st := @setoid_preorder V pre with h_st
   let s := Setup.mk V nonemp f valid pre h_pre st h_st
   let sns := setup_average_rare s
-  rw [ideal_system_eq_lem] at sns
-  dsimp [preorder_ideal_system2] at sns
+  rw [pre_closuresystem_eq_lem] at sns  --ここで、pre_closuresystem2を経由するのは必要。
+  dsimp [pre_closuresystem2] at sns
   dsimp [rootedset_from_setup] at sns
   exact sns

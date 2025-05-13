@@ -202,8 +202,8 @@ by
   simp
 
 --setupを与えたときのClosureSystemを与える関数。
---次のpreorder_ideal_system2のように定義する方法もある。
-noncomputable def preorder_ideal_system (s:Setup α): ClosureSystem α :=
+--次のpre_closuresystem2のように定義する方法もある。
+noncomputable def pre_closuresystem (s:Setup α): ClosureSystem α :=
 {
   ground := s.V
   sets := fun ss : Finset α => ss ⊆ s.V ∧(∀ v : s.V, v.val ∈ ss → (∀ w : s.V, s.pre.le w v → w.val ∈ ss)),
@@ -248,7 +248,8 @@ noncomputable def preorder_ideal_system (s:Setup α): ClosureSystem α :=
 }
 
 --集合族をrootedcircircuits経由で別に定義。同値性は、ideal_system_eq_lemで示される。
-noncomputable def preorder_ideal_system2 (s:Setup α): ClosureSystem α :=
+--functionalMainの中で使う。
+noncomputable def pre_closuresystem2 (s:Setup α): ClosureSystem α :=
  rootedsetToClosureSystem (rootedset_from_setup s)
 --既存の関数を利用した形で定義されているが、rootedsetToClosureSystemが複雑なので簡単になってないかも。
 
@@ -288,8 +289,8 @@ by
 
 --ふたつの定義が同値であることを示す。本質的には、size_one_preorder_setで示したこと。
 --それに気がつくのが遅かったので、証明はもっと短くなるかも。
-lemma ideal_system_eq_lem (s : Setup α) :
-   preorder_ideal_system s = preorder_ideal_system2 s :=
+lemma pre_closuresystem_eq_lem (s : Setup α) :
+   pre_closuresystem s = pre_closuresystem2 s :=
 by
   let sopl := size_one_preorder_lemma (rootedset_from_setup s)
   have :∀ p ∈ (rootedset_from_setup s).rootedsets, #p.stem = 1 :=
@@ -297,8 +298,8 @@ by
     exact fun p a => rootedsetset_from_setup_has_stem1 s p a
   specialize sopl this
   simp at sopl
-  dsimp [preorder_ideal_system]
-  dsimp [preorder_ideal_system2  ]
+  dsimp [pre_closuresystem]
+  dsimp [pre_closuresystem2  ]
   ext ss
   ·
     rfl
@@ -398,7 +399,7 @@ by
           · exact hx
           · exact hsub hx
       ------------------------------------------------------------------
-      -- `preorder_ideal_system2` の closedUnder 部分から
+      -- `pre_closuresystem2` の closedUnder 部分から
       --   ss_attach ∈ preorder.S_R …
       ------------------------------------------------------------------
       have hS : ss_attach ∈ preorder.S_R (R_from_RS1 (rootedset_from_setup s)) := by

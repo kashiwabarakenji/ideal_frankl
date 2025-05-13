@@ -74,8 +74,7 @@ have sub: V ⊆ s.V := by
     exact s.po.le_trans ⟨x.val, xin⟩ ⟨y.val, yin⟩ ⟨z.val, zin⟩ hxy hyz
 }
 
--- namespaceは中途半端なのでなくしたほうがいいかも。
-namespace SetupPoComponent
+
 
 --variable {α : Type} [Fintype α] [DecidableEq α]
 
@@ -110,7 +109,7 @@ noncomputable def comp_po_f
         _ = Quotient.mk _ ⟨v'.1, vin⟩ := by
           -- v' が filter に拾われているので mk v' = q
           let vp := v'.property
-          dsimp [SetupPoComponent.comp_po_V'] at vp
+          dsimp [comp_po_V'] at vp
           rw [Finset.mem_image] at vp
           simp at vp
           obtain ⟨w, hwf⟩ := vp
@@ -231,7 +230,7 @@ lemma comp_po_iter_val
     rw [Function.comp_apply]
     have xin: x.val ∈ s.V := by
       let xp := x.property
-      dsimp [SetupPoComponent.comp_po_V'] at xp
+      dsimp [comp_po_V'] at xp
       rw [Finset.mem_image] at xp
       simp at xp
       dsimp [compFinset] at xp
@@ -246,7 +245,7 @@ lemma comp_po_iter_val
 
     obtain ⟨val, property⟩ := x
     simp_all only
-    simp only [SetupPoComponent.comp_po_f, h_eq]
+    simp only [comp_po_f, h_eq]
 
 -- 補題2: reach g x y ↔ reach s.f sx sy
 lemma comp_po_reach_equiv
@@ -347,9 +346,7 @@ noncomputable def restrict_order_core
 }
 
 
-end SetupPoComponent
 
-open SetupPoComponent
 
 -- qに制限されたSetup_po の定義
 noncomputable def comp_po (s : Setup_po α) (q : Quotient (proj_setoid s))
@@ -439,7 +436,7 @@ noncomputable def excl_po_f
   have v_neq_q : (Quotient.mk (proj_setoid s) v) ≠ q := by
     -- v' ∈ exclFinset s q なので filter の第二条件が直接これ
     let vp := v'.property
-    dsimp [SetupPoComponent.excl_po_V'] at vp
+    dsimp [excl_po_V'] at vp
     dsimp [exclFinset] at vp
     rw [Finset.mem_image] at vp
     simp at vp
@@ -597,7 +594,7 @@ theorem excl_po_V'_nonempty_of_classes_ge2
     simp_all only [ge_iff_le, mem_attach, Finset.mem_image, true_and, exists_apply_eq_apply, ne_eq, not_false_eq_true,
       mem_filter, and_self]
     obtain ⟨val, property⟩ := v
-    simpa [SetupPoComponent.exclFinset]
+    simpa [exclFinset]
   exact ⟨v.val, this⟩
 
 noncomputable def restrict_order_excl

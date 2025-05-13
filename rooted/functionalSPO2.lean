@@ -215,7 +215,7 @@ noncomputable def setup_trace_spo2 (s : Setup_spo2 α)(x: s.V) (hx:(classOf s.to
     exact this
 }
 
---特に使ってないが、setup_trace_spo2の立ち位置をはっきりさせるため。
+--setup_trace_spo2の立ち位置をはっきりさせるため。使っている。
 lemma setup_trace_spo2_lem (s : Setup_spo2 α)(x: s.V) (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).card ≥ 2):
   (setup_trace_spo2 s x hx).toSetup_spo = setup_trace s.toSetup_spo x hx := by
   dsimp [setup_trace_spo2]

@@ -13,7 +13,7 @@ import rooted.functionalPartialTrace
 import rooted.functionalPartialMaximal
 import rooted.functionalDirectProduct
 
-open Finset Set Classical SetupPoComponent
+open Finset Set Classical
 
 set_option maxHeartbeats 2000000
 

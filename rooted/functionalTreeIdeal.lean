@@ -28,7 +28,7 @@ open Finset Set Classical
 variable {α : Type} [Fintype α] [DecidableEq α]
 
 --名前をpre2_closuresystemにしたほうがいいか？こちらは、s.poとsetoidを利用してhyperedgeを定義。
-noncomputable def setoid_ideal_ClosureSystem (s: Setup2 α): ClosureSystem α :=
+noncomputable def pre2_closuresystem (s: Setup2 α): ClosureSystem α :=
 {
     ground := s.V,
     sets := fun ss =>
@@ -135,15 +135,15 @@ noncomputable def setoid_ideal_ClosureSystem (s: Setup2 α): ClosureSystem α :=
 --定理名も変えた方がいいかも。pre_pre2_closuresystem_eqみたいな感じ。
 --functionalMainでのみ利用している。
 theorem Preorder_eq_PartialOrder (s: Setup2 α)  :
-  preorder_ideal_system s.toSetup = setoid_ideal_ClosureSystem s  := by
-  --#check @setoid_ideal_ClosureSystem _ _ V nonemp (@setoid_preorder V _:Setoid V) _
-  --#check setoid_ideal_ClosureSystem V nonemp (@setoid_preorder V _)
+  pre_closuresystem s.toSetup = pre2_closuresystem s  := by
+  --#check @pre2_closuresystem _ _ V nonemp (@setoid_preorder V _:Setoid V) _
+  --#check pre2_closuresystem V nonemp (@setoid_preorder V _)
   ext ss
   · rfl
   · --rename_i s
     --rcases s with ⟨s_val, hs⟩
     --unfold Membership.mem
-    dsimp [preorder_ideal_system, setoid_ideal_ClosureSystem]
+    dsimp [pre_closuresystem, pre2_closuresystem]
     let st := s.setoid
 
     apply Iff.intro
@@ -480,11 +480,11 @@ lemma setup_setupspo_quotient_lemma (s: Setup2 α) (q: Quotient s.setoid) :
 --functionalMainで使っている。
 --pre2_spo_closuresystem_eqという名前でどうか。
 theorem Setup_spo_eq_PartialOrder (s: Setup2 α)  :
-  setoid_ideal_ClosureSystem s = spo_closuresystem (setup_setupspo s)  := by
+  pre2_closuresystem s = spo_closuresystem (setup_setupspo s)  := by
   ext ss --ssは集合族としてのideal
   · rfl
   ·
-    dsimp [setoid_ideal_ClosureSystem, spo_closuresystem]
+    dsimp [pre2_closuresystem, spo_closuresystem]
     --let st := s.setoid
 
     apply Iff.intro
@@ -693,4 +693,4 @@ lemma preorder_partialorder_lemma_all {α : Type} [Fintype α] [DecidableEq α] 
     · rfl
     · rfl
 -/
---noncomputable def preorder_ideal_system {α : Type} [Fintype α] [DecidableEq α] (V: Finset α) [Preorder { x // x ∈ V }] (nonemp:V.Nonempty): ClosureSystem α :=
+--noncomputable def pre_closuresystem {α : Type} [Fintype α] [DecidableEq α] (V: Finset α) [Preorder { x // x ∈ V }] (nonemp:V.Nonempty): ClosureSystem α :=
