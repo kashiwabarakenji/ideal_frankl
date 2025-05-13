@@ -30,6 +30,8 @@ import rooted.functionalDirectProduct2
 
 open Finset Set Classical
 
+set_option maxHeartbeats 2000000
+
 variable {α : Type} [Fintype α] [DecidableEq α]
 
 --setup_po_average_rareの証明の中に書いてあったベースケースを補題として独立させた。
@@ -270,19 +272,27 @@ by
   --を使って、excessが減っていくことを示す。
   --theorem trace_ideal_nds_increase (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).card ≥ 2)
   --ChatGPT o3に全体の構造を設計してもらった。WellFoundedOnを使って証明。
-  let r : Setup_spo2 α → Setup_spo2 α → Prop := fun s t => excess s < excess t
-  have wf_r : WellFounded r := (measure fun s => excess s).wf
+  let r : Setup_spo2 α → Setup_spo2 α → Prop :=
+  fun s t => excess s.toSetup_spo < excess t.toSetup_spo
+
+  have wf_r : WellFounded r := by simpa [r] using
+    (measure (fun s : Setup_spo2 α => excess s.toSetup_spo)).wf
+
+  /-
+  let r : Setup_spo2 α → Setup_spo2 α → Prop := fun s t => excess s.toSetup_spo < excess t.toSetup_spo
+  have wf_r : WellFounded r := (measure fun s => excess s.toSetup_spo).wf
+  -/
   let wf_on : (univ : Set (Setup_spo2 α)).WellFoundedOn r :=
     WellFounded.wellFoundedOn wf_r
 
   apply Set.WellFoundedOn.induction wf_on (x := s₀) (hx := Set.mem_univ s₀)
   intro s mem_s ih
 
-  by_cases h0 : excess s = 0
+  by_cases h0 : excess s.toSetup_spo = 0
   · --基底ケース
     -- 定理 excess_zero で全クラスがサイズ1
     have h1 : ∀ q, (classOf s.toSetup_spo q).card = 1 := by
-      apply excess_zero s
+      apply excess_zero s.toSetup_spo
       exact h0
     -- これで Setup_po を作り，ベース補題を適用
     let s_po := po_ideal_system_from_allone _ h1
@@ -293,12 +303,12 @@ by
 
   · -- 帰納ステップ：excess s > 0 の場合
     -- 1) excess s ≠ 0 から 0 < excess s を得る
-    have hpos : 0 < excess s := by
+    have hpos : 0 < excess s.toSetup_spo := by
       simp_all only [Set.mem_univ, gt_iff_lt, ge_iff_le, forall_const, r]
       omega
 
     -- 2) ∃ q, classOf の大きさ ≥ 2 を得る
-    obtain ⟨q, hq⟩ := exists_q_card_ge_two_of_excess_pos s hpos
+    obtain ⟨q, hq⟩ := exists_q_card_ge_two_of_excess_pos s.toSetup_spo hpos
 
     -- 3) trace して新しい構造体 s' を作る
     have :@Quotient.mk _ s.setoid q.out = q :=
@@ -309,8 +319,8 @@ by
     let s' := setup_trace_spo2 s q.out hq
 
     -- 4) excess は１だけ減る
-    have h_ex_s' : excess s' = excess s - 1 :=
-      trace_excess_decrease s q.out hq
+    have h_ex_s' : excess s'.toSetup_spo = excess s.toSetup_spo - 1 :=
+      trace_excess_decrease s.toSetup_spo q.out hq
 
     -- 5) normalized_degree_sum は増える
     have h_nds :
@@ -319,6 +329,7 @@ by
     by
       dsimp [s']
       rw [trace_ideal_nds]
+
       exact trace_ideal_nds_increase s q.out hq
 
     -- 6) s' < s（r s' s） を示す

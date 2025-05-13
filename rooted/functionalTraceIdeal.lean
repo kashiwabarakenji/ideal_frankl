@@ -889,7 +889,7 @@ lemma normalized_degree_sum_congr {α : Type} [DecidableEq α] [Fintype α]
   rw [h_ground]
   simp_all only [s]
 
---traceしたものと、集合族が等しければ、ndsも等しい。
+--traceしたものと、集合族が等しければ、ndsも等しい。これはSetup_spoの仮定で大丈夫？
 theorem trace_ideal_nds (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
 )).card ≥ 2) :
   (spo_closuresystem (setup_trace_spo2 s x hx).toSetup_spo).normalized_degree_sum = ((spo_closuresystem s.toSetup_spo).toSetFamily.trace x.val (by simp_all only [ge_iff_le,
@@ -922,15 +922,15 @@ theorem trace_ideal_nds (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo 
 --excessは、Setup_spo2に対して定義されているが、Setup_spoに対しても定義できる。
 --帰納法を使いたいのは、Setup_spo2のクラスに対してなので、Setup_spoに変更しても本当に問題がないのか？
 --Setup_spoとSetup_spo2の違いを廃止するという方向性もある。
-noncomputable def excess (s: Setup_spo2 α)  : ℕ :=
+noncomputable def excess (s: Setup_spo α)  : ℕ :=
   ∑ q ∈ (Finset.univ : Finset (Quotient s.setoid)),
-    ((classOf s.toSetup_spo q).card - 1)
+    ((classOf s q).card - 1)
       --traceすることで、excessはひとつ減る。
 
 --setup_trace_spo2は、setup_traceでよさそう。(setup_trace_spo2 s x hx).toSetup_spoをsetup_traceに。
 --定理の前提もSetup_spoで十分かも。
-lemma trace_excess_decrease_lem_x (s: Setup_spo2 α) (x: s.V) (hx: (classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).card ≥ 2) :
- (classOfx s.toSetup_spo x).image Subtype.val = (classOf (setup_trace_spo2 s x hx).toSetup_spo (toNew s.toSetup_spo x hx (@Quotient.mk _ s.toSetup_spo.setoid x))).image Subtype.val ∪ ({x.val}:Finset α):=
+lemma trace_excess_decrease_lem_x (s: Setup_spo α) (x: s.V) (hx: (classOf s (@Quotient.mk _ s.setoid x)).card ≥ 2) :
+ (classOfx s x).image Subtype.val = (classOf (setup_trace s x hx) (toNew s x hx (@Quotient.mk _ s.setoid x))).image Subtype.val ∪ ({x.val}:Finset α):=
 by
   ext y
   apply Iff.intro
@@ -951,17 +951,17 @@ by
       left
       have yinsV : y ∈ s.V := by
         simp_all only [ge_iff_le, mem_attach, Quotient.eq, true_and]
-      have yinsV2:y ∈ (setup_trace_spo2 s x hx).V :=
+      have yinsV2:y ∈ (setup_trace s x hx).V :=
       by
         simp_all only [mem_attach, Quotient.eq, true_and]
         obtain ⟨val, property⟩ := x
         simp_all only
-        rw [setup_trace_spo2]
+        rw [setup_trace]
         simp_all only [mem_erase, ne_eq, not_false_eq_true, and_self]
       use yinsV2
       dsimp [classOf]
       rw [Finset.mem_filter]
-      have toErased_id: toErased s.toSetup_spo x hx ⟨y,yinsV⟩ = ⟨y,yinsV2⟩ := by
+      have toErased_id: toErased s x hx ⟨y,yinsV⟩ = ⟨y,yinsV2⟩ := by
         dsimp [toNew]
         dsimp [toErased]
         simp_all only [mem_attach, Quotient.eq, true_and, Subtype.coe_eta]
@@ -973,21 +973,21 @@ by
       · simp_all only [mem_attach, Quotient.eq, true_and]
       · dsimp [toNew]
         dsimp [toErased]
-        dsimp [setup_trace_spo2]
+        dsimp [setup_trace]
         split
-        · let rnsm := representativeNeSelf_mem_classOf s.toSetup_spo x hx
+        · let rnsm := representativeNeSelf_mem_classOf s x hx
           obtain ⟨hqq1, hqq2⟩ := hqq
-          let rnsm2 := representativeNeSelf_mem_classOf2 s.toSetup_spo x hx
-          have : s.setoid.r (representativeNeSelf2 s.toSetup_spo x hx) x := by
+          let rnsm2 := representativeNeSelf_mem_classOf2 s x hx
+          have : s.setoid.r (representativeNeSelf2 s x hx) x := by
             exact rnsm2
-          have :s.setoid.r ⟨y,yinsV⟩ (representativeNeSelf2 s.toSetup_spo x hx):= by
+          have :s.setoid.r ⟨y,yinsV⟩ (representativeNeSelf2 s x hx):= by
             exact Setoid.trans' s.setoid equiv_yx (id (Setoid.symm' s.setoid rnsm2))
 
-          have : (setup_trace_spo2 s x hx).setoid.r (representativeNeSelf s.toSetup_spo x hx) ⟨y,yinsV2⟩ :=
+          have : (setup_trace s x hx).setoid.r (representativeNeSelf s x hx) ⟨y,yinsV2⟩ :=
           by
             --使うのは、rnsmとhqq2とtoErasedで同値なものは同値なところに移るという定理。
             dsimp [classOf]
-            dsimp [setup_trace_spo2]
+            dsimp [setup_trace]
             dsimp [restrictedSetoid]
             exact id (Setoid.symm' s.setoid this)
           rename_i this_3
@@ -1010,7 +1010,7 @@ by
     cases h with
     | inl h =>
 
-      have yinsV2:y ∈ (setup_trace_spo2 s x hx).V := by
+      have yinsV2:y ∈ (setup_trace s x hx).V := by
         simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right]
         obtain ⟨w, h⟩ := h
         simp_all only
@@ -1018,9 +1018,9 @@ by
         exact mem_of_mem_erase yinsV2
       use ⟨y, yinsV⟩
       simp
-      let rnsm2 := representativeNeSelf_mem_classOf2 s.toSetup_spo x hx
+      let rnsm2 := representativeNeSelf_mem_classOf2 s x hx
       dsimp [classOfx]
-      let rnsm := representativeNeSelf_mem_classOf s.toSetup_spo x hx
+      let rnsm := representativeNeSelf_mem_classOf s x hx
       by_cases hy : y = x.val
       case pos =>
         subst hy
@@ -1028,7 +1028,7 @@ by
           ne_eq, Subtype.exists, exists_and_right, exists_eq_right, exists_const, and_true, coe_mem]
         obtain ⟨val, property⟩ := x
         dsimp [classOf] at h
-        exact classOf_self s.toSetup_spo ⟨val, property⟩
+        exact classOf_self s ⟨val, property⟩
         --xとyが同じときは、xの同値類の大きさは、1減る。
 
       case neg =>
@@ -1040,22 +1040,22 @@ by
         obtain ⟨h1, h2⟩ := h --条件はh1とh2に引き継がれる。特にh2
         --h2で、yは、xが写った先の同値類に入っていることがわかった。
         --よって、もともとのyもxと同値になる。
-        let teeqx := toErased_eqx s.toSetup_spo x ⟨y, yinsV2⟩ (representativeNeSelf s.toSetup_spo x hx)
-        have :(restrictedSetoid s.toSetup_spo x) ⟨y, yinsV2⟩ (representativeNeSelf s.toSetup_spo x hx) :=
+        let teeqx := toErased_eqx s x ⟨y, yinsV2⟩ (representativeNeSelf s x hx)
+        have :(restrictedSetoid s x) ⟨y, yinsV2⟩ (representativeNeSelf s x hx) :=
         by
           --h2を使う必要あり。
-          let q:= @Quotient.mk _ (setup_trace_spo2 s x hx).setoid (representativeNeSelf s.toSetup_spo x hx)
-          let cos := classOf_setoid (setup_trace_spo2 s x hx).toSetup_spo ⟨y, yinsV2⟩ (representativeNeSelf s.toSetup_spo x hx)
+          let q:= @Quotient.mk _ (setup_trace s x hx).setoid (representativeNeSelf s x hx)
+          let cos := classOf_setoid (setup_trace s x hx) ⟨y, yinsV2⟩ (representativeNeSelf s x hx)
 
           dsimp [toNew] at h2
 
-          have :(setup_trace_spo2 s x hx).setoid = restrictedSetoid s.toSetup_spo x := by
-            dsimp [setup_trace_spo2]
+          have :(setup_trace s x hx).setoid = restrictedSetoid s x := by
+            dsimp [setup_trace]
 
           rw [←this]
           rw [cos]
 
-          have :y ∈ (setup_trace_spo2 s x hx).V := by
+          have :y ∈ (setup_trace s x hx).V := by
             simp_all only
 
           convert h2
@@ -1072,7 +1072,7 @@ by
 
         specialize teeqx this
         exact Setoid.trans' s.setoid this rnsm2
-      exact (classOf_setoid s.toSetup_spo ⟨y, yinsV⟩ x).mp this
+      exact (classOf_setoid s ⟨y, yinsV⟩ x).mp this
 
     | inr h =>
       simp
@@ -1101,9 +1101,9 @@ by
         subst this
         simp_all only [ge_iff_le, Finset.mem_singleton, Subtype.coe_eta]
 
---traceすることで、excessはひとつ減る。
-lemma trace_excess_decrease (s: Setup_spo2 α) (x: s.V) (hx: (classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).card ≥ 2) :
-  excess (setup_trace_spo2 s x hx) = excess s - 1 := by
+--traceすることで、excessはひとつ減る。Setup_spoの仮定でもよいかも。
+lemma trace_excess_decrease (s: Setup_spo α) (x: s.V) (hx: (classOf s (@Quotient.mk _ s.setoid x)).card ≥ 2) :
+  excess (setup_trace s x hx) = excess s - 1 := by
   --まずは、xを含んでいる部分の同値類が一個減るということを示す。
 
   --xを含まない同値類に対しては、xのtraceで不変であることを示す必要がある。
@@ -1117,19 +1117,19 @@ lemma trace_excess_decrease (s: Setup_spo2 α) (x: s.V) (hx: (classOf s.toSetup_
 --    exact Subtype.coe_ne_coe.mpr h⟩ :=
 
   dsimp [excess]
-  set s' := setup_trace_spo2 s x hx with hs'
+  set s' := setup_trace s x hx with hs'
   --haveI := s'.toSetup_spo.spo.fintypeQuotient   -- `Finset.univ` 用の `Fintype` を入手
   --haveI := s.toSetup_spo.spo.fintypeQuotient
   let qx  : Quotient s.setoid      := ⟦x⟧
-  let qx' : Quotient s'.setoid     := toNew s.toSetup_spo x hx qx
+  let qx' : Quotient s'.setoid     := toNew s x hx qx
   -- 1. 右辺の和を特別クラスとその他に分割
   have hsplit_orig :
-      (∑ q : Quotient s.setoid, ((classOf s.toSetup_spo q).card - 1))
+      (∑ q : Quotient s.setoid, ((classOf s q).card - 1))
       =
-      (∑ q ∈ (Finset.univ.erase qx), ((classOf s.toSetup_spo q).card - 1)) +
-       ((classOf s.toSetup_spo qx).card - 1) :=
+      (∑ q ∈ (Finset.univ.erase qx), ((classOf s q).card - 1)) +
+       ((classOf s qx).card - 1) :=
   by
-    let fsea := @Finset.sum_erase_add (Quotient s.setoid) _ _ _ (Finset.univ) (fun q =>  (classOf s.toSetup_spo q).card - 1) qx
+    let fsea := @Finset.sum_erase_add (Quotient s.setoid) _ _ _ (Finset.univ) (fun q =>  (classOf s q).card - 1) qx
     have : qx ∈ Finset.univ := by simp
     specialize fsea this
     symm
@@ -1137,40 +1137,40 @@ lemma trace_excess_decrease (s: Setup_spo2 α) (x: s.V) (hx: (classOf s.toSetup_
 
   -- 2. 左辺の和を特別クラスとその他に分割
   have hsplit_new :
-      ∑ q : Quotient s'.setoid , (#(classOf s'.toSetup_spo q) - 1)
+      ∑ q : Quotient s'.setoid , (#(classOf s' q) - 1)
       =
-      ∑ q ∈ Finset.univ.erase qx' , (#(classOf s'.toSetup_spo q) - 1) +
-      (#(classOf s'.toSetup_spo qx') - 1)   :=
+      ∑ q ∈ Finset.univ.erase qx' , (#(classOf s' q) - 1) +
+      (#(classOf s' qx') - 1)   :=
   by
-    let fsea := @Finset.sum_erase_add (Quotient s'.setoid) _ _ _ (Finset.univ) (fun q =>  (classOf s'.toSetup_spo q).card - 1) qx'
+    let fsea := @Finset.sum_erase_add (Quotient s'.setoid) _ _ _ (Finset.univ) (fun q =>  (classOf s' q).card - 1) qx'
     have qxf: qx' ∈ (Finset.univ:Finset (Quotient s'.setoid)) := by simp
     specialize fsea qxf
     symm
     exact fsea
 
-  have other_lem:∑ q ∈ Finset.univ.erase qx', (#(classOf s'.toSetup_spo q) - 1) = ∑ q ∈ Finset.univ.erase qx, (#(classOf s.toSetup_spo q) - 1):=
+  have other_lem:∑ q ∈ Finset.univ.erase qx', (#(classOf s' q) - 1) = ∑ q ∈ Finset.univ.erase qx, (#(classOf s q) - 1):=
   by
     let S := Finset.univ.erase qx
     let T : Finset (Quotient s'.setoid) := (Finset.univ).erase qx'
-    let f := fun q : Quotient s.setoid => (classOf s.toSetup_spo q).card - 1
-    let g := fun q : Quotient s'.setoid => (classOf s'.toSetup_spo q).card - 1
+    let f := fun q : Quotient s.setoid => (classOf s q).card - 1
+    let g := fun q : Quotient s'.setoid => (classOf s' q).card - 1
     -- 対応写像
     let i : (q : Quotient s.setoid) → (q ∈ S) → Quotient s'.setoid :=
-        fun q _ => toNew s.toSetup_spo x hx q
+        fun q _ => toNew s x hx q
 
     -- ① 値域
     have hi :
     ∀ (q : Quotient s.setoid) (hq : q ∈ S), i q hq ∈ T := by
       intro q hq
       have hneq : q ≠ qx := (Finset.mem_erase.mp hq).left
-      have hneq' : toNew s.toSetup_spo x hx q ≠ qx' := by
+      have hneq' : toNew s x hx q ≠ qx' := by
         intro h
         -- `toOld` で戻すと q = qx となり矛盾
         have : q = qx := by
-          have := congrArg (toOld s.toSetup_spo x) h
+          have := congrArg (toOld s x) h
           simpa [NewOld_id, OldNew_id, qx, qx'] using this
         exact hneq this
-      have : (toNew s.toSetup_spo x hx q) ∈
+      have : (toNew s x hx q) ∈
             (Finset.univ : Finset (Quotient s'.setoid)) := by simp
       simpa [T, i] using Finset.mem_erase.mpr ⟨hneq', this⟩
 
@@ -1179,14 +1179,14 @@ lemma trace_excess_decrease (s: Setup_spo2 α) (x: s.V) (hx: (classOf s.toSetup_
         f q = g (i q hq) := by
       intro q hq
       have hq_ne : q ≠ qx := Finset.mem_erase.mp hq |>.left
-      exact congrArg (fun n => n - 1) (toNew_classOf s.toSetup_spo x hx q hq_ne)
+      exact congrArg (fun n => n - 1) (toNew_classOf s x hx q hq_ne)
 
     -- ③ 単射性
     have hinj :
         ∀ (q₁ q₂ : Quotient s.setoid) (h₁ : q₁ ∈ S) (h₂ : q₂ ∈ S),
           i q₁ h₁ = i q₂ h₂ → q₁ = q₂ := by
       intros q₁ q₂ h₁ h₂ h_eq
-      apply_fun toOld s.toSetup_spo x at h_eq
+      apply_fun toOld s x at h_eq
       rw [NewOld_id, NewOld_id] at h_eq
       exact h_eq
 
@@ -1195,7 +1195,7 @@ lemma trace_excess_decrease (s: Setup_spo2 α) (x: s.V) (hx: (classOf s.toSetup_
           i a₁ ha₁ = i a₂ ha₂ → a₁ = a₂ :=
     by
       intros q₁ q₂ h₁ h₂ h_eq
-      apply_fun toOld s.toSetup_spo x at h_eq
+      apply_fun toOld s x at h_eq
       rw [NewOld_id, NewOld_id] at h_eq
       exact h_eq
 
@@ -1205,14 +1205,14 @@ lemma trace_excess_decrease (s: Setup_spo2 α) (x: s.V) (hx: (classOf s.toSetup_
       ∃ (q : Quotient s.setoid) (hq : q ∈ S), i q hq = q' := by
       intro q' hq'
       -- もとの代表元
-      set q := toOld s.toSetup_spo x q' with hq_def
+      set q := toOld s x q' with hq_def
       have hq_mem : q ∈ (Finset.univ : Finset (Quotient s.setoid)) := by
         simp [hq_def]
       -- q ≠ qx を示して S へ
       have hq_ne : q ≠ qx := by
         intro h
         have hqqx: q' = qx' := by
-          let ca := congrArg (toNew s.toSetup_spo x hx) h
+          let ca := congrArg (toNew s x hx) h
           dsimp [q,qx] at ca
           rw [OldNew_id] at ca
           exact ca
@@ -1224,7 +1224,7 @@ lemma trace_excess_decrease (s: Setup_spo2 α) (x: s.V) (hx: (classOf s.toSetup_
       refine ⟨q, hqS, ?_⟩
       dsimp [i, hq_def]
       rw [hq_def]
-      let on := OldNew_id s.toSetup_spo x hx q'
+      let on := OldNew_id s x hx q'
       exact on
 
     -- ⑤ 5条件そろったので sum_bij
@@ -1235,24 +1235,24 @@ lemma trace_excess_decrease (s: Setup_spo2 α) (x: s.V) (hx: (classOf s.toSetup_
 
   rw [hsplit_orig, hsplit_new]
   rw [other_lem]
-  have :(#(classOf s'.toSetup_spo qx') - 1) = (#(classOf s.toSetup_spo qx) - 1) - 1 :=
+  have :(#(classOf s' qx') - 1) = (#(classOf s qx) - 1) - 1 :=
   by
     let tedl :=  trace_excess_decrease_lem_x s x hx
-    have : x.val ∉ Finset.image Subtype.val (classOf (setup_trace_spo2 s x hx).toSetup_spo (toNew s.toSetup_spo x hx ⟦x⟧)) :=
+    have : x.val ∉ Finset.image Subtype.val (classOf (setup_trace s x hx) (toNew s x hx ⟦x⟧)) :=
     by
       by_contra h_contra
       rw [Finset.mem_image] at h_contra
-      have :classOf (setup_trace_spo2 s x hx).toSetup_spo (toNew s.toSetup_spo x hx ⟦x⟧)⊆ (setup_trace_spo2 s x hx).V.attach := by
+      have :classOf (setup_trace s x hx) (toNew s x hx ⟦x⟧)⊆ (setup_trace s x hx).V.attach := by
         dsimp [classOf]
         simp_all only [Subtype.exists, exists_and_right, exists_eq_right, filter_subset, s', qx, qx']
       simp_all [s', qx, qx']
       obtain ⟨val, property⟩ := x
       obtain ⟨w, h⟩ := h_contra
       simp_all only
-      simp only [setup_trace_spo2] at h
-      simp only [setup_trace_spo2] at w
+      simp only [setup_trace] at h
+      simp only [setup_trace] at w
       simp at w
-    have :(Finset.image Subtype.val (classOfx s.toSetup_spo x)).card = (Finset.image Subtype.val (classOf (setup_trace_spo2 s x hx).toSetup_spo (toNew s.toSetup_spo x hx ⟦x⟧))).card + 1:=
+    have :(Finset.image Subtype.val (classOfx s x)).card = (Finset.image Subtype.val (classOf (setup_trace s x hx) (toNew s x hx ⟦x⟧))).card + 1:=
     by
       simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, not_exists,
         Finset.disjoint_singleton_right, exists_false, not_false_eq_true, card_union_of_disjoint,
@@ -1261,12 +1261,12 @@ lemma trace_excess_decrease (s: Setup_spo2 α) (x: s.V) (hx: (classOf s.toSetup_
     dsimp [qx,qx']
     symm
     have h_inj1 : Set.InjOn (Subtype.val : {x // x ∈ s.V} → α)
-               (↑(classOf s.toSetup_spo ⟦x⟧)) := by
+               (↑(classOf s ⟦x⟧)) := by
       intro a ha b hb h
       exact Subtype.ext h
 
     have h_inj2 : Set.InjOn (Subtype.val : {x // x ∈ s'.V} → α)
-                  (classOf s'.toSetup_spo (toNew s.toSetup_spo x hx ⟦x⟧)).toSet := by
+                  (classOf s' (toNew s x hx ⟦x⟧)).toSet := by
       intro a ha b hb h
       exact Subtype.ext h
 
@@ -1286,8 +1286,8 @@ lemma trace_excess_decrease (s: Setup_spo2 α) (x: s.V) (hx: (classOf s.toSetup_
     simp_all only [add_tsub_cancel_right, Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right,
       not_exists, s', qx, qx']
   rw [this]
-  have h : 1 ≤ #(classOf s.toSetup_spo qx) - 1 := by
-    have : 2 ≤ #(classOf s.toSetup_spo qx) := by
+  have h : 1 ≤ #(classOf s qx) - 1 := by
+    have : 2 ≤ #(classOf s qx) := by
       exact hx
     exact Nat.le_sub_one_of_lt hx
-  exact Eq.symm (Nat.add_sub_assoc h (∑ q ∈ Finset.univ.erase qx, (#(classOf s.toSetup_spo q) - 1)))
+  exact Eq.symm (Nat.add_sub_assoc h (∑ q ∈ Finset.univ.erase qx, (#(classOf s q) - 1)))

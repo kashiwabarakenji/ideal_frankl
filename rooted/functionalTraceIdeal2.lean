@@ -32,42 +32,42 @@ variable {α : Type} [Fintype α] [DecidableEq α]
 
 --excessが0であれば、同値類の大きさがすべて1。この部分は、TraceIdealに移動するか、excessの部分でまとめて1ファイルにするといいかも。
 --Setup_spo2でなくて、Setup_spoの前提でも成り立ちそう。
-lemma excess_zero (s: Setup_spo2 α) :
-  excess s = 0 → ∀ q: Quotient s.setoid, (classOf s.toSetup_spo q).card = 1 :=
+lemma excess_zero (s: Setup_spo α) :
+  excess s = 0 → ∀ q: Quotient s.setoid, (classOf s q).card = 1 :=
 by
   intro h q
-  have : ∀ q' :  Quotient s.setoid,0 ≤ (classOf s.toSetup_spo q').card - 1  := by
+  have : ∀ q' :  Quotient s.setoid,0 ≤ (classOf s q').card - 1  := by
     intro q'
     simp_all only [zero_le]
 
-  have nonneg: ∀ i ∈ Finset.univ, 0 ≤ Int.ofNat (#(classOf s.toSetup_spo i)) - 1 := by
+  have nonneg: ∀ i ∈ Finset.univ, 0 ≤ Int.ofNat (#(classOf s i)) - 1 := by
     intro i a
     simp_all only [zero_le, implies_true, Finset.mem_univ]
     simp_all only [Int.ofNat_eq_coe, sub_nonneg, Nat.one_le_cast, one_le_card]
     simp only [classOf_nonempty]
-  let fsez := @Finset.sum_eq_zero_iff_of_nonneg _ Int _ (fun q' => (classOf s.toSetup_spo q').card - 1) (Finset.univ : Finset (Quotient s.setoid)) nonneg
+  let fsez := @Finset.sum_eq_zero_iff_of_nonneg _ Int _ (fun q' => (classOf s q').card - 1) (Finset.univ : Finset (Quotient s.setoid)) nonneg
   --let con := classOf_nonempty s.toSetup_spo q
   dsimp [excess] at h
-  have :∀ i ∈ Finset.univ, (fun q' => Int.ofNat (#(classOf s.toSetup_spo q')) - 1) i = 0 :=
+  have :∀ i ∈ Finset.univ, (fun q' => Int.ofNat (#(classOf s q')) - 1) i = 0 :=
   by
     intro i a
     simp_all only [Finset.mem_univ, Int.ofNat_zero, Int.ofNat_one, Int.ofNat_sub]
     apply fsez.mp
     simp
     have h_cast :
-      (∑ q : Quotient s.setoid, (Int.ofNat (#(classOf s.toSetup_spo q)) - 1 : ℤ))
+      (∑ q : Quotient s.setoid, (Int.ofNat (#(classOf s q)) - 1 : ℤ))
         =
-      Int.ofNat (∑ q : Quotient s.setoid, (#(classOf s.toSetup_spo q) - 1)) :=
+      Int.ofNat (∑ q : Quotient s.setoid, (#(classOf s q) - 1)) :=
     by
       simp [Int.cast_sum]  -- ℕ の和を ℤ にキャスト
-      let fssd := @Finset.sum_sub_distrib _ _ (Finset.univ : Finset (Quotient s.setoid)) (fun q' => Int.ofNat (#(classOf s.toSetup_spo q'))) (fun q' => 1) _
-      suffices (∑ x : Quotient s.setoid, Int.ofNat (#(classOf s.toSetup_spo x))) - Int.ofNat (Fintype.card (Quotient s.setoid)) =
-  ∑ x : Quotient s.setoid,   (Int.ofNat (#(classOf s.toSetup_spo x)) - 1) from by
+      let fssd := @Finset.sum_sub_distrib _ _ (Finset.univ : Finset (Quotient s.setoid)) (fun q' => Int.ofNat (#(classOf s q'))) (fun q' => 1) _
+      suffices (∑ x : Quotient s.setoid, Int.ofNat (#(classOf s x))) - Int.ofNat (Fintype.card (Quotient s.setoid)) =
+  ∑ x : Quotient s.setoid,   (Int.ofNat (#(classOf s x)) - 1) from by
 
-        have :∀ q':Quotient s.setoid, Int.ofNat ((#(classOf s.toSetup_spo q')) - 1) = Int.ofNat (#(classOf s.toSetup_spo q')) - 1 := by
+        have :∀ q':Quotient s.setoid, Int.ofNat ((#(classOf s q')) - 1) = Int.ofNat (#(classOf s q')) - 1 := by
           intro q'
           simp [Int.ofNat_sub]
-          have h_card_ge : 1 ≤ #(classOf s.toSetup_spo q') := by
+          have h_card_ge : 1 ≤ #(classOf s q') := by
             specialize nonneg q' (Finset.mem_univ _)
             -- 0 ≤ ↑n - 1 ⇒ n ≥ 1
             -- Int.ofNat n - 1 ≥ 0 ⇒ Int.ofNat n ≥ 1 ⇒ n ≥ 1
@@ -95,22 +95,22 @@ by
     exact Finset.mem_univ q
   specialize ts this
   simp at ts
-  have h_eq : Int.ofNat (#(classOf s.toSetup_spo q)) - 1 + 1= 1 := by
+  have h_eq : Int.ofNat (#(classOf s q)) - 1 + 1= 1 := by
     simp_all only [sum_eq_zero_iff, Finset.mem_univ, forall_const, le_refl, implies_true, Int.ofNat_eq_coe, zero_add]
   simp at h_eq
   simp_all only [sum_eq_zero_iff, Finset.mem_univ, forall_const, le_refl, implies_true, Int.ofNat_eq_coe, Nat.cast_one,
     sub_self]
 
 --この補題もSetup_spo2の前提でなくても成り立ちそう。大きさが2以上の同値類がMaximalであることは、Setup_spo2の前提が必要だが、ここではそこまでいってない。
-lemma exists_q_card_ge_two_of_excess_pos {α : Type} [Fintype α] [DecidableEq α] (s : Setup_spo2 α)
+lemma exists_q_card_ge_two_of_excess_pos {α : Type} [Fintype α] [DecidableEq α] (s : Setup_spo α)
   (h : excess s > 0) :
-  ∃ q : Quotient s.setoid, (classOf s.toSetup_spo q).card ≥ 2 := by
+  ∃ q : Quotient s.setoid, (classOf s q).card ≥ 2 := by
   -- 対偶法で示す
   by_contra h'
   -- もし ∀ q, (classOf q).card < 2 ならば各項 (card - 1) = 0 で和も 0 になる
   have hz : excess s = 0 := by
     dsimp [excess]
-    have zero_terms : ∀ q, (classOf s.toSetup_spo q).card - 1 = 0 := by
+    have zero_terms : ∀ q, (classOf s q).card - 1 = 0 := by
       intro q
       -- ¬ ∃ q, card ≥ 2 から ¬ (card ≥ 2) をまず得て，Nat.not_le.mp で card < 2 に，
       -- さらに Nat.lt_succ_iff.mp で card ≤ 1 にし，Nat.sub_eq_zero_of_le で m - 1 = 0 を結論
