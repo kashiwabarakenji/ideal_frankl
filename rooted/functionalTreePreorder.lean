@@ -23,16 +23,389 @@ variable {α : Type} [Fintype α] [DecidableEq α]
 
 --このファイルのメイン定理は、function fから作られるpreorderから引き起こされるsetoidの同値類において、同値類の大きさが2以上であれば、極大要素になっているという定理eqClass_size_ge_two_implies_inverse
 
+--preorderは、rootedset_from_setupの繰り返しで作られている。le_eq_R と同じかも。
+--そとファイルからの参照なし。
+
+lemma size_one_preorder_setup_lemma (s: Setup α) (x y : {x : α // x ∈ s.V}) :
+  s.pre.le x y ↔  @Relation.ReflTransGen s.V (R_from_RS1 (rootedset_from_setup s))  y x:=
+by
+  simp [rootedset_from_setup]
+  rw [s.h_pre]
+  dsimp [size_one_preorder]
+  dsimp [size_one_circuits_preorder]
+  dsimp [rootedset_onestem_eachvertex_V]
+  apply Iff.intro
+  · intro h
+    apply preorder.R_hat.to_ReflTransGen
+    exact h
+
+  · intro h
+    intro s1 hs1
+    exact preorder.ReflTransGen.to_R_hat h s1 hs1
+
+--fで直前関係になっていれば、a <= bとなること。自明かと思っていたけど、深く定義を追っていかないと証明できなかった。
+--path_implies_leもsize_one_preorder_setup_step も、ファイル外のfq_lemma_rev_oneこの補題を参照。
+--これはcommonに移動させてもいいかも。
+lemma f_and_pre (su: Setup α) (a b : {x // x ∈ su.V}) (sf : su.f a = b ) : su.pre.le a b := by
+  rw [su.h_pre]
+  dsimp [size_one_preorder]
+  dsimp [size_one_circuits_preorder]
+  dsimp [preorder.R_hat]
+  intro s hs hhs
+  dsimp [preorder.S_R] at hs
+  rw [Finset.mem_filter] at hs
+  dsimp [rootedset_onestem_eachvertex_V] at hs
+  simp at hs
+  dsimp [preorder.closedUnder] at hs
+  let hs2 := hs.2
+  dsimp [R_from_RS1] at hs2
+  simp at hs2
+  specialize hs2 b b.property
+  specialize hs2 a a.property
+  have : a.val ∉ ({b.val}:Finset α) := by
+    intro h
+    rw [Finset.mem_singleton] at h
+    rw [←sf] at h
+    let suv := su.valid a
+    have : a = (su.f a) := by
+      exact Subtype.eq h
+    rw [←this] at suv
+    contradiction
+  let vp := ValidPair.mk {b.val} a.val this
+  specialize hs2 vp
+  simp at hs2
+  specialize hs2 a
+  simp at hs2
+  apply hs2
+  dsimp [vp]
+  ext
+  · simp
+    rw [sf]
+  · simp
+  · dsimp [vp]
+  · dsimp [vp]
+  · exact hhs
+
+-------ここからfの繰り返しに関する部分------
+
+--iterationは、functionalSPOでは、setup_spo前提だがreachと書かれていて、一部は利用されていて、一部は重複ている可能性がある。
+--iterationで辿り着くものには、大小関係がある。
+
+--証明には f_and_preが利用している。
+--外からは参照されてないかも。iteratef_lemma_twoから参照されている。
+
+lemma iteratef_lemma (s: Setup α) (x : s.V):
+  ∀ n, s.pre.le x (s.f^[n] x) := by
+  intro n
+  induction n generalizing x
+  case zero =>
+      simp_all only [Function.iterate_zero, id_eq, le_refl]
+
+  case succ n ih =>
+      rw [Function.iterate_succ]
+      simp
+      have ihh:s.pre.le (s.f x) (s.f^[n] (s.f x)) := by
+        simp_all only [Subtype.forall]
+      have : s.pre.le (x) (s.f x) := by
+        apply f_and_pre
+        simp_all only [Subtype.forall]
+      exact s.pre.le_trans x (s.f x) (s.f^[n] (s.f x)) this ihh
+
+--pathを使わずにiteratef_lemma_refを証明する。
+private lemma exists_iterate_eq_of_rtg
+    {α : Type} [Fintype α] [DecidableEq α]
+    {s : Setup α} {x y : s.V}
+    (h : Relation.ReflTransGen (fun a b : s.V ↦ s.f a = b) x y) :
+  ∃ n : ℕ, (s.f^[n]) x = y := by
+  induction h with
+  | refl      => exact ⟨0, rfl⟩
+  | tail h₁ h₂ ih =>
+      rcases ih with ⟨n, rfl⟩           -- 途中点 = f^[n] x
+      exact ⟨n.succ, by
+        rename_i c
+        rw [←h₂]
+        rw [Function.iterate_succ' s.f n]
+        exact rfl
+      ⟩
+
+--transitive closureを撮る前の一歩の場合の表現の違いに関する補題。Setup前提の形にした。
+--そのファイルからの参照はない。
+lemma size_one_preorder_setup_step (s: Setup α) (x y : {x : α // x ∈ s.V}) :
+  R_from_RS1 (rootedset_from_setup s) y x ↔ s.f x = y :=
+by
+  dsimp [rootedset_from_setup]
+  dsimp [rootedset_onestem_eachvertex_V]
+  dsimp [R_from_RS1]
+  apply Iff.intro
+  · intro h
+    simp [rootedset_onestem_eachvertex_V] at h
+    obtain ⟨val, property⟩ := h
+    obtain ⟨val_1, property_1⟩ := property
+    obtain ⟨val_2, property_2⟩ := property_1
+    obtain ⟨val_2, property⟩ := x
+    obtain ⟨val_3, property_1⟩ := y
+    obtain ⟨w, h⟩ := val_1
+    obtain ⟨w_1, h⟩ := h
+    subst h val_2
+    simp_all only [singleton_inj]
+    subst property_2
+    simp_all only [Subtype.coe_eta]
+  · intro h
+    have : x.val ∉ ({y.val} :Finset α):=
+    by
+      rw [←h]
+      simp
+      by_contra h_contra
+      have noteq:  ¬ ↑x = ↑(s.f x) :=
+      by
+        let sv := s.valid x
+        exact id (Ne.symm sv)
+      have :(s.f x) = x := by
+        apply Subtype.eq
+        subst h
+        simp_all only
+      rw [this] at noteq
+      contradiction
+
+    let vp := ValidPair.mk {y.val} x.val this
+    use vp
+    simp
+    constructor
+    ·
+      subst h
+      simp_all only [ValidPair.mk.injEq, singleton_inj, exists_and_right, exists_eq_right, Subtype.coe_eta, coe_mem,
+        exists_const, vp]
+    ·
+      subst h
+      simp_all only [and_self, vp]
+
+
+lemma size_one_preorder_setup_lemma2 (s : Setup α) (x y : s.V):
+  s.pre.le x y ↔
+  Relation.ReflTransGen (fun a b : s.V ↦ s.f a = b) x y := by
+  let sop := size_one_preorder_setup_lemma s x y
+  --let sop3 := Iff.symm (size_one_preorder_setup_step s x y)
+  have : (R_from_RS1 (rootedset_from_setup s)) = (fun b a : s.V ↦ s.f a = b):= by
+    --obtain ⟨val, property⟩ := x
+    --obtain ⟨val_1, property_1⟩ := y
+    ext a b
+    let sop3 := Iff.symm (size_one_preorder_setup_step s a b)
+    exact size_one_preorder_setup_step s b a
+
+  have :Relation.ReflTransGen (R_from_RS1 (rootedset_from_setup s)) y x ↔
+    Relation.ReflTransGen (fun a b : s.V ↦ s.f a = b) x y := by
+    rw [this]
+    exact Relation.reflTransGen_swap
+
+  exact Iff.trans sop this
+
+--これが証明したかった定理。
+theorem iteratef_lemma_ref
+    (s : Setup α) (x y : s.V)
+    (h : s.pre.le x y) :
+  ∃ n : ℕ, (s.f^[n]) x = y := by
+  -- `le` → 反射推移閉包
+  have h' : Relation.ReflTransGen (fun a b : s.V ↦ s.f a = b) x y :=
+    (size_one_preorder_setup_lemma2 s x y).1 h
+  -- 反射推移閉包 → 反復回数
+  exact exists_iterate_eq_of_rtg h'
+
+
+--iterationの回数と大小関係。
+--pathの議論は使っていない。
+lemma iteratef_lemma_two (s: Setup α) (x: s.V) (n1 n2: Nat) :
+  n1 < n2 → s.pre.le (s.f^[n1] x) (s.f^[n2] x) :=
+by
+  -- ここで f の n 回の反復を考えます
+  intro h
+  let n := n2 - n1
+  have : n + n1 = n2 := by
+    simp_all only [n]
+    obtain ⟨val, property⟩ := x
+    omega
+  have : s.f^[n] (s.f^[n1] x) = s.f^[n2] x := by
+    rw [←this]
+    rw [Function.iterate_add]
+    exact rfl
+  let il := iteratef_lemma s (s.f^[n1] x) n
+  rw [this] at il
+  exact il
+
+--補題:fのiterationの全体は、重複しているものがある。
+--証明：鳩の巣原理。 Fintype.exists_ne_map_eq_of_card_ltがポイント。
+--pathの議論は使っていない。
+lemma iteratef_pigeon (s: Setup α) (x: s.V)  : ∃ (n1 n2: Nat), n1 ≠ n2 ∧ (s.f^[n1] x) = s.f^[n2] x :=
+by
+  let dom := (Finset.Icc 0 (s.V.card + 1)).image (fun i => (s.f^[i] x))
+  have : s.V.card < ((Finset.Icc 0 (s.V.card + 1))).card := by
+    simp_all only [Nat.card_Icc, tsub_zero, ge_iff_le]
+    obtain ⟨val, property⟩ := x
+    linarith
+  have : Fintype.card { x // x ∈ s.V } < Fintype.card (Finset.Icc 0 (s.V.card + 1)) :=
+  by
+    simp_all only [Nat.card_Icc, tsub_zero, Fintype.card_coe, Finset.mem_Icc, zero_le, true_and]
+  have : Fintype.card { x // x ∈ s.V } < Fintype.card (Fin (#s.V + 1)) := by
+    simp_all only [Nat.card_Icc, tsub_zero, Fintype.card_coe, Finset.mem_Icc, zero_le, true_and, Fintype.card_fin,
+      lt_add_iff_pos_right, Nat.lt_one_iff, pos_of_gt]
+
+  let fe := @Fintype.exists_ne_map_eq_of_card_lt (Fin (s.V.card + 1)) s.V _ _ (λ i=> s.f^[i.val] x) this
+  obtain ⟨n1, n2, h⟩ := fe
+  use n1, n2
+  simp_all only [Nat.card_Icc, tsub_zero, Fintype.card_coe, Finset.mem_Icc, zero_le, true_and, Fintype.card_fin,
+    lt_add_iff_pos_right, Nat.lt_one_iff, pos_of_gt, ne_eq, and_true]
+  obtain ⟨val, property⟩ := x
+  obtain ⟨left, right⟩ := h
+  apply Aesop.BuiltinRules.not_intro
+  intro a
+  simp_all only
+  omega
+
+--上の定理の大小関係を整えたものを出力する定理
+lemma iteratef_pigeon_ordered (s : Setup α) (x : s.V) :
+  ∃ (n1 n2 : ℕ), n1 < n2 ∧ (s.f^[n1] x) = (s.f^[n2] x) := by
+  obtain ⟨n1, n2, hne, heq⟩ := iteratef_pigeon s x
+  by_cases h : n1 < n2
+  · exact ⟨n1, n2, h, heq⟩
+  · have h' : n2 < n1 := Nat.lt_of_le_of_ne (Nat.le_of_not_lt h) hne.symm
+    simp_all only [ne_eq, not_lt]
+    obtain ⟨val, property⟩ := x
+    apply Exists.intro
+    · apply Exists.intro
+      · apply And.intro
+        · exact h'
+        · simp_all only
+
+  --補題：何回もiterationすると、サイズが2以上の同値類に辿り着く。
+  --証明：鳩の巣の上の補題のn1とn2のノードは同じで、その次のノードは、異なるが同じ同値類に属するノードになる。
+lemma iteratef_size2 (s: Setup α) (x: s.V)  : ∃ (n : Nat), 2 ≤ (eqClass_setup s (s.f^[n] x)).card :=
+by
+  let h := iteratef_pigeon_ordered s x
+  /- hの別の分解の仕方。参考まで。
+  cases h with
+  | intro n1 h' =>
+    cases h' with
+    | intro n2 h'' =>
+      cases h'' with
+      | intro hneq heq =>
+      -- ここで n1, n2, hneq, heq が使える
+  -/
+  --obtain ⟨n1, n2, hneq, heq⟩ : ∃ n1 n2, n1 ≠ n2 ∧ s.f^[n1] x = s.f^[n2] x := h
+  obtain ⟨n1, n2, hneq, heq⟩ := h
+  let y := s.f^[n1] x
+  let z := s.f^[n1+1] x
+  have y12: y = s.f^[n2] x := by
+    simp_all only [y]
+  have fzy: z = s.f y := by
+    dsimp [y]
+    exact Function.iterate_succ_apply' s.f n1 x
+  have neqyz: y ≠ z := by
+    intro h
+    rw [fzy] at h
+    let hnot :=  s.valid y
+    rw [Eq.symm h] at hnot
+    contradiction
+  have : s.pre.le y z := by
+    exact f_and_pre s y z (id (Eq.symm fzy))
+  have : n2 > n1 + 1:= by
+    by_cases n2 = n1 + 1
+    case pos h =>
+      rw [h] at y12
+      rw [h] at hneq
+      have : y = s.f (s.f^[n1] x) :=
+      by
+        exact False.elim (neqyz y12)
+      have :y = s.f y := by
+        exact this
+      have :y ≠ s.f y := by
+        exact fun a => neqyz y12
+      contradiction
+    case neg h =>
+      simp_all only [Function.iterate_succ, Function.comp_apply, ne_eq, gt_iff_lt, y, z]
+      omega
+
+  have : s.pre.le z y := by
+    --zからyにfで行けるので、s.pre.le z yとなる。
+    let ilt := iteratef_lemma_two s x (n1+1) n2 this
+    dsimp [y,z]
+    simp_all only [Function.iterate_succ, Function.comp_apply, ne_eq, ge_iff_le, y, z]
+    rwa [← fzy]
+  have yineq: y ∈ eqClass_setup s y := by
+    simp_all only [Function.iterate_succ, Function.comp_apply, ne_eq, gt_iff_lt, y, z]
+    rw [eqClass_setup]
+    simp_all only [mem_filter, mem_attach, true_and]
+    rfl
+
+  have : z ∈ eqClass_setup s y := by
+    dsimp [eqClass_setup]
+    simp_all only [Finset.mem_filter, Finset.mem_univ, true_and]
+    constructor
+    · simp_all only [Function.iterate_succ, Function.comp_apply, ne_eq, gt_iff_lt, mem_attach, y, z]
+    ·
+      simp_all only [Function.iterate_succ, Function.comp_apply, ne_eq, gt_iff_lt, y, z]
+      obtain ⟨val, property⟩ := x
+      obtain ⟨val_1, property_1⟩ := y
+      obtain ⟨val_2, property_2⟩ := z
+      symm
+      rw [← fzy]
+      simp_all only
+      symm
+      rw [← fzy]
+      simp_all only
+      induction s
+      rename_i h_pre h_setoid po this_2
+      subst h_pre h_setoid
+      simp_all only [AntisymmRel.setoid_r]
+      constructor
+      · simp_all only
+      · simp_all only
+  have : (eqClass_setup s y).card ≥ 2 := by
+    dsimp [eqClass_setup]
+    simp_all only [Finset.card_filter, Finset.card_univ, true_and, Finset.mem_univ, Finset.mem_filter]
+    --zも(eqClass_setup s y).cardの要素で、neqyzなので、同値類の大きさは2以上。
+    have hsub : {y, z} ⊆ eqClass_setup s y := by
+      simp_all only [Function.iterate_succ, Function.comp_apply, ne_eq, gt_iff_lt, y, z]
+      obtain ⟨val, property⟩ := x
+      obtain ⟨val_1, property_1⟩ := y
+      obtain ⟨val_2, property_2⟩ := z
+      intro x hx
+      simp_all only [Finset.mem_insert, Finset.mem_singleton]
+      obtain ⟨val_3, property_3⟩ := x
+      cases hx with
+      | inl h => simp_all only
+      | inr h_1 => simp_all only
+    have hsub_card: ({y,z}:Finset s.V).card ≤ (eqClass_setup s y).card := by
+      exact Finset.card_le_card hsub
+    have :({y,z}:Finset s.V).card = 2:= by
+      simp_all only [Function.iterate_succ, Function.comp_apply, ne_eq, gt_iff_lt, Finset.mem_singleton,
+        not_false_eq_true, card_insert_of_not_mem, Finset.card_singleton, Nat.reduceAdd, y, z]
+    rw [this] at hsub_card
+    simp
+    simp_all only [Function.iterate_succ, Function.comp_apply, ne_eq, gt_iff_lt, Finset.mem_singleton,
+      not_false_eq_true, card_insert_of_not_mem, Finset.card_singleton, Nat.reduceAdd, y, z]
+    obtain ⟨val, property⟩ := x
+    obtain ⟨val_1, property_1⟩ := y
+    obtain ⟨val_2, property_2⟩ := z
+    exact hsub_card
+
+  use n1
+
+--Setup前提のs.Vの要素の極大の定義。
+--これもCommonに移動してもよい。
+def isMaximal (s: Setup α) (a : s.V) : Prop :=
+  ∀ b : s.V, s.pre.le a b → s.pre.le b a
+
+----ここから下はPathに依存している議論。
 --Preorderのstar_implies_pathExistsでも同じことを証明している。大きい方から小さい方の鎖になっているような。
 --このあたりはSetup前提ではないが、Setup前提のpath_exists_setup_reverse の証明で使っている。
 --最終的には、path_exists_setupに生かされる。
 --でも、fのiterationでないパスのアプローチは、初期のアプローチなので、全体からは浮いているかも。Setupも使ってないし。
 --パスが存在することと、fのiterationで到達できることが同値であるという命題は、iteratef_lemma_ref。
---リファクタリングするとすると、reachを最初に定義して、iterationの議論で全て行う。
---pathを完全にやめて、別ファイルにReachを使って全部書き直して、ファイル名をPreorderReachにしてもよいかも。
---o3の力で書き直すことは可能か？
+--本質的には、矢印を辿ることになるので、pathの手法とは変わらないかもしれないが、最初からSetupを使っていればもっと短くかけた。
+--でも、短く書き直すことが重要でないような気もするので、そのままでもいいかも。
 
---この補題の参照は、このページ内のみ。
+--この補題の参照は、このページ内のみ。これのsetupのiteration版がiratef_lemma_refとなっている。
+-- fも使ってないので、行き先が一つとは限らない。
+--path_exists_setupを経由してやや冗長ではあるが、順序をカバー関係に分解する必要があるので、書き直してもそれほど短くならないかも。
 lemma path_exists {α : Type} [Fintype α] (R : α → α → Prop) (x y : α) (h : Relation.ReflTransGen R x y) :
   ∃ (n : ℕ) (z : Fin (n + 1) → α), z 0 = x ∧ z n = y ∧ ∀ i : Fin n, R (z i.castSucc) (z i.succ) := by
   -- ReflTransGen の帰納法を適用
@@ -117,48 +490,8 @@ lemma path_exists {α : Type} [Fintype α] (R : α → α → Prop) (x y : α) (
         simp_all only
         omega
 
---fで直前関係になっていれば、a <= bとなること。自明かと思っていたけど、深く定義を追っていかないと証明できなかった。
---path_implies_leもsize_one_preorder_setup_step も、ファイル外のfq_lemma_rev_oneこの補題を参照。
---これはcommonに移動させてもいいかも。
-lemma f_and_pre (su: Setup α) (a b : {x // x ∈ su.V}) (sf : su.f a = b ) : su.pre.le a b := by
-  rw [su.h_pre]
-  dsimp [size_one_preorder]
-  dsimp [size_one_circuits_preorder]
-  dsimp [preorder.R_hat]
-  intro s hs hhs
-  dsimp [preorder.S_R] at hs
-  rw [Finset.mem_filter] at hs
-  dsimp [rootedset_onestem_eachvertex_V] at hs
-  simp at hs
-  dsimp [preorder.closedUnder] at hs
-  let hs2 := hs.2
-  dsimp [R_from_RS1] at hs2
-  simp at hs2
-  specialize hs2 b b.property
-  specialize hs2 a a.property
-  have : a.val ∉ ({b.val}:Finset α) := by
-    intro h
-    rw [Finset.mem_singleton] at h
-    rw [←sf] at h
-    let suv := su.valid a
-    have : a = (su.f a) := by
-      exact Subtype.eq h
-    rw [←this] at suv
-    contradiction
-  let vp := ValidPair.mk {b.val} a.val this
-  specialize hs2 vp
-  simp at hs2
-  specialize hs2 a
-  simp at hs2
-  apply hs2
-  dsimp [vp]
-  ext
-  · simp
-    rw [sf]
-  · simp
-  · dsimp [vp]
-  · dsimp [vp]
-  · exact hhs
+
+
 
 --補題 頂点aから頂点bにfのパスで辿れるときは、a <= bである。
 --外ファイルからの参照はない。
@@ -231,76 +564,6 @@ by
         Fin.succ_last, Nat.succ_eq_add_one, Subtype.forall, Nat.cast_add, Nat.cast_one, b', z', a']
     exact this
 
---transitive closureを撮る前の一歩の場合の表現の違いに関する補題。Setup前提の形にした。
---そのファイルからの参照はない。
-lemma size_one_preorder_setup_step (s: Setup α) (x y : {x : α // x ∈ s.V}) :
-  R_from_RS1 (rootedset_from_setup s) y x ↔ s.f x = y :=
-by
-  dsimp [rootedset_from_setup]
-  dsimp [rootedset_onestem_eachvertex_V]
-  dsimp [R_from_RS1]
-  apply Iff.intro
-  · intro h
-    simp [rootedset_onestem_eachvertex_V] at h
-    obtain ⟨val, property⟩ := h
-    obtain ⟨val_1, property_1⟩ := property
-    obtain ⟨val_2, property_2⟩ := property_1
-    obtain ⟨val_2, property⟩ := x
-    obtain ⟨val_3, property_1⟩ := y
-    obtain ⟨w, h⟩ := val_1
-    obtain ⟨w_1, h⟩ := h
-    subst h val_2
-    simp_all only [singleton_inj]
-    subst property_2
-    simp_all only [Subtype.coe_eta]
-  · intro h
-    have : x.val ∉ ({y.val} :Finset α):=
-    by
-      rw [←h]
-      simp
-      by_contra h_contra
-      have noteq:  ¬ ↑x = ↑(s.f x) :=
-      by
-        let sv := s.valid x
-        exact id (Ne.symm sv)
-      have :(s.f x) = x := by
-        apply Subtype.eq
-        subst h
-        simp_all only
-      rw [this] at noteq
-      contradiction
-
-    let vp := ValidPair.mk {y.val} x.val this
-    use vp
-    simp
-    constructor
-    ·
-      subst h
-      simp_all only [ValidPair.mk.injEq, singleton_inj, exists_and_right, exists_eq_right, Subtype.coe_eta, coe_mem,
-        exists_const, vp]
-    ·
-      subst h
-      simp_all only [and_self, vp]
-
---preorderは、rootedset_from_setupの繰り返しで作られている。
---そとファイルからの参照なし。
-lemma size_one_preorder_setup_lemma (s: Setup α) (x y : {x : α // x ∈ s.V}) :
-  s.pre.le x y ↔  @Relation.ReflTransGen s.V (R_from_RS1 (rootedset_from_setup s))  y x:=
-by
-  simp [rootedset_from_setup]
-  rw [s.h_pre]
-  dsimp [size_one_preorder]
-  dsimp [size_one_circuits_preorder]
-  dsimp [rootedset_onestem_eachvertex_V]
-  apply Iff.intro
-  · intro h
-    apply preorder.R_hat.to_ReflTransGen
-    exact h
-
-  · intro h
-    intro s1 hs1
-    exact preorder.ReflTransGen.to_R_hat h s1 hs1
-
 --証明できたけど、写像が後ろから前に向かっているので逆になっている。外からは使わないけど、次の補題で使っている。
 --外ファイルからの参照なし。
 lemma path_exists_setup_reverse (s: Setup α) (x y : {x : α // x ∈ s.V}) :
@@ -334,7 +597,7 @@ by
 --eqClass_size_ge_two_implies_outsideで参照されている。
 --大小関係があるときは、fの適用の繰り返してかけるというように書き直すことが可能。
 --リファクタリングのためには、reachで言明を書き換えたい。
-theorem path_exists_setup (s: Setup α) (x y : {x : α // x ∈ s.V}) :
+lemma path_exists_setup (s: Setup α) (x y : {x : α // x ∈ s.V}) :
   s.pre.le x y →
   ∃ (n : ℕ) (z : Fin (n + 1) → {x : α // x ∈ s.V}), z 0 = x ∧ z n = y ∧ ∀ i : Fin n, s.f (z i.castSucc) = (z i.succ) :=
 by
@@ -516,10 +779,11 @@ by
   subst hn
   simp_all only [Fin.coe_castSucc, Fin.val_succ, Nat.cast_add, Nat.cast_one, Fin.natCast_eq_last, z']
   use z'
-  simp_all
-  simp_all only [Fin.coe_eq_castSucc, Fin.val_zero, Nat.cast_zero, zero_add, Fin.val_last, Fin.is_le', Nat.cast_sub,
-    Fin.natCast_eq_last, sub_add_cancel, Fin.coe_castSucc, Fin.val_succ, Nat.cast_add, Nat.cast_one, implies_true,
-    and_self, z']
+  simp_all only [Fin.coe_eq_castSucc, z']
+  simp_all only [Fin.val_zero, Nat.cast_zero, zero_add, Fin.val_last, Fin.is_le', Nat.cast_sub,
+    Fin.natCast_eq_last, Fin.coe_eq_castSucc, sub_add_cancel, Fin.coe_castSucc, Fin.val_succ,
+    Nat.cast_add, Nat.cast_one, implies_true, and_self, z']
+
 
 --補題。サイズ2以上の同値類は、fの行き先が同値類の外にでない。
 --後ろで使っている。f_on_equivなどで参照されている。外からは使っていない。
@@ -718,12 +982,9 @@ by
     · simp_all only
 
 ----Setup前提の極大
---Setup前提のs.Vの要素の極大の定義。
---これもCommonに移動してもよい。
-def isMaximal (s: Setup α) (a : s.V) : Prop :=
-  ∀ b : s.V, s.pre.le a b → s.pre.le b a
 
---このファイルのメイン定理. Setup前提。サイズが2以上の同値類は、極大要素になること。
+
+--このファイルのメイン定理のひとつ. Setup前提。サイズが2以上の同値類は、極大要素になること。
 --サイズ2以上の同値類からいけるところは、同じ同値類内に必ずなる。このことは前の補題で示されている。
 --pathexsits_setupを使っているが、パスの議論をやめて、fの繰り返しで書けることに書き換えた方がいいかも。
 --この定理は、functionalSPOのeqClass_Maximalで使われる。それは、同値類の極大性の定理。
@@ -975,10 +1236,9 @@ theorem eqClass_size_ge_two_implies_inverse
 
             have :↑ii + 1 < nn + 2 := by
               subst hz1 hz0
-              simp_all only [ge_iff_le, le_add_iff_nonneg_left, zero_le, lt_add_iff_pos_left, add_pos_iff,
-                Nat.lt_one_iff, pos_of_gt, or_true, Nat.cast_add, Nat.cast_one, Fin.natCast_eq_last, Subtype.forall,
-                Fin.coe_eq_castSucc, Fin.coeSucc_eq_succ, Fin.succ_last, Nat.succ_eq_add_one, Fin.succ_zero_eq_one,
-                Subtype.coe_eta, add_lt_add_iff_right, zz', ii]
+              simp_all only [ge_iff_le, le_add_iff_nonneg_left, zero_le, lt_add_iff_pos_left,
+                add_pos_iff, Nat.lt_one_iff, pos_of_gt, or_true, Nat.cast_add, Nat.cast_one,
+                Fin.natCast_eq_last, Subtype.forall, Subtype.coe_eta, add_lt_add_iff_right, zz']
               linarith
             let fmt := Fin.val_mk this
             rw [←fmt]
@@ -1026,27 +1286,22 @@ theorem eqClass_size_ge_two_implies_inverse
                 -- 全てを組み合わせる
                 rw [h1, h3]
               subst hz1 hz0
-              simp_all only [ge_iff_le, le_add_iff_nonneg_left, zero_le, lt_add_iff_pos_left, add_pos_iff,
-                Nat.lt_one_iff, pos_of_gt, or_true, Nat.cast_add, Nat.cast_one, Fin.natCast_eq_last, Subtype.forall,
-                Fin.coe_eq_castSucc, Fin.coeSucc_eq_succ, Fin.succ_last, Nat.succ_eq_add_one, Fin.succ_zero_eq_one,
-                Subtype.coe_eta, zz', ii]
+              simp_all only [ge_iff_le, le_add_iff_nonneg_left, zero_le, lt_add_iff_pos_left,
+                add_pos_iff, Nat.lt_one_iff, pos_of_gt, or_true, Nat.cast_add, Nat.cast_one,
+                Fin.natCast_eq_last, Subtype.forall, Subtype.coe_eta, zz', ii]
             exact this
 
           · subst hz1 hz0
-            simp_all only [ge_iff_le, le_add_iff_nonneg_left, zero_le, lt_add_iff_pos_left, add_pos_iff, Nat.lt_one_iff,
-              pos_of_gt, or_true, Nat.cast_add, Nat.cast_one, Fin.natCast_eq_last, Subtype.forall, Fin.coe_eq_castSucc,
-              Fin.coeSucc_eq_succ, Fin.succ_last, Nat.succ_eq_add_one, Fin.succ_zero_eq_one, Subtype.coe_eta, zz']
-            simp [Fin.val_add]
+            simp_all only [ge_iff_le, le_add_iff_nonneg_left, zero_le, lt_add_iff_pos_left,
+              add_pos_iff, Nat.lt_one_iff, pos_of_gt, or_true, Nat.cast_add, Nat.cast_one,
+              Fin.natCast_eq_last, Subtype.forall, Subtype.coe_eta, Fin.succ_mk, zz']
             apply Fin.ext
             set ii := i.val with hhi
             have hii: ii + 2 < nn + 2 := by
               dsimp [ii]
               simp_all only [Subtype.coe_eta, add_lt_add_iff_right, Fin.is_lt, zz']
             have hiii:ii < nn + 2:= by
-              simp_all only [ge_iff_le, le_add_iff_nonneg_left, zero_le, lt_add_iff_pos_left, add_pos_iff,
-                Nat.lt_one_iff, pos_of_gt, or_true, Nat.cast_add, Nat.cast_one, Fin.natCast_eq_last, Subtype.forall,
-                Fin.coe_eq_castSucc, Fin.coeSucc_eq_succ, Fin.succ_last, Nat.succ_eq_add_one, Fin.succ_zero_eq_one,
-                Subtype.coe_eta, zz', ii]
+              simp_all only [Subtype.coe_eta, add_lt_add_iff_right, Fin.is_lt, ii, zz']
               linarith
             have hiiii:ii + 1 < nn + 1 := by
               linarith
@@ -1077,33 +1332,11 @@ theorem eqClass_size_ge_two_implies_inverse
 
     exact s.pre.le_trans y (s.f x) x ihht slex1
 
--------ここからfの繰り返しに関する部分------
 
---iterationは、functionalSPOでは、setup_spo前提だがreachと書かれていて、一部は利用されていて、一部は重複ている可能性がある。
---iterationで辿り着くものには、大小関係がある。
-
---証明には f_and_preがけりようしている。
---外からは参照されてないかも。iteratef_lemma_twoから参照されている。
-lemma iteratef_lemma (s: Setup α) (x : s.V):
-  ∀ n, s.pre.le x (s.f^[n] x) := by
-  intro n
-  induction n generalizing x
-  case zero =>
-      simp_all only [Function.iterate_zero, id_eq, le_refl]
-
-  case succ n ih =>
-      rw [Function.iterate_succ]
-      simp
-      have ihh:s.pre.le (s.f x) (s.f^[n] (s.f x)) := by
-        simp_all only [Subtype.forall]
-      have : s.pre.le (x) (s.f x) := by
-        apply f_and_pre
-        simp_all only [Subtype.forall]
-      exact s.pre.le_trans x (s.f x) (s.f^[n] (s.f x)) this ihh
-
---大小関係があるとiterationで辿り着く。
---この補題は、path_exists_setupを利用。利用しなくても直接帰納法で示せそう。
-lemma iteratef_lemma_ref (s: Setup α) (x y: s.V) (h: s.pre.le x y):
+--iteratef_lemma_refのpathを使った証明。
+--大小関係があるとiterationで辿り着く。reachを使って書き直すことも可能。
+--最初に証明したiteratef_lemma_refの言明。この補題は、path_exists_setupを利用。のちに上のように書き直す。
+lemma iteratef_lemma_ref_path (s: Setup α) (x y: s.V) (h: s.pre.le x y):
   ∃ n:Nat, (s.f^[n] x)=y := by
   let pes := path_exists_setup s x y h
   obtain ⟨n, h⟩ := pes
@@ -1132,186 +1365,9 @@ lemma iteratef_lemma_ref (s: Setup α) (x y: s.V) (h: s.pre.le x y):
   simp
   congr
 
---iterationの回数と大小関係。
---pathの議論は使っていない。
-lemma iteratef_lemma_two (s: Setup α) (x: s.V) (n1 n2: Nat) :
-  n1 < n2 → s.pre.le (s.f^[n1] x) (s.f^[n2] x) :=
-by
-  -- ここで f の n 回の反復を考えます
-  intro h
-  let n := n2 - n1
-  have : n + n1 = n2 := by
-    simp_all only [n]
-    obtain ⟨val, property⟩ := x
-    omega
-  have : s.f^[n] (s.f^[n1] x) = s.f^[n2] x := by
-    rw [←this]
-    rw [Function.iterate_add]
-    exact rfl
-  let il := iteratef_lemma s (s.f^[n1] x) n
-  rw [this] at il
-  exact il
-
---補題:fのiterationの全体は、重複しているものがある。
---証明：鳩の巣原理。
---pathの議論は使っていない。
-lemma iteratef_pegion (s: Setup α) (x: s.V)  : ∃ (n1 n2: Nat), n1 ≠ n2 ∧ (s.f^[n1] x) = s.f^[n2] x :=
-by
-  let dom := (Finset.Icc 0 (s.V.card + 1)).image (fun i => (s.f^[i] x))
-  have : s.V.card < ((Finset.Icc 0 (s.V.card + 1))).card := by
-    simp_all only [Nat.card_Icc, tsub_zero, ge_iff_le]
-    obtain ⟨val, property⟩ := x
-    linarith
-  have : Fintype.card { x // x ∈ s.V } < Fintype.card (Finset.Icc 0 (s.V.card + 1)) :=
-  by
-    simp_all only [Nat.card_Icc, tsub_zero, Fintype.card_coe, Finset.mem_Icc, zero_le, true_and]
-  have : Fintype.card { x // x ∈ s.V } < Fintype.card (Fin (#s.V + 1)) := by
-    simp_all only [Nat.card_Icc, tsub_zero, Fintype.card_coe, Finset.mem_Icc, zero_le, true_and, Fintype.card_fin,
-      lt_add_iff_pos_right, Nat.lt_one_iff, pos_of_gt]
-
-  let fe := @Fintype.exists_ne_map_eq_of_card_lt (Fin (s.V.card + 1)) s.V _ _ (λ i=> s.f^[i.val] x) this
-  obtain ⟨n1, n2, h⟩ := fe
-  use n1, n2
-  simp_all only [Nat.card_Icc, tsub_zero, Fintype.card_coe, Finset.mem_Icc, zero_le, true_and, Fintype.card_fin,
-    lt_add_iff_pos_right, Nat.lt_one_iff, pos_of_gt, ne_eq, and_true]
-  obtain ⟨val, property⟩ := x
-  obtain ⟨left, right⟩ := h
-  apply Aesop.BuiltinRules.not_intro
-  intro a
-  simp_all only
-  omega
-
---上の定理の大小関係を整えたものを出力する定理
-lemma iteratef_pegion_ordered (s : Setup α) (x : s.V) :
-  ∃ (n1 n2 : ℕ), n1 < n2 ∧ (s.f^[n1] x) = (s.f^[n2] x) := by
-  obtain ⟨n1, n2, hne, heq⟩ := iteratef_pegion s x
-  by_cases h : n1 < n2
-  · exact ⟨n1, n2, h, heq⟩
-  · have h' : n2 < n1 := Nat.lt_of_le_of_ne (Nat.le_of_not_lt h) hne.symm
-    simp_all only [ne_eq, not_lt]
-    obtain ⟨val, property⟩ := x
-    apply Exists.intro
-    · apply Exists.intro
-      · apply And.intro
-        · exact h'
-        · simp_all only
-
-  --補題：何回もiterationすると、サイズが2以上の同値類に辿り着く。
-  --証明：鳩の巣の上の補題のn1とn2のノードは同じで、その次のノードは、異なるが同じ同値類に属するノードになる。
-lemma iteratef_size2 (s: Setup α) (x: s.V)  : ∃ (n : Nat), 2 ≤ (eqClass_setup s (s.f^[n] x)).card :=
-by
-  let h := iteratef_pegion_ordered s x
-  /- hの別の分解の仕方。参考まで。
-  cases h with
-  | intro n1 h' =>
-    cases h' with
-    | intro n2 h'' =>
-      cases h'' with
-      | intro hneq heq =>
-      -- ここで n1, n2, hneq, heq が使える
-  -/
-  --obtain ⟨n1, n2, hneq, heq⟩ : ∃ n1 n2, n1 ≠ n2 ∧ s.f^[n1] x = s.f^[n2] x := h
-  obtain ⟨n1, n2, hneq, heq⟩ := h
-  let y := s.f^[n1] x
-  let z := s.f^[n1+1] x
-  have y12: y = s.f^[n2] x := by
-    simp_all only [y]
-  have fzy: z = s.f y := by
-    dsimp [y]
-    exact Function.iterate_succ_apply' s.f n1 x
-  have neqyz: y ≠ z := by
-    intro h
-    rw [fzy] at h
-    let hnot :=  s.valid y
-    rw [Eq.symm h] at hnot
-    contradiction
-  have : s.pre.le y z := by
-    exact f_and_pre s y z (id (Eq.symm fzy))
-  have : n2 > n1 + 1:= by
-    by_cases n2 = n1 + 1
-    case pos h =>
-      rw [h] at y12
-      rw [h] at hneq
-      have : y = s.f (s.f^[n1] x) :=
-      by
-        exact False.elim (neqyz y12)
-      have :y = s.f y := by
-        exact this
-      have :y ≠ s.f y := by
-        exact fun a => neqyz y12
-      contradiction
-    case neg h =>
-      simp_all only [Function.iterate_succ, Function.comp_apply, ne_eq, gt_iff_lt, y, z]
-      omega
-
-  have : s.pre.le z y := by
-    --zからyにfで行けるので、s.pre.le z yとなる。
-    let ilt := iteratef_lemma_two s x (n1+1) n2 this
-    dsimp [y,z]
-    simp_all only [Function.iterate_succ, Function.comp_apply, ne_eq, ge_iff_le, y, z]
-    rwa [← fzy]
-  have yineq: y ∈ eqClass_setup s y := by
-    simp_all only [Function.iterate_succ, Function.comp_apply, ne_eq, gt_iff_lt, y, z]
-    rw [eqClass_setup]
-    simp_all only [mem_filter, mem_attach, true_and]
-    rfl
-
-  have : z ∈ eqClass_setup s y := by
-    dsimp [eqClass_setup]
-    simp_all only [Finset.mem_filter, Finset.mem_univ, true_and]
-    constructor
-    · simp_all only [Function.iterate_succ, Function.comp_apply, ne_eq, gt_iff_lt, mem_attach, y, z]
-    ·
-      simp_all only [Function.iterate_succ, Function.comp_apply, ne_eq, gt_iff_lt, y, z]
-      obtain ⟨val, property⟩ := x
-      obtain ⟨val_1, property_1⟩ := y
-      obtain ⟨val_2, property_2⟩ := z
-      symm
-      rw [← fzy]
-      simp_all only
-      symm
-      rw [← fzy]
-      simp_all only
-      induction s
-      rename_i h_pre h_setoid po this_2
-      subst h_pre h_setoid
-      simp_all only [AntisymmRel.setoid_r]
-      constructor
-      · simp_all only
-      · simp_all only
-  have : (eqClass_setup s y).card ≥ 2 := by
-    dsimp [eqClass_setup]
-    simp_all only [Finset.card_filter, Finset.card_univ, true_and, Finset.mem_univ, Finset.mem_filter]
-    --zも(eqClass_setup s y).cardの要素で、neqyzなので、同値類の大きさは2以上。
-    have hsub : {y, z} ⊆ eqClass_setup s y := by
-      simp_all only [Function.iterate_succ, Function.comp_apply, ne_eq, gt_iff_lt, y, z]
-      obtain ⟨val, property⟩ := x
-      obtain ⟨val_1, property_1⟩ := y
-      obtain ⟨val_2, property_2⟩ := z
-      intro x hx
-      simp_all only [Finset.mem_insert, Finset.mem_singleton]
-      obtain ⟨val_3, property_3⟩ := x
-      cases hx with
-      | inl h => simp_all only
-      | inr h_1 => simp_all only
-    have hsub_card: ({y,z}:Finset s.V).card ≤ (eqClass_setup s y).card := by
-      exact Finset.card_le_card hsub
-    have :({y,z}:Finset s.V).card = 2:= by
-      simp_all only [Function.iterate_succ, Function.comp_apply, ne_eq, gt_iff_lt, Finset.mem_singleton,
-        not_false_eq_true, card_insert_of_not_mem, Finset.card_singleton, Nat.reduceAdd, y, z]
-    rw [this] at hsub_card
-    simp
-    simp_all only [Function.iterate_succ, Function.comp_apply, ne_eq, gt_iff_lt, Finset.mem_singleton,
-      not_false_eq_true, card_insert_of_not_mem, Finset.card_singleton, Nat.reduceAdd, y, z]
-    obtain ⟨val, property⟩ := x
-    obtain ⟨val_1, property_1⟩ := y
-    obtain ⟨val_2, property_2⟩ := z
-    exact hsub_card
-
-  use n1
 
 --サイズが2以上の同値類は、極大である。
-
+--eqClass_size_ge_two_implies_inverseがpathの議論に依存。
 lemma iteratef_size2m (s: Setup α) (x: s.V)  :
   ∀ (n : Nat), 2 ≤ (eqClass_setup s (s.f^[n] x)).card →
   isMaximal s (s.f^[n] x) :=
@@ -1321,6 +1377,7 @@ by
   exact fun b a => eqClass_size_ge_two_implies_inverse s (s.f^[n] x) h b a
 
 --ノードの上にサイズ2以上が2つあると、それらは一致する。証明の中で極大の定義を使っている。
+--でもこれ自体をどこからも参照してない。
 lemma iteratef_size2_eq (s: Setup α) (x: s.V)  :
  ∀ (n1 n2 : Nat), 2 ≤ (eqClass_setup s (s.f^[n1] x)).card ∧ 2 ≤ (eqClass_setup s (s.f^[n2] x)).card
   → eqClass_setup s (s.f^[n1] x) = eqClass_setup s (s.f^[n2] x) :=
@@ -1369,9 +1426,9 @@ by
 
 
 -------------------------------------------------------------
---同じ同値類のfの行き先は、同値になることを示す必要がある。
---順序は関係なさそうなので、Setup2からSetupに変更した。場所も移動した。でもfには関係する。
-lemma f_on_equiv
+--同じ同値類のfの行き先は、同値になることを示す必要がある。あとで使っている。
+--eqClass_size_ge_two_implies_outsideに依存している。
+theorem f_on_equiv
   (s: Setup α) (x y: s.V) (h: s.setoid.r x y) :
   s.setoid.r (s.f x) (s.f y) :=
 by

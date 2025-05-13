@@ -269,7 +269,7 @@ by
   intro x hx
   simp_all only [mem_subtype, mem_attach]
 
--- 両向き。
+-- 両向き。size_one_preorder_setup_lemmaと同じか。
 lemma le_eq_R (s : Setup α) (x y : {x // x ∈ s.V}) :
   s.pre.le y x ↔ preorder.R_hat (R_from_RS1 (rootedset_from_setup s)) x y :=
 by
