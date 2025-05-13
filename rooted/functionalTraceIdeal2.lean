@@ -192,9 +192,11 @@ by
 --結果的につかってないみたい。
 theorem trace_ideal_nds_increase2 (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
 )).card ≥ 2) :
-(spo_closuresystem s.toSetup_spo).normalized_degree_sum ≤ (spo_closuresystem (setup_trace_spo2 s x hx).toSetup_spo).normalized_degree_sum :=
+(spo_closuresystem s.toSetup_spo).normalized_degree_sum ≤ (spo_closuresystem (setup_trace s.toSetup_spo x hx)).normalized_degree_sum :=
 by
-  rw [trace_ideal_nds]
+  let tin := trace_ideal_nds s.toSetup_spo x hx
+  simp
+  rw [tin]
   exact trace_ideal_nds_increase s x hx
 
 --------------------------------------------------------
