@@ -687,8 +687,8 @@ Nonempty (Quotient (proj_setoid s)) := by
 
 /-comp_poとexcl_poのidealの直和がもとのidealになることを示すための定義
 -- ideal 系
-def IdealSys (s : Setup_po α) := partialorder_ideal_system s
-def IdealComp (s : Setup_po α) (q) := partialorder_ideal_system (comp_po s q)
+def IdealSys (s : Setup_po α) := po_closuresystem s
+def IdealComp (s : Setup_po α) (q) := po_closuresystem (comp_po s q)
 
 -- === 2. ２成分だけ取り出して DirectProduct =============================
 

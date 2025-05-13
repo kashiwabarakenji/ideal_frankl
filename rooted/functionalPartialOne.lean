@@ -18,12 +18,6 @@ open Finset Set Classical SetupPoComponent
 set_option maxHeartbeats 2000000
 
 variable {α : Type} [Fintype α] [DecidableEq α]
-/- テスト。消す。
-variable {α : Type _} [Fintype α] [DecidableEq α]
-variable (s : Setup_po α) (conn : numClasses (proj_setoid s) = 1)
-
-lemma test_conn : conn = conn := by rfl
--/
 
 --連結成分がひとつであるときに、極大要素が最大要素になり、次数が1になることを証明したい。
 --その要素をtraceしても、ndsが上がらないことを示したい。
@@ -111,7 +105,7 @@ lemma component_one
     (s : Setup_po α)
     (h1 : numClasses (proj_setoid s) = 1) :
     ∀ ss : Finset α, ∀ x : s.V,
-      (partialorder_ideal_system s).sets ss →
+      (po_closuresystem s).sets ss →
       x.val ∈ ss →
       po_maximal s x →
       ss = s.V := by
@@ -150,7 +144,7 @@ lemma component_one
 --連結成分の数の仮定は必要ない。
 lemma hasgroundminusone
   (s : Setup_po α) (x : s.V) (mx :po_maximal s x):
-    (partialorder_ideal_system s).sets (s.V.erase x) :=
+    (po_closuresystem s).sets (s.V.erase x) :=
 by
 
   refine And.intro ?subset ?ideal
@@ -219,8 +213,8 @@ private lemma not_mem_of_subset_erase
   exact (Finset.mem_erase.1 this).1 rfl
 
 lemma trace_sets_iff (s  : Setup_po α) (conn  : numClasses (proj_setoid s) = 1)  (x  : s.V) (mx : po_maximal s x) (nontriv : s.V.card ≥ 2)(ss : Finset α) :
-    (partialorder_ideal_system (po_trace s x mx nontriv)).sets ss
-    ↔ (partialorder_ideal_system s).sets ss ∧ ss ≠ s.V :=
+    (po_closuresystem (po_trace s x mx nontriv)).sets ss
+    ↔ (po_closuresystem s).sets ss ∧ ss ≠ s.V :=
 by
   let t := po_trace s x mx nontriv
   have tV : t.V = s.V.erase x := by
@@ -230,12 +224,12 @@ by
   -- → 方向
   ------------------------------------------------------------------
   have forward :
-      (partialorder_ideal_system t).sets ss →
-        (partialorder_ideal_system s).sets ss ∧ ss ≠ s.V := by
+      (po_closuresystem t).sets ss →
+        (po_closuresystem s).sets ss ∧ ss ≠ s.V := by
     intro h_t
     -- 1. ground 包含
     have h_sub_erase : ss ⊆ s.V.erase x := by
-      have : ss ⊆ t.V := (partialorder_ideal_system t).inc_ground ss h_t
+      have : ss ⊆ t.V := (po_closuresystem t).inc_ground ss h_t
       simpa [tV] using this
     have h_sub_V : ss ⊆ s.V := by
       exact subset_trans h_sub_erase (Finset.erase_subset _ _)
@@ -308,8 +302,8 @@ by
   -- ← 方向
   ------------------------------------------------------------------
   have backward :
-      (partialorder_ideal_system s).sets ss ∧ ss ≠ s.V →
-        (partialorder_ideal_system t).sets ss := by
+      (po_closuresystem s).sets ss ∧ ss ≠ s.V →
+        (po_closuresystem t).sets ss := by
     rintro ⟨h_s, h_ne⟩
     -- `x ∉ ss` （さもなくば component_one に反する）
     have hx_not : (x : α) ∉ ss := by
@@ -360,6 +354,7 @@ by
   ------------------------------------------------------------------
   exact ⟨forward, backward⟩
 
+--sectionは、下のvariableの設定のために使っているのかも。
 section numberof
 
 variable {α : Type _} [Fintype α] [DecidableEq α]
@@ -383,9 +378,9 @@ def ideals (F : SetFamily α) [DecidablePred F.sets] : Finset (Finset α) :=
 -- 1. 名前を短く
 ------------------------------------------------------------------------
 
-abbrev Fₛ  : ClosureSystem α := partialorder_ideal_system s
+abbrev Fₛ  : ClosureSystem α := po_closuresystem s
 abbrev t   : Setup_po α      := (po_trace s x mx nontriv)
-abbrev Fₜ  : ClosureSystem α := partialorder_ideal_system (po_trace s x mx nontriv)
+abbrev Fₜ  : ClosureSystem α := po_closuresystem (po_trace s x mx nontriv)
 
 noncomputable
 instance : DecidablePred (Fₛ s).sets := Classical.decPred _
@@ -398,8 +393,8 @@ instance : DecidablePred (Fₜ s x mx nontriv).sets := Classical.decPred _
 -- 2. `Fₛ.ideals` と `Fₜ.ideals` の対応
 ------------------------------------------------------------------------
 private lemma ideals_eq_erase (s : Setup_po α) (conn  : numClasses (proj_setoid s) = 1)(x  : s.V) (mx : po_maximal s x) (nontriv : s.V.card ≥ 2):
-    (ideals (partialorder_ideal_system (po_trace s x mx nontriv)).toSetFamily) =
-      (ideals (partialorder_ideal_system s).toSetFamily).erase (s.V) := by
+    (ideals (po_closuresystem (po_trace s x mx nontriv)).toSetFamily) =
+      (ideals (po_closuresystem s).toSetFamily).erase (s.V) := by
   -- 記号を開く
   dsimp [ideals]
   -- ground 同定
@@ -407,10 +402,10 @@ private lemma ideals_eq_erase (s : Setup_po α) (conn  : numClasses (proj_setoid
     simp [po_trace]
   -- convenience abbreviations
   set Iₛ : Finset (Finset α) :=
-      (s.V.powerset).filter (partialorder_ideal_system s).sets with hIₛ
+      (s.V.powerset).filter (po_closuresystem s).sets with hIₛ
   set Iₜ : Finset (Finset α) :=
       ((s.V.erase x).powerset).filter
-        (partialorder_ideal_system (po_trace s x mx nontriv)).sets with hIₜ
+        (po_closuresystem (po_trace s x mx nontriv)).sets with hIₜ
   -- 2 ⊆ 関係：`Iₜ` は `Iₛ` から ground を除いたもの
   have sub :
       Iₜ ⊆ Iₛ.erase (s.V) := by
@@ -488,18 +483,18 @@ private lemma ideals_eq_erase (s : Setup_po α) (conn  : numClasses (proj_setoid
 -- 3. カードを比較して「ちょうど 1 減る」
 ------------------------------------------------------------------------
 lemma number_of_hyperedges_trace (s : Setup_po α) (conn  : numClasses (proj_setoid s) = 1)(x  : s.V) (mx : po_maximal s x) (nontriv : s.V.card ≥ 2):
- (partialorder_ideal_system s).toSetFamily.number_of_hyperedges =
-    (partialorder_ideal_system (po_trace s x mx nontriv)).toSetFamily.number_of_hyperedges +1 :=
+ (po_closuresystem s).toSetFamily.number_of_hyperedges =
+    (po_closuresystem (po_trace s x mx nontriv)).toSetFamily.number_of_hyperedges +1 :=
   -- 展開
 by
   dsimp [SetFamily.number_of_hyperedges]
-  --dsimp [partialorder_ideal_system]
+  --dsimp [po_closuresystem]
   -- `card` の計算：erase で 1 つ減る
 
   -- `Finset.card_erase_add_one` : |erase| + 1 = |S|
   have h_card :
-      ((ideals (partialorder_ideal_system s).toSetFamily).erase (s.V)).card + 1 =
-        (ideals (partialorder_ideal_system s).toSetFamily).card := by
+      ((ideals (po_closuresystem s).toSetFamily).erase (s.V)).card + 1 =
+        (ideals (po_closuresystem s).toSetFamily).card := by
     apply Finset.card_erase_add_one
     -- ground イデアルは確かにリストに入っている
     have h_ground_sets : (Fₛ s).sets s.V :=
@@ -515,14 +510,14 @@ by
     obtain ⟨val, property⟩ := x
     rfl
   -- Int に直してゴール完了
-  have : Int.ofNat ((ideals (partialorder_ideal_system s).toSetFamily).card)
-        = Int.ofNat ((ideals (partialorder_ideal_system s).toSetFamily).erase (s.V)).card + 1 := by
+  have : Int.ofNat ((ideals (po_closuresystem s).toSetFamily).card)
+        = Int.ofNat ((ideals (po_closuresystem s).toSetFamily).erase (s.V)).card + 1 := by
     simpa [Int.ofNat_add, Int.ofNat_one] using congrArg Int.ofNat h_card.symm
   let iee := ideals_eq_erase s conn x mx nontriv
   symm
   ring_nf
 
-  have goal₁ : 1 +  Int.ofNat #((ideals (partialorder_ideal_system s).toSetFamily).erase s.V) = Int.ofNat #(ideals (partialorder_ideal_system s).toSetFamily) := by
+  have goal₁ : 1 +  Int.ofNat #((ideals (po_closuresystem s).toSetFamily).erase s.V) = Int.ofNat #(ideals (po_closuresystem s).toSetFamily) := by
     rw [add_comm]
     simp_all only [ge_iff_le, Int.ofNat_eq_coe]
 
@@ -536,12 +531,12 @@ lemma total_size_of_hyperedge_trace
   (conn  : numClasses (proj_setoid s) = 1)
   (x : s.V) (mx : po_maximal s x)
   (nontriv : s.V.card ≥ 2) :
-  (partialorder_ideal_system s).toSetFamily.total_size_of_hyperedges
-    = (partialorder_ideal_system (po_trace s x mx nontriv)).toSetFamily.total_size_of_hyperedges
+  (po_closuresystem s).toSetFamily.total_size_of_hyperedges
+    = (po_closuresystem (po_trace s x mx nontriv)).toSetFamily.total_size_of_hyperedges
       + s.V.card := by
   -- 1) 定義を展開し、`ideals` を導入
   dsimp [SetFamily.total_size_of_hyperedges, ideals]
-  let I := ideals (partialorder_ideal_system s).toSetFamily
+  let I := ideals (po_closuresystem s).toSetFamily
 
   -- 2) ground (= s.V) は必ず I に含まれるので erase 後に足し戻す
   have hG : s.V ∈ I := by
@@ -556,7 +551,7 @@ lemma total_size_of_hyperedge_trace
     simp_all only [mem_filter, Finset.mem_powerset]
     apply And.intro
     · rfl
-    · simp only [partialorder_ideal_system, conn]
+    · simp only [po_closuresystem, conn]
       simp_all only [subset_refl, coe_mem, implies_true, imp_self, and_self]
 
   -- 3) sum_erase_add で (I.erase s.V).sum + s.V.card = I.sum
@@ -574,7 +569,7 @@ lemma total_size_of_hyperedge_trace
   · exact
       Eq.symm
         (Nat.cast_sum
-          (filter (partialorder_ideal_system s).sets (partialorder_ideal_system s).ground.powerset)
+          (filter (po_closuresystem s).sets (po_closuresystem s).ground.powerset)
           card)
   · norm_cast
     simp
@@ -587,8 +582,8 @@ lemma total_size_of_hyperedge_trace2
   (conn  : numClasses (proj_setoid s) = 1)
   (x : s.V) (mx : po_maximal s x)
   (nontriv : s.V.card ≥ 2) :
-  (partialorder_ideal_system s).toSetFamily.total_size_of_hyperedges
-    = (partialorder_ideal_system (po_trace s x mx nontriv)).toSetFamily.total_size_of_hyperedges
+  (po_closuresystem s).toSetFamily.total_size_of_hyperedges
+    = (po_closuresystem (po_trace s x mx nontriv)).toSetFamily.total_size_of_hyperedges
       + s.V.card := by
   -- 1) 定義を展開
   dsimp [SetFamily.total_size_of_hyperedges]
@@ -596,11 +591,11 @@ lemma total_size_of_hyperedge_trace2
   -- 2) sum_erase_add: erase s.V で消えた部分に s.V.card を足すと元に戻る
 
   have h_sum :
-      ((ideals (partialorder_ideal_system s).toSetFamily).erase s.V).sum Finset.card + s.V.card
-        = (ideals (partialorder_ideal_system s).toSetFamily).sum Finset.card := by
+      ((ideals (po_closuresystem s).toSetFamily).erase s.V).sum Finset.card + s.V.card
+        = (ideals (po_closuresystem s).toSetFamily).sum Finset.card := by
     apply Finset.sum_erase_add
     -- ground (= s.V) は必ず ideals に含まれる
-    have hG : s.V ∈ ideals (partialorder_ideal_system s).toSetFamily := by
+    have hG : s.V ∈ ideals (po_closuresystem s).toSetFamily := by
       dsimp [ideals, Fₛ]
       -- s.V ∈ powerset かつ s.V.sets は has_ground
       have hp : s.V ∈ s.V.powerset :=
@@ -612,14 +607,14 @@ lemma total_size_of_hyperedge_trace2
       obtain ⟨val, property⟩ := x
       apply And.intro
       · rfl
-      · unfold partialorder_ideal_system
+      · unfold po_closuresystem
         simp_all only [subset_refl, coe_mem, implies_true, imp_self, and_self]
     simp [hG]
 
   -- 3) Nat → Int に持ち上げ
   have h_int :
-      Int.ofNat (((ideals (partialorder_ideal_system s).toSetFamily).erase s.V).sum Finset.card + s.V.card)
-        = Int.ofNat ((ideals (partialorder_ideal_system s).toSetFamily).sum Finset.card) := by
+      Int.ofNat (((ideals (po_closuresystem s).toSetFamily).erase s.V).sum Finset.card + s.V.card)
+        = Int.ofNat ((ideals (po_closuresystem s).toSetFamily).sum Finset.card) := by
     simp [Int.ofNat_add]
     let cio := congrArg Int.ofNat (h_sum.symm)
     simp_all only [ge_iff_le]
@@ -633,24 +628,24 @@ lemma total_size_of_hyperedge_trace2
   -- Int.ofNat (((ideals t)).sum card) + s.V.card
   -- となるように書き換える
   have h_sum' :
-       ((ideals (partialorder_ideal_system (po_trace s x mx nontriv)).toSetFamily).sum Finset.card)
+       ((ideals (po_closuresystem (po_trace s x mx nontriv)).toSetFamily).sum Finset.card)
         + s.V.card
-        = ((ideals (partialorder_ideal_system s).toSetFamily).sum Finset.card) := by
+        = ((ideals (po_closuresystem s).toSetFamily).sum Finset.card) := by
     -- h_int は erase 側＋足し戻しで元に戻る等式
     symm
     exact
       Eq.symm
         (Mathlib.Tactic.Abel.subst_into_add
-          ((ideals (partialorder_ideal_system (po_trace s x mx nontriv)).toSetFamily).sum card)
-          (#s.V) (((ideals (partialorder_ideal_system s).toSetFamily).erase s.V).sum card) (#s.V)
-          ((ideals (partialorder_ideal_system s).toSetFamily).sum card)
+          ((ideals (po_closuresystem (po_trace s x mx nontriv)).toSetFamily).sum card)
+          (#s.V) (((ideals (po_closuresystem s).toSetFamily).erase s.V).sum card) (#s.V)
+          ((ideals (po_closuresystem s).toSetFamily).sum card)
           (congrFun (congrArg Finset.sum (iee )) card) rfl h_sum)
   -- よくわからないけど証明できた。
 
   have goal₁ :
-      Int.ofNat ((ideals (partialorder_ideal_system (po_trace s x mx nontriv)).toSetFamily).sum Finset.card)
+      Int.ofNat ((ideals (po_closuresystem (po_trace s x mx nontriv)).toSetFamily).sum Finset.card)
         + s.V.card
-        = Int.ofNat ((ideals (partialorder_ideal_system s).toSetFamily).sum Finset.card) := by
+        = Int.ofNat ((ideals (po_closuresystem s).toSetFamily).sum Finset.card) := by
     -- h_int は erase 側＋足し戻しで元に戻る等式
     -- dsimp [ideals] で `ideals t = (ideals s).erase s.V` を適用できる
     symm
@@ -668,21 +663,21 @@ lemma normalized_degree_sum_trace
   (conn  : numClasses (proj_setoid s) = 1)
   (x : s.V) (mx : po_maximal s x)
   (nontriv : s.V.card ≥ 2) :
-  (partialorder_ideal_system s).toSetFamily.normalized_degree_sum
-= (partialorder_ideal_system (po_trace s x mx nontriv)).toSetFamily.normalized_degree_sum
-  + ((Int.ofNat s.V.card) - (partialorder_ideal_system (po_trace s x mx nontriv)).number_of_hyperedges)
+  (po_closuresystem s).toSetFamily.normalized_degree_sum
+= (po_closuresystem (po_trace s x mx nontriv)).toSetFamily.normalized_degree_sum
+  + ((Int.ofNat s.V.card) - (po_closuresystem (po_trace s x mx nontriv)).number_of_hyperedges)
    :=
 by
   -- 展開
   dsimp [SetFamily.normalized_degree_sum]
   -- 全体集合は必ずイデアル集合に含まれる
-  have hG : s.V ∈ ideals (partialorder_ideal_system s).toSetFamily := by
+  have hG : s.V ∈ ideals (po_closuresystem s).toSetFamily := by
     dsimp [ideals]
     have hp : s.V ∈ s.V.powerset := by
       apply Finset.mem_powerset.mpr
       exact fun ⦃a⦄ a => a
     simp [ideals]
-    let fmf := Finset.mem_filter.mpr ⟨hp, (partialorder_ideal_system s).has_ground⟩
+    let fmf := Finset.mem_filter.mpr ⟨hp, (po_closuresystem s).has_ground⟩
     simp_all only [ge_iff_le]
     obtain ⟨val, property⟩ := x
     apply And.intro
@@ -690,16 +685,16 @@ by
     · rw [mem_filter] at fmf
       simp_all only [Finset.mem_powerset, subset_refl, true_and]
   -- erase で消した分を足し戻す
-  have : #(partialorder_ideal_system (po_trace s x mx nontriv)).ground + 1=
-      #(partialorder_ideal_system s).ground := by
-    dsimp [partialorder_ideal_system]
+  have : #(po_closuresystem (po_trace s x mx nontriv)).ground + 1=
+      #(po_closuresystem s).ground := by
+    dsimp [po_closuresystem]
     dsimp [po_trace]
     simp_all only [ge_iff_le, coe_mem, card_erase_of_mem]
     obtain ⟨val, property⟩ := x
     omega
   rw [←this]
   norm_cast
-  have hground:#(partialorder_ideal_system (po_trace s x mx nontriv)).ground + 1 = s.V.card :=
+  have hground:#(po_closuresystem (po_trace s x mx nontriv)).ground + 1 = s.V.card :=
   by
     simp_all only
     obtain ⟨val, property⟩ := x
@@ -713,8 +708,8 @@ by
   rw [tsht, nht]
   ring_nf
 
-  set pn := (partialorder_ideal_system (po_trace s x mx nontriv)).number_of_hyperedges with hpn
-  set pg := ((partialorder_ideal_system (po_trace s x mx nontriv)).ground.card : ℤ) with hpg
+  set pn := (po_closuresystem (po_trace s x mx nontriv)).number_of_hyperedges with hpn
+  set pg := ((po_closuresystem (po_trace s x mx nontriv)).ground.card : ℤ) with hpg
   rw [←hground]
   suffices h_sub : (pg + 1) * 2 + (-(pn * (pg + 1)) - (pg + 1)) = (-pn - pn * pg) + (pg + 1) from
   by
@@ -749,7 +744,7 @@ lemma normalized_degree_sum_lem
   --(conn  : numClasses (proj_setoid s) = 1)
   (x : s.V) (mx : po_maximal s x)
   (nontriv : s.V.card ≥ 2):
-(Int.ofNat s.V.card) ≤ (partialorder_ideal_system (po_trace s x mx nontriv)).number_of_hyperedges :=
+(Int.ofNat s.V.card) ≤ (po_closuresystem (po_trace s x mx nontriv)).number_of_hyperedges :=
 by
   have :#(po_trace s x mx nontriv).V + 1 = Int.ofNat #s.V := by
     dsimp [po_trace]
@@ -764,7 +759,7 @@ by
 
   let iil2 :=isIdeal_lem2 (po_trace s x mx nontriv)
 
-  have :(filter (fun s_1 => (partialorder_ideal_system (po_trace s x mx nontriv)).sets s_1)) (po_trace s x mx nontriv).V.powerset =
+  have :(filter (fun s_1 => (po_closuresystem (po_trace s x mx nontriv)).sets s_1)) (po_trace s x mx nontriv).V.powerset =
       (filter (isIdeal (po_trace s x mx nontriv)) (po_trace s x mx nontriv).V.powerset) :=
   by
     simp_all only [Int.ofNat_eq_coe]
@@ -783,8 +778,8 @@ lemma normalized_degree_sum_gt
   (conn  : numClasses (proj_setoid s) = 1)
   (x : s.V) (mx : po_maximal s x)
   (nontriv : s.V.card ≥ 2) :
-  (partialorder_ideal_system s).toSetFamily.normalized_degree_sum
-  ≤ (partialorder_ideal_system (po_trace s x mx nontriv)).toSetFamily.normalized_degree_sum :=
+  (po_closuresystem s).toSetFamily.normalized_degree_sum
+  ≤ (po_closuresystem (po_trace s x mx nontriv)).toSetFamily.normalized_degree_sum :=
 by
   --以下の証明は結構間違っているかも。
   let ndst := normalized_degree_sum_trace s conn x mx nontriv
@@ -800,69 +795,12 @@ lemma trace_one_ground_card
   (s : Setup_po α)
   (x : s.V) (mx : po_maximal s x)
   (nontriv : s.V.card ≥ 2) :
-  (partialorder_ideal_system s).ground.card
-  > (partialorder_ideal_system (po_trace s x mx nontriv)).ground.card :=
+  (po_closuresystem s).ground.card
+  > (po_closuresystem (po_trace s x mx nontriv)).ground.card :=
 by
-  dsimp [partialorder_ideal_system]
+  dsimp [po_closuresystem]
   dsimp [po_trace]
   simp_all only [ge_iff_le, coe_mem, card_erase_of_mem, gt_iff_lt, tsub_lt_self_iff, card_pos, Nat.lt_one_iff,
     pos_of_gt, and_true]
   obtain ⟨val, property⟩ := x
   exact ⟨val, property⟩
-
-
-  /-
-
-  --この条件をうまく使う必要がある。
-
-
-  have :#(filter (isIdeal s) s.V.powerset) = (partialorder_ideal_system (po_trace s x mx nontriv)).number_of_hyperedges + 1:= by
-
-    have h :
-      ( (po_trace s x mx nontriv).V.powerset.filter
-          (isIdeal (po_trace s x mx nontriv)) )
-        =
-      ( s.V.powerset.filter (isIdeal s) ).erase s.V :=
-    by
-      let iee := ideals_eq_erase s conn x mx nontriv
-      sorry
-
-    have h_card :  -- 以前のゴールだった個数の等式
-      ((po_trace s x mx nontriv).V.powerset.filter
-          (isIdeal (po_trace s x mx nontriv))).card
-      =
-      ((s.V.powerset.filter (isIdeal s)).erase s.V).card :=
-    by
-      simp_all only [Int.ofNat_eq_coe]
-
-    symm
-    dsimp [partialorder_ideal_system]
-    let iil :=isIdeal_lem s
-    sorry
-
-  sorry
-  -/
-
-
-
-
-
-
-  --have :#(filter (isIdeal s) s.V.powerset) = (partialorder_ideal_system (po_trace s x mx nontriv)).number_of_hyperedges := by
-  --let iil := isIdeal_lem (po_trace s x mx nontriv)
-
-
-
-
-
-
-
-
-
-
-
-
-  --((Int.ofNat s.V.card) - (partialorder_ideal_system (po_trace s x mx nontriv)).number_of_hyperedges)
-  --の符号が重要。今はパラレルはないので、必ず非正になる。
-
-end numberof

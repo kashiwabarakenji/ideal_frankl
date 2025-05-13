@@ -278,19 +278,19 @@ private lemma downward_closed_of_restrict
 --setup_poのtraceと、集合族のtraceが同じであること。
 lemma po_trace_ideal (s : Setup_po α) (x : s.V) (pm   : po_maximal s x)
     (geq2 : s.V.card ≥ 2):
-  ∀ ss :Finset (s.V.erase x), (partialorder_ideal_system  (po_trace s x pm geq2)).sets (ss.image Subtype.val)
-  =  ((partialorder_ideal_system  s).trace x.val x.property geq2).sets (ss.image Subtype.val) :=
+  ∀ ss :Finset (s.V.erase x), (po_closuresystem  (po_trace s x pm geq2)).sets (ss.image Subtype.val)
+  =  ((po_closuresystem  s).trace x.val x.property geq2).sets (ss.image Subtype.val) :=
 by
   intro ss
   -- abbreviations for readability
   let s₀   := s
   let s₁   := po_trace s x pm geq2
-  let 𝒞₀   := partialorder_ideal_system s₀
-  let 𝒞₁   := partialorder_ideal_system s₁
+  let 𝒞₀   := po_closuresystem s₀
+  let 𝒞₁   := po_closuresystem s₁
   let T𝒞₀ := (𝒞₀.trace x.val x.property geq2)
 
   -- unpack the two `sets` definitions
-  dsimp [partialorder_ideal_system, ClosureSystem,
+  dsimp [po_closuresystem, ClosureSystem,
          SetFamily.trace, 𝒞₀, 𝒞₁, T𝒞₀, s₁]
 
   -- the set appearing on both sides

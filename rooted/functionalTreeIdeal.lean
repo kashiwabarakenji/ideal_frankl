@@ -27,7 +27,7 @@ open Finset Set Classical
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 
---名前をpre_closuresystemにしたほうがいいか？
+--名前をpre2_closuresystemにしたほうがいいか？こちらは、s.poとsetoidを利用してhyperedgeを定義。
 noncomputable def setoid_ideal_ClosureSystem (s: Setup2 α): ClosureSystem α :=
 {
     ground := s.V,
@@ -132,7 +132,8 @@ noncomputable def setoid_ideal_ClosureSystem (s: Setup2 α): ClosureSystem α :=
 }
 
 --この定理は、preorderとpartialorderのidealの関係。spoとの関係はあとの定理。
---functionalMainで利用している。
+--定理名も変えた方がいいかも。pre_pre2_closuresystem_eqみたいな感じ。
+--functionalMainでのみ利用している。
 theorem Preorder_eq_PartialOrder (s: Setup2 α)  :
   preorder_ideal_system s.toSetup = setoid_ideal_ClosureSystem s  := by
   --#check @setoid_ideal_ClosureSystem _ _ V nonemp (@setoid_preorder V _:Setoid V) _
@@ -377,7 +378,7 @@ theorem Preorder_eq_PartialOrder (s: Setup2 α)  :
           exact aS this
         exact this
 
---名前の統一問題がある。ideal_systemみたいな
+--名前の統一問題がある。これはこのままでいいかも。
 def spo_closuresystem (s: Setup_spo α) : ClosureSystem α :=
   -- Implement the closure system logic here
 {
@@ -462,7 +463,7 @@ noncomputable def setup_setupspo_quotient (s: Setup2 α) (q: Quotient s.setoid) 
   Quotient.mk (setup_setupspo s).setoid ⟨rep, by simp⟩
 -/
 
---下で使っている。
+--下で使っている。setoidが埋め込みになっていること。
 lemma seteq_setupspo_eq  (s:Setup2 α) :
 s.setoid = (setup_setupspo s).setoid := by
   dsimp [setup_setupspo]
@@ -477,6 +478,7 @@ lemma setup_setupspo_quotient_lemma (s: Setup2 α) (q: Quotient s.setoid) :
 
 --時間がかかった上に、よくわからないまま証明された。
 --functionalMainで使っている。
+--pre2_spo_closuresystem_eqという名前でどうか。
 theorem Setup_spo_eq_PartialOrder (s: Setup2 α)  :
   setoid_ideal_ClosureSystem s = spo_closuresystem (setup_setupspo s)  := by
   ext ss --ssは集合族としてのideal
@@ -578,7 +580,9 @@ theorem Setup_spo_eq_PartialOrder (s: Setup2 α)  :
               · exact a
               · congr
 
---setoidで等しければ、parallelであることを表している。
+---setoiodの同値類がパラレルであること。
+--何ヶ所かで使っている。
+--equivというよりも内容はparellelだが、次のequiv2のほうをparallelの名前にする。
 lemma spo_closuresystem_equiv (s : Setup_spo α) (x y: s.V) (h: s.setoid.r x y) (hs: (spo_closuresystem s).sets ss):
   x.val ∈ ss ↔ y.val ∈ ss := by
     obtain ⟨left, right⟩ := hs
@@ -604,6 +608,7 @@ lemma spo_closuresystem_equiv (s : Setup_spo α) (x y: s.V) (h: s.setoid.r x y) 
       apply right
       exact Quotient.sound h
 
+--定理名にparallelを使う。
 lemma spo_closuresystem_equiv2 (s : Setup_spo α) (x y: s.V) (h: s.setoid.r x y) :
   parallel (spo_closuresystem s) x y ∨ x = y:=
 by

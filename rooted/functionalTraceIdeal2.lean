@@ -101,6 +101,7 @@ by
   simp_all only [sum_eq_zero_iff, Finset.mem_univ, forall_const, le_refl, implies_true, Int.ofNat_eq_coe, Nat.cast_one,
     sub_self]
 
+--この補題もSetup_spo2の前提でなくても成り立ちそう。大きさが2以上の同値類がMaximalであることは、Setup_spo2の前提が必要だが、ここではそこまでいってない。
 lemma exists_q_card_ge_two_of_excess_pos {α : Type} [Fintype α] [DecidableEq α] (s : Setup_spo2 α)
   (h : excess s > 0) :
   ∃ q : Quotient s.setoid, (classOf s.toSetup_spo q).card ≥ 2 := by
@@ -123,6 +124,7 @@ lemma exists_q_card_ge_two_of_excess_pos {α : Type} [Fintype α] [DecidableEq �
 
 --trace_parallel_average_rare を使って大きさ2以上の同値類の頂点をtraceすると、normalized degree sumが下がらないことを証明する。
 --一般的な枠組みでは、trace_parallel_average_rareで証明済み。
+--spo2_rareを利用しているので、仮定はSetup_spoでなくて、Setup_spo2である必要がある。
 theorem trace_ideal_nds_increase (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
 )).card ≥ 2) :
   (spo_closuresystem s.toSetup_spo).normalized_degree_sum ≤ ((spo_closuresystem s.toSetup_spo).toSetFamily.trace x.val (by simp_all only [ge_iff_le,
@@ -186,7 +188,8 @@ by
   specialize tpar this
   exact tpar
 
---trace_ideal_nds_increaseよりはすっきりした形。
+--trace_ideal_nds_increaseよりはすっきりした形。仮定はSetup_spo2である必要。
+--結果的につかってないみたい。
 theorem trace_ideal_nds_increase2 (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
 )).card ≥ 2) :
 (spo_closuresystem s.toSetup_spo).normalized_degree_sum ≤ (spo_closuresystem (setup_trace_spo2 s x hx).toSetup_spo).normalized_degree_sum :=
@@ -206,7 +209,7 @@ structure Setup_po (α : Type) [Fintype α] [DecidableEq α] where
 (order : ∀ x y : V, (reach f x y ↔ po.le x y)) --fからpo.leが決まる。
 
 --idealsystemとclosure systemの名称でどちらがいいか。定義名は、po_closuresystemという手もある。
-def partialorder_ideal_system {α : Type} [Fintype α] [DecidableEq α] (s: Setup_po α) : ClosureSystem α :=
+def po_closuresystem {α : Type} [Fintype α] [DecidableEq α] (s: Setup_po α) : ClosureSystem α :=
 { ground := s.V,
   sets := fun ss : Finset α => ss ⊆ s.V ∧(∀ v : s.V, v.val ∈ ss → (∀ w : s.V, s.po.le w v → w.val ∈ ss)),
   inc_ground := by
@@ -579,9 +582,9 @@ noncomputable def po_ideal_system_from_allone {α : Type} [Fintype α] [Decidabl
 --示したいのは、poのidealのndsが常に非正であるときに、Setup_spo2のidealのndsも常に非正であることだが、上のことから自明。
 
 lemma po_ideal_system_eq (s: Setup_spo α) (hq1:∀ q: Quotient s.setoid, (classOf s q).card = 1) :
-  partialorder_ideal_system (po_ideal_system_from_allone s hq1) = spo_closuresystem s:=
+  po_closuresystem (po_ideal_system_from_allone s hq1) = spo_closuresystem s:=
 by
-  dsimp [partialorder_ideal_system, po_ideal_system_from_allone]
+  dsimp [po_closuresystem, po_ideal_system_from_allone]
   dsimp [spo_closuresystem]
   simp
   ext ss

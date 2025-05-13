@@ -916,8 +916,12 @@ theorem trace_ideal_nds (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo 
 --次の定理は、ある同値類qがあって、(classOf s.toSetup_spo q).card ≥ 2)のときには、
 --そこからxを持ってきて、traceすることにより、一つ台集合が小さくて、ndsが等しいか大きい集合族を作ることができる。
 --2以上の同値類の大きさの過剰分は、1減っている。
---過剰分の定義
 
+--過剰分excessの定義
+--excessは極大な同値類だけではなく、すべての同値類に対する余剰。
+--excessは、Setup_spo2に対して定義されているが、Setup_spoに対しても定義できる。
+--帰納法を使いたいのは、Setup_spo2のクラスに対してなので、Setup_spoに変更しても本当に問題がないのか？
+--Setup_spoとSetup_spo2の違いを廃止するという方向性もある。
 noncomputable def excess (s: Setup_spo2 α)  : ℕ :=
   ∑ q ∈ (Finset.univ : Finset (Quotient s.setoid)),
     ((classOf s.toSetup_spo q).card - 1)

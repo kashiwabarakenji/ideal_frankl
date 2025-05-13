@@ -73,10 +73,6 @@ def setup2_induces_spo (s : Setup2 α) : Setup_spo2 α :=
     exact csm
 }
 
-
-
-
-
 --すぐ下で利用。
 omit [Fintype α] in
 lemma card_of_image_subset (V1 V2: Finset α) (A : Finset V1)(B:Finset V2)
@@ -157,6 +153,7 @@ by
 
 --setup2_induces_spoなどと違って、traceをとっている。
 --結構いろいろなところで使われているが、実際は、setup_traceの定義で十分なところが多そう。
+--大きさ2以上の同値類が極大なもののみという条件が必要な場合のみSetup_spo2が必要。
 noncomputable def setup_trace_spo2 (s : Setup_spo2 α)(x: s.V) (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
 )).card ≥ 2): Setup_spo2 α :=
 {

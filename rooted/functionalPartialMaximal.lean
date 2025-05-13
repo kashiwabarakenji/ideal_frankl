@@ -447,7 +447,7 @@ by
       · simp_all only
 
 lemma isIdeal_lem2 (s: Setup_po α) :--(ss : Finset α)(hss : ss ⊆ s.V) :
-  ∀ ss : Finset α, ss ⊆ s.V → (isIdeal s ss ↔ (partialorder_ideal_system s).sets ss) :=
+  ∀ ss : Finset α, ss ⊆ s.V → (isIdeal s ss ↔ (po_closuresystem s).sets ss) :=
 by
   intro ss hss
   constructor
@@ -473,7 +473,7 @@ by
 
     · intro v w hv hle
       -- ideal の定義から w ∈ ss
-      dsimp [partialorder_ideal_system] at h
+      dsimp [po_closuresystem] at h
       simp_all only [Subtype.forall]
       obtain ⟨val, property⟩ := v
       obtain ⟨val_1, property_1⟩ := w

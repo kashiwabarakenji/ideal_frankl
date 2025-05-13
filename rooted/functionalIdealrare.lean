@@ -849,6 +849,7 @@ by
     exact this
   exact Finset.card_bij i H₁ H₂ H₃
 
+--ざっと見たところ、Setup_spo2でなくて、Setup_spoでよさそうにも見えるが、本当か？
 theorem setoid_ideal_rare (s : Setup_spo2 α)(q : Quotient (s.toSetup_spo).setoid )(hm: isMaximal_spo s.toSetup_spo q) :
   ∀ (x : classOf s.toSetup_spo q), (spo_closuresystem s.toSetup_spo).toSetFamily.is_rare x := by
 
@@ -869,7 +870,7 @@ theorem setoid_ideal_rare (s : Setup_spo2 α)(q : Quotient (s.toSetup_spo).setoi
 --ある同値類がサイズ2以上であった場合に、その頂点はrareになる。
 -- spo2のsingleton_if_not_maximalで極大要素出ない場合は、サイズが1。
 -- よって、サイズ2以上の同値類は、rareなvertexになる。
-
+-- この補題は、singleton_if_not_maximalを使っているので、仮定は、Setup_spoでなく、Setup_spo2である必要がある。
 lemma spo2_rare (s : Setup_spo2 α) (q: Quotient s.setoid) (hx:(classOf s.toSetup_spo q).card ≥ 2) :
   ∀ (y : s.V), @Quotient.mk _ s.toSetup_spo.setoid y = q → (spo_closuresystem s.toSetup_spo).is_rare y :=
 by
