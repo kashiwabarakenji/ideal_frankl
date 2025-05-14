@@ -129,8 +129,8 @@ private lemma exists_iterate_eq_of_rtg
       ⟩
 
 --transitive closureを撮る前の一歩の場合の表現の違いに関する補題。Setup前提の形にした。
---そのファイルからの参照はない。
-lemma size_one_preorder_setup_step (s: Setup α) (x y : {x : α // x ∈ s.V}) :
+--そとファイルからの参照はない。外から参照されるようであれば、privateを外す。
+private lemma size_one_preorder_setup_step (s: Setup α) (x y : {x : α // x ∈ s.V}) :
   R_from_RS1 (rootedset_from_setup s) y x ↔ s.f x = y :=
 by
   dsimp [rootedset_from_setup]
@@ -179,8 +179,8 @@ by
       subst h
       simp_all only [and_self, vp]
 
-
-lemma size_one_preorder_setup_lemma2 (s : Setup α) (x y : s.V):
+---そのから使われてない。より使いやすい他のを引用した方が良いので。
+private lemma size_one_preorder_setup_lemma2 (s : Setup α) (x y : s.V):
   s.pre.le x y ↔
   Relation.ReflTransGen (fun a b : s.V ↦ s.f a = b) x y := by
   let sop := size_one_preorder_setup_lemma s x y
@@ -199,7 +199,7 @@ lemma size_one_preorder_setup_lemma2 (s : Setup α) (x y : s.V):
 
   exact Iff.trans sop this
 
---これが証明したかった定理。
+--これが証明したかった定理。preorderで大小関係があれば、reachで届く。
 theorem iteratef_lemma_ref
     (s : Setup α) (x y : s.V)
     (h : s.pre.le x y) :
@@ -393,6 +393,8 @@ by
 --これもCommonに移動してもよい。
 def isMaximal (s: Setup α) (a : s.V) : Prop :=
   ∀ b : s.V, s.pre.le a b → s.pre.le b a
+
+--任意の要素の上には、maximalな要素が存在するという定理を作ってもよい。
 
 ----ここから下はPathに依存している議論。
 --Preorderのstar_implies_pathExistsでも同じことを証明している。大きい方から小さい方の鎖になっているような。
@@ -988,6 +990,8 @@ by
 --サイズ2以上の同値類からいけるところは、同じ同値類内に必ずなる。このことは前の補題で示されている。
 --pathexsits_setupを使っているが、パスの議論をやめて、fの繰り返しで書けることに書き換えた方がいいかも。
 --この定理は、functionalSPOのeqClass_Maximalで使われる。それは、同値類の極大性の定理。
+--pathでなく、reachを使って、o3で書き直そうと思う。手で直すこともできるかも。
+--path_exists_setupとeqClass_size_ge_two_implies_outsideとpath_implies_rearを使っている。
 theorem eqClass_size_ge_two_implies_inverse
     {α : Type} [Fintype α] [DecidableEq α]
     (s : Setup α)
