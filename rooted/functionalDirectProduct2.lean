@@ -21,6 +21,7 @@ variable {α : Type} [Fintype α] [DecidableEq α]
 
 noncomputable instance : ∀ v, Decidable (Quotient.mk'' v = q) :=  fun v => (Quotient.mk'' v).decidableEq q
 
+--compとexclの分解は、disjointであることの補題。すぐ下で使っている。
 lemma disjoint_ground_excl (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]
   --(hnonempty : (excl_po_V' s q).Nonempty) :
   (geq2quotient: (numClasses (proj_setoid s) ≥ 2)) :
@@ -52,7 +53,8 @@ by
   contradiction
 
 --成分ごとに分解した集合族の直積がもとの集合族に一致すること。
-theorem directProduct_comp_excel  (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]
+----directProduct_comp_excel_ground_cardなど下で使っている。
+lemma directProduct_comp_excel  (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]
   (geq2quotient: (numClasses (proj_setoid s) ≥ 2)) :
   DirectProduct (po_closuresystem (comp_po s q)).toSetFamily (po_closuresystem (excl_po s q geq2quotient)).toSetFamily =
   (po_closuresystem s).toSetFamily :=
@@ -465,6 +467,8 @@ by
                     Subtype.exists, exists_and_right, exists_eq_right, exists_true_left, false_or, not_false_eq_true,
                     ne_eq, exists_const, and_false, compq, eclq]
 
+--(po_closuresystem s)がcompとexclに分解できるという言明。
+--使ってない？directProduct_comp_excel_ground_cardの証明で使えそうだけど。
 lemma directProduct_comp_excel_ground (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]
   (geq2quotient: (numClasses (proj_setoid s) ≥ 2)) :
   (po_closuresystem (comp_po s q)).ground ∪ (po_closuresystem (excl_po s q geq2quotient)).ground =
@@ -473,6 +477,7 @@ by
   rw [← directProduct_comp_excel s q geq2quotient]
   dsimp [DirectProduct]
 
+--下で使っている。
 lemma directProduct_comp_excel_ground_card (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]
   (geq2quotient: (numClasses (proj_setoid s) ≥ 2)) :
   (po_closuresystem (comp_po s q)).toSetFamily.ground.card +
@@ -494,6 +499,7 @@ by
 
   rw [Finset.card_union_of_disjoint this]
 
+--下のdirectProduct_comp_excel_ground_eで使っている。
 lemma directProduct_comp_ground_card (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]  :
  ((po_closuresystem (comp_po s q))).toSetFamily.ground.card ≥ 1 :=
 by
@@ -507,6 +513,7 @@ by
   simp
   exact Quotient.mk_eq_iff_out.mpr rfl
 
+--下のdirectProduct_comp_excel_ground_cで使っている。
 lemma directProduct_excl_ground_card (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]
   (geq2quotient: (numClasses (proj_setoid s) ≥ 2)) :
  ((po_closuresystem (excl_po s q geq2quotient))).toSetFamily.ground.card ≥ 1 :=
@@ -518,6 +525,7 @@ by
   let epv := excl_po_V'_nonempty_of_classes_ge2 s q geq2quotient
   exact one_le_card.mpr epv
 
+--functionalMainで利用。
 lemma directProduct_comp_excel_ground_c (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]
   (geq2quotient: (numClasses (proj_setoid s) ≥ 2)) :
   (po_closuresystem (comp_po s q)).toSetFamily.ground.card <
@@ -532,6 +540,7 @@ by
   let degc := directProduct_excl_ground_card s q geq2quotient
   exact Mathlib.Tactic.LinearCombination.lt_of_lt degc this
 
+--functionalMainで利用。
 lemma directProduct_comp_excel_ground_e (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]
   (geq2quotient: (numClasses (proj_setoid s) ≥ 2)) :
   ((po_closuresystem (excl_po s q geq2quotient))).toSetFamily.ground.card <
@@ -549,6 +558,7 @@ by
   rw [add_comm]
   exact this
 
+--functionalMainで使っている。
 theorem directProduct_nds  (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]
   (geq2quotient: (numClasses (proj_setoid s) ≥ 2)) :
   (po_closuresystem (comp_po s q)).toSetFamily.normalized_degree_sum ≤ 0 →
@@ -623,10 +633,3 @@ by
     simp_all only [ge_iff_le, ili]
 
   convert goal
-
-
-/-
-example {A:Prop} {B:Prop} {C:Prop}:
-   A∨B →  (A→C) → (B→C) → C :=
-by
--/

@@ -853,6 +853,7 @@ theorem trace_ideal (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quotient.mk _ s
         --ssがxを含むケース。
         exact hr
 
+--すぐ下で利用。
 lemma normalized_degree_sum_congr {α : Type} [DecidableEq α] [Fintype α]
   (F G : SetFamily α)
   [DecidablePred F.sets] [DecidablePred G.sets]
@@ -890,7 +891,9 @@ lemma normalized_degree_sum_congr {α : Type} [DecidableEq α] [Fintype α]
   simp_all only [s]
 
 --traceしたものと、集合族が等しければ、ndsも等しい。これはSetup_spoの仮定で大丈夫？
-theorem trace_ideal_nds (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quotient.mk _ s.setoid x
+--functionalMainで使われている。
+--trace_ideal_nds_increase2でも使われている。
+lemma trace_ideal_nds (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quotient.mk _ s.setoid x
 )).card ≥ 2) :
   (spo_closuresystem (setup_trace s x hx)).normalized_degree_sum = ((spo_closuresystem s).toSetFamily.trace x.val (by simp_all only [ge_iff_le,
     coe_mem] ) (by
@@ -916,7 +919,8 @@ theorem trace_ideal_nds (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quotient.mk
 --次の定理は、ある同値類qがあって、(classOf s.toSetup_spo q).card ≥ 2)のときには、
 --そこからxを持ってきて、traceすることにより、一つ台集合が小さくて、ndsが等しいか大きい集合族を作ることができる。
 --2以上の同値類の大きさの過剰分は、1減っている。
-
+--setup_spo2_average_rareではexcessに従って、強い帰納法で証明することになる。
+--excessだけ別ファイルに独立させてもいい。functionalExcess.leanなど。定理は2つだが、closuresystemの話はしてないし。
 --過剰分excessの定義
 --excessは極大な同値類だけではなく、すべての同値類に対する余剰。
 --excessは、Setup_spo2に対して定義されているが、Setup_spoに対しても定義できる。
@@ -1102,7 +1106,8 @@ by
         simp_all only [ge_iff_le, Finset.mem_singleton, Subtype.coe_eta]
 
 --traceすることで、excessはひとつ減る。Setup_spoの仮定でもよいかも。
-lemma trace_excess_decrease (s: Setup_spo α) (x: s.V) (hx: (classOf s (@Quotient.mk _ s.setoid x)).card ≥ 2) :
+--functionalMainで使われている。
+theorem trace_excess_decrease (s: Setup_spo α) (x: s.V) (hx: (classOf s (@Quotient.mk _ s.setoid x)).card ≥ 2) :
   excess (setup_trace s x hx) = excess s - 1 := by
   --まずは、xを含んでいる部分の同値類が一個減るということを示す。
 

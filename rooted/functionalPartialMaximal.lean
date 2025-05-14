@@ -260,6 +260,7 @@ instance proj_setoid {α : Type} [Fintype α] [DecidableEq α] (s: Setup_po α) 
     ⟩
 
 --proj_maxは、本当に極大元になっていることの証明。
+--functionalMainでも利用。
 lemma proj_max_maximal (s: Setup_po α) (v : {x : α // x ∈ s.V}) :
   po_maximal s (proj_max s v) := by
   -- proj_max は po_maximal_reachable の選択肢の一つ

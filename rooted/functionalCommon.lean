@@ -101,6 +101,8 @@ variable {α : Type} [Fintype α] [DecidableEq α]
 
 --fからRootedSetを作る関数。
 --この形が一番良いか？alpha上のRootedSetsを与える。集合族を定義するのにこの形を利用している。
+--functionalMainの主定理でもこの定義が参照されている。
+--これをSetupから使えるようにしたのが、rootedset_from_setup。
 noncomputable def rootedset_onestem_eachvertex_V {α : Type} [Fintype α] [DecidableEq α] (V: Finset α) (f : V → V) (valid:∀ v : V, f v ≠ v) (nonemp:Finset.Nonempty V): RootedSets α :=
 {
   ground := V,
@@ -289,6 +291,7 @@ by
 
 --ふたつの定義が同値であることを示す。本質的には、size_one_preorder_setで示したこと。
 --それに気がつくのが遅かったので、証明はもっと短くなるかも。
+--functionalMainの主定理の証明でも使われている。
 lemma pre_closuresystem_eq_lem (s : Setup α) :
    pre_closuresystem s = pre_closuresystem2 s :=
 by

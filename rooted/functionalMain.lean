@@ -258,12 +258,12 @@ by
   exact hP (#s_orig.V) s_orig rfl
 
 --Setup_spo2の主定理。functionalMainで利用している。
---ここだけsじゃなくてs₀をつかっているので注意。論文で引用するのであれば、sに統一するか。もともとsの場所をどうするか？
+--ここだけ初期のsとして、sじゃなくてs₀をつかっているので注意。帰納法でsが動くため。
 --trace_ideal_nds_increaseを使っているので、仮定は、Setup_spoでなくて、Setup_spo2である必要がある。
 theorem setup_spo2_average_rare (s₀ :Setup_spo2 α): (spo_closuresystem s₀.toSetup_spo).normalized_degree_sum ≤ 0 :=
 by
 
-  --この定理の証明は、excessの値に関する帰納法。
+  --この定理の証明は、excessの値に関する強い帰納法。
   --ベースケースであるexcess=0の場合が、setup_po_average_rareに相当。
   --それに相当するということを証明するのに、excess_zeroを使う。
 
@@ -328,10 +328,13 @@ by
         ≤ (spo_closuresystem s'.toSetup_spo).normalized_degree_sum :=
     by
       dsimp [s']
+      exact trace_ideal_nds_increase2 s q.out hq
+      /-
       --let tin := trace_ideal_nds s.toSetup_spo q.out hq
       rw [setup_trace_spo2_lem ]
       rw [trace_ideal_nds s.toSetup_spo q.out hq]
       exact trace_ideal_nds_increase s q.out hq
+      -/
 
     -- 6) s' < s（r s' s） を示す
     have h_rel : r s' s := by
@@ -354,7 +357,7 @@ by
       _ ≤ 0 := ih_s'
 
 
---setupを使った形の主定理。この定理は帰納法は必要なくて、直接証明可能。
+--setupを使った形の主定理。この定理はsetup_spo2_average_rareに帰着させるので帰納法は必要なくて、直接証明可能。
 lemma setup_average_rare (s:Setup α): (pre_closuresystem s).normalized_degree_sum ≤ 0 :=
 by
   --spo2_average_rareから証明する。
@@ -366,7 +369,7 @@ by
   --theorem Preorder_eq_PartialOrder (s: Setup2 α)  :  pre_closuresystem s.toSetup = pre2_closuresystem s  := by
   --という定理もあった。
   let s2 :=  (Setup_to_Setup2 s)
-  let s_spo := setup2_induces_spo s2
+  let s_spo := setup2_induces_spo s2  --setup_spo2_average_rareに帰着させるためspoに埋め込み。
   have : s2.toSetup = s :=
   by
     rfl

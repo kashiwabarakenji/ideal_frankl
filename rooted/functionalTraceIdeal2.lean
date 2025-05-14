@@ -24,7 +24,14 @@ open Finset Set Classical
 --半順序の構造Setup_poとの橋渡しの部分。
 --同値類の大きさが全部1であれば、Setup_poとみなせるということを示すのがメイン。
 --前半のexcessの部分は、excessが0であれば同値類の大きさが全部1という形で繋がっている。
---ファイル名をfunctionalEqualOneなどに変えてもよい。とりあえず、後半にはclosuresystemも出てくるのでそのまま。
+--前半部分はファイル名をfunctionalEqualOneなどに変えて独立させるか、TraceIdealに移動してもよい。
+--ただし、ここにあるのは、excessを利用した議論もある。
+--とりあえず、後半にはclosuresystemも出てくるのでそのまま。
+--いまところ、
+--TraceIdeal Idealに関係があって、excesが出てこないもの。
+--functionalExcess Excessが出てくるもの。
+--functionalSetuppo Setup_soに帰着させる部分。
+--に再編成するとよいかも。
 
 set_option maxHeartbeats 2000000
 
@@ -32,7 +39,8 @@ variable {α : Type} [Fintype α] [DecidableEq α]
 
 --excessが0であれば、同値類の大きさがすべて1。この部分は、TraceIdealに移動するか、excessの部分でまとめて1ファイルにするといいかも。
 --Setup_spo2でなくて、Setup_spoの前提でも成り立ちそう。
-lemma excess_zero (s: Setup_spo α) :
+--functionalMainで使っている。
+theorem excess_zero (s: Setup_spo α) :
   excess s = 0 → ∀ q: Quotient s.setoid, (classOf s q).card = 1 :=
 by
   intro h q
@@ -101,8 +109,10 @@ by
   simp_all only [sum_eq_zero_iff, Finset.mem_univ, forall_const, le_refl, implies_true, Int.ofNat_eq_coe, Nat.cast_one,
     sub_self]
 
+--excessが正ならば、大きさ2以上の同値類が存在。
 --この補題もSetup_spo2の前提でなくても成り立ちそう。大きさが2以上の同値類がMaximalであることは、Setup_spo2の前提が必要だが、ここではそこまでいってない。
-lemma exists_q_card_ge_two_of_excess_pos {α : Type} [Fintype α] [DecidableEq α] (s : Setup_spo α)
+--functionalMainで使っている。
+theorem exists_q_card_ge_two_of_excess_pos {α : Type} [Fintype α] [DecidableEq α] (s : Setup_spo α)
   (h : excess s > 0) :
   ∃ q : Quotient s.setoid, (classOf s q).card ≥ 2 := by
   -- 対偶法で示す
@@ -126,7 +136,9 @@ lemma exists_q_card_ge_two_of_excess_pos {α : Type} [Fintype α] [DecidableEq �
 --trace_parallel_average_rare を使って大きさ2以上の同値類の頂点をtraceすると、normalized degree sumが下がらないことを証明する。
 --一般的な枠組みでは、trace_parallel_average_rareで証明済み。
 --spo2_rareを利用しているので、仮定はSetup_spoでなくて、Setup_spo2である必要がある。
-theorem trace_ideal_nds_increase (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
+--下のtrace_ideal_nds_increase2で、setup_traceを利用する形に書き換え。
+--以下の議論は、excessに関係がないので、TraceIdealに移動してもよい。
+lemma trace_ideal_nds_increase (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
 )).card ≥ 2) :
   (spo_closuresystem s.toSetup_spo).normalized_degree_sum ≤ ((spo_closuresystem s.toSetup_spo).toSetFamily.trace x.val (by simp_all only [ge_iff_le,
     coe_mem] ) (by
@@ -189,8 +201,8 @@ by
   specialize tpar this
   exact tpar
 
---trace_ideal_nds_increaseよりはすっきりした形。仮定はSetup_spo2である必要。
---結果的につかってないみたい。
+--trace_ideal_nds_increaseよりはすっきりした形。setup_traceを利用している。仮定はSetup_spo2である必要。
+--Mainのh_ndsを証明するときに使っている。
 theorem trace_ideal_nds_increase2 (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
 )).card ≥ 2) :
 (spo_closuresystem s.toSetup_spo).normalized_degree_sum ≤ (spo_closuresystem (setup_trace s.toSetup_spo x hx)).normalized_degree_sum :=

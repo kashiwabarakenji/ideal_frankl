@@ -134,6 +134,7 @@ noncomputable def pre2_closuresystem (s: Setup2 α): ClosureSystem α :=
 --この定理は、preorderとpartialorderのidealの関係。spoとの関係はあとの定理。
 --定理名も変えた方がいいかも。pre_pre2_closuresystem_eqみたいな感じ。
 --functionalMainでのみ利用している。
+--名前はclosuresystemの変換であることがわかるように変えてもいいかも。pre_pre2_closuresystem_eqとか。
 theorem Preorder_eq_PartialOrder (s: Setup2 α)  :
   pre_closuresystem s.toSetup = pre2_closuresystem s  := by
   --#check @pre2_closuresystem _ _ V nonemp (@setoid_preorder V _:Setoid V) _

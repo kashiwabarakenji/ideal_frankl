@@ -773,7 +773,8 @@ by
 
   exact Int.toNat_le.mp nli
 
-lemma normalized_degree_sum_gt
+--functionalMainで利用。
+theorem normalized_degree_sum_gt
   (s : Setup_po α)
   (conn  : numClasses (proj_setoid s) = 1)
   (x : s.V) (mx : po_maximal s x)
@@ -781,7 +782,7 @@ lemma normalized_degree_sum_gt
   (po_closuresystem s).toSetFamily.normalized_degree_sum
   ≤ (po_closuresystem (po_trace s x mx nontriv)).toSetFamily.normalized_degree_sum :=
 by
-  --以下の証明は結構間違っているかも。
+
   let ndst := normalized_degree_sum_trace s conn x mx nontriv
   rw [ndst]
 
@@ -791,6 +792,7 @@ by
   obtain ⟨val, property⟩ := x
   exact ndsl
 
+--functionalMainで利用。
 lemma trace_one_ground_card
   (s : Setup_po α)
   (x : s.V) (mx : po_maximal s x)
