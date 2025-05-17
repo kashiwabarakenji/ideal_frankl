@@ -396,7 +396,410 @@ def isMaximal (s: Setup α) (a : s.V) : Prop :=
 
 --任意の要素の上には、maximalな要素が存在するという定理を作ってもよい。
 
-----ここから下はPathに依存している議論。
+/--
+`2 ≤ s.card` ならば
+`a , b ∈ s` かつ `a ≠ b` となる 2 点 `a , b` が存在する。
+-/
+lemma card_ge_two {α : Type} {s : Finset α}
+    (h : (2 : ℕ) ≤ s.card) :
+    ∃ a b : α, a ∈ s ∧ b ∈ s ∧ a ≠ b :=
+by
+  ----------------------------------------------------------------
+  -- 1. まず `a ∈ s` を 1 つ取り出す
+  ----------------------------------------------------------------
+  have h_pos : 0 < s.card := by
+    have : (0 : ℕ) < 2 := by decide
+    exact Nat.lt_of_lt_of_le this h
+  rcases (Finset.card_pos.mp h_pos) with ⟨a, ha⟩
+
+  ----------------------------------------------------------------
+  -- 2. `s.erase a` の要素数は少なくとも 1
+  ----------------------------------------------------------------
+  have h_card_erase : 1 ≤ (s.erase a).card := by
+    have h_eq : (s.erase a).card + 1 = s.card :=
+      Finset.card_erase_add_one ha
+    have : 2 ≤ (s.erase a).card + 1 := by
+      simpa [h_eq] using h
+    exact Nat.le_of_succ_le_succ this
+  have h_pos_erase : 0 < (s.erase a).card :=
+    Nat.succ_le_iff.mp h_card_erase
+
+  ----------------------------------------------------------------
+  -- 3. `b ∈ s.erase a` を 1 つ取り出す
+  ----------------------------------------------------------------
+  rcases (Finset.card_pos.mp h_pos_erase) with ⟨b, hb_in_erase⟩
+  rcases (Finset.mem_erase).1 hb_in_erase with ⟨hneq_ba, hb⟩
+
+  ----------------------------------------------------------------
+  -- 4. 2 点 `a , b` と必要な条件をまとめる
+  ----------------------------------------------------------------
+  exact ⟨a, b, ha, hb, hneq_ba.symm⟩
+
+
+lemma eqClass_size_ge_two_implies_outside
+    {α : Type} [Fintype α] [DecidableEq α]
+    (s : Setup α) :
+    ∀ y : {x // x ∈ s.V},
+      2 ≤ (eqClass_setup s y).card →
+      s.f y ∈ eqClass_setup s y :=
+by
+  intro y hcard
+
+  ----------------------------------------------------------------
+  -- 1. 同値類から y とは異なる要素 z を 1 つ取り出す
+  ----------------------------------------------------------------
+  have htwo : (eqClass_setup s y).card ≥ 2 := hcard
+  obtain ⟨a, b, ha, hb, hne⟩ := (card_ge_two htwo)   -- 2 個以上あるとき，互いに異なる 2 点が取れる
+  -- a または b が y と異なればそれを z とする
+  set z : {x // x ∈ s.V} :=
+    if h : (a : {x // x ∈ s.V}) ≠ y then a else b with hz_def
+  have hz_mem : z ∈ eqClass_setup s y := by
+    by_cases h : (a : {x // x ∈ s.V}) ≠ y
+    · simp [hz_def, h, ha]
+    · have : (b : {x // x ∈ s.V}) ≠ y := by
+        intro hby
+        have : (a : {x // x ∈ s.V}) = b := by
+          have : a = y := Subtype.ext (by
+            subst hby
+            simp_all only
+          )
+          have : (a : {x // x ∈ s.V}) = (y : {x // x ∈ s.V}) := this
+          simpa [hby] using this
+        exact (hne this).elim
+      simp [hz_def, h, hb, this]
+
+  have hrel : s.setoid.r y z := by
+    -- `eqClass_setup` は `filter` で `setoid.r` を課している
+    have := (Finset.mem_filter.mp hz_mem).2
+    exact this
+
+  ----------------------------------------------------------------
+  -- 2. `y ≤ z` を iteration へ変換し，反復回数 n (≥1) を取る
+  ----------------------------------------------------------------
+  have hle : s.pre.le y z := by
+    -- `setoid_preorder` の定義より
+    exact eqClass_le s y z hz_mem
+  obtain ⟨n, hn⟩ := iteratef_lemma_ref s y z hle   -- ∃ n, f^[n] y = z
+  have hn_pos : 0 < n := by
+    by_contra hn0
+    have hn00 : n = 0 := by
+      exact Nat.eq_zero_of_le_zero (Nat.le_of_not_lt hn0)
+    have hzy: z = y := by
+      rw [hn00] at hn
+      exact id (Eq.symm hn)
+    have : z ≠ y := by
+      -- z は y と異なる
+      by_cases (a : {x // x ∈ s.V}) ≠ y
+      · subst hn00
+        simp_all only [ge_iff_le, ne_eq, dite_eq_ite, not_false_eq_true, ↓reduceIte, ↓reduceDIte, z]
+
+      ·
+        subst hn00
+        simp_all only [ge_iff_le, ne_eq, dite_eq_ite, ↓reduceIte, ↓reduceDIte, Decidable.not_not, Function.iterate_zero,
+          id_eq, not_true_eq_false, lt_self_iff_false, not_false_eq_true, z]
+    exact this hzy
+
+  ----------------------------------------------------------------
+  -- 3. 反復の 1 ステップ目 `f y` が同値類に入ることを示す
+  ----------------------------------------------------------------
+  -- (i) y ≤ fy
+  have hle_y_fy : s.pre.le y (s.f y) := by
+    simpa using f_and_pre s y (s.f y) rfl
+
+  -- (ii) fy ≤ z
+  have hle_fy_z : s.pre.le (s.f y) z := by
+    -- n = (n-1)+1 なので iteratef_lemma をもう一度
+    have : s.pre.le (s.f y) (s.f^[n - 1] (s.f y)) :=
+      iteratef_lemma s (s.f y) (n - 1)
+
+    rw [←@Function.comp_apply _ _ _ (s.f^[n - 1]) s.f ] at this
+    rw [←@Function.iterate_succ _ s.f (n-1)] at this
+    simp [Nat.sub_add_cancel hn_pos]
+    have nsucc: (n-1).succ = n := by
+      simp [Nat.sub_add_cancel hn_pos]
+    rw [nsucc] at this
+    exact le_of_le_of_eq this hn
+
+  -- (iii) z ≤ y  も hrel から取れる
+  have hle_z_y : s.pre.le z y := by
+    exact eqClass_ge s y z hz_mem
+
+  -- (iv) 以上より y ≤ fy ∧ fy ≤ y
+  have hfy_y : s.pre.le (s.f y) y :=
+    s.pre.le_trans (s.f y) z y hle_fy_z hle_z_y
+  have hy_fy : s.pre.le y (s.f y) := hle_y_fy
+
+  ----------------------------------------------------------------
+  -- 4. 前後で ≤ が成り立つ ⇒ setoid.r
+  ----------------------------------------------------------------
+  have hrel_fy : s.setoid.r y (s.f y) := by
+    -- `setoid_preorder` は左右の ≤ が揃えば成り立つ
+    suffices (s.pre.le y (s.f y)) ∧ (s.pre.le (s.f y) y) from by
+      rw [s.h_setoid]
+      exact this
+
+    simp [hy_fy, hfy_y]
+
+  ----------------------------------------------------------------
+  -- 5. filter の条件を満たすので `f y` は同値類に属する
+  ----------------------------------------------------------------
+  show s.f y ∈ eqClass_setup s y
+
+    -- `attach` に必ず入っているので条件は r のみ
+  have hmem : (s.f y) ∈ s.V.attach := by
+    -- `s.f y` は V の要素
+    simp [Finset.mem_attach]    -- automatically true by `.attach`
+  have : s.setoid.r y (s.f y) := hrel_fy
+  exact Finset.mem_filter.mpr ⟨hmem, this⟩
+
+private lemma cycle_exists
+    {α : Type} [Fintype α] [DecidableEq α]
+    (s : Setup α) (x : {x // x ∈ s.V})
+    (h₂ : 2 ≤ (eqClass_setup s x).card) :
+    ∃ p : ℕ, 0 < p ∧ s.f^[p] x = x := by
+  -- `f x` は同値類にとどまる → `f x ≤ x`
+  have h_fx_in : s.f x ∈ eqClass_setup s x :=
+    eqClass_size_ge_two_implies_outside s x h₂
+  have h_fx_le_x : s.pre.le (s.f x) x :=
+    eqClass_ge s x (s.f x) h_fx_in
+  -- `f x ≤ x` から「いつか戻って来る」回数 `m`
+  rcases iteratef_lemma_ref s (s.f x) x h_fx_le_x with ⟨m, hm⟩
+  -- 周期 `p = m.succ (>0)` で `x` に戻る
+  refine ⟨m.succ, Nat.succ_pos _, ?_⟩
+  -- f^[m+1] x = f^[m] (f x) = x
+  exact hm
+
+/--
+`f^[p] x = x` なら任意の `k` について `f^[p*k] x = x`
+-/
+private lemma iterate_power_cycle
+    {α : Type} (f : α → α) (x : α) {p : ℕ}
+    (hp : 0 < p) (hcycle : f^[p] x = x) : --使ってないように見えて使っている？
+    ∀ k : ℕ, f^[p * k] x = x := by
+  intro k
+  induction k with
+  | zero     => exact rfl
+  | succ k ih =>
+      -- f^[p*(k+1)] = f^[p] (f^[p*k])
+      have hpk: p * (k + 1) = p + p * k := by ring
+      have :f^[p*(k+1)] x = f^[p] ((f^[p*k]) x):= by
+        rw [←@Function.comp_apply _  _ _ (f^[p]) f^[p*k] x]
+        rw [←Function.iterate_add]
+        exact congrFun (congrArg (Nat.iterate f) hpk) x
+
+        -- `f^[p] x = x` なので `f^[p*(k+1)] x = x`
+
+      rw [this]
+      simp_all only
+
+/--
+最終目標：サイズ 2 以上の同値類に属する点は極大
+（`x ≤ y → y ≤ x`）
+-/
+theorem eqClass_size_ge_two_implies_inverse
+    {α : Type} [Fintype α] [DecidableEq α]
+    (s : Setup α) (x : {x // x ∈ s.V})
+    (h₂ : 2 ≤ (eqClass_setup s x).card) :
+    isMaximal s x := by
+  -- 周期 `p`
+  obtain ⟨p, hp_pos, hcycle⟩ := cycle_exists s x h₂
+  -- 反復 `p*k` は常に `x`
+  have hpow := iterate_power_cycle s.f x hp_pos hcycle
+  -- 極大性の証明
+  intro y h_xy            -- 仮定 `x ≤ y`
+  -- `y = f^[n] x` を取得
+  rcases iteratef_lemma_ref s x y h_xy with ⟨n, rfl⟩
+  -- n = 0 なら y = x で終わり
+  cases n with
+  | zero    => simp
+  | succ n₀ =>
+      -- 剰余 `r = (n₀.succ) % p`
+      let r := (n₀.succ) % p
+      have hr_lt : r < p := Nat.mod_lt _ hp_pos
+      by_cases hr0 : r = 0
+      ----------------------------------------------------------------
+      -- ① 剰余が 0 なら y = x（x ≤ x は自明）
+      ----------------------------------------------------------------
+      ·
+        have : s.f^[n₀.succ] x = x := by
+          -- n₀.succ = q*p なので周期で戻る
+          have h1 : n₀.succ = p * (n₀.succ / p) := by
+            simp_all only [Function.iterate_succ, Function.comp_apply, Nat.succ_eq_add_one, r]
+            obtain ⟨val, property⟩ := x
+            rw [Nat.mul_div_cancel']
+            omega
+            --simpa [Nat.mod_eq_zero_of_dvd (Nat.dvd_of_mod_eq_zero hr0)]
+            --      using (Nat.mod_add_div _ p).symm
+          -- 置換
+
+          rw [h1]
+          exact hpow (n₀.succ / p)
+
+        simp [hr0, this]
+      ----------------------------------------------------------------
+      -- ② 剰余が正なら `m = p - r` で y →* x
+      ----------------------------------------------------------------
+      ·
+        have hr_pos : 0 < r := Nat.pos_of_ne_zero hr0
+        let m : ℕ := p - r        -- 0 < m ≤ p
+        have hm_pos : 0 < m := Nat.sub_pos_of_lt hr_lt
+        -- `y ≤ f^[m] y`
+        have h_y_step : s.pre.le (s.f^[n₀.succ] x)
+                                   (s.f^[m] (s.f^[n₀.succ] x)) :=
+          iteratef_lemma s (s.f^[n₀.succ] x) m
+        -- 計算 `f^[m] y = x`
+        have h_to_x : s.f^[m] (s.f^[n₀.succ] x) = x := by
+          -- n₀.succ = q*p + r なので n₀.succ + m = (q+1)*p
+          have hdecomp : n₀.succ = p * (n₀.succ / p) + r :=
+          by
+            simp_all only [Function.iterate_succ, Function.comp_apply, Nat.succ_eq_add_one, tsub_pos_iff_lt, r, m]
+            obtain ⟨val, property⟩ := x
+            rw [Nat.div_add_mod]
+          have hsum : n₀.succ + m = p * ((n₀.succ / p) + 1) := by
+            have : m = p - r := rfl; simp [m, hdecomp, Nat.add_sub_cancel] at *
+            rw [hdecomp]
+            calc
+              p * ((n₀ + 1) / p) + r + (p - r) = p * ((n₀ + 1) / p) + p :=
+              by
+                have : r + (p - r) = p := by
+                  simp_all only [Nat.add_sub_cancel]
+                  refine Nat.add_sub_of_le ?_
+                  exact Nat.le_of_succ_le hm_pos
+                exact Mathlib.Tactic.Ring.add_pf_add_lt (p * ((n₀ + 1) / p)) this
+
+              _ = p * ((n₀ + 1) / p + 1) :=
+              by
+                rw [mul_add_one]
+              _= p * ((p * ((n₀ + 1) / p) + r) / p + 1) :=
+              by
+                symm
+                exact
+                  (Nat.mul_left_cancel_iff hp_pos).mpr
+                    (congrFun
+                      (congrArg HAdd.hAdd (congrFun (congrArg HDiv.hDiv (id (Eq.symm hdecomp))) p))
+                      1)
+
+          have sfsf: s.f^[n₀.succ + m] x =
+                  s.f^[p * ((n₀.succ / p) + 1)] x := by
+            exact congrFun (congrArg (Nat.iterate s.f) hsum) x
+          have := congrArg (fun t => t)
+                  (by
+                    -- 反復の足し算
+                    exact hcycle
+                  )
+
+          -- 右辺を周期で縮約
+          simp [this, hpow]
+          rename_i h1
+          rw [←@Function.comp_apply _ _ _ s.f^[n₀] s.f]
+          rw [←Function.iterate_succ]
+          rw [←@Function.comp_apply _ _ _ s.f^[m] s.f^[n₀.succ]]
+          rw [←Function.iterate_add]
+          rw [add_comm]
+          rw [hsum]
+          exact hpow (n₀.succ / p + 1)
+
+        -- まとめ： y ≤ x
+        simp [h_to_x]
+        exact le_of_le_of_eq h_y_step h_to_x
+
+
+-------------------------------------------------------------
+--同じ同値類のfの行き先は、同値になることを示す必要がある。あとで使っている。
+--eqClass_size_ge_two_implies_outsideに依存している。
+theorem f_on_equiv
+  (s: Setup α) (x y: s.V) (h: s.setoid.r x y) :
+  s.setoid.r (s.f x) (s.f y) :=
+by
+  have eqy: eqClass_setup s x = eqClass_setup s y := by
+      apply eqClass_eq
+      · rw [s.h_setoid] at h
+        rw [setoid_preorder] at h
+        simp [equiv_rel] at h
+        simp_all only
+      · rw [s.h_setoid] at h
+        rw [setoid_preorder] at h
+        simp [equiv_rel] at h
+        simp_all only
+  have xineq: x∈ eqClass_setup s x := by
+          simp_all only [eqClass_setup]
+          simp
+          rw [s.h_setoid]
+          rw [setoid_preorder]
+          simp [equiv_rel]
+          rw [s.h_setoid] at h
+          rw [setoid_preorder] at h
+          simp [equiv_rel] at h
+          simp_all only [ge_iff_le, not_le, and_self]
+
+  have yineq: y ∈ eqClass_setup s x := by
+      simp_all only [eqClass_setup]
+      rw [s.h_setoid] at h
+      rw [setoid_preorder] at h
+      simp [equiv_rel] at h
+      simp_all only [mem_filter, mem_attach, true_and]
+      rfl
+
+  by_cases h1: (eqClass_setup s x).card ≥ 2;
+  case pos =>
+    let eqsx := eqClass_size_ge_two_implies_outside s x h1
+    have : s.f x ∈ eqClass_setup s x := by
+      simp_all only [eqsx]
+      rwa [← eqy]
+    have : s.f y ∈ eqClass_setup s y := by
+      have :(eqClass_setup s y).card ≥ 2 := by
+        rw [←eqy]
+        exact h1
+      exact eqClass_size_ge_two_implies_outside s y this
+    rw [←eqy] at this
+    rw [s.h_setoid]
+    rw [setoid_preorder]
+    simp
+    dsimp [equiv_rel]
+    let eqe := (eqClass_eq_rev s (s.f x) (s.f y) x)
+    specialize eqe eqsx
+    specialize eqe this
+    constructor
+    · exact eqe.1
+    · exact eqe.2
+  case neg =>
+    --同値類の大きさが1のとき。
+    --同値類の大きさが1であれば、同値のものは一致する。
+    have :(eqClass_setup s x).card = 1 := by
+      --cardは1以上で2以上でないので、ちょうど1になる。
+      have geq1:(eqClass_setup s x).card ≥ 1 := by
+
+        have :(eqClass_setup s x).Nonempty := by
+          simp_all only [ge_iff_le, not_le]
+          exact ⟨_, xineq⟩
+        exact Finset.card_pos.mpr this
+      have leq1: (eqClass_setup s x).card  ≤ 1 := by
+        simp_all only [ge_iff_le, not_le, one_le_card]
+        omega
+      exact Eq.symm (Nat.le_antisymm geq1 leq1)
+
+    have :x = y := by
+      obtain ⟨xx,hxx⟩ := Finset.card_eq_one.mp this
+      rw [hxx] at yineq
+      rw [hxx] at xineq
+      simp at xineq
+      simp at yineq
+      rw [←yineq] at xineq
+      exact xineq
+    subst this
+    rfl
+
+
+/-
+--逆向き。今のところ使わなくても、示したいことは示せているかも。
+lemma f_on_equiv_rev
+  (s: Setup2 α) (x y: s.V) (h: s.setoid.r (s.f x) (s.f y)) :
+  s.setoid.r x y :=
+by
+-/
+
+/-
+----ここから下はPathに依存している議論。落ち着いたら消してもよい。
 --Preorderのstar_implies_pathExistsでも同じことを証明している。大きい方から小さい方の鎖になっているような。
 --このあたりはSetup前提ではないが、Setup前提のpath_exists_setup_reverse の証明で使っている。
 --最終的には、path_exists_setupに生かされる。
@@ -790,7 +1193,8 @@ by
 --補題。サイズ2以上の同値類は、fの行き先が同値類の外にでない。
 --後ろで使っている。f_on_equivなどで参照されている。外からは使っていない。
 --iterationでなく、pathで証明されている。この証明をPathを使わずにiteration系の補題から証明したい。
-lemma eqClass_size_ge_two_implies_outside
+--=>上に書き直した。
+lemma eqClass_size_ge_two_implies_outside2
     {α : Type} [Fintype α] [DecidableEq α]
     (s : Setup α):
     ∀ y : {x // x ∈ s.V}, ( 2 ≤ (eqClass_setup s y).card) → s.f y ∈ (eqClass_setup s y):=
@@ -992,7 +1396,7 @@ by
 --この定理は、functionalSPOのeqClass_Maximalで使われる。それは、同値類の極大性の定理。
 --pathでなく、reachを使って、o3で書き直そうと思う。手で直すこともできるかも。
 --path_exists_setupとeqClass_size_ge_two_implies_outsideとpath_implies_rearを使っている。
-theorem eqClass_size_ge_two_implies_inverse
+theorem eqClass_size_ge_two_implies_inverse2
     {α : Type} [Fintype α] [DecidableEq α]
     (s : Setup α)
     (x : {x // x ∈ s.V})
@@ -1427,98 +1831,4 @@ by
       eqClass_eq s (s.f^[n1] x) (s.f^[n2] x)
         (m2 (s.f^[n1] x) (m1 (s.f^[n2] x) (m2 (s.f^[n1] x) (m1 (s.f^[n2] x) le1))))
         (m1 (s.f^[n2] x) (m2 (s.f^[n1] x) (m1 (s.f^[n2] x) (m2 (s.f^[n1] x) le2))))
-
-
--------------------------------------------------------------
---同じ同値類のfの行き先は、同値になることを示す必要がある。あとで使っている。
---eqClass_size_ge_two_implies_outsideに依存している。
-theorem f_on_equiv
-  (s: Setup α) (x y: s.V) (h: s.setoid.r x y) :
-  s.setoid.r (s.f x) (s.f y) :=
-by
-  have eqy: eqClass_setup s x = eqClass_setup s y := by
-      apply eqClass_eq
-      · rw [s.h_setoid] at h
-        rw [setoid_preorder] at h
-        simp [equiv_rel] at h
-        simp_all only
-      · rw [s.h_setoid] at h
-        rw [setoid_preorder] at h
-        simp [equiv_rel] at h
-        simp_all only
-  have xineq: x∈ eqClass_setup s x := by
-          simp_all only [eqClass_setup]
-          simp
-          rw [s.h_setoid]
-          rw [setoid_preorder]
-          simp [equiv_rel]
-          rw [s.h_setoid] at h
-          rw [setoid_preorder] at h
-          simp [equiv_rel] at h
-          simp_all only [ge_iff_le, not_le, and_self]
-
-  have yineq: y ∈ eqClass_setup s x := by
-      simp_all only [eqClass_setup]
-      rw [s.h_setoid] at h
-      rw [setoid_preorder] at h
-      simp [equiv_rel] at h
-      simp_all only [mem_filter, mem_attach, true_and]
-      rfl
-
-  by_cases h1: (eqClass_setup s x).card ≥ 2;
-  case pos =>
-    let eqsx := eqClass_size_ge_two_implies_outside s x h1
-    have : s.f x ∈ eqClass_setup s x := by
-      simp_all only [eqsx]
-      rwa [← eqy]
-    have : s.f y ∈ eqClass_setup s y := by
-      have :(eqClass_setup s y).card ≥ 2 := by
-        rw [←eqy]
-        exact h1
-      exact eqClass_size_ge_two_implies_outside s y this
-    rw [←eqy] at this
-    rw [s.h_setoid]
-    rw [setoid_preorder]
-    simp
-    dsimp [equiv_rel]
-    let eqe := (eqClass_eq_rev s (s.f x) (s.f y) x)
-    specialize eqe eqsx
-    specialize eqe this
-    constructor
-    · exact eqe.1
-    · exact eqe.2
-  case neg =>
-    --同値類の大きさが1のとき。
-    --同値類の大きさが1であれば、同値のものは一致する。
-    have :(eqClass_setup s x).card = 1 := by
-      --cardは1以上で2以上でないので、ちょうど1になる。
-      have geq1:(eqClass_setup s x).card ≥ 1 := by
-
-        have :(eqClass_setup s x).Nonempty := by
-          simp_all only [ge_iff_le, not_le]
-          exact ⟨_, xineq⟩
-        exact Finset.card_pos.mpr this
-      have leq1: (eqClass_setup s x).card  ≤ 1 := by
-        simp_all only [ge_iff_le, not_le, one_le_card]
-        omega
-      exact Eq.symm (Nat.le_antisymm geq1 leq1)
-
-    have :x = y := by
-      obtain ⟨xx,hxx⟩ := Finset.card_eq_one.mp this
-      rw [hxx] at yineq
-      rw [hxx] at xineq
-      simp at xineq
-      simp at yineq
-      rw [←yineq] at xineq
-      exact xineq
-    subst this
-    rfl
-
-
-/-
---逆向き。今のところ使わなくても、示したいことは示せているかも。
-lemma f_on_equiv_rev
-  (s: Setup2 α) (x y: s.V) (h: s.setoid.r (s.f x) (s.f y)) :
-  s.setoid.r x y :=
-by
 -/
