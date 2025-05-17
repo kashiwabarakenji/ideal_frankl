@@ -789,7 +789,7 @@ by
 
 --補題。サイズ2以上の同値類は、fの行き先が同値類の外にでない。
 --後ろで使っている。f_on_equivなどで参照されている。外からは使っていない。
---iterationでなく、pathで証明されている。この証明をPathを使わずに証明したい。
+--iterationでなく、pathで証明されている。この証明をPathを使わずにiteration系の補題から証明したい。
 lemma eqClass_size_ge_two_implies_outside
     {α : Type} [Fintype α] [DecidableEq α]
     (s : Setup α):
