@@ -32,7 +32,8 @@ variable {α : Type} [Fintype α] [DecidableEq α]
 --一部にSetup_spoが前提の話も入っている。Setup_spo2の前提になっていても、本当は必要ないものが多そう。
 --ー定理の中には、singleton_if_not_maximalの仮定が必要なものは見つからない。仮定はidealrareのところで利用される。
 --Setup_spo2が出てくるのは、setup_trace_spo2までない。
---Setup_SPOtraceとして新たなファイルを作って、Setup_SPOのtrace部分と一緒にするとよさそう。
+--Setup_SPOtraceとして新たなファイルを作って、Setup_SPOのtrace部分と一緒にした。
+--でも結局、このファイルの内容もtraceだった。
 
 --Setup_spoよりも仮定としてはつよくなっている。大きさ2以上の同値類が極大なもののみという仮定が付け加わる。
 structure Setup_spo2 (α : Type) [Fintype α] [DecidableEq α]
@@ -75,7 +76,7 @@ def setup2_induces_spo (s : Setup2 α) : Setup_spo2 α :=
 
 --すぐ下で利用。
 omit [Fintype α] in
-lemma card_of_image_subset (V1 V2: Finset α) (A : Finset V1)(B:Finset V2)
+private lemma card_of_image_subset (V1 V2: Finset α) (A : Finset V1)(B:Finset V2)
   (h : A.image Subtype.val ⊆ B.image Subtype.val) :
   B.card ≥ A.card := by
   --haveI : DecidableEq (Subtype (· : α → Prop)) := inferInstance
@@ -118,7 +119,7 @@ by
 
   exact card_of_image_subset (setup_trace s x hx).V s.V (classOf (setup_trace s x hx) (toNew s x hx q)) (classOf s q) this
 
---Setup_spo2前提ではないが、setup_trace_spo2の証明で利用。
+--Setup_spo2前提ではないが、そとのファイルのsetup_trace_spo2の証明で利用。これもtrace。
 lemma setup_trace_spo_le (s : Setup_spo α) (x: s.V) (hx:(classOf s (@Quotient.mk _ s.setoid x
 )).card ≥ 2) (q1 q2 : Quotient (restrictedSetoid s x)) :
   (setup_trace s x hx).spo.le q1 q2 ↔ s.spo.le (toOld s x q1) (toOld s x q2) :=
@@ -151,7 +152,7 @@ by
     simp_all only
     exact this
 
---setup2_induces_spoなどと違って、traceをとっている。
+--setup2_induces_spoなどと違って、traceをとっている。trace関係のファイルに移動した方がいいのかも。
 --結構いろいろなところで使われているが、実際は、setup_traceの定義で十分なところが多そう。
 --大きさ2以上の同値類が極大なもののみという条件が必要な場合のみSetup_spo2が必要。
 noncomputable def setup_trace_spo2 (s : Setup_spo2 α)(x: s.V) (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
@@ -215,7 +216,7 @@ noncomputable def setup_trace_spo2 (s : Setup_spo2 α)(x: s.V) (hx:(classOf s.to
     exact this
 }
 
---setup_trace_spo2の立ち位置をはっきりさせるため。使っている。
+--setup_trace_spo2の立ち位置をはっきりさせるため。Mainで使っている。
 lemma setup_trace_spo2_lem (s : Setup_spo2 α)(x: s.V) (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).card ≥ 2):
   (setup_trace_spo2 s x hx).toSetup_spo = setup_trace s.toSetup_spo x hx := by
   dsimp [setup_trace_spo2]

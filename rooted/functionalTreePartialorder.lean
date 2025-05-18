@@ -138,7 +138,7 @@ by
 --s.preとs.poの関係を示す補題。
 ---------------------------
 
---同値類は、大小関係と両立する。
+--同値類は、大小関係と両立する。下で使っているし外からも使っている。
 --instを入れなくても、自動的にs.poのインスタンスを使ってくれている。
 lemma pullback_preorder_lemma (s : Setup2 α)-- [inst : PartialOrder (Quotient s.setoid)]
  (j1 j2 : (Quotient s.setoid)) (x1 x2 : s.V) :
@@ -151,7 +151,8 @@ by
   subst h2 h1
   simp_all only [Quotient.lift_mk]
 
---要素の大小関係と、同値類の大小関係の関係。逆方向は、上の補題？
+--要素の大小関係と、同値類の大小関係の関係。下で使っているし、そとからも使っている。
+--逆方向は、上の補題？
 --Preorder_eq_PartialOrderなどで利用。
 lemma pushforward_preorder_lemma (s : Setup2 α) (x1 x2 : s.V) :
   s.pre.le x1 x2 → s.po.le (Quotient.mk s.setoid x1)  (Quotient.mk s.setoid x2) :=
@@ -243,14 +244,15 @@ by
     congr 1
 
 --任意の同値類から要素を取れることも補題にする。Setupでも良さそうだが、ここでしか使わないので。Quot.outでもよさそう。
-lemma quotient_representative (s: Setup2 α) (q: Quotient s.setoid) :
+private lemma quotient_representative (s: Setup2 α) (q: Quotient s.setoid) :
   ∃ x : s.V, q = Quotient.mk s.setoid x :=
 by
   simp_all only [Subtype.exists]
   rcases q with ⟨x,hx⟩
   exact ⟨x, hx, rfl⟩
 
-lemma pre_po_lemma (s: Setup2 α) (x y :s.V) :
+--下で利用。
+private lemma pre_po_lemma (s: Setup2 α) (x y :s.V) :
  s.pre.le x y ↔ s.po.le (Quotient.mk s.setoid x) (Quotient.mk s.setoid y) := by
   constructor
   · intro h
@@ -280,6 +282,7 @@ lemma f_fq_lemma (s: Setup2 α) (x:s.V) :
   -/
 
 --reachを使って書き直せる？逆は、fq_lemma_rev。
+--そとからも使っている。
 lemma fq_lemma (s: Setup2 α) (qx:Quotient s.setoid) :
   ∀ qy :(Quotient s.setoid), s.po.le qx qy → ∃ n:Nat, qy = ((fq s)^[n]) qx :=
 by
@@ -307,8 +310,9 @@ by
   rw [←h]
 
 --poからfqの大小の方向。fq_lemma_revのbase caseに使う。
+--1段階の場合。
 --下で使っている。
-lemma fq_lemma_rev_one (s: Setup2 α) (qx :Quotient s.setoid) :
+private lemma fq_lemma_rev_one (s: Setup2 α) (qx :Quotient s.setoid) :
   s.po.le qx ((fq s) qx) :=
 by
   --pre_po_lemmaでs.preの議論に帰着する。
@@ -332,10 +336,9 @@ by
   subst hx
   simp_all [y]
 
---fqのiterationでいけるものは、大小関係がある。
+--fqのiterationでいけるものは、大小関係がある。fq_lemmaの逆。
 --functionalSPOでreachを使って書き換えられるreach_leq のでそっちを使うと良い。
---その証明にこれを使っている。
---functionalSPOで使っている。
+--外から使っていた。
 lemma fq_lemma_rev (s: Setup2 α) (qx qy:Quotient s.setoid) :
   (∃ n:Nat, qy = ((fq s)^[n]) qx) → s.po.le qx qy :=
 by
@@ -365,7 +368,7 @@ by
     · simp_all only [Function.comp_apply]
 
 /-
---今のところ使ってない？
+--今のところ使ってない？極大なものより大きなものは下に一致。
 theorem exists_max_ge_of_mem {s : Setup2 α} {q : Quotient s.setoid} :
   ∃ y : Quotient s.setoid, s.po.le q y ∧ ∀ z : Quotient s.setoid, s.po.le y z → z = y :=
 by

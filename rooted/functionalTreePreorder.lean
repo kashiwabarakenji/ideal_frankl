@@ -21,10 +21,10 @@ set_option maxHeartbeats 500000
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 
+--前半は、Setupに関係する補題を示す。Commonの続き的な内容。
+--fの連鎖で届くことと、preorderの大小が同値であることを示す。
+--後半は、考えている前順序集合に関する補題。
 --このファイルのメイン定理は、function fから作られるpreorderから引き起こされるsetoidの同値類において、同値類の大きさが2以上であれば、極大要素になっているという定理eqClass_size_ge_two_implies_inverse
-
---preorderは、rootedset_from_setupの繰り返しで作られている。le_eq_R と同じかも。
---そとファイルからの参照なし。
 
 lemma size_one_preorder_setup_lemma (s: Setup α) (x y : {x : α // x ∈ s.V}) :
   s.pre.le x y ↔  @Relation.ReflTransGen s.V (R_from_RS1 (rootedset_from_setup s))  y x:=
@@ -180,7 +180,9 @@ by
       simp_all only [and_self, vp]
 
 ---そのから使われてない。より使いやすい他のを引用した方が良いので。
-private lemma size_one_preorder_setup_lemma2 (s : Setup α) (x y : s.V):
+-- fから順序を定義するのに、この方法のほうがシンプルかもしれないが。
+--size_one_preorder_setup_lemma2から名称変更
+private lemma  size_one_preorder_eq_transition (s : Setup α) (x y : s.V):
   s.pre.le x y ↔
   Relation.ReflTransGen (fun a b : s.V ↦ s.f a = b) x y := by
   let sop := size_one_preorder_setup_lemma s x y
@@ -206,7 +208,7 @@ theorem iteratef_lemma_ref
   ∃ n : ℕ, (s.f^[n]) x = y := by
   -- `le` → 反射推移閉包
   have h' : Relation.ReflTransGen (fun a b : s.V ↦ s.f a = b) x y :=
-    (size_one_preorder_setup_lemma2 s x y).1 h
+    (size_one_preorder_eq_transition s x y).1 h
   -- 反射推移閉包 → 反復回数
   exact exists_iterate_eq_of_rtg h'
 
@@ -435,8 +437,11 @@ by
   ----------------------------------------------------------------
   exact ⟨a, b, ha, hb, hneq_ba.symm⟩
 
+-----------------------------------------------------------------------
+-- このあたりから、応用-------
 
-lemma eqClass_size_ge_two_implies_outside
+--同値類の大きさが2以上のところは極大要素であるを証明するための補題。
+private lemma eqClass_size_ge_two_implies_outside
     {α : Type} [Fintype α] [DecidableEq α]
     (s : Setup α) :
     ∀ y : {x // x ∈ s.V},
@@ -705,7 +710,7 @@ theorem eqClass_size_ge_two_implies_inverse
 
 
 -------------------------------------------------------------
---同じ同値類のfの行き先は、同値になることを示す必要がある。あとで使っている。
+--同じ同値類のfの行き先は、同値になることを示す必要がある。あとで外からも使っている。
 --eqClass_size_ge_two_implies_outsideに依存している。
 theorem f_on_equiv
   (s: Setup α) (x y: s.V) (h: s.setoid.r x y) :

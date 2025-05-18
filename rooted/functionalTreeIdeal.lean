@@ -27,7 +27,7 @@ open Finset Set Classical
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 
---名前をpre2_closuresystemにしたほうがいいか？こちらは、s.poとsetoidを利用してhyperedgeを定義。
+--名前をpre2_closuresystemにした。s.poとsetoidを利用してhyperedgeを定義。
 noncomputable def pre2_closuresystem (s: Setup2 α): ClosureSystem α :=
 {
     ground := s.V,

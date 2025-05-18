@@ -16,7 +16,7 @@ import rooted.Dominant
 import rooted.FamilyLemma
 import rooted.StemSizeOne
 import rooted.functionalCommon
---import rooted.functionalTreePreorder
+import rooted.functionalTreePreorder
 import rooted.functionalTreePartialorder
 
 open Finset Set Classical
@@ -32,6 +32,31 @@ structure Setup_spo_base (α : Type) [Fintype α] [DecidableEq α] where
   (setoid : Setoid {x : α // x ∈ V})
   (fq : Quotient setoid → Quotient setoid)
 
+--半順序に関することなので、commonから移動してきた。Setup_spoの定義で使用するものなので。
+--でも3つの外ファイルから参照されている。
+def partialOrderOfFq {A : Type} (f : A → A)
+  (noLoop : ∀ x y, reach f x y → reach f y x → x = y)
+  : PartialOrder A :=
+{ le := reach f
+  le_refl := by
+    intro x
+    dsimp [reach]
+    use 0
+    simp_all only [Function.iterate_zero, id_eq]
+
+  le_trans := by
+      intro x y z ⟨n, hn⟩ ⟨m, hm⟩
+      exists (n + m)
+      subst hn hm
+      let fi := (Function.iterate_add_apply f m n x)
+      rw [add_comm] at fi
+      exact fi
+
+  , le_antisymm := by
+      intro x y hxy hyx
+      exact noLoop x y hxy hyx
+}
+
 --ここでのfqはSetup_spo_baseのfq。
 structure Setup_spo (α : Type) [Fintype α] [DecidableEq α] extends Setup_spo_base α where
   -- antisymmetry を保証する仮定：ループがあれば自明なもののみ
@@ -46,17 +71,24 @@ def isMaximal_spo (s: Setup_spo α) (x : Quotient s.setoid) : Prop :=
   s.spo.le x y → s.spo.le y x
 
 --Quotientに対するそれに属する。頂点の集合。
+--eqClassの定義と同じなので必要なかったかも。そっちは、Setup2用。setoidを引数にすれば統一できた。
 def classOf (s : Setup_spo α) (q : Quotient s.setoid) [DecidableEq (Quotient s.setoid)]  : Finset {x // x ∈ s.V} :=
   Finset.filter (fun (a : {x // x ∈ s.V}) => @Quotient.mk'' _ s.setoid a = q) s.V.attach
 --以下とほぼ同じ
 --noncomputable def eqClass_setup (s: Setup α) (x : {x : α // x ∈ s.V}) : Finset {x // x ∈ s.V} :=
 --  s.V.attach.filter (fun y => s.setoid.r x y)
 
---要素にひとつに対するそれと同値な頂点全体がclassOf。
+--ためしにsetoidに対して定義してみた。このほうがいいともいえないかも。
+noncomputable def classOfsetoid (V: Finset α) (std: Setoid {x : α // x ∈ V}) (x : {x : α // x ∈ V}) :
+  Finset {x : α // x ∈ V} :=
+  Finset.filter (fun (a : {x : α // x ∈ V}) => std.r x a) V.attach
+
+--要素にひとつに対するそれと同値な頂点全体がclassOf。引数がs.Vの点。
 noncomputable def classOfx (s : Setup_spo α) (x : {x : α // x ∈ s.V}) :
   Finset {x : α // x ∈ s.V} :=
   classOf s (@Quotient.mk _ s.setoid x)
 
+--同値類が非空であること。
 lemma classOf_nonempty (s : Setup_spo α) (q : Quotient s.setoid) :
   (classOf s q).Nonempty := by
   dsimp [classOf]
