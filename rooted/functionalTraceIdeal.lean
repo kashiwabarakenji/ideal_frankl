@@ -25,7 +25,7 @@ import rooted.functionalTreeIdeal
 --import rooted.functionalIdealrare
 
 ---前半がndsの話。
---- だいたいSetup_spo2の仮定がついているが、ほとんどは、Setup_spoの仮定でOKと思われる。
+--- だいたいSetup_spo2の仮定がついているが、ほとんどは、Setup_spoの仮定でOKと思われる。=> 無くした。
 ---後半がexcessの話。これもsetup_spoの引数に書き換えた。
 
 open Finset Set Classical
@@ -171,7 +171,9 @@ lemma trace_ideal_lem (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quotient.mk _
           rw [←ca]
           dsimp [toOld]
 
+/- spo2だったし、使ってなさそうだからコメントアウト。問題なければ消去。
 --(hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).card ≥ 2)
+--これはsetup_spo2の仮定が必要なのか？
 noncomputable def spo_equiv_x_sub (s : Setup_spo2 α) (x: s.V)  : Finset s.V :=
   (classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).erase x
 
@@ -179,7 +181,7 @@ noncomputable def spo_equiv_x_sub (s : Setup_spo2 α) (x: s.V)  : Finset s.V :=
 --(hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).card ≥ 2)
 noncomputable def spo_equiv_x (s : Setup_spo2 α) (x: s.V)   : Finset α :=
   ((classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).erase x).image Subtype.val
-
+-/
 -- (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).card ≥ 2)
 noncomputable def spo_equiv_x_with (s : Setup_spo α) (x: s.V)  : Finset α :=
   ((classOf s (@Quotient.mk _ s.setoid x))).image Subtype.val
@@ -923,7 +925,7 @@ lemma trace_ideal_nds (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quotient.mk _
 --excessだけ別ファイルに独立させてもいい。functionalExcess.leanなど。定理は2つだが、closuresystemの話はしてないし。
 --過剰分excessの定義
 --excessは極大な同値類だけではなく、すべての同値類に対する余剰。
---excessは、Setup_spo2に対して定義されているが、Setup_spoに対しても定義できる。
+--excessは、Setup_spo2に対して定義されているが、Setup_spoに対しても定義できる。=>変更した。
 --帰納法を使いたいのは、Setup_spo2のクラスに対してなので、Setup_spoに変更しても本当に問題がないのか？
 --Setup_spoとSetup_spo2の違いを廃止するという方向性もある。
 noncomputable def excess (s: Setup_spo α)  : ℕ :=

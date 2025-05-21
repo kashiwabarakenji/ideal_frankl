@@ -27,6 +27,9 @@ open Finset Set Classical
 variable {α : Type} [Fintype α] [DecidableEq α]
 
 --ここからSetup_spo2が前提。
+--どの定理をどのファイルに入れるかがうまくいっていないかも。
+--traceに関係する部分と関係ない部分を分けた方がいいかも。
+--setup_spoとsetup_spo2は分けなくてもよかったかも。
 --maximal以外は、singletonというsingleton_if_not_maximal の仮定が付け加わっている。
 --この仮定が必要なのは、rareな頂点を示すときぐらい。
 --一部にSetup_spoが前提の話も入っている。Setup_spo2の前提になっていても、本当は必要ないものが多そう。
@@ -46,6 +49,7 @@ structure Setup_spo2 (α : Type) [Fintype α] [DecidableEq α]
 
 --Setup2からSetup_spo2への埋め込み。
 --functionalMainのaverage_rareのところで使っている。
+--ここで極大要素以外は、同値類のサイズが1という条件を証明している。
 def setup2_induces_spo (s : Setup2 α) : Setup_spo2 α :=
 {
   V := s.V,
@@ -89,6 +93,7 @@ private lemma card_of_image_subset (V1 V2: Finset α) (A : Finset V1)(B:Finset V
   simp_all only [ge_iff_le]
   linarith
 
+--trace関係の補題。
 --新しく写って同値類が大きくなることはない。前提は、Setup_spoだが、setup_trace_spo2で利用。
 noncomputable def toNew_card (s : Setup_spo α) (x : {x : α // x ∈ s.V})
   (q: Quotient s.setoid)
@@ -153,7 +158,7 @@ by
     exact this
 
 --setup2_induces_spoなどと違って、traceをとっている。trace関係のファイルに移動した方がいいのかも。
---結構いろいろなところで使われているが、実際は、setup_traceの定義で十分なところが多そう。
+--結構いろいろなところで使われているが、実際は、setup_traceの定義で十分なところもあるかも。検証の必要あり。
 --大きさ2以上の同値類が極大なもののみという条件が必要な場合のみSetup_spo2が必要。
 noncomputable def setup_trace_spo2 (s : Setup_spo2 α)(x: s.V) (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
 )).card ≥ 2): Setup_spo2 α :=

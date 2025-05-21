@@ -37,9 +37,13 @@ theorem functional_family_average_rare (V: Finset α) (f : V → V) (valid:∀ v
 
 ## 同値類上の半順序が作る集合族 (functionalSPO.lean)
 
-- 前順序を前提にしないSetoidがSetup_spo。
-- それに関する補題を証明している。
-- Setup_spoとSetup2の関係
+- 前順序を前提にしないSetoid上の半順序を抽象化した仮定がSetup_spo2。Setup_spoは極大なところ以外は同値類の大きさが1であるというsingleton_if_not_maximalの仮定を外したもの。とりあえず、この仮定は使わないので。
+- validの仮定があると、極大の部分の同値類の大きさが1にならないが、Setup_spoやSetup_spo2の仮定においては、極大な部分の同値類の大きさは1になる。validの仮定なしで元の言明を書き直した方がいいのかも。
+- traceとrare vertexの関係の補題では、Setup_spo2ではなく、Setup_spoで十分なのかも。
+- このファイルでは、Setup_spoに関する補題を証明している。
+- Setup_spoとSetup2の関係など。
+- 補題：サイズが2以上の同値類は、半順序の極大要素に対応するところにしか出てこない。<=eqClass_Maximalで証明。setup2_induces_spoで利用。
+- これは利用するところがspo2なのでそっちに移動してもいいかも。
 
 ## 同値類上の半順序が作る集合族 (functionalTreeIdeal.lean)
 - pre_closuresystemは、前順序から作ったideal。
@@ -52,10 +56,10 @@ theorem functional_family_average_rare (V: Finset α) (f : V → V) (valid:∀ v
 
 - Setup_spoからsingleton_if_not_maximalの仮定をつけたのがSetup_spo2。
 - Mainのファイルではこっちのほうを利用する。
-- 補題：サイズが2以上の同値類は、半順序の極大要素に対応するところにしか出てこない。
 - V上に同値類が与えられていて、以下の条件を満たすとする。1. サイズ2以上の同値類は、半順序の極大な要素のみ。2. 半順序の親は、たかだか1つ。
 - この半順序に対して、順序idealを考えて、hyperedgeと思って、集合族を考えることができる。
-
+- SPO2とSPOtraceの関数の分類も微妙なので、整理したい。
+- 現在の分類の観点は、仮定がSetup_spoかspo2か。Idealを使うか使わないか。Traceに関係するかしないか。
 
 ## 順序idealと平均rare (functionalIdealRare.lean)
 
@@ -63,12 +67,8 @@ theorem functional_family_average_rare (V: Finset α) (f : V → V) (valid:∀ v
 - 頂点集合上に前順序が与えられると順序idealの全体が決まる。これは集合族のhyperedgeと思って、平均rareになるかなどが議論できる。
 - 平均rareとは、(順序idealの大きさの和*2-順序idealの個数*台集合の大きさ)<=0のことである。
 
-## 同値類上の半順序とrare (functionalIdealRare.lean)
-
-- 補題: サイズ2以上の同値類の頂点は、rareな頂点になる。
-  - この補題の証明は、その同値類をhyperedge全体から含まないhyperedge全体への単射を作ることで可能。
-
-
+- 補題: Setup_spo2の仮定のもと、サイズ2以上の同値類の頂点は、rareな頂点になる。
+- ここで、Setup_spo2の仮定を利用している。
 
 ## 半順序のtrace (functionalTraceIdeal.lean)
 
@@ -82,6 +82,9 @@ theorem functional_family_average_rare (V: Finset α) (f : V → V) (valid:∀ v
 
 ## 半順序のtrace (functionalTraceIdeal2.lean)
 
+- trace_ideal_nds_increaseのところで、Setup_spo2の仮定を使っている。
+- spo2_rareを呼んでいて、これがSetup_spo2の仮定を使っている。
+- Setup_spo2の仮定は、同値類の大きさが1であることを仮定しているので、traceした後の集合族は、同値類の大きさが1であることがわかる。
 - 補題： 集合族に対して、パラレルな要素を持つ要素で、rareな頂点をtraceして平均rareであれば、もともと平均rareである。
   - この補題は順序とは関係なく、一般に成り立つ。
 - この補題の証明は、すでにParallel.leanのファイルの中で完了している。
@@ -95,7 +98,7 @@ theorem functional_family_average_rare (V: Finset α) (f : V → V) (valid:∀ v
  - パラレルな頂点がなくなったあとは、極大な頂点(=グラフの根)をdeletionしていく。集合族としては、根のdeletionと考えても、traceと考えても同じ。
  - 補題：半順序集合の順序idealの個数は、台集合の数よりも同じか多い。
    - これは、各要素を単項idealに対応させれば、それが単射になることからわかる。反対称律から、単射でなければパラレルな要素が出てくる。
-   - われわれの枠組みに限らない一般的な定理となる。principal_ideal_injectiveで証明済み。
+   - われわれの枠組みに限らない一般的な定理となる。principal_ideal_injectiveで証明。
 
 ## 半順序と極大元 (functionalPartialMaximal.lean)
 
