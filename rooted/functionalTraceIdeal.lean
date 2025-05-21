@@ -36,7 +36,7 @@ variable {α : Type} [Fintype α] [DecidableEq α]
 
 --制限される前から、制限された世界への成り立つ定理。
 -- (spo_closuresystem (setup_trace_spo2 s x hx).toSetup_spo)となっているが、おそらく(spo_closuresystem (setup_trace s x hx)でOK。
-lemma trace_ideal_lem (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quotient.mk _ s.setoid x
+private lemma trace_ideal_lem (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quotient.mk _ s.setoid x
 )).card ≥ 2) :
   ∀ ss:Finset α,  (spo_closuresystem s).sets ss → (spo_closuresystem (setup_trace s x hx)).sets (ss.erase x.val) := by
   --右から左は別の補題に分けた。
@@ -189,7 +189,7 @@ noncomputable def spo_equiv_x_with (s : Setup_spo α) (x: s.V)  : Finset α :=
   --s.toSetup_spo.spo.le x (spo_equiv_x s x hx) := by
 
 --制限されたあとのhyperedgeから制限される前の世界に戻す定理。
-theorem trace_ideal_lem_rev (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quotient.mk _ s.setoid x
+private lemma trace_ideal_lem_rev (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quotient.mk _ s.setoid x
 )).card ≥ 2) :
   ∀ ss:Finset α, (spo_closuresystem (setup_trace s x hx)).sets ss → ((spo_equiv_x_with s x) ∩ ss).Nonempty  → (spo_closuresystem s).sets (ss ∪ {x.val}):= by
   intro ss
@@ -419,7 +419,7 @@ theorem trace_ideal_lem_rev (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quotien
           simp_all only [Subtype.coe_eta, Subtype.forall, mem_erase, ne_eq, Finset.mem_image, Finset.mem_union,
             Finset.mem_singleton, true_or, I']
 
-lemma new_lem_notx (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quotient.mk _ s.setoid x
+private lemma new_lem_notx (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quotient.mk _ s.setoid x
 )).card ≥ 2) :
   ∀ x_1: s.V.erase x.val, (h:x_1.val ∉ (spo_equiv_x_with s x)) → toNew s x hx (@Quotient.mk _ s.setoid ⟨x_1.val,by
   obtain ⟨val, property⟩ := x
@@ -464,7 +464,7 @@ by
     Subtype.coe_eta]
 
 --これもSetup_spoに仮定を変えても大丈夫か？
-lemma trace_ideal_lem_rev2 (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quotient.mk _ s.setoid x
+private lemma trace_ideal_lem_rev2 (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quotient.mk _ s.setoid x
 )).card ≥ 2) :
   ∀ ss:Finset α, (spo_closuresystem (setup_trace s x hx)).sets ss → (spo_equiv_x_with s x) ∩ ss =∅ → (spo_closuresystem s).sets ss := by
 
@@ -723,8 +723,8 @@ lemma trace_ideal_lem_rev2 (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quotient
           exact rfl
 
 --今までの補題をまとめたもの。
---setup_trace_spo2は、setup_traceでよさそう。
-theorem trace_ideal (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quotient.mk _ s.setoid x
+--trace_ideal_ndsで引用。
+private lemma trace_ideal (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quotient.mk _ s.setoid x
 )).card ≥ 2) :
   ∀ ss:Finset α,  (spo_closuresystem (setup_trace s x hx)).sets ss ↔ ((spo_closuresystem s).toSetFamily.trace x.val (by simp_all only [ge_iff_le,
     coe_mem] ) (by
@@ -856,7 +856,7 @@ theorem trace_ideal (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quotient.mk _ s
         exact hr
 
 --すぐ下で利用。
-lemma normalized_degree_sum_congr {α : Type} [DecidableEq α] [Fintype α]
+private lemma normalized_degree_sum_congr {α : Type} [DecidableEq α] [Fintype α]
   (F G : SetFamily α)
   [DecidablePred F.sets] [DecidablePred G.sets]
   (h_sets   : F.sets = G.sets)
@@ -895,7 +895,7 @@ lemma normalized_degree_sum_congr {α : Type} [DecidableEq α] [Fintype α]
 --traceしたものと、集合族が等しければ、ndsも等しい。これはSetup_spoの仮定で大丈夫？
 --functionalMainで使われている。
 --trace_ideal_nds_increase2でも使われている。
-lemma trace_ideal_nds (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quotient.mk _ s.setoid x
+theorem trace_ideal_nds (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quotient.mk _ s.setoid x
 )).card ≥ 2) :
   (spo_closuresystem (setup_trace s x hx)).normalized_degree_sum = ((spo_closuresystem s).toSetFamily.trace x.val (by simp_all only [ge_iff_le,
     coe_mem] ) (by

@@ -38,12 +38,14 @@ theorem functional_family_average_rare (V: Finset α) (f : V → V) (valid:∀ v
 ## 同値類上の半順序が作る集合族 (functionalSPO.lean)
 
 - 前順序を前提にしないSetoid上の半順序を抽象化した仮定がSetup_spo2。Setup_spoは極大なところ以外は同値類の大きさが1であるというsingleton_if_not_maximalの仮定を外したもの。とりあえず、この仮定は使わないので。
-- validの仮定があると、極大の部分の同値類の大きさが1にならないが、Setup_spoやSetup_spo2の仮定においては、極大な部分の同値類の大きさは1になる。validの仮定なしで元の言明を書き直した方がいいのかも。
-- traceとrare vertexの関係の補題では、Setup_spo2ではなく、Setup_spoで十分なのかも。
-- このファイルでは、Setup_spoに関する補題を証明している。
+- validの仮定があると、極大な同値類の大きさが1にならないが、Setup_spoやSetup_spo2の仮定においては、極大な部分の同値類の大きさは1になりうる。仮定の種類が無駄に増えている気もするので、validの仮定なしで元の言明を書き直した方がいいのかも。
+- traceの関係の補題では、Setup_spo2ではなく、Setup_spoで十分なものが多い。
+- このファイルfunctionalSPOでは、Setup_spoに関する補題を証明している。
 - Setup_spoとSetup2の関係など。
-- 補題：サイズが2以上の同値類は、半順序の極大要素に対応するところにしか出てこない。<=eqClass_Maximalで証明。setup2_induces_spoで利用。
+- 補題：サイズが2以上の同値類は、半順序の極大要素に対応するところにしか出てこない。<=eqClass_Maximalが言明。setup2_induces_spoで利用。
 - これは利用するところがspo2なのでそっちに移動してもいいかも。
+
+  - よって、パラレルな頂点をtraceした集合族もこれにより、前順序を定めることができる。サイズ2以上の同値類から同値な頂点をひとつtraceしても、半順序の親がたかだか1つということも変わらない。
 
 ## 同値類上の半順序が作る集合族 (functionalTreeIdeal.lean)
 - pre_closuresystemは、前順序から作ったideal。
@@ -52,31 +54,35 @@ theorem functional_family_average_rare (V: Finset α) (f : V → V) (valid:∀ v
 - spo_closuresystemは、Setup_spoの仮定から作ったideal。
 - 補題：spo_closreusystemは、pre2_closuresystemと一致する。
 
-## 同値類上の半順序 (functionalSPO2.lean, functionalSPOtrace.lean)
+## 同値類上の半順序 (functionalSPO2.lean)
 
 - Setup_spoからsingleton_if_not_maximalの仮定をつけたのがSetup_spo2。
 - Mainのファイルではこっちのほうを利用する。
 - V上に同値類が与えられていて、以下の条件を満たすとする。1. サイズ2以上の同値類は、半順序の極大な要素のみ。2. 半順序の親は、たかだか1つ。
 - この半順序に対して、順序idealを考えて、hyperedgeと思って、集合族を考えることができる。
+- 補題：サイズ2以上の同値類からパラレルな頂点をひとつtraceしても、サイズが2以上の同値類が極大なものに限られることも変わらない。setup_trace_spo2の定義。
 - SPO2とSPOtraceの関数の分類も微妙なので、整理したい。
 - 現在の分類の観点は、仮定がSetup_spoかspo2か。Idealを使うか使わないか。Traceに関係するかしないか。
+
+## spoのtrace (functionalSPOtrace.lean)
+
+- 大きい世界と小さい世界間の写像。要素間のものと、同値類間のもの。
+
+- 補題: パラレルな頂点をtraceした場合、もとの前順序で大小関係があることと、traceした集合族での大小関係は一致する。ここでの大小関係は、hyperedgeがxを含んでいたらyも含むという関係。setup_trace_reach
+- Setup_spo前提の対象のtraceの定義。
 
 ## 順序idealと平均rare (functionalIdealRare.lean)
 
 - 順序idealとは、考えている前順序で、下に閉じている集合のことである。
 - 頂点集合上に前順序が与えられると順序idealの全体が決まる。これは集合族のhyperedgeと思って、平均rareになるかなどが議論できる。
 - 平均rareとは、(順序idealの大きさの和*2-順序idealの個数*台集合の大きさ)<=0のことである。
-
-- 補題: Setup_spo2の仮定のもと、サイズ2以上の同値類の頂点は、rareな頂点になる。
+- 補題: Setup_spo2の仮定のもと、サイズ2以上の同値類の頂点は、rareな頂点になる。spo2_rareで証明している。
 - ここで、Setup_spo2の仮定を利用している。
 
 ## 半順序のtrace (functionalTraceIdeal.lean)
 
 
 - 同値な頂点(パラレルな頂点とも呼ぶ)のひとつをtraceすることにより、同一視していく方向性。
-- 補題: パラレルな頂点をtraceした場合、もとの前順序で大小関係があることと、traceした集合族での大小関係は一致する。ここでの大小関係は、hyperedgeがxを含んでいたらyも含むという関係。
-  - よって、パラレルな頂点をtraceした集合族もこれにより、前順序を定めることができる。サイズ2以上の同値類から同値な頂点をひとつtraceしても、半順序の親がたかだか1つということも変わらない。
-- 補題：サイズ2以上の同値類からパラレルな頂点をひとつtraceしても、サイズが2以上の同値類が極大なものに限られることも変わらない。
 - 集合族としては、パラレルな頂点を持つ頂点をtraceしていくことにより、パラレルな頂点を持たない集合族を得ることができる。
 - excessもここで定義。
 

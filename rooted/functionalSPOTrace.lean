@@ -27,7 +27,7 @@ variable {α : Type} [Fintype α] [DecidableEq α]
 
 
 -----------------------------------
---このファイルはsetup_spoの1点制限traceの話。ファイルを独立させた。
+--このファイルはsetup_spoの1点制限traceの話の補題。ファイルを独立させた。
 --Setup_spo2から得られるideal全体の集合族において、同値類の大きさが2以上のときに、1元traceしても、またSetup2になる。
 
 def restrictedSetoid (s: Setup_spo α)(x : {x : α // x ∈ s.V}): Setoid {y : α // y ∈ s.V.erase x.val} :=
@@ -75,6 +75,7 @@ noncomputable def representativeNeSelf2
     simp_all only
     simp [representativeNeSelf]⟩
 
+--TraceIdealからも利用されている。
 lemma representativeNeSelf_mem_classOf
   (s : Setup_spo α) (x : {x // x ∈ s.V}) (hx : 2 ≤ (classOf s ⟦x⟧).card) :
   ⟨(representativeNeSelf s x hx).val, Finset.mem_of_mem_erase (representativeNeSelf s x hx).property⟩ ∈ (classOf s (@Quotient.mk _ s.setoid x)).erase x :=
@@ -83,6 +84,7 @@ by
   have hb := Classical.choose_spec (exists_ne_of_one_lt_card hx x)
   simp_all only [ne_eq, Subtype.coe_eta, mem_erase, not_false_eq_true, and_self]
 
+--TraceIdealからも利用されている。
 lemma representativeNeSelf_mem_classOf2
   (s : Setup_spo α) (x : {x // x ∈ s.V}) (hx : 2 ≤ (classOf s ⟦x⟧).card) :
   s.setoid.r ⟨(representativeNeSelf s x hx), by
@@ -99,6 +101,7 @@ by
   obtain ⟨h11,h12⟩ := h1
   exact Quotient.eq''.mp h12
 
+--TraceIdeal2からも利用されている。
 lemma representativeNeSelf_mem_classOf3
   (s : Setup_spo α) (x : {x // x ∈ s.V}) (hx : 2 ≤ (classOf s ⟦x⟧).card) :
   s.setoid.r (representativeNeSelf2 s x hx) x :=
@@ -124,7 +127,7 @@ noncomputable def toErased (s : Setup_spo α)
         exact Subtype.coe_ne_coe.mpr h⟩
 
 --toErasedの写像は、xと異なる場合は、恒等写像。
-lemma toErased_eq_ne
+private lemma toErased_eq_ne
   (s : Setup_spo α) (x z : {x // x ∈ s.V})
   (hx : 2 ≤ (classOf s ⟦x⟧).card)
   (h : z ≠ x) :
@@ -148,6 +151,7 @@ by
   simp_all only [Quotient.eq]
 -/
 -- yとzが同じ同値類であれば、移り先も同じ同値類。
+--TraceIdealからも利用されている。
 --逆方向は、toErased_eqxやtoErased_eq_lemを使う。
 lemma toErased_eq
   (s : Setup_spo α) (x y z : {x : α // x ∈ s.V})
@@ -304,6 +308,7 @@ by
       exact q_eq
 
 --上の命題の逆方向。xの移り先の同値類に入った時は、もともとxと同値だった。
+--TraceIdealからも利用されている。
 lemma toErased_eqx
   (s : Setup_spo α) (x : {xx : α // xx ∈ s.V}) (y z : {xx : α // xx ∈ s.V.erase x.val})
   -- (hx : 2 ≤ (classOf s ⟦x⟧).card)
@@ -324,7 +329,7 @@ lemma toErased_eqx
   by
     exact equivyz
 
---setoidで同値なことと、classOfの関係
+--setoidで同値なことと、classOfの関係。TraceIdealからも利用されている。
 lemma classOf_setoid
   (s : Setup_spo α) (y z: {x : α // x ∈ s.V}) :
   s.setoid.r y z ↔ y ∈ (classOf s ⟦z⟧)  :=
@@ -343,7 +348,7 @@ by
     simp_all only [mem_attach, Quotient.eq, true_and]
 
 --定義から自明かもしれないが。
-lemma classOf_quotient
+private lemma classOf_quotient
   (s : Setup_spo α) (y : {x : α // x ∈ s.V}) (q:Quotient s.setoid) :
   q = @Quotient.mk' _ s.setoid y ↔ y ∈ (classOf s q) := by
   dsimp [classOf]
@@ -508,7 +513,7 @@ lemma setup2_trace_fq_one (s : Setup_spo α) (x: s.V) (hx:(classOf s (@Quotient.
 -/
 
 --したで使っている。
-lemma setup2_trace_fq_n (s : Setup_spo α) (x: s.V) (hx:(classOf s (@Quotient.mk _ s.setoid x)).card ≥ 2) (n :Nat):
+private lemma setup2_trace_fq_n (s : Setup_spo α) (x: s.V) (hx:(classOf s (@Quotient.mk _ s.setoid x)).card ≥ 2) (n :Nat):
   ((setup_trace_base s x hx).fq)^[n] = fun q => toNew s x hx (s.fq^[n] (toOld s x q)) := by
   dsimp [setup_trace_base]
   induction n
@@ -530,6 +535,7 @@ lemma setup2_trace_fq_n (s : Setup_spo α) (x: s.V) (hx:(classOf s (@Quotient.mk
     simp_all only [no]
 
 --すぐしたのsetup_trace_noLoopで使う。
+--functionalSPO2でも使う。
 lemma setup_trace_reach (s : Setup_spo α) (x: s.V) (hx:(classOf s (@Quotient.mk _ s.setoid x
 )).card ≥ 2) (q1 q2 : Quotient (restrictedSetoid s x)) :
   reach (setup_trace_base s x hx).fq q1 q2 ↔

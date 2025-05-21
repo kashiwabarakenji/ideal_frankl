@@ -256,7 +256,8 @@ noncomputable def setoid_ideal_injection (s: Setup_spo α)(q : Quotient s.setoid
       simp_all only [Finset.not_nonempty_empty, disjoint_self, Finset.bot_eq_empty, not_and]
 ⟩
 
-theorem setoid_ideal_injection_injective
+--下で使っている。
+private lemma setoid_ideal_injection_injective
   (s : Setup_spo α) (q : Quotient s.setoid) (hm : isMaximal_spo s q) :
   Function.Injective (setoid_ideal_injection s q hm) := by
   intro ⟨ss₁, h₁⟩ ⟨ss₂, h₂⟩ h_eq
@@ -309,8 +310,9 @@ theorem setoid_ideal_injection_injective
 
   exact Subtype.mk_eq_mk.mpr this
 
+--下で使っている。
 omit [Fintype α] [DecidableEq α] in
-lemma powerset_image {α β : Type*}[DecidableEq β]
+private lemma powerset_image {α β : Type*}[DecidableEq β]
   (s : Finset α) (f : α → β) :
   s.powerset.image (fun a => a.image f) = (s.image f).powerset := by
   -- 要素レベルで等しいことを示すために `ext t` で両辺のメンバーシップを比較
@@ -404,7 +406,7 @@ lemma filter_set_of_set_comp_eq_image_filter
 
 --「Filter 後に image を取ったカードが等しい」単射性を利用。
 --card_filter_image_eqで使っているが直接証明した方が簡単そう。
-lemma card_of_image_filter_of_inj_on
+private lemma card_of_image_filter_of_inj_on
   {α β : Type} [DecidableEq α] [DecidableEq β]
   (s : Finset α) (f : α → β) (p : α → Prop) [DecidablePred p]
   (hf : Set.InjOn f (s.filter p)) :
@@ -414,7 +416,7 @@ by
 
 
 --setoid_ideal_injection_cardの証明で使っている。
-lemma card_filter_image_eq
+private lemma card_filter_image_eq
   {α β : Type} [DecidableEq α] [DecidableEq β]
   (S₀ : Finset α) (φ : α → β) (P : β → Prop)
   [DecidablePred P]
@@ -428,7 +430,7 @@ by
 
 --Subtype を val で写したときの単射性を保証するもの。
 --setoid_ideal_injection_cardの証明で使っている。
-lemma image_val_inj_on
+private lemma image_val_inj_on
   {α : Type*} [DecidableEq α]
   {V : Finset α}
   (S : Finset (Finset {x // x ∈ V})) :
@@ -455,8 +457,8 @@ by
       simp_all only
     rw [this]; exact ha'
 
---attach した要素からなる powerset を val で写したら元の powerset に戻る
-lemma powerset_image_attach {α : Type*} [DecidableEq α] (V : Finset α) :
+--attach した要素からなる powerset を val で写したら元の powerset に戻る。下で使っている。
+private lemma powerset_image_attach {α : Type*} [DecidableEq α] (V : Finset α) :
   Finset.image (fun ss => ss.image Subtype.val) V.attach.powerset = V.powerset := by
   apply Finset.ext
   intro s
@@ -487,7 +489,7 @@ lemma powerset_image_attach {α : Type*} [DecidableEq α] (V : Finset α) :
     rw [Finset.mem_image]
     exact ⟨ss, hss, hS⟩
 
-lemma setoid_ideal_injection_card
+private lemma setoid_ideal_injection_card
   (s : Setup_spo α):-- (q : Quotient s.setoid)  :
   #(filter (fun ss => (spo_closuresystem s).sets (Finset.image Subtype.val ss)) s.V.attach.powerset) =
   #(filter (fun s_1 => (spo_closuresystem s).sets s_1) (spo_closuresystem s).ground.powerset) :=
@@ -518,7 +520,7 @@ by
   simp_all only [coe_filter, Finset.mem_powerset, P, S₀, φ, S₁]
 
 
-lemma setoid_ideal_number_of_hyperedges (s : Setup_spo α)(q : Quotient s.setoid ):
+private lemma setoid_ideal_number_of_hyperedges (s : Setup_spo α)(q : Quotient s.setoid ):
   (setoid_ideal_injection_domain s q).card + (setoid_ideal_injection_codomain s q).card =
   (spo_closuresystem s).number_of_hyperedges := by
   dsimp [setoid_ideal_injection_domain, setoid_ideal_injection_codomain]
@@ -540,6 +542,7 @@ lemma setoid_ideal_number_of_hyperedges (s : Setup_spo α)(q : Quotient s.setoid
   let siic := setoid_ideal_injection_card s
   exact siic
 
+--下で使っている。
 lemma setoid_ideal_domain_codomain (s : Setup_spo α)(q : Quotient s.setoid ) (hm: isMaximal_spo s q) :
   (setoid_ideal_injection_domain s q).card ≤ (setoid_ideal_injection_codomain s q).card := by
   --dsimp [setoid_ideal_injection_domain, setoid_ideal_injection_codomain]
@@ -554,7 +557,8 @@ lemma setoid_ideal_domain_codomain (s : Setup_spo α)(q : Quotient s.setoid ) (h
   specialize fcl this
   simp_all only
 
-lemma degree_le_setoid_ideal_injection_domain_card
+--下で使っている。
+private lemma degree_le_setoid_ideal_injection_domain_card
   (s : Setup_spo α) (q : Quotient s.setoid) (x : {x // x ∈ classOf s q}) :
   (spo_closuresystem s).degree ↑↑x  = #(setoid_ideal_injection_domain s q) :=
 by
@@ -849,17 +853,17 @@ by
     exact this
   exact Finset.card_bij i H₁ H₂ H₃
 
---ざっと見たところ、Setup_spo2でなくて、Setup_spoでよさそうにも見えるが、本当か？
-theorem setoid_ideal_rare (s : Setup_spo2 α)(q : Quotient (s.toSetup_spo).setoid )(hm: isMaximal_spo s.toSetup_spo q) :
-  ∀ (x : classOf s.toSetup_spo q), (spo_closuresystem s.toSetup_spo).toSetFamily.is_rare x := by
+--Setup_spo2からSetup_spoに変更した。
+private lemma setoid_ideal_rare (s : Setup_spo α)(q : Quotient s.setoid )(hm: isMaximal_spo s q) :
+  ∀ (x : classOf s q), (spo_closuresystem s).toSetFamily.is_rare x := by
 
   dsimp [SetFamily.is_rare]
-  rw [←setoid_ideal_number_of_hyperedges s.toSetup_spo q]
-  let sid := setoid_ideal_domain_codomain s.toSetup_spo q hm
+  rw [←setoid_ideal_number_of_hyperedges s q]
+  let sid := setoid_ideal_domain_codomain s q hm
 
   intro x_1
   simp
-  let dls := degree_le_setoid_ideal_injection_domain_card s.toSetup_spo q x_1
+  let dls := degree_le_setoid_ideal_injection_domain_card s q x_1
   linarith
 
 
@@ -871,14 +875,14 @@ theorem setoid_ideal_rare (s : Setup_spo2 α)(q : Quotient (s.toSetup_spo).setoi
 -- spo2のsingleton_if_not_maximalで極大要素出ない場合は、サイズが1。
 -- よって、サイズ2以上の同値類は、rareなvertexになる。
 -- この補題は、singleton_if_not_maximalを使っているので、仮定は、Setup_spoでなく、Setup_spo2である必要がある。
-lemma spo2_rare (s : Setup_spo2 α) (q: Quotient s.setoid) (hx:(classOf s.toSetup_spo q).card ≥ 2) :
+theorem spo2_rare (s : Setup_spo2 α) (q: Quotient s.setoid) (hx:(classOf s.toSetup_spo q).card ≥ 2) :
   ∀ (y : s.V), @Quotient.mk _ s.toSetup_spo.setoid y = q → (spo_closuresystem s.toSetup_spo).is_rare y :=
 by
   intro y hq
   have hm: isMaximal_spo s.toSetup_spo q :=
   by
     exact s.singleton_if_not_maximal q hx
-  let sir := setoid_ideal_rare s q hm
+  let sir := setoid_ideal_rare s.toSetup_spo q hm
   have : y ∈ classOf s.toSetup_spo q := by
     subst hq
     simp_all only [ge_iff_le]
