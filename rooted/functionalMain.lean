@@ -329,12 +329,6 @@ by
     by
       dsimp [s']
       exact trace_ideal_nds_increase2 s q.out hq
-      /-
-      --let tin := trace_ideal_nds s.toSetup_spo q.out hq
-      rw [setup_trace_spo2_lem ]
-      rw [trace_ideal_nds s.toSetup_spo q.out hq]
-      exact trace_ideal_nds_increase s q.out hq
-      -/
 
     -- 6) s' < s（r s' s） を示す
     have h_rel : r s' s := by

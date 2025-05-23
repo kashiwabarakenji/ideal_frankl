@@ -83,7 +83,7 @@ private lemma quotient_subsingleton
 -- 3.  補題：numClasses = 1 なら ∀y, proj_max s y = proj_max s x
 ------------------------------------------------------------
 
-lemma proj_max_eq_of_one_class
+private lemma proj_max_eq_of_one_class
     (s : Setup_po α) (h : numClasses (proj_setoid s) = 1)
     (x y : {x : α // x ∈ s.V}) :
     proj_max s y = proj_max s x := by
@@ -101,7 +101,8 @@ lemma proj_max_eq_of_one_class
 -- 4.  本命：component_one
 ------------------------------------------------------------
 
-lemma component_one
+--外からも使っている。コンポーネントの数が1だと、極大要素を含むhyperedgeが全体集合になること。
+theorem component_one
     (s : Setup_po α)
     (h1 : numClasses (proj_setoid s) = 1) :
     ∀ ss : Finset α, ∀ x : s.V,
@@ -142,7 +143,7 @@ lemma component_one
 
 --全体集合からmaximalな要素を除いたものがidealになること。
 --連結成分の数の仮定は必要ない。
-lemma hasgroundminusone
+private lemma hasgroundminusone
   (s : Setup_po α) (x : s.V) (mx :po_maximal s x):
     (po_closuresystem s).sets (s.V.erase x) :=
 by
@@ -182,7 +183,7 @@ by
         exact hval
       exact (Finset.mem_erase).2 ⟨hwne, w.property⟩
 
-lemma po_trace_le_iff
+private lemma po_trace_le_iff
     (s : Setup_po α) (x : s.V) (mx : po_maximal s x)
     (nontriv : s.V.card ≥ 2)
     {a b : s.V}
@@ -212,7 +213,7 @@ private lemma not_mem_of_subset_erase
   -- `Finset.mem_erase.1` : `a ∈ s.erase a ↔ ¬ a = a ∧ a ∈ s`
   exact (Finset.mem_erase.1 this).1 rfl
 
-lemma trace_sets_iff (s  : Setup_po α) (conn  : numClasses (proj_setoid s) = 1)  (x  : s.V) (mx : po_maximal s x) (nontriv : s.V.card ≥ 2)(ss : Finset α) :
+private lemma trace_sets_iff (s  : Setup_po α) (conn  : numClasses (proj_setoid s) = 1)  (x  : s.V) (mx : po_maximal s x) (nontriv : s.V.card ≥ 2)(ss : Finset α) :
     (po_closuresystem (po_trace s x mx nontriv)).sets ss
     ↔ (po_closuresystem s).sets ss ∧ ss ≠ s.V :=
 by
@@ -526,7 +527,7 @@ by
   obtain ⟨val, property⟩ := x
   convert goal₁
 
-lemma total_size_of_hyperedge_trace
+private lemma total_size_of_hyperedge_trace
   (s : Setup_po α)
   (conn  : numClasses (proj_setoid s) = 1)
   (x : s.V) (mx : po_maximal s x)
@@ -658,7 +659,7 @@ lemma total_size_of_hyperedge_trace2
 
 
 
-lemma normalized_degree_sum_trace
+private lemma normalized_degree_sum_trace
   (s : Setup_po α)
   (conn  : numClasses (proj_setoid s) = 1)
   (x : s.V) (mx : po_maximal s x)
@@ -774,6 +775,7 @@ by
   exact Int.toNat_le.mp nli
 
 --functionalMainで利用。
+--traceすると、normalized_Degree_sumが減ることはない。
 theorem normalized_degree_sum_gt
   (s : Setup_po α)
   (conn  : numClasses (proj_setoid s) = 1)

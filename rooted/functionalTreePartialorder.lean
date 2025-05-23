@@ -225,7 +225,7 @@ def fq (s: Setup2 α) (q:(Quotient s.setoid)):
 
 --Quotientとってからfqを施しても、fをとってからQuotientを取っても同じ。
 --fqの引数がSetupでなくて、Setup2にする必要あり。reachを使えそう。
-lemma f_on_equiv_n
+private lemma f_on_equiv_n
   (s: Setup2 α) (x : s.V) :
   ∀ n:Nat, Quotient.mk s.setoid (s.f^[n] x) = (fq s)^[n] (Quotient.mk s.setoid x) :=
 by
@@ -260,11 +260,13 @@ private lemma pre_po_lemma (s: Setup2 α) (x y :s.V) :
   · intro h
     exact pullback_preorder_lemma s ⟦x⟧ ⟦y⟧ x y rfl rfl h
 
+/-
 --reachを使えそう。f_on_equiv_nと同じだった。
 lemma f_fq_lemma (s: Setup2 α) (x:s.V) :
   ∀ n:Nat, Quotient.mk s.setoid (s.f^[n] x) = (fq s)^[n] (Quotient.mk s.setoid x) := by
   intro n
   exact f_on_equiv_n s x n
+-/
   /-
   induction n generalizing x
   case zero =>
@@ -366,6 +368,25 @@ by
     apply le_trans
     · exact this
     · simp_all only [Function.comp_apply]
+
+--こっちは、spoでなくてpoの方。前提はSetup2なので、移動した。外でも使っている。名前を変えた。
+lemma reach_po_leq (s : Setup2 α) (x y : Quotient s.setoid) :
+  reach (fq s) x y → s.po.le x y := by
+  --これはs.spo.leの定義な気もするが。
+  intro h
+  rw [s.h_po]
+  dsimp [reach] at h
+  let fql := fq_lemma_rev s x y
+  obtain ⟨n, hn⟩ := h
+  rw [←hn]
+  have :(∃ n, y = (fq s)^[n] x) := by
+    use n
+    subst hn
+    simp_all only
+  specialize fql this
+  rw [←hn] at fql
+  convert fql
+  rw [s.h_po]
 
 /-
 --今のところ使ってない？極大なものより大きなものは下に一致。

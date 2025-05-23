@@ -26,7 +26,8 @@ variable {α : Type} [Fintype α] [DecidableEq α]
 --後半は、考えている前順序集合に関する補題。
 --このファイルのメイン定理は、function fから作られるpreorderから引き起こされるsetoidの同値類において、同値類の大きさが2以上であれば、極大要素になっているという定理eqClass_size_ge_two_implies_inverse
 
-lemma size_one_preorder_setup_lemma (s: Setup α) (x y : {x : α // x ∈ s.V}) :
+--Commonのle_eq_Rの内容とかぶっている。
+private lemma size_one_preorder_setup_lemma (s: Setup α) (x y : {x : α // x ∈ s.V}) :
   s.pre.le x y ↔  @Relation.ReflTransGen s.V (R_from_RS1 (rootedset_from_setup s))  y x:=
 by
   simp [rootedset_from_setup]
@@ -46,7 +47,7 @@ by
 --fで直前関係になっていれば、a <= bとなること。自明かと思っていたけど、深く定義を追っていかないと証明できなかった。
 --path_implies_leもsize_one_preorder_setup_step も、ファイル外のfq_lemma_rev_oneこの補題を参照。
 --これはcommonに移動させてもいいかも。
-lemma f_and_pre (su: Setup α) (a b : {x // x ∈ su.V}) (sf : su.f a = b ) : su.pre.le a b := by
+theorem f_and_pre (su: Setup α) (a b : {x // x ∈ su.V}) (sf : su.f a = b ) : su.pre.le a b := by
   rw [su.h_pre]
   dsimp [size_one_preorder]
   dsimp [size_one_circuits_preorder]
@@ -94,7 +95,7 @@ lemma f_and_pre (su: Setup α) (a b : {x // x ∈ su.V}) (sf : su.f a = b ) : su
 --証明には f_and_preが利用している。
 --外からは参照されてないかも。iteratef_lemma_twoから参照されている。
 
-lemma iteratef_lemma (s: Setup α) (x : s.V):
+private lemma iteratef_lemma (s: Setup α) (x : s.V):
   ∀ n, s.pre.le x (s.f^[n] x) := by
   intro n
   induction n generalizing x
@@ -129,7 +130,7 @@ private lemma exists_iterate_eq_of_rtg
       ⟩
 
 --transitive closureを撮る前の一歩の場合の表現の違いに関する補題。Setup前提の形にした。
---そとファイルからの参照はない。外から参照されるようであれば、privateを外す。
+--そとファイルからの参照はない。
 private lemma size_one_preorder_setup_step (s: Setup α) (x y : {x : α // x ∈ s.V}) :
   R_from_RS1 (rootedset_from_setup s) y x ↔ s.f x = y :=
 by
@@ -179,7 +180,7 @@ by
       subst h
       simp_all only [and_self, vp]
 
----そのから使われてない。より使いやすい他のを引用した方が良いので。
+---そとから使われてない。より使いやすい他のを引用した方が良いので。
 -- fから順序を定義するのに、この方法のほうがシンプルかもしれないが。
 --size_one_preorder_setup_lemma2から名称変更
 private lemma  size_one_preorder_eq_transition (s : Setup α) (x y : s.V):
@@ -202,6 +203,7 @@ private lemma  size_one_preorder_eq_transition (s : Setup α) (x y : s.V):
   exact Iff.trans sop this
 
 --これが証明したかった定理。preorderで大小関係があれば、reachで届く。
+--外から参照されている。
 theorem iteratef_lemma_ref
     (s : Setup α) (x y : s.V)
     (h : s.pre.le x y) :
@@ -215,7 +217,7 @@ theorem iteratef_lemma_ref
 
 --iterationの回数と大小関係。
 --pathの議論は使っていない。
-lemma iteratef_lemma_two (s: Setup α) (x: s.V) (n1 n2: Nat) :
+private lemma iteratef_lemma_two (s: Setup α) (x: s.V) (n1 n2: Nat) :
   n1 < n2 → s.pre.le (s.f^[n1] x) (s.f^[n2] x) :=
 by
   -- ここで f の n 回の反復を考えます
@@ -236,7 +238,7 @@ by
 --補題:fのiterationの全体は、重複しているものがある。
 --証明：鳩の巣原理。 Fintype.exists_ne_map_eq_of_card_ltがポイント。
 --pathの議論は使っていない。
-lemma iteratef_pigeon (s: Setup α) (x: s.V)  : ∃ (n1 n2: Nat), n1 ≠ n2 ∧ (s.f^[n1] x) = s.f^[n2] x :=
+private lemma iteratef_pigeon (s: Setup α) (x: s.V)  : ∃ (n1 n2: Nat), n1 ≠ n2 ∧ (s.f^[n1] x) = s.f^[n2] x :=
 by
   let dom := (Finset.Icc 0 (s.V.card + 1)).image (fun i => (s.f^[i] x))
   have : s.V.card < ((Finset.Icc 0 (s.V.card + 1))).card := by
@@ -263,7 +265,7 @@ by
   omega
 
 --上の定理の大小関係を整えたものを出力する定理
-lemma iteratef_pigeon_ordered (s : Setup α) (x : s.V) :
+private lemma iteratef_pigeon_ordered (s : Setup α) (x : s.V) :
   ∃ (n1 n2 : ℕ), n1 < n2 ∧ (s.f^[n1] x) = (s.f^[n2] x) := by
   obtain ⟨n1, n2, hne, heq⟩ := iteratef_pigeon s x
   by_cases h : n1 < n2
@@ -279,7 +281,7 @@ lemma iteratef_pigeon_ordered (s : Setup α) (x : s.V) :
 
   --補題：何回もiterationすると、サイズが2以上の同値類に辿り着く。
   --証明：鳩の巣の上の補題のn1とn2のノードは同じで、その次のノードは、異なるが同じ同値類に属するノードになる。
-lemma iteratef_size2 (s: Setup α) (x: s.V)  : ∃ (n : Nat), 2 ≤ (eqClass_setup s (s.f^[n] x)).card :=
+private lemma iteratef_size2 (s: Setup α) (x: s.V)  : ∃ (n : Nat), 2 ≤ (eqClass_setup s (s.f^[n] x)).card :=
 by
   let h := iteratef_pigeon_ordered s x
   /- hの別の分解の仕方。参考まで。
@@ -402,7 +404,7 @@ def isMaximal (s: Setup α) (a : s.V) : Prop :=
 `2 ≤ s.card` ならば
 `a , b ∈ s` かつ `a ≠ b` となる 2 点 `a , b` が存在する。
 -/
-lemma card_ge_two {α : Type} {s : Finset α}
+private lemma card_ge_two {α : Type} {s : Finset α}
     (h : (2 : ℕ) ≤ s.card) :
     ∃ a b : α, a ∈ s ∧ b ∈ s ∧ a ≠ b :=
 by
@@ -579,7 +581,7 @@ private lemma cycle_exists
 -/
 private lemma iterate_power_cycle
     {α : Type} (f : α → α) (x : α) {p : ℕ}
-    (hp : 0 < p) (hcycle : f^[p] x = x) : --使ってないように見えて使っている？
+    (_ : 0 < p) (hcycle : f^[p] x = x) : --p正の仮定は使ってないように見えて使っている？
     ∀ k : ℕ, f^[p * k] x = x := by
   intro k
   induction k with

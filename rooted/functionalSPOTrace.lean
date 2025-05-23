@@ -27,8 +27,8 @@ variable {α : Type} [Fintype α] [DecidableEq α]
 
 
 -----------------------------------
---このファイルはsetup_spoの1点制限traceの話の補題。ファイルを独立させた。
---Setup_spo2から得られるideal全体の集合族において、同値類の大きさが2以上のときに、1元traceしても、またSetup2になる。
+--このファイルはSetup_spo前提の1点制限traceの話の補題。
+--Setup_spoから得られるideal全体の集合族において、同値類の大きさが2以上のときに、1元traceしても、またSetup_spoになる。
 
 def restrictedSetoid (s: Setup_spo α)(x : {x : α // x ∈ s.V}): Setoid {y : α // y ∈ s.V.erase x.val} :=
   Setoid.comap
@@ -347,7 +347,7 @@ by
     rw [Finset.mem_filter] at h
     simp_all only [mem_attach, Quotient.eq, true_and]
 
---定義から自明かもしれないが。
+--定義から自明かもしれないが。下で使っている。
 private lemma classOf_quotient
   (s : Setup_spo α) (y : {x : α // x ∈ s.V}) (q:Quotient s.setoid) :
   q = @Quotient.mk' _ s.setoid y ↔ y ∈ (classOf s q) := by
@@ -365,7 +365,7 @@ private lemma classOf_quotient
     symm
     exact h.2
 
---自分自身も、同値類に入る。
+--自分自身も、同値類に入る。外から使う。
 lemma classOf_self
   (s : Setup_spo α) (x : {x : α // x ∈ s.V}) :
   x ∈ (classOf s ⟦x⟧) := by
@@ -588,8 +588,6 @@ by
   rw [OldNew_id s x hx q2] at this
   exact this
 
-
-
 --traceで、こちらは、Setup_spo2ではなく、Setup_spoの前提。
 noncomputable def setup_trace (s : Setup_spo α)(x: s.V) (hx:(classOf s (@Quotient.mk _ s.setoid x
 )).card ≥ 2): Setup_spo α :=
@@ -619,7 +617,7 @@ noncomputable def setup_trace (s : Setup_spo α)(x: s.V) (hx:(classOf s (@Quotie
 }
 
 --toErased_eqの証明で使う。
-lemma toErased_eq_lem (s : Setup_spo α) (x : {x : α // x ∈ s.V})
+private lemma toErased_eq_lem (s : Setup_spo α) (x : {x : α // x ∈ s.V})
   (y z: {y : α // y ∈ s.V}) (hx:(classOf s (@Quotient.mk _ s.setoid x)).card ≥ 2)
    (ree: restrictedSetoid s x (toErased s x hx y) (toErased s x hx z)) :
    s.setoid.r y z :=
@@ -687,7 +685,7 @@ by
       exact ree
 
 --xと違う同値類は、恒等写像。toNew_classOfなどexcessの議論で使う。
-lemma toNew_card_eq (s : Setup_spo α) (x : {x : α // x ∈ s.V})
+private lemma toNew_card_eq (s : Setup_spo α) (x : {x : α // x ∈ s.V})
   (q: Quotient s.setoid)
    (hx:(classOf s (@Quotient.mk _ s.setoid x)).card ≥ 2)
    (nq:  q ≠ @Quotient.mk _ s.setoid x) :
@@ -811,7 +809,7 @@ by
   --s.singleton_if_not_maximal q hqを利用する必要あり。
   --ということは、古い世界では極大元。
   --古い世界と新しい世界の大小関係は一致しているので、新しい世界でも極大元。
---trace_excess_decreaseで利用。Setup_spo2の前提は必要でないので移動の余地あり。
+--trace_excess_decreaseで利用。
 lemma toNew_classOf (s : Setup_spo α) (x : {x : α // x ∈ s.V})
   (hx : (classOf s (@Quotient.mk _ s.setoid x)).card ≥ 2)
   (cls : Quotient s.setoid) :

@@ -2,7 +2,7 @@
 
 ## 言明
 
-- Vを有限台集合として、関数 f:V -> Vが定義する前順序を考える。この前順序に順序ideal全体を考えて、有限集合V上の集合族と思う。
+- Vを有限台集合として、関数 f:V -> Vが定義する前順序を考える。v < f(v)というV上の2項関係が定義できる。この2項関係のtransitive closureを考えるとV上に前順序(preorder)が定義できる。この前順序に順序ideal全体を考えて、有限集合V上の集合族と思う。
 - この集合族が平均rareであることを示すのがメイン定理。
 
 ```haskel
@@ -12,18 +12,21 @@ theorem functional_family_average_rare (V: Finset α) (f : V → V) (valid:∀ v
 
 ## 前順序 (functionalCommon.lean)
 
-- このファイルは、メイン定理を記述するために必要な定義と、それに関係する補題を記述している。
-- Vを有限台集合とする。
-- f:V -> Vの関数が与えられると、v < f(v)というV上の2項関係が定義できる。この2項関係のtransitive closureを考えるとV上に前順序(preorder)が定義できる。Setup.pre.le.
-- vからみて、f(v)を親と呼ぶ。vとf(v)は異なると仮定しても同じ場合を許しても、予想としては同値になる。とりあえず異なると仮定して考えている。s.valid.
-- 補題：functionが与えられると、前順序における頂点の同値類ができる。qClass_setup。- この同値類に対して、setoidを考えることができる。s.setoid.
+- このファイルCommonは、メイン定理を記述するために必要な定義と、それに関係する補題を記述している。
+- fが与えられる仮定をSetupというStructureにまとめる。Setupには、fやそれから導かれる前順序やSetoidが定義されている。
+- fで定義される前順序は、Setup.pre.le. vからみて、f(v)を親と呼ぶ。vとf(v)は異なると仮定しても同じ場合を許しても、予想としては同値になる。とりあえず異なると仮定して考えている。s.valid.
+- 補題：functionが与えられると、前順序における頂点の同値類ができる。qClass_setup。
+- この同値類に対して、setoidを考えることができる。s.setoid.
 - ここまでのsettingをSetupとして定義して、いろいろな言明の仮定として使っている。
+- Setupの仮定のもとで、前順序に対するidealを考えている。
+- 前順序は、transitive closureを考えるルートと、vとf(v)の関係に両立する集合族から考えるルートの2通りがあって、それらは一致することも示している。le_eq_Rやpre_closuresystem_eq_lem。これは主定理の証明にも利用。
 
 ## 前順序の性質 (functionalPreorder.lean)
 
-- fから前順序を定義する時に、idealを考えてから前順序を考える方法と2項関係を考えて、そのtransitive closureを考える方法がある。どちらでも同じ前順序が得られる。size_one_preorder_setup_lemma
-- 補題：前順序の大小関係と、親の関係で辿れるのは同値。iteratef_lemma, iteratef_lemma_ref
+- fから前順序を定義する時に、idealを考えてから前順序を考える方法と2項関係を考えて、そのtransitive closureを考える方法がある。どちらでも同じ前順序が得られる。size_one_preorder_setup_lemma。pre_closuresystem_eq_lemの内容と被る。
+- 補題：前順序の大小関係と、親の関係で辿れるのは同値。f_and_pre, iteratef_lemma, iteratef_lemma_ref
 - 補題：同値類の大きさが2以上のところは極大要素である。eqClass_size_ge_two_implies_outside
+- 補題：同値な要素の親は同値。f_on_equiv
 
 ## 同値類上の半順序の定義 (functionalTreePartialOrder.lean)
 - 上のセッティングのもと、頂点の同値類上に半順序が定義できる。半順序関係の定義は、同値類Aから同値類Bに順序の大小があることを、任意の順序idealに対して、同値類Aを含んでいるならば同値類Bを含んでいるということと、定義する。partialOrder_from_preorder
@@ -33,11 +36,11 @@ theorem functional_family_average_rare (V: Finset α) (f : V → V) (valid:∀ v
 - 極大性is_MaximalQも定義して、preorderの極大性との関係を示す。isMaximal_iff
 - fの同値類版が、fq。
 - fとfqの関係も示す。f_on_equiv_n.
-- fq単独の性質も示す。fq_lemma。
+- fq単独の性質も示す。fqで辿れることと、順序の関係。fq_lemma。fq_lemma_rev
 
 ## 同値類上の半順序が作る集合族 (functionalSPO.lean)
 
-- 前順序を前提にしないSetoid上の半順序を抽象化した仮定がSetup_spo2。Setup_spoは極大なところ以外は同値類の大きさが1であるというsingleton_if_not_maximalの仮定を外したもの。とりあえず、この仮定は使わないので。
+- 前順序を前提にしないSetoid上の半順序を抽象化した仮定がSetup_spo2。Setup_spoは極大なところ以外は同値類の大きさが1であるというsingleton_if_not_maximalの仮定を外したもの。とりあえず、この仮定はしばらく使わないので。
 - validの仮定があると、極大な同値類の大きさが1にならないが、Setup_spoやSetup_spo2の仮定においては、極大な部分の同値類の大きさは1になりうる。仮定の種類が無駄に増えている気もするので、validの仮定なしで元の言明を書き直した方がいいのかも。
 - traceの関係の補題では、Setup_spo2ではなく、Setup_spoで十分なものが多い。
 - このファイルfunctionalSPOでは、Setup_spoに関する補題を証明している。
@@ -48,6 +51,7 @@ theorem functional_family_average_rare (V: Finset α) (f : V → V) (valid:∀ v
   - よって、パラレルな頂点をtraceした集合族もこれにより、前順序を定めることができる。サイズ2以上の同値類から同値な頂点をひとつtraceしても、半順序の親がたかだか1つということも変わらない。
 
 ## 同値類上の半順序が作る集合族 (functionalTreeIdeal.lean)
+
 - pre_closuresystemは、前順序から作ったideal。
 - pre2_closuresystemは、Setup2のpoを利用して作ったideal。
 - 補題：hyperedgeの集合の全体(=前順序の順序ideal全体)は、この半順序の順序idealに一致する。
@@ -57,19 +61,20 @@ theorem functional_family_average_rare (V: Finset α) (f : V → V) (valid:∀ v
 ## 同値類上の半順序 (functionalSPO2.lean)
 
 - Setup_spoからsingleton_if_not_maximalの仮定をつけたのがSetup_spo2。
-- Mainのファイルではこっちのほうを利用する。
+- MainのファイルではSetup_spoではなく、Setup_spo2を利用する。
 - V上に同値類が与えられていて、以下の条件を満たすとする。1. サイズ2以上の同値類は、半順序の極大な要素のみ。2. 半順序の親は、たかだか1つ。
 - この半順序に対して、順序idealを考えて、hyperedgeと思って、集合族を考えることができる。
-- 補題：サイズ2以上の同値類からパラレルな頂点をひとつtraceしても、サイズが2以上の同値類が極大なものに限られることも変わらない。setup_trace_spo2の定義。
+- 補題：大小関係があるときは、traceしても大小関係がある。setup_trace_spo_le
+- 補題：サイズ2以上の同値類からパラレルな頂点をひとつtraceしても、サイズが2以上の同値類が極大なものに限られることも変わらない。つまり、またSetup_spo2になる。setup_trace_spo2の定義。
 - SPO2とSPOtraceの関数の分類も微妙なので、整理したい。
 - 現在の分類の観点は、仮定がSetup_spoかspo2か。Idealを使うか使わないか。Traceに関係するかしないか。
 
 ## spoのtrace (functionalSPOtrace.lean)
 
-- 大きい世界と小さい世界間の写像。要素間のものと、同値類間のもの。
 
+- 大きい世界と小さい世界間の写像。要素間のものと、同値類間のもの。いろいろな補題を示す。
 - 補題: パラレルな頂点をtraceした場合、もとの前順序で大小関係があることと、traceした集合族での大小関係は一致する。ここでの大小関係は、hyperedgeがxを含んでいたらyも含むという関係。setup_trace_reach
-- Setup_spo前提の対象のtraceの定義。
+- Setup_spo前提のtraceの定義。setup_trace。
 
 ## 順序idealと平均rare (functionalIdealRare.lean)
 
@@ -80,7 +85,6 @@ theorem functional_family_average_rare (V: Finset α) (f : V → V) (valid:∀ v
 - ここで、Setup_spo2の仮定を利用している。
 
 ## 半順序のtrace (functionalTraceIdeal.lean)
-
 
 - 同値な頂点(パラレルな頂点とも呼ぶ)のひとつをtraceすることにより、同一視していく方向性。
 - 集合族としては、パラレルな頂点を持つ頂点をtraceしていくことにより、パラレルな頂点を持たない集合族を得ることができる。
@@ -102,13 +106,18 @@ theorem functional_family_average_rare (V: Finset α) (f : V → V) (valid:∀ v
  - ここまでで、サイズ2以上の同値類はないと仮定してよくなったので、同値類のサイズは全部1で、頂点集合ground上の半順序と思うことができる。
  - パラレルな頂点がなくなったあとは、グラフ論の森(forest)で各連結成分に根が指定されているものと思うことができる。根から遠い頂点が下となる。
  - パラレルな頂点がなくなったあとは、極大な頂点(=グラフの根)をdeletionしていく。集合族としては、根のdeletionと考えても、traceと考えても同じ。
+ - コンポーネントの数が1だと、極大要素を含むhyperedgeが全体集合になること。component_one。
  - 補題：半順序集合の順序idealの個数は、台集合の数よりも同じか多い。
    - これは、各要素を単項idealに対応させれば、それが単射になることからわかる。反対称律から、単射でなければパラレルな要素が出てくる。
    - われわれの枠組みに限らない一般的な定理となる。principal_ideal_injectiveで証明。
+ - 補題:traceすると、normalized_Degree_sumが減ることはない。theorem normalized_degree_sum_gt
 
 ## 半順序と極大元 (functionalPartialMaximal.lean)
 
+- Setup po前提の極大元に関する部分。
 - 極大要素はa < bならばb < aが成り立つものである。この性質を使って、同値類が極大でないところにあると、矛盾が生じる。
+- 極大要素に関する色々な補題を証明。
+- proj_max_maximalで、proj_maxは、本当に極大元になっていることの証明。
 
 ## 半順序が連結の場合
 

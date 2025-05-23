@@ -93,9 +93,10 @@ private lemma card_of_image_subset (V1 V2: Finset α) (A : Finset V1)(B:Finset V
   simp_all only [ge_iff_le]
   linarith
 
---trace関係の補題。
+--trace関係の定義や補題。
+
 --新しく写って同値類が大きくなることはない。前提は、Setup_spoだが、setup_trace_spo2で利用。
-noncomputable def toNew_card (s : Setup_spo α) (x : {x : α // x ∈ s.V})
+private lemma toNew_card (s : Setup_spo α) (x : {x : α // x ∈ s.V})
   (q: Quotient s.setoid)
    (hx:(classOf s (@Quotient.mk _ s.setoid x)).card ≥ 2):
   (classOf s q).card ≥ (classOf (setup_trace s x hx) (toNew s x hx q)).card :=
@@ -124,7 +125,9 @@ by
 
   exact card_of_image_subset (setup_trace s x hx).V s.V (classOf (setup_trace s x hx) (toNew s x hx q)) (classOf s q) this
 
---Setup_spo2前提ではないが、そとのファイルのsetup_trace_spo2の証明で利用。これもtrace。
+--Setup_spo2前提ではないが、下でもそとのファイルのsetup_trace_spo2の証明で利用。それがspo2の前提。
+--traceしても、大小関係は変わらない。
+--場所をSPOTraceに移動する余地はあるが、spo2前提の定理の補題なのでここにある。
 lemma setup_trace_spo_le (s : Setup_spo α) (x: s.V) (hx:(classOf s (@Quotient.mk _ s.setoid x
 )).card ≥ 2) (q1 q2 : Quotient (restrictedSetoid s x)) :
   (setup_trace s x hx).spo.le q1 q2 ↔ s.spo.le (toOld s x q1) (toOld s x q2) :=
@@ -157,8 +160,8 @@ by
     simp_all only
     exact this
 
---setup2_induces_spoなどと違って、traceをとっている。trace関係のファイルに移動した方がいいのかも。
---結構いろいろなところで使われているが、実際は、setup_traceの定義で十分なところもあるかも。検証の必要あり。
+--setup2_induces_spoなどと違って、traceをとっている。ただし、spo2前提。
+--結構いろいろなところで使われていた、setup_traceの定義で十分なところはそちらに変更。Mainで使われている。
 --大きさ2以上の同値類が極大なもののみという条件が必要な場合のみSetup_spo2が必要。
 noncomputable def setup_trace_spo2 (s : Setup_spo2 α)(x: s.V) (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
 )).card ≥ 2): Setup_spo2 α :=

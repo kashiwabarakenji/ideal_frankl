@@ -25,6 +25,7 @@ open Function Finset
 
 def po_maximal (s: Setup_po α) (x: s.V) : Prop := ∀ y, s.po.le x y → x = y
 
+--外からも参照している。
 lemma po_maximal_lem (s: Setup_po α) (x: s.V) :
   po_maximal s x ↔ s.f x = x :=
 by
@@ -57,7 +58,7 @@ by
 `f : α → α` を `Fintype` 上で反復すると、
 `0,1,…,Fintype.card α` のうち 2 つの反復が一致する。
 -/
-lemma exists_eq_iterate {α : Type u} [DecidableEq α] [Fintype α]
+private lemma exists_eq_iterate {α : Type u} [DecidableEq α] [Fintype α]
   (f : α → α) (a : α) :
   ∃ m n : ℕ, m < n ∧ f^[m] a = f^[n] a := by
   classical
@@ -107,7 +108,7 @@ lemma exists_eq_iterate {α : Type u} [DecidableEq α] [Fintype α]
         simp [g, hEq]
         ⟩
 
---かならず上に極大要素がある。
+--かならず上に極大要素がある。外からも参照あり。
 lemma po_maximal_reachable (s : Setup_po α) (y : s.V):
  ∃ x, po_maximal s x ∧ reach s.f y x :=
 by
@@ -189,7 +190,7 @@ by
 
   exact ⟨x, h_max, h_reach⟩
 
---任意の要素を極大要素は、ただ1つしかない。
+--任意の要素を極大要素は、ただ1つしかない。外からも参照あり。
 lemma po_maximal_reachable_eq (s : Setup_po α) (y : s.V):
  ∀ x1 x2, (po_maximal s x1 ∧ reach s.f y x1 ) →
           (po_maximal s x2 ∧ reach s.f y x2) →
@@ -269,7 +270,7 @@ lemma proj_max_maximal (s: Setup_po α) (v : {x : α // x ∈ s.V}) :
   --obtain ⟨val, property⟩ := v
   exact x
 
---proj_maxは、自分より上にあることの証明。
+--proj_maxは、自分より上にあることの証明。外からも利用。
 lemma reach_maximal (s: Setup_po α) (v : {x : α // x ∈ s.V}) : reach s.f v (proj_max s v) := by
   -- proof for reachability from v to proj_max s v
   dsimp [proj_max]

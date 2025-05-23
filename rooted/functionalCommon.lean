@@ -210,7 +210,7 @@ by
 
 -- 大小関係と寝付きサーキットから定義するpreorderの関係。
 -- 両向き。size_one_preorder_setup_lemmaと同じか。
-lemma le_eq_R (s : Setup α) (x y : {x // x ∈ s.V}) :
+private lemma le_eq_R (s : Setup α) (x y : {x // x ∈ s.V}) :
   s.pre.le y x ↔ preorder.R_hat (R_from_RS1 (rootedset_from_setup s)) x y :=
 by
   apply Iff.intro

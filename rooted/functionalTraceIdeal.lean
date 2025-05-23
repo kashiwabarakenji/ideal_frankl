@@ -35,7 +35,6 @@ set_option maxHeartbeats 2000000
 variable {α : Type} [Fintype α] [DecidableEq α]
 
 --制限される前から、制限された世界への成り立つ定理。
--- (spo_closuresystem (setup_trace_spo2 s x hx).toSetup_spo)となっているが、おそらく(spo_closuresystem (setup_trace s x hx)でOK。
 private lemma trace_ideal_lem (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quotient.mk _ s.setoid x
 )).card ≥ 2) :
   ∀ ss:Finset α,  (spo_closuresystem s).sets ss → (spo_closuresystem (setup_trace s x hx)).sets (ss.erase x.val) := by
@@ -740,7 +739,6 @@ private lemma trace_ideal (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quotient.
     intro ss
     apply Iff.intro
     · intro h
-      --dsimp [setup_trace_spo2] at h
       dsimp [SetFamily.trace]
       constructor
       ·

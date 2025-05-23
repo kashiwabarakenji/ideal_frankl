@@ -113,7 +113,7 @@ lemma reach_leq (s : Setup_spo α) (q1 q2 : Quotient s.setoid) :
   dsimp [partialOrderOfFq] at *
   exact h
 
---すぐ下で使っている。
+--すぐ下で使っている。外でも使っている。
 lemma reach_leq_rev (s : Setup_spo α) (q1 q2 : Quotient s.setoid) :
   s.spo.le q1 q2 →  reach s.fq q1 q2  := by
   intro h
@@ -122,26 +122,10 @@ lemma reach_leq_rev (s : Setup_spo α) (q1 q2 : Quotient s.setoid) :
   dsimp [reach]
   exact h
 
---こっちは、spoでなくてpoの方。名前を変えた。
-lemma reach_po_leq (s : Setup2 α) (x y : Quotient s.setoid) :
-  reach (fq s) x y → s.po.le x y := by
-  --これはs.spo.leの定義な気もするが。
-  intro h
-  rw [s.h_po]
-  dsimp [reach] at h
-  let fql := fq_lemma_rev s x y
-  obtain ⟨n, hn⟩ := h
-  rw [←hn]
-  have :(∃ n, y = (fq s)^[n] x) := by
-    use n
-    subst hn
-    simp_all only
-  specialize fql this
-  rw [←hn] at fql
-  convert fql
-  rw [s.h_po]
 
---fq_lemmaと内容が被っている。こっちは、reachで書き換えたもの。使ってないのかも。
+
+/-
+--fq_lemmaと内容が被っている。こっちは、reachで書き換えたもの。使ってないのかも。使ってもよい。
 lemma reach_po_leq_rev (s : Setup2 α) (q1 q2 : Quotient s.setoid) :
   s.po.le q1 q2 → reach (fq s) q1 q2 :=
 by
@@ -152,6 +136,7 @@ by
   obtain ⟨n, hn⟩ := fql
   use n
   exact hn.symm
+-/
 
 -- 証明すべきこと
 --1. setup2から得られるsetoidとpartialOrderは、Setup_spo2の定義を満たす。
