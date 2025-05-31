@@ -18,14 +18,89 @@ set_option maxHeartbeats 2000000
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 
+-- 同値類の一つをqとして、qの側とq以外の部分に分割。
+-- 片方の順序idealの大きさの和をs1、順序idealの個数をh1、頂点集合の大きさをn1とする。
+-- もう片方の順序idealの大きさの和をs2、順序idealの個数をh2、頂点集合の大きさをn2とする。
+-- 合わせた半順序集合に関して順序idealの大きさの和は、s1*h2+s2*h1である。
+-- 合わせた半順序集合の順序idealの個数は、h1*h2である。
+-- 合わせた半順序集合の台集合の大きさは、n1+n2である。
+-- 平均rareであるためには、(s1*h2+s2*h1)*2-(h1*h2)*(n1+n2)<=0である。
+-- それぞれが平均rareなので、s1*2-h1*n1<=0, s2*2-h2*n2<=0であることからこれはいえる。
+-- 連結成分が3個以上の場合は、帰納法で証明することになる。
 
+-- まずはcomp側でもexcl側でもない部分を定義する。
+
+---連結成分の数。でもこれはsetoidが与えた時のもの。場所を変えたほうがいい？
+def numClasses {α : Type _} (st : Setoid α)
+  [Fintype α] [DecidableEq (Quotient st)] : ℕ :=
+  (Finset.univ.image (Quot.mk st.r)).card
+
+--連結成分の個数が1以上であること。
+--Mainから参照あり。
+lemma numClasses_pos (s : Setup_po α) :
+  (numClasses (proj_setoid s)) > 0 := by
+  -- numClasses の定義を展開して `Finset.card` を使う
+  dsimp [numClasses]
+  -- `Finset.card` の定義を展開して `Finset.nonempty` を使う
+  have h1 : Fintype.card (Quotient (proj_setoid s)) ≥ 1 := by
+    --apply Fintype.card_pos_iff.2
+    --refine (nonempty_quotient_iff s).mpr ?_
+    let qx := Quot.mk (proj_setoid s)
+    obtain ⟨x, h_nonemp⟩ := Setup_po.nonemp s
+    specialize qx ⟨x, h_nonemp⟩
+    simp_all only [ge_iff_le]
+    apply Fintype.card_pos_iff.mpr
+    exact Nonempty.intro qx
+
+  simp_all only [ge_iff_le, gt_iff_lt, card_pos, Finset.image_nonempty, attach_nonempty_iff]
+  cases s
+  simp_all only
+
+--そとから参照あり。
+lemma quotient_exists (s : Setup_po α) :
+Nonempty (Quotient (proj_setoid s)) := by
+  -- s.V.attach は空でないので同値類も空でない
+  obtain ⟨v, hv⟩ := Setup_po.nonemp s
+  -- `Quotient.mk` を使って同値類を作る
+  let x := Quotient.mk (proj_setoid s) ⟨v, hv⟩
+  use x
+
+-- 連結成分の数。setup_poに対して、定義する。numClassesと同じだが、必要であれば復活。
+--noncomputable def num_connected_components (s : Setup_po α) : ℕ :=
+--  (Finset.univ.image (Quot.mk (proj_setoid s))).card
+----numClasses (proj_setoid s)と定義しても良い。
+
+--これは、comp側でもexcl側でもない？
+noncomputable def  restrict_order_core
+  (s : Setup_po α)
+  (V' : Finset α)
+  (sub : V' ⊆ s.V) :
+  PartialOrder (Subtype fun x => x ∈ V') :=
+{ le            := fun x y =>
+    -- compare via the original order on s.V
+    s.po.le ⟨x.1, sub x.2⟩ ⟨y.1, sub y.2⟩
+, le_refl       := fun x =>
+    -- reflexivity from the original order
+    s.po.le_refl _
+, le_trans      := fun {x y z} hxy hyz =>
+    -- transitivity from the original order
+    s.po.le_trans ⟨x.1, sub x.2⟩ ⟨y.1, sub y.2⟩ ⟨z.1, sub z.2⟩ hxy hyz
+, le_antisymm  := fun {x y} hxy hyx => by
+    -- antisymmetry from the original order, then Subtype.ext to lift to the subtype
+    let sp := s.po.le_antisymm ⟨x.1, sub x.2⟩ ⟨y.1, sub y.2⟩ hxy hyx
+    apply Subtype.ext
+    simpa using sp
+}
+-------------------------------
+---ここからcomp側の定義。
+-------------------------------
 
 -- q側の頂点集合。これをsubtype化したものがcomp_po_V'
 noncomputable def compFinset (s : Setup_po α) (q : Quotient (proj_setoid s))[DecidableEq (Quotient (proj_setoid s))] : Finset {x // x ∈ s.V} :=
   Finset.filter (fun (v:{x // x ∈ s.V}) => @Quotient.mk'' _ (proj_setoid s) v = q) s.V.attach
 
 -- q側に制限した半順序
-noncomputable def restrict_order (s : Setup_po α) (q : Quotient (proj_setoid s)) : PartialOrder ((compFinset s q).image Subtype.val) :=
+noncomputable def  restrict_order_comp (s : Setup_po α) (q : Quotient (proj_setoid s)) : PartialOrder ((compFinset s q).image Subtype.val) :=
 let V := (compFinset s q).image Subtype.val
 have sub: V ⊆ s.V := by
       simp_all only [coe_mem, V]
@@ -78,12 +153,14 @@ have sub: V ⊆ s.V := by
 
 --variable {α : Type} [Fintype α] [DecidableEq α]
 
+--まずは、comp側(qからなる側)のcomponentの準備。
+
 -- V' の定義をトップレベルに。compFinsetをsubtype化したもの。
 noncomputable def comp_po_V' (s : Setup_po α) (q : Quotient (proj_setoid s)) : Finset α :=
   (compFinset s q).image Subtype.val
 
 -- V' ⊆ s.V の証明をトップレベルに
-lemma comp_po_sub (s : Setup_po α) (q : Quotient (proj_setoid s)) :
+private lemma comp_po_sub (s : Setup_po α) (q : Quotient (proj_setoid s)) :
   comp_po_V' s q ⊆ s.V := by
   dsimp [comp_po_V'];
   simp [Finset.image_subset_iff]
@@ -211,7 +288,8 @@ def comp_po_to_sV
 ⟨ v'.val, comp_po_sub s q v'.2 ⟩
 
 -- 補題1: もともとのs.fと制限したcomp_po_fが一致する。
-lemma comp_po_iter_val
+--下で使っている。
+private lemma comp_po_iter_val
   (s : Setup_po α) (q : Quotient (proj_setoid s))
   (x : comp_po_V' s q) :
   ∀ n : ℕ, (((comp_po_f s q)^[n]) x).val = (s.f^[n]) ⟨x, comp_po_sub s q x.2⟩ := by
@@ -248,7 +326,7 @@ lemma comp_po_iter_val
     simp only [comp_po_f, h_eq]
 
 -- 補題2: reach g x y ↔ reach s.f sx sy
-lemma comp_po_reach_equiv
+private lemma comp_po_reach_equiv
   (s : Setup_po α) (q : Quotient (proj_setoid s))
   (x y : comp_po_V' s q) :
   reach (comp_po_f s q) x y
@@ -283,69 +361,13 @@ by
     -- 最後にサブタイプの等号へ戻す
     apply Subtype.ext; exact h₂
 
--- 補題3: restrict_order.le の展開。もとの半順序と制限された半順序の関係
+-- 補題3:  restrict_order_comp.le の展開。もとの半順序と制限された半順序の関係
 @[simp]
-lemma comp_po_restrict_le_iff
+private lemma comp_po_restrict_le_iff
   (s : Setup_po α) (q : Quotient (proj_setoid s))
   (x y : comp_po_V' s q) :
-  (restrict_order s q).le x y ↔ s.po.le ⟨x, comp_po_sub s q x.2⟩ ⟨y, comp_po_sub s q y.2⟩ := by
-  simp [restrict_order]
-
-------------------------------
---qを除いた半順序の定義に使う部分。
--------------------------------
-
-noncomputable def exclFinset
-  (s : Setup_po α) (q : Quotient (proj_setoid s))[DecidableRel (projr s)]  :
-  Finset {x // x ∈ s.V} :=
-  Finset.filter
-    (fun v ↦ @Quotient.mk _ (proj_setoid s) v ≠ q)
-    s.V.attach
-
-/-- 除外部分を **`α` の `Finset`** として取り出した頂点集合 -/
-noncomputable def excl_po_V'
-  (s : Setup_po α)
-  (q : Quotient (proj_setoid s))
-  [DecidableRel (projr s)]
-  [DecidableEq (Quotient (proj_setoid s))] :
-  Finset α :=
-  (exclFinset s q).image Subtype.val
-
-lemma excl_po_sub
-  (s : Setup_po α) (q : Quotient (proj_setoid s))
-  [DecidableRel (projr s)]
-  [DecidableEq   (Quotient (proj_setoid s))] :
-  excl_po_V' s q ⊆ s.V := by
-  dsimp [excl_po_V', exclFinset]
-  -- Finset.image_subset_iff : image f s ⊆ t ↔ s ⊆ t.preimage f
-  simp only [Finset.image_subset_iff, Subtype.coe_mk]
-  intros x hx
-  -- hx : x ∈ exclFinset s q
-  -- exclFinset s q ⊆ s.V.attach なので x.1 ∈ s.V
-  exact coe_mem x
-
-noncomputable def restrict_order_core
-  (s : Setup_po α)
-  (V' : Finset α)
-  (sub : V' ⊆ s.V) :
-  PartialOrder (Subtype fun x => x ∈ V') :=
-{ le            := fun x y =>
-    -- compare via the original order on s.V
-    s.po.le ⟨x.1, sub x.2⟩ ⟨y.1, sub y.2⟩
-, le_refl       := fun x =>
-    -- reflexivity from the original order
-    s.po.le_refl _
-, le_trans      := fun {x y z} hxy hyz =>
-    -- transitivity from the original order
-    s.po.le_trans ⟨x.1, sub x.2⟩ ⟨y.1, sub y.2⟩ ⟨z.1, sub z.2⟩ hxy hyz
-, le_antisymm  := fun {x y} hxy hyx => by
-    -- antisymmetry from the original order, then Subtype.ext to lift to the subtype
-    let sp := s.po.le_antisymm ⟨x.1, sub x.2⟩ ⟨y.1, sub y.2⟩ hxy hyx
-    apply Subtype.ext
-    simpa using sp
-}
-
-
+  ( restrict_order_comp s q).le x y ↔ s.po.le ⟨x, comp_po_sub s q x.2⟩ ⟨y, comp_po_sub s q y.2⟩ := by
+  simp [restrict_order_comp]
 
 
 -- qに制限されたSetup_po の定義
@@ -366,25 +388,44 @@ noncomputable def comp_po (s : Setup_po α) (q : Quotient (proj_setoid s))
     -- これで V' = (compFinset s q).image Subtype.val 上に v.val がある
     refine ⟨Subtype.val v, Finset.mem_image.2 ⟨v, hv_mem, rfl⟩⟩
 , f      := comp_po_f s q
-, po     := restrict_order s q
+, po     :=  restrict_order_comp s q
 , order  := fun x y => by
     -- トップレベル補題をすべて利用する
     simpa [comp_po_restrict_le_iff s q, ← comp_po_reach_equiv s q x y]
       using (comp_po_reach_equiv s q x y).trans (s.order _ _) }
 
---------------------------------------------
----  ここからqでない部分の半順序を与える議論
+------------------------------
+--qを除いた半順序の定義に使う部分。excl側。
+-------------------------------
 
+noncomputable def exclFinset
+  (s : Setup_po α) (q : Quotient (proj_setoid s))[DecidableRel (projr s)]  :
+  Finset {x // x ∈ s.V} :=
+  Finset.filter
+    (fun v ↦ @Quotient.mk _ (proj_setoid s) v ≠ q)
+    s.V.attach
 
----連結成分の数。でもこれはsetoidが与えた時のもの。
-def numClasses {α : Type _} (st : Setoid α)
-  [Fintype α] [DecidableEq (Quotient st)] : ℕ :=
-  (Finset.univ.image (Quot.mk st.r)).card
+/-- 除外部分を **`α` の `Finset`** として取り出した頂点集合 -/
+noncomputable def excl_po_V'
+  (s : Setup_po α)
+  (q : Quotient (proj_setoid s))
+  [DecidableRel (projr s)]
+  [DecidableEq (Quotient (proj_setoid s))] :
+  Finset α :=
+  (exclFinset s q).image Subtype.val
 
--- 連結成分の数。setup_poに対して、定義する。numClassesと同じだが、必要であれば復活。
---noncomputable def num_connected_components (s : Setup_po α) : ℕ :=
---  (Finset.univ.image (Quot.mk (proj_setoid s))).card
-----numClasses (proj_setoid s)と定義しても良い。
+private lemma excl_po_sub
+  (s : Setup_po α) (q : Quotient (proj_setoid s))
+  [DecidableRel (projr s)]
+  [DecidableEq   (Quotient (proj_setoid s))] :
+  excl_po_V' s q ⊆ s.V := by
+  dsimp [excl_po_V', exclFinset]
+  -- Finset.image_subset_iff : image f s ⊆ t ↔ s ⊆ t.preimage f
+  simp only [Finset.image_subset_iff, Subtype.coe_mk]
+  intros x hx
+  -- hx : x ∈ exclFinset s q
+  -- exclFinset s q ⊆ s.V.attach なので x.1 ∈ s.V
+  exact coe_mem x
 
 noncomputable def excl_po_f
   (s : Setup_po α)
@@ -459,7 +500,7 @@ noncomputable def excl_po_f
 
 
 
-lemma excl_po_val_step
+private lemma excl_po_val_step
   (s : Setup_po α) (q : Quotient (proj_setoid s))[DecidableRel (projr s)] [DecidableEq (Quotient (proj_setoid s))]
   (v : excl_po_V' s q) :
   (excl_po_f s q v).val
@@ -468,12 +509,9 @@ lemma excl_po_val_step
   -- その .val をそのまま持ってくるだけなので reflexivity
   dsimp [excl_po_f]      -- def を展開
 
+-- 2. 制限前と後で反復値が一致する補題
 
-----------------------------------------------------------------
--- 2. 反復値が一致する補題
-----------------------------------------------------------------
-
-lemma excl_po_iter_val
+private lemma excl_po_iter_val
   (s : Setup_po α) (q : Quotient (proj_setoid s))
   [DecidableRel (projr s)] [DecidableEq (Quotient (proj_setoid s))]
   (x : excl_po_V' s q) :
@@ -514,10 +552,9 @@ lemma excl_po_iter_val
           rw [Function.iterate_succ']
           rw [Function.comp_apply]
 
-----------------------------------------------------------------
--- 3. reach の同値性
-----------------------------------------------------------------
-lemma excl_po_reach_equiv
+-- 3. exclに制限前と後でのreach の同値性
+--下から参照あり。一つ下に移動する？
+private lemma excl_po_reach_equiv
   (s : Setup_po α) (q : Quotient (proj_setoid s))
   [DecidableRel (projr s)] [DecidableEq (Quotient (proj_setoid s))]
   (x y : excl_po_V' s q) :
@@ -567,7 +604,8 @@ lemma excl_po_reach_equiv
     apply Subtype.ext
     exact h_val'
 
-
+-- functionalDirectProduct2から引用。
+-- exclの頂点集合が非空でないこと。
 theorem excl_po_V'_nonempty_of_classes_ge2
   (s : Setup_po α) (q : Quotient (proj_setoid s))
   [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]:
@@ -655,32 +693,7 @@ noncomputable def excl_po
 
     simpa [restr_iff] using (reach_equiv.trans (s.order sx sy)) }
 
-lemma numClasses_pos (s : Setup_po α) :
-  (numClasses (proj_setoid s)) > 0 := by
-  -- numClasses の定義を展開して `Finset.card` を使う
-  dsimp [numClasses]
-  -- `Finset.card` の定義を展開して `Finset.nonempty` を使う
-  have h1 : Fintype.card (Quotient (proj_setoid s)) ≥ 1 := by
-    --apply Fintype.card_pos_iff.2
-    --refine (nonempty_quotient_iff s).mpr ?_
-    let qx := Quot.mk (proj_setoid s)
-    obtain ⟨x, h_nonemp⟩ := Setup_po.nonemp s
-    specialize qx ⟨x, h_nonemp⟩
-    simp_all only [ge_iff_le]
-    apply Fintype.card_pos_iff.mpr
-    exact Nonempty.intro qx
 
-  simp_all only [ge_iff_le, gt_iff_lt, card_pos, Finset.image_nonempty, attach_nonempty_iff]
-  cases s
-  simp_all only
-
-lemma quotient_exists (s : Setup_po α) :
-Nonempty (Quotient (proj_setoid s)) := by
-  -- s.V.attach は空でないので同値類も空でない
-  obtain ⟨v, hv⟩ := Setup_po.nonemp s
-  -- `Quotient.mk` を使って同値類を作る
-  let x := Quotient.mk (proj_setoid s) ⟨v, hv⟩
-  use x
 
 /-comp_poとexcl_poのidealの直和がもとのidealになることを示すための定義
 -- ideal 系

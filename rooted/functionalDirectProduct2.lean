@@ -22,7 +22,7 @@ variable {α : Type} [Fintype α] [DecidableEq α]
 noncomputable instance : ∀ v, Decidable (Quotient.mk'' v = q) :=  fun v => (Quotient.mk'' v).decidableEq q
 
 --compとexclの分解は、disjointであることの補題。すぐ下で使っている。
-lemma disjoint_ground_excl (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]
+private lemma disjoint_ground_excl (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]
   --(hnonempty : (excl_po_V' s q).Nonempty) :
   (geq2quotient: (numClasses (proj_setoid s) ≥ 2)) :
   (comp_po s q).V ∩ (excl_po s q geq2quotient).V = ∅ :=
@@ -469,7 +469,7 @@ by
 
 --(po_closuresystem s)がcompとexclに分解できるという言明。
 --使ってない？directProduct_comp_excel_ground_cardの証明で使えそうだけど。
-lemma directProduct_comp_excel_ground (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]
+private lemma directProduct_comp_excel_ground (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]
   (geq2quotient: (numClasses (proj_setoid s) ≥ 2)) :
   (po_closuresystem (comp_po s q)).ground ∪ (po_closuresystem (excl_po s q geq2quotient)).ground =
   (po_closuresystem s).toSetFamily.ground :=
@@ -478,7 +478,7 @@ by
   dsimp [DirectProduct]
 
 --下で使っている。
-lemma directProduct_comp_excel_ground_card (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]
+private lemma directProduct_comp_excel_ground_card (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]
   (geq2quotient: (numClasses (proj_setoid s) ≥ 2)) :
   (po_closuresystem (comp_po s q)).toSetFamily.ground.card +
     (po_closuresystem (excl_po s q geq2quotient)).toSetFamily.ground.card =
@@ -500,7 +500,7 @@ by
   rw [Finset.card_union_of_disjoint this]
 
 --下のdirectProduct_comp_excel_ground_eで使っている。
-lemma directProduct_comp_ground_card (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]  :
+private lemma directProduct_comp_ground_card (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]  :
  ((po_closuresystem (comp_po s q))).toSetFamily.ground.card ≥ 1 :=
 by
   dsimp [po_closuresystem]
@@ -514,7 +514,7 @@ by
   exact Quotient.mk_eq_iff_out.mpr rfl
 
 --下のdirectProduct_comp_excel_ground_cで使っている。
-lemma directProduct_excl_ground_card (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]
+private lemma directProduct_excl_ground_card (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]
   (geq2quotient: (numClasses (proj_setoid s) ≥ 2)) :
  ((po_closuresystem (excl_po s q geq2quotient))).toSetFamily.ground.card ≥ 1 :=
 by

@@ -26,17 +26,9 @@ open Finset Set Classical
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 
---ここからSetup_spo2が前提。
---どの定理をどのファイルに入れるかがうまくいっていないかも。
---traceに関係する部分と関係ない部分を分けた方がいいかも。
---setup_spoとsetup_spo2は分けなくてもよかったかも。
---maximal以外は、singletonというsingleton_if_not_maximal の仮定が付け加わっている。
---この仮定が必要なのは、rareな頂点を示すときぐらい。
---一部にSetup_spoが前提の話も入っている。Setup_spo2の前提になっていても、本当は必要ないものが多そう。
---ー定理の中には、singleton_if_not_maximalの仮定が必要なものは見つからない。仮定はidealrareのところで利用される。
---Setup_spo2が出てくるのは、setup_trace_spo2までない。
---Setup_SPOtraceとして新たなファイルを作って、Setup_SPOのtrace部分と一緒にした。
---でも結局、このファイルの内容もtraceだった。
+--ここからSetup_spo2が前提のもの。
+--一部にSetup_spoが前提の話も入っているがsetup_spo2につながる話。
+--traceに関しても、maximalにつながる話がここに入っている。
 
 --Setup_spoよりも仮定としてはつよくなっている。大きさ2以上の同値類が極大なもののみという仮定が付け加わる。
 structure Setup_spo2 (α : Type) [Fintype α] [DecidableEq α]
@@ -46,6 +38,84 @@ structure Setup_spo2 (α : Type) [Fintype α] [DecidableEq α]
   ∀ q : Quotient toSetup_spo.setoid,
     (classOf toSetup_spo q).card ≥ 2 →
     isMaximal_spo toSetup_spo q
+
+
+--ここから極大性の話。極大性の話はspoというよりもspo2なので移動させた。
+-- Setup_spoの極大性とSetup2の極大性の関係。使われてない。
+lemma isMaximal_spo_iff (s: Setup2 α) (q : Quotient s.setoid) :
+  isMaximal_spo (setup_setupspo s) q ↔
+  isMaximalQ s q :=
+by
+  dsimp [isMaximal_spo]
+  dsimp [isMaximalQ]
+  dsimp [setup_setupspo]
+  apply Iff.intro
+  · intro h
+    intro y
+    let hy := h y
+    rw [spole_iff_po]
+    rw [spole_iff_po]
+    exact hy
+  · intro h
+    intro y
+    let hy := h y
+    rw [spole_iff_po] at hy
+    rw [spole_iff_po] at hy
+    exact hy
+
+--同値類の大きさが2以上であれば、同値類の極大性が成り立つ。
+--setup2_induces_spoで利用している。
+theorem eqClass_Maximal (s: Setup2 α) (q : Quotient s.setoid) :
+  (classOf (setup_setupspo s) q).card ≥ 2 → isMaximalQ s q  := by
+  intro h
+  rw [←eqClass_Class_of2] at h
+  dsimp [isMaximalQ]
+  let ecs := eqClass_size_ge_two_implies_inverse s.toSetup (Quotient.out q) h
+  obtain ⟨x, hx⟩ := Quotient.exists_rep q
+  intro q2
+  obtain ⟨y, hy⟩ := Quotient.exists_rep q2
+  specialize ecs y
+  let imi := isMaximal_iff s x
+  rw [hx] at imi
+  dsimp [isMaximal] at imi
+  dsimp [isMaximalQ] at imi
+  have: @Quotient.mk _ s.setoid q.out = q := by
+    subst hy hx
+    simp_all only [ge_iff_le, Subtype.forall, Quotient.out_eq]
+  rw [←this]
+  have : x ∈ eqClass_setup s.toSetup q.out := by
+      dsimp [eqClass_setup]
+      rw [Finset.mem_filter]
+      constructor
+      ·
+        subst hy hx
+        simp_all only [ge_iff_le, Subtype.forall, Quotient.out_eq, mem_attach]
+      ·
+        dsimp [eqClass_setup]
+        rw [←hx]
+        exact Quotient.mk_out x
+  have q_eq : s.pre.le x q.out := by
+    exact eqClass_ge s.toSetup q.out x this
+  have q_eq2 : s.pre.le q.out x := by
+    exact eqClass_le s.toSetup q.out x this
+  rw [←hy]
+  let imimp := imi.mp
+  have : ∀ (b : { x // x ∈ s.V }), x ≤ b → b ≤ x := by
+    intro b h
+    have : q.out ≤ b := by
+      exact Preorder.le_trans q.out x b q_eq2 h
+    have : b ≤ q.out := by
+      apply eqClass_size_ge_two_implies_inverse s.toSetup q.out
+      subst hy hx
+      simp_all only [ge_iff_le, Quotient.out_eq]
+      subst hy hx
+      simp_all only [ge_iff_le, Quotient.out_eq]
+    exact Preorder.le_trans b q.out x this q_eq2
+  specialize imimp this
+  intro a
+  subst hy hx
+  simp_all only [Subtype.forall, ge_iff_le, Subtype.coe_eta, implies_true, Quotient.out_eq]
+
 
 --Setup2からSetup_spo2への埋め込み。
 --functionalMainのaverage_rareのところで使っている。
@@ -78,6 +148,11 @@ def setup2_induces_spo (s : Setup2 α) : Setup_spo2 α :=
     exact csm
 }
 
+-----------------------
+--trace関係の定義や補題。
+--Setup_spo2に関連するもの
+------------------------------
+
 --すぐ下で利用。
 omit [Fintype α] in
 private lemma card_of_image_subset (V1 V2: Finset α) (A : Finset V1)(B:Finset V2)
@@ -93,9 +168,7 @@ private lemma card_of_image_subset (V1 V2: Finset α) (A : Finset V1)(B:Finset V
   simp_all only [ge_iff_le]
   linarith
 
---trace関係の定義や補題。
-
---新しく写って同値類が大きくなることはない。前提は、Setup_spoだが、setup_trace_spo2で利用。
+--新しく写って同値類が大きくなることはない。前提は、Setup_spoだが、setup_trace_spo2内で利用。
 private lemma toNew_card (s : Setup_spo α) (x : {x : α // x ∈ s.V})
   (q: Quotient s.setoid)
    (hx:(classOf s (@Quotient.mk _ s.setoid x)).card ≥ 2):

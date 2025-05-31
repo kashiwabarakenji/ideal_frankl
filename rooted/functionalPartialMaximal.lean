@@ -25,6 +25,7 @@ open Function Finset
 
 def po_maximal (s: Setup_po α) (x: s.V) : Prop := ∀ y, s.po.le x y → x = y
 
+--極大であることは、s.fが自分自身であること。
 --外からも参照している。
 lemma po_maximal_lem (s: Setup_po α) (x: s.V) :
   po_maximal s x ↔ s.f x = x :=
@@ -314,12 +315,12 @@ noncomputable def proj_max_of_quot
     (s : Setup_po α) (v : {x : α // x ∈ s.V}) :
   proj_max_of_quot s ⟦v⟧ = proj_max s v := rfl
 
---yの極大要素proj_maxが本当に極大要素で、上にあること。proj_max_maximalとかぶっている。
+--yの極大要素proj_maxが本当に極大要素で、上にあること。proj_max_maximalとかぶっている。そのから参照あり。
 lemma proj_max_spec (s : Setup_po α) (y : s.V) :
   po_maximal s (proj_max s y) ∧ reach s.f y (proj_max s y) :=
   Classical.choose_spec (po_maximal_reachable s y)
 
---極大でreachableであれば、proj_maxになること。
+--極大でreachableであれば、proj_maxになること。functionalDirectProductから参照。
 lemma proj_max_unique (s : Setup_po α) {y x : s.V}
   (h : po_maximal s x ∧ reach s.f y x) :
   proj_max s y = x := by
@@ -329,7 +330,7 @@ lemma proj_max_unique (s : Setup_po α) {y x : s.V}
   exact po_maximal_reachable_eq s y (proj_max s y) x hy h
 
 --大小関係がある場合は、対応する極大要素proj_maxは等しい。
-lemma proj_max_order (s: Setup_po α) (x y : {x : α // x ∈ s.V})(od:s.po.le x y) :
+private lemma proj_max_order (s: Setup_po α) (x y : {x : α // x ∈ s.V})(od:s.po.le x y) :
  proj_max s x = proj_max s y := by
   -- proj_max は po_maximal_reachable の選択肢の一つ
   dsimp [proj_max]
@@ -346,14 +347,14 @@ lemma proj_max_order (s: Setup_po α) (x y : {x : α // x ∈ s.V})(od:s.po.le x
   · simp_all only
   · exact this
 
---大小関係がある場合は、対応するコンポーネントは等しい。
+--大小関係がある場合は、対応するコンポーネントは等しい。外から参照あり。
 lemma quotient_order (s: Setup_po α) (x y : {x : α // x ∈ s.V}) (od:s.po.le x y):
   Quotient.mk (proj_setoid s) x = Quotient.mk (proj_setoid s) y := by
   -- proj_max は po_maximal_reachable の選択肢の一つ
   apply (proj_max_quotient s x y).mp
   exact proj_max_order s x y od
 
---極大要素のproj_maxは自分自身
+--極大要素のproj_maxは自分自身。外から参照あり。
 lemma proj_max_eq_of_maximal
     (s : Setup_po α) (x : s.V) (hmax : po_maximal s x) :
     proj_max s x = x := by

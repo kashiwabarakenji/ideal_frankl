@@ -26,10 +26,7 @@ variable {α : Type} [Fintype α] [DecidableEq α]
 -- 2.  補題：numClasses = 1 なら Quotient が subsingleton
 ------------------------------------------------------------
 
-/--
-`Finset.card` が 1 の集合は実質的に要素が一つだけなので，
-その要素で固定すれば subsingleton が取れる。
--/
+--連結成分が1つであれば、同値類の要素がひとつ。下で使っている。
 private lemma quotient_subsingleton
     (s : Setup_po α)
     (h : numClasses (proj_setoid s) = 1) :
@@ -83,6 +80,7 @@ private lemma quotient_subsingleton
 -- 3.  補題：numClasses = 1 なら ∀y, proj_max s y = proj_max s x
 ------------------------------------------------------------
 
+-- 連結成分が1つであれば、極大要素が等しい。下で使っている。
 private lemma proj_max_eq_of_one_class
     (s : Setup_po α) (h : numClasses (proj_setoid s) = 1)
     (x y : {x : α // x ∈ s.V}) :
@@ -141,48 +139,11 @@ theorem component_one
   -- 2方向の包含で Finset 等号
   exact Finset.Subset.antisymm hsubset hsuperset
 
---全体集合からmaximalな要素を除いたものがidealになること。
---連結成分の数の仮定は必要ない。
-private lemma hasgroundminusone
-  (s : Setup_po α) (x : s.V) (mx :po_maximal s x):
-    (po_closuresystem s).sets (s.V.erase x) :=
-by
+------------------------------------------------------------
+--- normalized_degree_sum_gtに向けた部分
+------------------------------------------------------------
 
-  refine And.intro ?subset ?ideal
-
-  /- ① 包含 `erase ⊆ V` はライブラリ補題で済む -/
-  · exact Finset.erase_subset _ _
-
-  /- ② ideal 条件 -/
-  · intro v hv w hw
-    -- `hv` : v.val ∈ s.V.erase x
-    -- `hw` : s.po.le w v
-    -- 目標 : w.val ∈ s.V.erase x
-    -- まず `hv` から `v.val ≠ x` を取り出す
-    have hvne : (v : α) ≠ x := (Finset.mem_erase.1 hv).1
-
-    -- `w = x` かどうかで場合分け
-    by_cases hwx : (w : s.V) = x
-    · -- (1) もし `w = x` なら `x ≤ v` なので極大性と矛盾
-      have hxv : s.po.le x v := by
-        simpa [hwx] using hw
-      have hxeqv : (x : s.V) = v := mx v hxv
-      have : (v : α) = x :=
-      by
-        apply congrArg Subtype.val
-        subst hwx hxeqv
-        simp_all only [le_refl, mem_erase, ne_eq, not_true_eq_false, coe_mem, and_true]
-      exact (hvne this).elim          -- 矛盾 → このケースは起こらない
-    · -- (2) `w ≠ x` なら下方閉なので w も erase に入る
-      --   `w.val ∈ s.V` は `w.property`
-      --   `w.val ≠ x` は `w ≠ x` から導ける
-      have hwne : (w : α) ≠ x := by
-        intro hval
-        apply hwx
-        apply Subtype.ext
-        exact hval
-      exact (Finset.mem_erase).2 ⟨hwne, w.property⟩
-
+--すぐ下で使っている。
 private lemma po_trace_le_iff
     (s : Setup_po α) (x : s.V) (mx : po_maximal s x)
     (nontriv : s.V.card ≥ 2)
@@ -203,6 +164,7 @@ private lemma po_trace_le_iff
     , Finset.mem_erase, ha, hb       -- 使い切るための `simp` データ
     ]
 
+--すぐ下で使っている。
 private lemma not_mem_of_subset_erase
   {α : Type _} [DecidableEq α]  -- ← here
   {x : α} {ss ground : Finset α}
@@ -213,6 +175,8 @@ private lemma not_mem_of_subset_erase
   -- `Finset.mem_erase.1` : `a ∈ s.erase a ↔ ¬ a = a ∧ a ∈ s`
   exact (Finset.mem_erase.1 this).1 rfl
 
+-- traceしたあとのidealはもともとのidealから全体集合を除いたもの。下で使っている。
+-- 連結成分が1の仮定の下で成り立つ。
 private lemma trace_sets_iff (s  : Setup_po α) (conn  : numClasses (proj_setoid s) = 1)  (x  : s.V) (mx : po_maximal s x) (nontriv : s.V.card ≥ 2)(ss : Finset α) :
     (po_closuresystem (po_trace s x mx nontriv)).sets ss
     ↔ (po_closuresystem s).sets ss ∧ ss ≠ s.V :=
@@ -393,6 +357,7 @@ instance : DecidablePred (Fₜ s x mx nontriv).sets := Classical.decPred _
 ------------------------------------------------------------------------
 -- 2. `Fₛ.ideals` と `Fₜ.ideals` の対応
 ------------------------------------------------------------------------
+--Setup_poのtraceの操作が集合族のtrace操作に一致していること。下で使っている。po_trace_idealと同じ内容だがこちらは連結成分の数を1と仮定している。
 private lemma ideals_eq_erase (s : Setup_po α) (conn  : numClasses (proj_setoid s) = 1)(x  : s.V) (mx : po_maximal s x) (nontriv : s.V.card ≥ 2):
     (ideals (po_closuresystem (po_trace s x mx nontriv)).toSetFamily) =
       (ideals (po_closuresystem s).toSetFamily).erase (s.V) := by
@@ -483,7 +448,7 @@ private lemma ideals_eq_erase (s : Setup_po α) (conn  : numClasses (proj_setoid
 ------------------------------------------------------------------------
 -- 3. カードを比較して「ちょうど 1 減る」
 ------------------------------------------------------------------------
-lemma number_of_hyperedges_trace (s : Setup_po α) (conn  : numClasses (proj_setoid s) = 1)(x  : s.V) (mx : po_maximal s x) (nontriv : s.V.card ≥ 2):
+private lemma number_of_hyperedges_trace (s : Setup_po α) (conn  : numClasses (proj_setoid s) = 1)(x  : s.V) (mx : po_maximal s x) (nontriv : s.V.card ≥ 2):
  (po_closuresystem s).toSetFamily.number_of_hyperedges =
     (po_closuresystem (po_trace s x mx nontriv)).toSetFamily.number_of_hyperedges +1 :=
   -- 展開
@@ -527,6 +492,7 @@ by
   obtain ⟨val, property⟩ := x
   convert goal₁
 
+--連結成分が1つの仮定。traceした後のtotal_size。下で使っている。
 private lemma total_size_of_hyperedge_trace
   (s : Setup_po α)
   (conn  : numClasses (proj_setoid s) = 1)
@@ -577,7 +543,193 @@ private lemma total_size_of_hyperedge_trace
     let iee := ideals_eq_erase s conn x mx nontriv
     exact congrFun (congrArg Finset.sum iee) fun x => #x
 
---上の定理の最初の証明。ちょっとだけ長い。あとで消す。
+--下で使っている。
+private lemma normalized_degree_sum_trace
+  (s : Setup_po α)
+  (conn  : numClasses (proj_setoid s) = 1)
+  (x : s.V) (mx : po_maximal s x)
+  (nontriv : s.V.card ≥ 2) :
+  (po_closuresystem s).toSetFamily.normalized_degree_sum
+= (po_closuresystem (po_trace s x mx nontriv)).toSetFamily.normalized_degree_sum
+  + ((Int.ofNat s.V.card) - (po_closuresystem (po_trace s x mx nontriv)).number_of_hyperedges)
+   :=
+by
+  -- 展開
+  dsimp [SetFamily.normalized_degree_sum]
+  -- 全体集合は必ずイデアル集合に含まれる
+  have hG : s.V ∈ ideals (po_closuresystem s).toSetFamily := by
+    dsimp [ideals]
+    have hp : s.V ∈ s.V.powerset := by
+      apply Finset.mem_powerset.mpr
+      exact fun ⦃a⦄ a => a
+    simp [ideals]
+    let fmf := Finset.mem_filter.mpr ⟨hp, (po_closuresystem s).has_ground⟩
+    simp_all only [ge_iff_le]
+    obtain ⟨val, property⟩ := x
+    apply And.intro
+    · rfl
+    · rw [mem_filter] at fmf
+      simp_all only [Finset.mem_powerset, subset_refl, true_and]
+  -- erase で消した分を足し戻す
+  have : #(po_closuresystem (po_trace s x mx nontriv)).ground + 1=
+      #(po_closuresystem s).ground := by
+    dsimp [po_closuresystem]
+    dsimp [po_trace]
+    simp_all only [ge_iff_le, coe_mem, card_erase_of_mem]
+    obtain ⟨val, property⟩ := x
+    omega
+  rw [←this]
+  norm_cast
+  have hground:#(po_closuresystem (po_trace s x mx nontriv)).ground + 1 = s.V.card :=
+  by
+    simp_all only
+    obtain ⟨val, property⟩ := x
+    rfl
+  rw [←hground]
+  ring_nf
+  norm_cast
+
+  let tsht := total_size_of_hyperedge_trace s conn x mx nontriv
+  let nht := number_of_hyperedges_trace s conn x mx nontriv
+  rw [tsht, nht]
+  ring_nf
+
+  set pn := (po_closuresystem (po_trace s x mx nontriv)).number_of_hyperedges with hpn
+  set pg := ((po_closuresystem (po_trace s x mx nontriv)).ground.card : ℤ) with hpg
+  rw [←hground]
+  suffices h_sub : (pg + 1) * 2 + (-(pn * (pg + 1)) - (pg + 1)) = (-pn - pn * pg) + (pg + 1) from
+  by
+    ring_nf
+    simp_all only [Nat.cast_add, Nat.cast_one, pn, pg]
+    ring_nf
+
+  simp_all only [pn, pg]
+  ring
+
+--princialIdealのtrace版。
+noncomputable
+def principalIdealTrace (s : Setup_po α) (x : s.V) (mx) (nontriv)
+    (v : (po_trace s x mx nontriv).V) : Finset α :=
+  principalIdeal (po_trace s x mx nontriv) v
+
+
+
+--単射性だけだと1足りないが、空集合もhyperedgeで、princialIdealではないので、成り立つ。
+private lemma normalized_degree_sum_lem
+  (s : Setup_po α)
+  --(conn  : numClasses (proj_setoid s) = 1)
+  (x : s.V) (mx : po_maximal s x)
+  (nontriv : s.V.card ≥ 2):
+(Int.ofNat s.V.card) ≤ (po_closuresystem (po_trace s x mx nontriv)).number_of_hyperedges :=
+by
+  have :#(po_trace s x mx nontriv).V + 1 = Int.ofNat #s.V := by
+    dsimp [po_trace]
+    simp_all only [ge_iff_le, coe_mem, card_erase_of_mem]
+    obtain ⟨val, property⟩ := x
+    norm_cast
+    omega
+
+  rw [←this]
+
+  let nli := nodes_le_ideals (po_trace s x mx nontriv)
+
+  let iil2 :=isIdeal_lem2 (po_trace s x mx nontriv)
+
+  have :(filter (fun s_1 => (po_closuresystem (po_trace s x mx nontriv)).sets s_1)) (po_trace s x mx nontriv).V.powerset =
+      (filter (isIdeal (po_trace s x mx nontriv)) (po_trace s x mx nontriv).V.powerset) :=
+  by
+    simp_all only [Int.ofNat_eq_coe]
+    obtain ⟨val, property⟩ := x
+    ext a : 1
+    simp_all only [mem_filter, Finset.mem_powerset, and_congr_right_iff, implies_true, iil2]
+
+  dsimp [SetFamily.number_of_hyperedges]
+
+  rw [←this] at nli
+
+  exact Int.toNat_le.mp nli
+
+--functionalMainで利用。
+--traceすると、normalized_Degree_sumが減ることはない。
+--PartialTraceに移動することも可能かもしれないが、連結成分の数が1と仮定したうえでの定理。
+theorem normalized_degree_sum_gt
+  (s : Setup_po α)
+  (conn  : numClasses (proj_setoid s) = 1)
+  (x : s.V) (mx : po_maximal s x)
+  (nontriv : s.V.card ≥ 2) :
+  (po_closuresystem s).toSetFamily.normalized_degree_sum
+  ≤ (po_closuresystem (po_trace s x mx nontriv)).toSetFamily.normalized_degree_sum :=
+by
+
+  let ndst := normalized_degree_sum_trace s conn x mx nontriv
+  rw [ndst]
+
+  let ndsl := normalized_degree_sum_lem s x mx nontriv
+
+  simp_all only [Int.ofNat_eq_coe, add_le_iff_nonpos_right, tsub_le_iff_right, zero_add, ge_iff_le]
+  obtain ⟨val, property⟩ := x
+  exact ndsl
+
+--functionalMainで利用。
+lemma trace_one_ground_card
+  (s : Setup_po α)
+  (x : s.V) (mx : po_maximal s x)
+  (nontriv : s.V.card ≥ 2) :
+  (po_closuresystem s).ground.card
+  > (po_closuresystem (po_trace s x mx nontriv)).ground.card :=
+by
+  dsimp [po_closuresystem]
+  dsimp [po_trace]
+  simp_all only [ge_iff_le, coe_mem, card_erase_of_mem, gt_iff_lt, tsub_lt_self_iff, card_pos, Nat.lt_one_iff,
+    pos_of_gt, and_true]
+  obtain ⟨val, property⟩ := x
+  exact ⟨val, property⟩
+
+-- 使ってないもの。
+
+--全体集合からmaximalな要素を除いたものがidealの要素になる。
+--連結成分の数の仮定は必要ない。使ってないかも。trace_sets_iffの片方向とかぶっているわけでもないか。
+private lemma hasgroundminusone
+  (s : Setup_po α) (x : s.V) (mx :po_maximal s x):
+    (po_closuresystem s).sets (s.V.erase x) :=
+by
+
+  refine And.intro ?subset ?ideal
+
+  /- ① 包含 `erase ⊆ V` はライブラリ補題で済む -/
+  · exact Finset.erase_subset _ _
+
+  /- ② ideal 条件 -/
+  · intro v hv w hw
+    -- `hv` : v.val ∈ s.V.erase x
+    -- `hw` : s.po.le w v
+    -- 目標 : w.val ∈ s.V.erase x
+    -- まず `hv` から `v.val ≠ x` を取り出す
+    have hvne : (v : α) ≠ x := (Finset.mem_erase.1 hv).1
+
+    -- `w = x` かどうかで場合分け
+    by_cases hwx : (w : s.V) = x
+    · -- (1) もし `w = x` なら `x ≤ v` なので極大性と矛盾
+      have hxv : s.po.le x v := by
+        simpa [hwx] using hw
+      have hxeqv : (x : s.V) = v := mx v hxv
+      have : (v : α) = x :=
+      by
+        apply congrArg Subtype.val
+        subst hwx hxeqv
+        simp_all only [le_refl, mem_erase, ne_eq, not_true_eq_false, coe_mem, and_true]
+      exact (hvne this).elim          -- 矛盾 → このケースは起こらない
+    · -- (2) `w ≠ x` なら下方閉なので w も erase に入る
+      --   `w.val ∈ s.V` は `w.property`
+      --   `w.val ≠ x` は `w ≠ x` から導ける
+      have hwne : (w : α) ≠ x := by
+        intro hval
+        apply hwx
+        apply Subtype.ext
+        exact hval
+      exact (Finset.mem_erase).2 ⟨hwne, w.property⟩
+
+--total_size_of_hyperedge_traceの最初の証明。ちょっとだけ長い。あとで消す。
 lemma total_size_of_hyperedge_trace2
   (s : Setup_po α)
   (conn  : numClasses (proj_setoid s) = 1)
@@ -657,78 +809,8 @@ lemma total_size_of_hyperedge_trace2
   convert goal₁
   simp_all only [Int.ofNat_eq_coe, Nat.cast_sum]
 
-
-
-private lemma normalized_degree_sum_trace
-  (s : Setup_po α)
-  (conn  : numClasses (proj_setoid s) = 1)
-  (x : s.V) (mx : po_maximal s x)
-  (nontriv : s.V.card ≥ 2) :
-  (po_closuresystem s).toSetFamily.normalized_degree_sum
-= (po_closuresystem (po_trace s x mx nontriv)).toSetFamily.normalized_degree_sum
-  + ((Int.ofNat s.V.card) - (po_closuresystem (po_trace s x mx nontriv)).number_of_hyperedges)
-   :=
-by
-  -- 展開
-  dsimp [SetFamily.normalized_degree_sum]
-  -- 全体集合は必ずイデアル集合に含まれる
-  have hG : s.V ∈ ideals (po_closuresystem s).toSetFamily := by
-    dsimp [ideals]
-    have hp : s.V ∈ s.V.powerset := by
-      apply Finset.mem_powerset.mpr
-      exact fun ⦃a⦄ a => a
-    simp [ideals]
-    let fmf := Finset.mem_filter.mpr ⟨hp, (po_closuresystem s).has_ground⟩
-    simp_all only [ge_iff_le]
-    obtain ⟨val, property⟩ := x
-    apply And.intro
-    · rfl
-    · rw [mem_filter] at fmf
-      simp_all only [Finset.mem_powerset, subset_refl, true_and]
-  -- erase で消した分を足し戻す
-  have : #(po_closuresystem (po_trace s x mx nontriv)).ground + 1=
-      #(po_closuresystem s).ground := by
-    dsimp [po_closuresystem]
-    dsimp [po_trace]
-    simp_all only [ge_iff_le, coe_mem, card_erase_of_mem]
-    obtain ⟨val, property⟩ := x
-    omega
-  rw [←this]
-  norm_cast
-  have hground:#(po_closuresystem (po_trace s x mx nontriv)).ground + 1 = s.V.card :=
-  by
-    simp_all only
-    obtain ⟨val, property⟩ := x
-    rfl
-  rw [←hground]
-  ring_nf
-  norm_cast
-
-  let tsht := total_size_of_hyperedge_trace s conn x mx nontriv
-  let nht := number_of_hyperedges_trace s conn x mx nontriv
-  rw [tsht, nht]
-  ring_nf
-
-  set pn := (po_closuresystem (po_trace s x mx nontriv)).number_of_hyperedges with hpn
-  set pg := ((po_closuresystem (po_trace s x mx nontriv)).ground.card : ℤ) with hpg
-  rw [←hground]
-  suffices h_sub : (pg + 1) * 2 + (-(pn * (pg + 1)) - (pg + 1)) = (-pn - pn * pg) + (pg + 1) from
-  by
-    ring_nf
-    simp_all only [Nat.cast_add, Nat.cast_one, pn, pg]
-    ring_nf
-
-  simp_all only [pn, pg]
-  ring
-
---princialIdealのtrace版。
-noncomputable
-def principalIdealTrace (s : Setup_po α) (x : s.V) (mx) (nontriv)
-    (v : (po_trace s x mx nontriv).V) : Finset α :=
-  principalIdeal (po_trace s x mx nontriv) v
-
 /-- principalIdealTrace は単射。 現在は使ってない。-/
-lemma inj_principalTrace
+private lemma inj_principalTrace
     (s : Setup_po α) (x mx nontriv) :
   Function.Injective (principalIdealTrace s x mx nontriv) := by
   -- 同型を `principal_injective` に帰着
@@ -738,73 +820,3 @@ lemma inj_principalTrace
   exact congrArg Subtype.val (pi h)
 
   --simpa using principal_injective _ h
-
---単射性だけだと1足りないが、空集合もhyperedgeで、princialIdealではないので、成り立つ。
-lemma normalized_degree_sum_lem
-  (s : Setup_po α)
-  --(conn  : numClasses (proj_setoid s) = 1)
-  (x : s.V) (mx : po_maximal s x)
-  (nontriv : s.V.card ≥ 2):
-(Int.ofNat s.V.card) ≤ (po_closuresystem (po_trace s x mx nontriv)).number_of_hyperedges :=
-by
-  have :#(po_trace s x mx nontriv).V + 1 = Int.ofNat #s.V := by
-    dsimp [po_trace]
-    simp_all only [ge_iff_le, coe_mem, card_erase_of_mem]
-    obtain ⟨val, property⟩ := x
-    norm_cast
-    omega
-
-  rw [←this]
-
-  let nli := nodes_le_ideals (po_trace s x mx nontriv)
-
-  let iil2 :=isIdeal_lem2 (po_trace s x mx nontriv)
-
-  have :(filter (fun s_1 => (po_closuresystem (po_trace s x mx nontriv)).sets s_1)) (po_trace s x mx nontriv).V.powerset =
-      (filter (isIdeal (po_trace s x mx nontriv)) (po_trace s x mx nontriv).V.powerset) :=
-  by
-    simp_all only [Int.ofNat_eq_coe]
-    obtain ⟨val, property⟩ := x
-    ext a : 1
-    simp_all only [mem_filter, Finset.mem_powerset, and_congr_right_iff, implies_true, iil2]
-
-  dsimp [SetFamily.number_of_hyperedges]
-
-  rw [←this] at nli
-
-  exact Int.toNat_le.mp nli
-
---functionalMainで利用。
---traceすると、normalized_Degree_sumが減ることはない。
-theorem normalized_degree_sum_gt
-  (s : Setup_po α)
-  (conn  : numClasses (proj_setoid s) = 1)
-  (x : s.V) (mx : po_maximal s x)
-  (nontriv : s.V.card ≥ 2) :
-  (po_closuresystem s).toSetFamily.normalized_degree_sum
-  ≤ (po_closuresystem (po_trace s x mx nontriv)).toSetFamily.normalized_degree_sum :=
-by
-
-  let ndst := normalized_degree_sum_trace s conn x mx nontriv
-  rw [ndst]
-
-  let ndsl := normalized_degree_sum_lem s x mx nontriv
-
-  simp_all only [Int.ofNat_eq_coe, add_le_iff_nonpos_right, tsub_le_iff_right, zero_add, ge_iff_le]
-  obtain ⟨val, property⟩ := x
-  exact ndsl
-
---functionalMainで利用。
-lemma trace_one_ground_card
-  (s : Setup_po α)
-  (x : s.V) (mx : po_maximal s x)
-  (nontriv : s.V.card ≥ 2) :
-  (po_closuresystem s).ground.card
-  > (po_closuresystem (po_trace s x mx nontriv)).ground.card :=
-by
-  dsimp [po_closuresystem]
-  dsimp [po_trace]
-  simp_all only [ge_iff_le, coe_mem, card_erase_of_mem, gt_iff_lt, tsub_lt_self_iff, card_pos, Nat.lt_one_iff,
-    pos_of_gt, and_true]
-  obtain ⟨val, property⟩ := x
-  exact ⟨val, property⟩

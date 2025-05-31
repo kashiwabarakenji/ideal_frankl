@@ -732,8 +732,8 @@ private lemma trace_ideal (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quotient.
     obtain ⟨val, property⟩ := x
     rfl
   have : s.V.card ≥ 2:= by
-    let csl := card_subtype_le_original  (classOf s ⟦x⟧)
-    linarith
+    let csl := card_subtype_le_original  (classOfx s x)
+    exact Nat.le_trans hx csl
   exact this
     )).sets ss :=  by
     intro ss
@@ -902,8 +902,8 @@ theorem trace_ideal_nds (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quotient.mk
     obtain ⟨val, property⟩ := x
     rfl
   have : s.V.card ≥ 2:= by
-    let csl := card_subtype_le_original  (classOf s ⟦x⟧)
-    linarith
+    let csl := card_subtype_le_original  (classOfx s x)
+    exact Nat.le_trans hx csl
   exact this
     )).normalized_degree_sum := by
 
@@ -933,7 +933,7 @@ noncomputable def excess (s: Setup_spo α)  : ℕ :=
 
 --setup_trace_spo2は、setup_traceでよさそう。(setup_trace_spo2 s x hx).toSetup_spoをsetup_traceに。
 --定理の前提もSetup_spoで十分かも。
-lemma trace_excess_decrease_lem_x (s: Setup_spo α) (x: s.V) (hx: (classOf s (@Quotient.mk _ s.setoid x)).card ≥ 2) :
+private lemma trace_excess_decrease_lem_x (s: Setup_spo α) (x: s.V) (hx: (classOf s (@Quotient.mk _ s.setoid x)).card ≥ 2) :
  (classOfx s x).image Subtype.val = (classOf (setup_trace s x hx) (toNew s x hx (@Quotient.mk _ s.setoid x))).image Subtype.val ∪ ({x.val}:Finset α):=
 by
   ext y
@@ -1032,6 +1032,9 @@ by
           ne_eq, Subtype.exists, exists_and_right, exists_eq_right, exists_const, and_true, coe_mem]
         obtain ⟨val, property⟩ := x
         dsimp [classOf] at h
+        simp_all only [Finset.mem_image, mem_filter, mem_attach, true_and, Subtype.exists, exists_and_right,
+          exists_eq_right, exists_true_left]
+        simp_all only
         exact classOf_self s ⟨val, property⟩
         --xとyが同じときは、xの同値類の大きさは、1減る。
 
@@ -1243,7 +1246,7 @@ theorem trace_excess_decrease (s: Setup_spo α) (x: s.V) (hx: (classOf s (@Quoti
   have :(#(classOf s' qx') - 1) = (#(classOf s qx) - 1) - 1 :=
   by
     let tedl :=  trace_excess_decrease_lem_x s x hx
-    have : x.val ∉ Finset.image Subtype.val (classOf (setup_trace s x hx) (toNew s x hx ⟦x⟧)) :=
+    have xnot: x.val ∉ Finset.image Subtype.val (classOf (setup_trace s x hx) (toNew s x hx ⟦x⟧)) :=
     by
       by_contra h_contra
       rw [Finset.mem_image] at h_contra
@@ -1262,11 +1265,13 @@ theorem trace_excess_decrease (s: Setup_spo α) (x: s.V) (hx: (classOf s (@Quoti
       simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, not_exists,
         Finset.disjoint_singleton_right, exists_false, not_false_eq_true, card_union_of_disjoint,
         Finset.card_singleton, s', qx, qx', tedl]
-    dsimp [classOfx] at this
+
+
+    dsimp [classOf] at this
     dsimp [qx,qx']
     symm
     have h_inj1 : Set.InjOn (Subtype.val : {x // x ∈ s.V} → α)
-               (↑(classOf s ⟦x⟧)) := by
+               (↑(classOfx s x)) := by
       intro a ha b hb h
       exact Subtype.ext h
 
@@ -1281,15 +1286,17 @@ theorem trace_excess_decrease (s: Setup_spo α) (x: s.V) (hx: (classOf s (@Quoti
     -- #(Finset.image Subtype.val (classOf s'.toSetup_spo (toNew s.toSetup_spo x hx ⟦x⟧))) + 1
 
     -- image を外す
-    rw [Finset.card_image_of_injOn h_inj1,
-        Finset.card_image_of_injOn h_inj2] at this
 
-    -- now goal is
-    -- #(classOf s.toSetup_spo ⟦x⟧) - 2 = #(classOf s'.toSetup_spo (toNew …)) - 1
+    rw [Finset.card_image_of_injOn h_inj1] at this
+    let fcii := Finset.card_image_of_injOn h_inj2 --使っているっぽい。
+    --dsimp [classOf] at fcii
+    --dsimp [Finset.attach] at fcii
+    --simp_all [s', qx, qx']
+    erw [this] --謎の命令
+    simp_all only [add_tsub_cancel_right]
+    congr 1
+    --rw [←fcii] at this
 
-    -- ゴールと this を使って整理
-    simp_all only [add_tsub_cancel_right, Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right,
-      not_exists, s', qx, qx']
   rw [this]
   have h : 1 ≤ #(classOf s qx) - 1 := by
     have : 2 ≤ #(classOf s qx) := by

@@ -371,38 +371,7 @@ private lemma powerset_image {α β : Type*}[DecidableEq β]
 
 ------------
 
---使ってない。これもpowersetとimageの順序を交換している様に見えるが。
---微妙に証明すべき式の形と一致してないのかも。
-lemma card_filter_image_image_eq_filter
-  {α β : Type} [DecidableEq α] [DecidableEq β]
-  {s : Finset α} (f : α → β) (p : Finset β → Prop) [DecidablePred p] :
-  ((s.powerset.image (Finset.image f)).filter p).card =
-    ((s.image f).powerset.filter p).card := by
-  rw [@filter_image]
-  rw [←@powerset_image α β _ s f]
-  simp only [filter_image]
 
---使ってない。証明すべき式の形と一致してないのかも。
-lemma filter_set_of_set_comp_eq_image_filter
-  {α β : Type*} [DecidableEq α] [DecidableEq β]
-  (S : Finset (Finset α)) (f : Finset α → Finset β)
-  (p : Finset β → Prop) [DecidablePred p] :
-  (S.filter (fun s => p (f s))).image f = (S.image f).filter p := by
-  ext x
-  simp only [Finset.mem_filter, Finset.mem_image]
-  constructor
-  · rintro ⟨hs, hps⟩
-    obtain ⟨left, right⟩ := hps
-    obtain ⟨left, right_1⟩ := left
-    subst right
-    simp_all only [and_true]
-    exact ⟨_, left, rfl⟩
-  · intro a
-    obtain ⟨left, right⟩ := a
-    obtain ⟨w, h⟩ := left
-    obtain ⟨left, right_1⟩ := h
-    subst right_1
-    exact ⟨w, ⟨left, right⟩, rfl⟩
 
 --「Filter 後に image を取ったカードが等しい」単射性を利用。
 --card_filter_image_eqで使っているが直接証明した方が簡単そう。
@@ -489,6 +458,7 @@ private lemma powerset_image_attach {α : Type*} [DecidableEq α] (V : Finset α
     rw [Finset.mem_image]
     exact ⟨ss, hss, hS⟩
 
+--下で使っている。
 private lemma setoid_ideal_injection_card
   (s : Setup_spo α):-- (q : Quotient s.setoid)  :
   #(filter (fun ss => (spo_closuresystem s).sets (Finset.image Subtype.val ss)) s.V.attach.powerset) =
@@ -519,7 +489,7 @@ by
   --simp_all only [coe_filter, Finset.mem_powerset, S₀, φ, S₁, P]
   simp_all only [coe_filter, Finset.mem_powerset, P, S₀, φ, S₁]
 
-
+--下で使っている。
 private lemma setoid_ideal_number_of_hyperedges (s : Setup_spo α)(q : Quotient s.setoid ):
   (setoid_ideal_injection_domain s q).card + (setoid_ideal_injection_codomain s q).card =
   (spo_closuresystem s).number_of_hyperedges := by
@@ -543,7 +513,7 @@ private lemma setoid_ideal_number_of_hyperedges (s : Setup_spo α)(q : Quotient 
   exact siic
 
 --下で使っている。
-lemma setoid_ideal_domain_codomain (s : Setup_spo α)(q : Quotient s.setoid ) (hm: isMaximal_spo s q) :
+private lemma setoid_ideal_domain_codomain (s : Setup_spo α)(q : Quotient s.setoid ) (hm: isMaximal_spo s q) :
   (setoid_ideal_injection_domain s q).card ≤ (setoid_ideal_injection_codomain s q).card := by
   --dsimp [setoid_ideal_injection_domain, setoid_ideal_injection_codomain]
 
@@ -893,3 +863,38 @@ by
   specialize sir ⟨y,this⟩
   subst hq
   simp_all only [ge_iff_le]
+
+--
+
+--使ってない。これもpowersetとimageの順序を交換している様に見えるが。
+--微妙に証明すべき式の形と一致してないのかも。
+private lemma card_filter_image_image_eq_filter
+  {α β : Type} [DecidableEq α] [DecidableEq β]
+  {s : Finset α} (f : α → β) (p : Finset β → Prop) [DecidablePred p] :
+  ((s.powerset.image (Finset.image f)).filter p).card =
+    ((s.image f).powerset.filter p).card := by
+  rw [@filter_image]
+  rw [←@powerset_image α β _ s f]
+  simp only [filter_image]
+
+--使ってない。証明すべき式の形と一致してないのかも。
+private lemma filter_set_of_set_comp_eq_image_filter
+  {α β : Type*} [DecidableEq α] [DecidableEq β]
+  (S : Finset (Finset α)) (f : Finset α → Finset β)
+  (p : Finset β → Prop) [DecidablePred p] :
+  (S.filter (fun s => p (f s))).image f = (S.image f).filter p := by
+  ext x
+  simp only [Finset.mem_filter, Finset.mem_image]
+  constructor
+  · rintro ⟨hs, hps⟩
+    obtain ⟨left, right⟩ := hps
+    obtain ⟨left, right_1⟩ := left
+    subst right
+    simp_all only [and_true]
+    exact ⟨_, left, rfl⟩
+  · intro a
+    obtain ⟨left, right⟩ := a
+    obtain ⟨w, h⟩ := left
+    obtain ⟨left, right_1⟩ := h
+    subst right_1
+    exact ⟨w, ⟨left, right⟩, rfl⟩

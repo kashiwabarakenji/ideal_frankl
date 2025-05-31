@@ -106,7 +106,7 @@ noncomputable def spushforward  (s: Setup α) (I : Finset s.V) : Finset (Quotien
 
 --同値類上の半順序を加えたSetup。仮定としての強さは、Setupと同じか。するとSetupからSetup2が定義できる。Setup_to_Setup2
 --Setup2にすることで、s.poが使える。
---分ける必要があった？証明上の理由？
+--リファクタリング予定：SetupとSetup2にわけないで、poをdefにしてしまったほうがよかった。
 --上のinstanceは、s.po.leとは別物になってしまうので、instanceでなくてdefのほうがよい。
 structure Setup2 (α : Type) [Fintype α] [DecidableEq α] extends Setup α where
   (po       : PartialOrder (Quotient setoid))
@@ -162,7 +162,9 @@ by
   dsimp [partialOrder_from_preorder]
   simp_all only
 
+--------------------------
 -- 極大要素に関する定義や補題。
+
 --商集合上 `(Quotient setoid_preorder, ≤)` における「極大元」であることを表す述語。
 --この順序はPartial orderの順序。まだ使ってないかも。setupで書き直す。
 def isMaximalQ (s : Setup2 α) (x : Quotient (s.setoid)) : Prop :=
@@ -369,7 +371,7 @@ by
     · exact this
     · simp_all only [Function.comp_apply]
 
---こっちは、spoでなくてpoの方。前提はSetup2なので、移動した。外でも使っている。名前を変えた。
+--こっちは、spoでなくてpoの方。外でも使っている。名前を変えた。
 lemma reach_po_leq (s : Setup2 α) (x y : Quotient s.setoid) :
   reach (fq s) x y → s.po.le x y := by
   --これはs.spo.leの定義な気もするが。

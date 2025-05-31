@@ -32,7 +32,7 @@ structure Setup_spo_base (α : Type) [Fintype α] [DecidableEq α] where
   (setoid : Setoid {x : α // x ∈ V})
   (fq : Quotient setoid → Quotient setoid)
 
---半順序に関することなので、commonから移動してきた。Setup_spoの定義で使用するものなので。
+--半順序に関することなので、commonから移動してきた。Setup_spoの定義で使用するもの。
 --でも3つの外ファイルから参照されている。
 def partialOrderOfFq {A : Type} (f : A → A)
   (noLoop : ∀ x y, reach f x y → reach f y x → x = y)
@@ -65,10 +65,13 @@ structure Setup_spo (α : Type) [Fintype α] [DecidableEq α] extends Setup_spo_
     (reach fq x y → reach fq y x → x = y))
   (spo : PartialOrder (Quotient setoid))
   (h_spo : spo = partialOrderOfFq fq noLoop)
+-- spoとh_spoは、ここにいれないで、def spo : PartialOrder _ := partialOrderOfFq fq noLoopとしたほうがいい。
 
 def isMaximal_spo (s: Setup_spo α) (x : Quotient s.setoid) : Prop :=
   ∀ y : Quotient s.setoid,
   s.spo.le x y → s.spo.le y x
+
+----Setup_spoの枠組みにおける同値類に関すること。
 
 --Quotientに対するそれに属する。頂点の集合。
 --eqClassの定義と同じなので必要なかったかも。そっちは、Setup2用。setoidを引数にすれば統一できた。
@@ -77,6 +80,13 @@ def classOf (s : Setup_spo α) (q : Quotient s.setoid) [DecidableEq (Quotient s.
 --以下とほぼ同じ
 --noncomputable def eqClass_setup (s: Setup α) (x : {x : α // x ∈ s.V}) : Finset {x // x ∈ s.V} :=
 --  s.V.attach.filter (fun y => s.setoid.r x y)
+--noncomputable def classOf'
+--    {α : Type} {V : Finset α} (std : Setoid {x // x ∈ V})
+--    (q : Quotient std) : Finset {x // x ∈ V} :=
+--  V.attach.filter (fun a => @Quotient.mk _ std a = q)
+-- def classOf (s : Setup_spo α) := classOf' s.setoid
+-- とまとめられるとのアドバイス。
+
 
 --ためしにsetoidに対して定義してみた。このほうがいいともいえないかも。
 noncomputable def classOfsetoid (V: Finset α) (std: Setoid {x : α // x ∈ V}) (x : {x : α // x ∈ V}) :
@@ -87,6 +97,7 @@ noncomputable def classOfsetoid (V: Finset α) (std: Setoid {x : α // x ∈ V})
 noncomputable def classOfx (s : Setup_spo α) (x : {x : α // x ∈ s.V}) :
   Finset {x : α // x ∈ s.V} :=
   classOf s (@Quotient.mk _ s.setoid x)
+--classOf s ⟦x⟧で十分ではないかということ。そのように変更したらクラスでエラー。
 
 --同値類が非空であること。
 lemma classOf_nonempty (s : Setup_spo α) (q : Quotient s.setoid) :
@@ -104,6 +115,58 @@ lemma classOf_nonempty (s : Setup_spo α) (q : Quotient s.setoid) :
 noncomputable def QuotientOf (s: Setup_spo α) (xx : Finset {x : α // x ∈ s.V}) :
   Finset (Quotient s.setoid) :=
   xx.image (@Quotient.mk _ s.setoid)
+
+--setoidで同値なことと、classOfの関係。TraceIdealからも利用されている。
+--trace に直接関係がないので、SPOなどに移動した。上の定理とかぶってないか。
+lemma classOf_setoid
+  (s : Setup_spo α) (y z: {x : α // x ∈ s.V}) :
+  s.setoid.r y z ↔ y ∈ (classOf s ⟦z⟧)  :=
+by
+  apply Iff.intro
+  · intro h
+    dsimp [classOf]
+    rw [Finset.mem_filter]
+    constructor
+    · simp_all only [mem_attach]
+    · dsimp [classOf]
+      simp_all only [Quotient.eq]
+  · intro h
+    dsimp [classOf] at h
+    rw [Finset.mem_filter] at h
+    simp_all only [mem_attach, Quotient.eq, true_and]
+
+--classOfで同じことと、setoidで同じことの関係。
+--上の補題と、定義から自明かもしれないが。下で使っている。
+--これもtraceに関係がない。
+lemma classOf_quotient
+  (s : Setup_spo α) (y : {x : α // x ∈ s.V}) (q:Quotient s.setoid) :
+  q = @Quotient.mk' _ s.setoid y ↔ y ∈ (classOf s q) := by
+  dsimp [classOf]
+  rw [Finset.mem_filter]
+  constructor
+  ·
+    intro a
+    subst a
+    simp_all only [mem_attach, true_and]
+    obtain ⟨val, property⟩ := y
+    rfl
+  · dsimp [classOf]
+    intro h
+    symm
+    exact h.2
+
+--自分自身も、同値類に入る。外から使う。
+--traceに関係がない。
+lemma classOf_self
+  (s : Setup_spo α) (x : {x : α // x ∈ s.V}) :
+  x ∈ (classOf s ⟦x⟧) := by
+  dsimp [classOf]
+  rw [Finset.mem_filter]
+  constructor
+  · exact mem_attach s.V x
+  · dsimp [classOf]
+
+--setup_spoの枠組みに関するreachに関すること。
 
 lemma reach_leq (s : Setup_spo α) (q1 q2 : Quotient s.setoid) :
   reach s.fq q1 q2 → s.spo.le q1 q2 := by
@@ -212,6 +275,7 @@ def setup_setupspo (s: Setup2 α) : Setup_spo α :=
 }
 
 --eqClassとclassOfは同じもの。classOfは、setup_spoから定義されるところが違う。
+--統合可能。
 lemma eqClass_Class_of (s: Setup2 α) (x : {x : α // x ∈ s.V}) :
   (eqClass_setup s.toSetup) x = classOf (setup_setupspo s) (@Quotient.mk' _ s.setoid x) := by
   dsimp [classOf]
@@ -234,6 +298,12 @@ lemma eqClass_Class_of (s: Setup2 α) (x : {x : α // x ∈ s.V}) :
     simp only [Quotient.mk'] at a
     simp_all only [Quotient.eq]
 
+--noncomputable def eqClass_setup
+--    (t : Setup α) (x : {x : α // x ∈ t.V}) :
+--    Finset {x // x ∈ t.V} :=
+--  classOf' t.V t.setoid ⟦x⟧
+--のように統合できる。
+
 --上とほぼ同じだが、qを与えたもの。
 lemma eqClass_Class_of2 (s: Setup2 α) (q : Quotient s.setoid) :
   eqClass_setup s.toSetup (Quotient.out q) = (classOf (setup_setupspo s) q) :=
@@ -242,7 +312,7 @@ by
   congr
   simp [Quotient.mk']
 
---Setup2の順序がspoの順序に拡張できること。
+--Setup2の順序がspoの順序に拡張できること。これも上の定理に統合できる。
 lemma spole_iff_po (s: Setup2 α) (x y : Quotient s.setoid) :
   s.po.le x y ↔ (setup_setupspo s).spo.le x y := by
   dsimp [setup_setupspo]
@@ -262,82 +332,6 @@ lemma spole_iff_po (s: Setup2 α) (x y : Quotient s.setoid) :
       simp_all only
     let fql := fq_lemma_rev s x y this
     exact fql
-
---ここから極大性の話。
-
-lemma isMaximal_spo_iff (s: Setup2 α) (q : Quotient s.setoid) :
-  isMaximal_spo (setup_setupspo s) q ↔
-  isMaximalQ s q :=
-by
-  dsimp [isMaximal_spo]
-  dsimp [isMaximalQ]
-  dsimp [setup_setupspo]
-  apply Iff.intro
-  · intro h
-    intro y
-    let hy := h y
-    rw [spole_iff_po]
-    rw [spole_iff_po]
-    exact hy
-  · intro h
-    intro y
-    let hy := h y
-    rw [spole_iff_po] at hy
-    rw [spole_iff_po] at hy
-    exact hy
-
---同値類の大きさが2以上であれば、同値類の極大性が成り立つ。
---setup2_induces_spoで利用している。
-theorem eqClass_Maximal (s: Setup2 α) (q : Quotient s.setoid) :
-  (classOf (setup_setupspo s) q).card ≥ 2 → isMaximalQ s q  := by
-  intro h
-  rw [←eqClass_Class_of2] at h
-  dsimp [isMaximalQ]
-  let ecs := eqClass_size_ge_two_implies_inverse s.toSetup (Quotient.out q) h
-  obtain ⟨x, hx⟩ := Quotient.exists_rep q
-  intro q2
-  obtain ⟨y, hy⟩ := Quotient.exists_rep q2
-  specialize ecs y
-  let imi := isMaximal_iff s x
-  rw [hx] at imi
-  dsimp [isMaximal] at imi
-  dsimp [isMaximalQ] at imi
-  have: @Quotient.mk _ s.setoid q.out = q := by
-    subst hy hx
-    simp_all only [ge_iff_le, Subtype.forall, Quotient.out_eq]
-  rw [←this]
-  have : x ∈ eqClass_setup s.toSetup q.out := by
-      dsimp [eqClass_setup]
-      rw [Finset.mem_filter]
-      constructor
-      ·
-        subst hy hx
-        simp_all only [ge_iff_le, Subtype.forall, Quotient.out_eq, mem_attach]
-      ·
-        dsimp [eqClass_setup]
-        rw [←hx]
-        exact Quotient.mk_out x
-  have q_eq : s.pre.le x q.out := by
-    exact eqClass_ge s.toSetup q.out x this
-  have q_eq2 : s.pre.le q.out x := by
-    exact eqClass_le s.toSetup q.out x this
-  rw [←hy]
-  let imimp := imi.mp
-  have : ∀ (b : { x // x ∈ s.V }), x ≤ b → b ≤ x := by
-    intro b h
-    have : q.out ≤ b := by
-      exact Preorder.le_trans q.out x b q_eq2 h
-    have : b ≤ q.out := by
-      apply eqClass_size_ge_two_implies_inverse s.toSetup q.out
-      subst hy hx
-      simp_all only [ge_iff_le, Quotient.out_eq]
-      subst hy hx
-      simp_all only [ge_iff_le, Quotient.out_eq]
-    exact Preorder.le_trans b q.out x this q_eq2
-  specialize imimp this
-  intro a
-  subst hy hx
-  simp_all only [Subtype.forall, ge_iff_le, Subtype.coe_eta, implies_true, Quotient.out_eq]
 
 /-
 --わざわざ定理にする必要はなくて、Quotient.eqとおなじだった。でもTraceIdeal2などで使っている。なくした。

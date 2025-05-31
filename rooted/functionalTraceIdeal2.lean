@@ -10,7 +10,7 @@ import rooted.Preorder
 import rooted.Dominant
 import rooted.FamilyLemma
 import rooted.StemSizeOne
-import rooted.Parallel
+--import rooted.Parallel
 import rooted.functionalCommon
 import rooted.functionalTreePartialorder
 import rooted.functionalSPO

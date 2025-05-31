@@ -18,6 +18,8 @@ set_option maxHeartbeats 2000000
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 
+--このファイルはtraceに関するもの。連結成分の数は1とは限らない。
+
 --ただのSetupと比較するとシンプルになっている。preorderのときのような同値類を考える必要がない。
 --structure Setup_po (α : Type) [Fintype α] [DecidableEq α] where
 --(V : Finset α)
@@ -29,7 +31,7 @@ variable {α : Type} [Fintype α] [DecidableEq α]
 --def reach {A : Type} (f : A → A) (x y : A) : Prop :=  ∃ n : ℕ, f^[n] x = y
 
 
-
+--半順序の極大要素のtrace。PartialOneで使う。
 def po_trace (s : Setup_po α) (x : s.V)
     (pm   : po_maximal s x)
     (geq2 : s.V.card ≥ 2) : Setup_po α := by
@@ -266,17 +268,10 @@ def po_trace (s : Setup_po α) (x : s.V)
     po     := po'
     order  := order' }
 
-private lemma downward_closed_of_restrict
-    {β : Type}
-    {le : β → β → Prop}
-    {A : Finset β}
-    (hdown : ∀ v, v ∈ A →
-            ∀ w, le w v → w ∈ A) :
-    ∀ v, v ∈ (A : Finset β) →
-      ∀ w, le w v → w ∈ A := hdown
+--- ここから下は全部使われていない。
 
---setup_poのtraceと、集合族のtraceが同じであること。
-lemma po_trace_ideal (s : Setup_po α) (x : s.V) (pm   : po_maximal s x)
+--setup_poのtraceと、集合族のtraceが同じであること。使ってない？ideals_eq_eraseと内容が同じだが、こちらは連結成分の数が1とは限らない。
+private lemma po_trace_ideal (s : Setup_po α) (x : s.V) (pm   : po_maximal s x)
     (geq2 : s.V.card ≥ 2):
   ∀ ss :Finset (s.V.erase x), (po_closuresystem  (po_trace s x pm geq2)).sets (ss.image Subtype.val)
   =  ((po_closuresystem  s).trace x.val x.property geq2).sets (ss.image Subtype.val) :=
@@ -491,3 +486,13 @@ by
           contradiction
 
     exact And.symm ⟨hdown₁, hsub₁⟩
+
+--使われてない。
+private lemma downward_closed_of_restrict
+    {β : Type}
+    {le : β → β → Prop}
+    {A : Finset β}
+    (hdown : ∀ v, v ∈ A →
+            ∀ w, le w v → w ∈ A) :
+    ∀ v, v ∈ (A : Finset β) →
+      ∀ w, le w v → w ∈ A := hdown
