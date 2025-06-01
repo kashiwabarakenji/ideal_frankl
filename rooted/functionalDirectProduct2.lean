@@ -467,7 +467,7 @@ by
                     Subtype.exists, exists_and_right, exists_eq_right, exists_true_left, false_or, not_false_eq_true,
                     ne_eq, exists_const, and_false, compq, eclq]
 
---(po_closuresystem s)がcompとexclに分解できるという言明。
+--(po_closuresystem s)の台集合がcompとexclに分解できるという言明。
 --使ってない？directProduct_comp_excel_ground_cardの証明で使えそうだけど。
 private lemma directProduct_comp_excel_ground (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]
   (geq2quotient: (numClasses (proj_setoid s) ≥ 2)) :
@@ -477,6 +477,7 @@ by
   rw [← directProduct_comp_excel s q geq2quotient]
   dsimp [DirectProduct]
 
+--comp側の台集合の大きさとexcl側の台集合の大きさを足すと、もとの台集合の大きさになること。
 --下で使っている。
 private lemma directProduct_comp_excel_ground_card (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]
   (geq2quotient: (numClasses (proj_setoid s) ≥ 2)) :
@@ -499,6 +500,7 @@ by
 
   rw [Finset.card_union_of_disjoint this]
 
+--comp側の台集合の大きさが1以上であること。
 --下のdirectProduct_comp_excel_ground_eで使っている。
 private lemma directProduct_comp_ground_card (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]  :
  ((po_closuresystem (comp_po s q))).toSetFamily.ground.card ≥ 1 :=
@@ -513,6 +515,7 @@ by
   simp
   exact Quotient.mk_eq_iff_out.mpr rfl
 
+--excl側の台集合の大きさが1以上であること。
 --下のdirectProduct_comp_excel_ground_cで使っている。
 private lemma directProduct_excl_ground_card (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]
   (geq2quotient: (numClasses (proj_setoid s) ≥ 2)) :

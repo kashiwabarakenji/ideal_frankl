@@ -19,12 +19,13 @@ open Finset Set Classical
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 
---Main定理を述べるのに必要だからここにおいている。
+--Main定理を述べるのに必要だからここにおいている。それほど、他の部分から共通に使われているわけではない。
+--もっと共通の部品を増やせればいいが。Setupのように仮定をコロコロ変えていると部品が共通化しにくい。
 --Setupは、Preorderのところしか出てこないので、Setupに関する部分はPreorderのところに移動可能かと思ったら、
 --preclosuresystemも同様。
 --合わせて、Setupの定義に関連する補題をいくつか。
 --eqClass_setupの定義に関係する部分。
---reachに関する部分。
+--reachに関する部分。これは、Setupに依存しないかも。
 
 ------------
 --setupの定義に必要な部分。

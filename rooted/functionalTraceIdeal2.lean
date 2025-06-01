@@ -38,7 +38,6 @@ set_option maxHeartbeats 2000000
 variable {α : Type} [Fintype α] [DecidableEq α]
 
 --excessが0であれば、同値類の大きさがすべて1。この部分は、TraceIdealに移動するか、excessの部分でまとめて1ファイルにするといいかも。
---Setup_spo2でなくて、Setup_spoの前提でも成り立ちそう。
 --functionalMainで使っている。
 theorem excess_zero (s: Setup_spo α) :
   excess s = 0 → ∀ q: Quotient s.setoid, (classOf s q).card = 1 :=

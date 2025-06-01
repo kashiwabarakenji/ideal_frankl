@@ -773,6 +773,7 @@ by
 
     · simp_all only [ne_eq, mem_filter, mem_attach, true_and]
 
+--xを含まない同値類は、traceしても大きさが変わらない。
 --trace_excess_decreaseで利用。
 lemma toNew_classOf (s : Setup_spo α) (x : {x : α // x ∈ s.V})
   (hx : (classOf s (@Quotient.mk _ s.setoid x)).card ≥ 2)

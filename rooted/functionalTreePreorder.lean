@@ -599,10 +599,9 @@ private lemma iterate_power_cycle
       rw [this]
       simp_all only
 
-/--
-最終目標：サイズ 2 以上の同値類に属する点は極大
-（`x ≤ y → y ≤ x`）
--/
+
+--サイズ 2 以上の同値類に属する点は極大
+-- SPO2で使っている。そこでの仮定は、Setup2
 theorem eqClass_size_ge_two_implies_inverse
     {α : Type} [Fintype α] [DecidableEq α]
     (s : Setup α) (x : {x // x ∈ s.V})
@@ -713,6 +712,7 @@ theorem eqClass_size_ge_two_implies_inverse
 
 -------------------------------------------------------------
 --同じ同値類のfの行き先は、同値になることを示す必要がある。あとで外からも使っている。
+--TreePartialから利用している。
 --eqClass_size_ge_two_implies_outsideに依存している。
 theorem f_on_equiv
   (s: Setup α) (x y: s.V) (h: s.setoid.r x y) :

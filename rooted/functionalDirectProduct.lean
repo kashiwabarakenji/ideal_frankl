@@ -398,6 +398,7 @@ noncomputable def comp_po (s : Setup_po α) (q : Quotient (proj_setoid s))
 --qを除いた半順序の定義に使う部分。excl側。
 -------------------------------
 
+-- qを除いた頂点集合の定義。Subtype化したもの。
 noncomputable def exclFinset
   (s : Setup_po α) (q : Quotient (proj_setoid s))[DecidableRel (projr s)]  :
   Finset {x // x ∈ s.V} :=
@@ -405,7 +406,7 @@ noncomputable def exclFinset
     (fun v ↦ @Quotient.mk _ (proj_setoid s) v ≠ q)
     s.V.attach
 
-/-- 除外部分を **`α` の `Finset`** として取り出した頂点集合 -/
+/-- 除外部分のFinset α の 頂点集合 -/
 noncomputable def excl_po_V'
   (s : Setup_po α)
   (q : Quotient (proj_setoid s))
@@ -414,6 +415,7 @@ noncomputable def excl_po_V'
   Finset α :=
   (exclFinset s q).image Subtype.val
 
+--exclFinsetが全体の部分集合である補題。
 private lemma excl_po_sub
   (s : Setup_po α) (q : Quotient (proj_setoid s))
   [DecidableRel (projr s)]
@@ -427,6 +429,7 @@ private lemma excl_po_sub
   -- exclFinset s q ⊆ s.V.attach なので x.1 ∈ s.V
   exact coe_mem x
 
+--excl側での親の頂点を与える関数の定義。
 noncomputable def excl_po_f
   (s : Setup_po α)
   (q : Quotient (proj_setoid s))
@@ -434,9 +437,7 @@ noncomputable def excl_po_f
   [DecidableEq (Quotient (proj_setoid s))]
   (v' : excl_po_V' s q) :
   excl_po_V' s q := by
---noncomputable def excl_po_f
---  (s : Setup_po α) (q) [DecidableEq (Quotient (proj_setoid s))] (v' : excl_po_V' s q) : excl_po_V' s q := by
-  -- ① もとの `s.V` へ
+
   have hv : (v' : α) ∈ s.V := excl_po_sub s q v'.property
   let fv : s.V := s.f ⟨v', hv⟩
   let v  : s.V := ⟨v', hv⟩
@@ -498,8 +499,7 @@ noncomputable def excl_po_f
     dsimp [exclFinset]; simp [hneq]
   refine ⟨fv.1, by simpa [excl_po_V'] using fv_in⟩
 
-
-
+-- excl_po_fと通常のs.fとの関係。1 step編。
 private lemma excl_po_val_step
   (s : Setup_po α) (q : Quotient (proj_setoid s))[DecidableRel (projr s)] [DecidableEq (Quotient (proj_setoid s))]
   (v : excl_po_V' s q) :
@@ -509,8 +509,7 @@ private lemma excl_po_val_step
   -- その .val をそのまま持ってくるだけなので reflexivity
   dsimp [excl_po_f]      -- def を展開
 
--- 2. 制限前と後で反復値が一致する補題
-
+-- 2. 制限前と後で反復値が一致する補題 n step編
 private lemma excl_po_iter_val
   (s : Setup_po α) (q : Quotient (proj_setoid s))
   [DecidableRel (projr s)] [DecidableEq (Quotient (proj_setoid s))]
@@ -552,7 +551,7 @@ private lemma excl_po_iter_val
           rw [Function.iterate_succ']
           rw [Function.comp_apply]
 
--- 3. exclに制限前と後でのreach の同値性
+-- exclに制限前と後でのreach の同値性
 --下から参照あり。一つ下に移動する？
 private lemma excl_po_reach_equiv
   (s : Setup_po α) (q : Quotient (proj_setoid s))
@@ -643,12 +642,8 @@ noncomputable def restrict_order_excl
   PartialOrder (excl_po_V' s q) :=
 restrict_order_core s (excl_po_V' s q) (excl_po_sub s q)
 
-/--
-`comp_po` が「連結成分 `q` そのもの」を取るのに対し，
-`excl_po` は **その成分を丸ごと取り除いた残り**で `Setup_po` を作る。
-`hnonempty` は「残りが空でない」ことを仮定として与える。
--/
---nonemptyの仮定は同値類が2つ以上という条件で置き換えるべき。
+--excl側のSetup_poの定義。
+--nonemptyの仮定は同値類が2つ以上という条件で置き換えるべき？
 noncomputable def excl_po
   (s : Setup_po α) (q : Quotient (proj_setoid s))[DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]
   --(hnonempty : (excl_po_V' s q).Nonempty) :
@@ -692,39 +687,3 @@ noncomputable def excl_po
       rfl
 
     simpa [restr_iff] using (reach_equiv.trans (s.order sx sy)) }
-
-
-
-/-comp_poとexcl_poのidealの直和がもとのidealになることを示すための定義
--- ideal 系
-def IdealSys (s : Setup_po α) := po_closuresystem s
-def IdealComp (s : Setup_po α) (q) := po_closuresystem (comp_po s q)
-
--- === 2. ２成分だけ取り出して DirectProduct =============================
-
--- 連結成分を２つ取り，証明用に名前を付ける
-noncomputable def q₁ (s : Setup_po α) : Quotient (proj_setoid s) :=
-  Quotient.mk (Classical.choice s.nonemp)   -- 代表をとれば一つできる
-
-noncomputable def q₂ (s : Setup_po α) : Quotient (proj_setoid s) :=
-  by
-    -- 「もう一つ別のクラスがある」という前提で選択
-    classical
-    choose v hv using s.nonemp
-    have : ∃ w, ¬projr s v w := by
-      -- disconnected 仮定なら構成できる
-      sorry
-    exact Quotient.mk (Classical.some this)
-
-
-/-- `s` から連結成分 `q` を「抹消」した半順序 -/
-noncomputable
-def trace_component (s : Setup_po α) (q: Quotient (proj_setoid s)) : Setup_po α :=
-  po_trace s (Classical.choice (comp_po s q).nonemp)      -- ←極大点を一つ取って trace
-      (by  -- その点が最大である証明
-        have : po_maximal … := …
-        exact this)
-      (by  -- |V| ≥ 2
-        have := (comp_po s q).nonemp
-        simpa using … )
--/

@@ -609,7 +609,7 @@ lemma spo_closuresystem_equiv (s : Setup_spo α) (x y: s.V) (h: s.setoid.r x y) 
       apply right
       exact Quotient.sound h
 
---定理名にparallelを使う。
+--TraceIdeal2で使う。定理名にparallelを入れても良い。
 lemma spo_closuresystem_equiv2 (s : Setup_spo α) (x y: s.V) (h: s.setoid.r x y) :
   parallel (spo_closuresystem s) x y ∨ x = y:=
 by

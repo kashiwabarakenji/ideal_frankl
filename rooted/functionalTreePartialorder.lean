@@ -138,7 +138,8 @@ by
 --s.preとs.poの関係を示す補題。
 ---------------------------
 
---同値類は、大小関係と両立する。下で使っているし外からも使っている。
+--同値類上の半順序は、前順序の大小関係と両立する。
+--下で使っているし外からも使っている。
 --instを入れなくても、自動的にs.poのインスタンスを使ってくれている。
 lemma pullback_preorder_lemma (s : Setup2 α)-- [inst : PartialOrder (Quotient s.setoid)]
  (j1 j2 : (Quotient s.setoid)) (x1 x2 : s.V) :
@@ -151,7 +152,8 @@ by
   subst h2 h1
   simp_all only [Quotient.lift_mk]
 
---要素の大小関係と、同値類の大小関係の関係。下で使っているし、そとからも使っている。
+--要素の大小関係と、同値類の大小関係の関係。前順序で関係があれば、半順序でも関係がある。
+--下で使っているし、そとからも使っている。
 --逆方向は、上の補題？
 --Preorder_eq_PartialOrderなどで利用。
 lemma pushforward_preorder_lemma (s : Setup2 α) (x1 x2 : s.V) :

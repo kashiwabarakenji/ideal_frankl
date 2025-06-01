@@ -352,25 +352,18 @@ by
 
 
 --setupを使った形の主定理。この定理はsetup_spo2_average_rareに帰着させるので帰納法は必要なくて、直接証明可能。
+--使っている定理exclあある場所は、TreePartial, SPO2,
 lemma setup_average_rare (s:Setup α): (pre_closuresystem s).normalized_degree_sum ≤ 0 :=
 by
-  --spo2_average_rareから証明する。
-  --setup2_induces_spoを使って、対応するSetup_spo2が得られる。spo2からclosuresystemを生成するには、spo_closuresystem
-  --trace_ideal_ndsはidealがひとしければndsも等しいという定理。
-  --theorem Setup_spo_eq_PartialOrder (s: Setup2 α)  : pre2_closuresystem s = spo_closuresystem (setup_setupspo s)
-  --が利用するメインの定理。
-  --pre2_closuresystem (s: Setup2 α): ClosureSystem となる。pre_closuresystemとの違いはSetup2のところか。
-  --theorem Preorder_eq_PartialOrder (s: Setup2 α)  :  pre_closuresystem s.toSetup = pre2_closuresystem s  := by
-  --という定理もあった。
   let s2 :=  (Setup_to_Setup2 s)
   let s_spo := setup2_induces_spo s2  --setup_spo2_average_rareに帰着させるためspoに埋め込み。
   have : s2.toSetup = s :=
   by
     rfl
   rw [←this]
-  rw [Preorder_eq_PartialOrder s2]
-  rw [Setup_spo_eq_PartialOrder s2]
-  exact setup_spo2_average_rare s_spo
+  rw [Preorder_eq_PartialOrder s2] --TreeIdeal
+  rw [Setup_spo_eq_PartialOrder s2] --TreeIdeal
+  exact setup_spo2_average_rare s_spo --上の定理。
 
 --全体の主定理。setupを使わない形。
 theorem functional_family_average_rare (V: Finset α) (f : V → V) (valid:∀ v : V, f v ≠ v) (nonemp:V.Nonempty) :

@@ -201,6 +201,7 @@ by
 --Setup_spo2前提ではないが、下でもそとのファイルのsetup_trace_spo2の証明で利用。それがspo2の前提。
 --traceしても、大小関係は変わらない。
 --場所をSPOTraceに移動する余地はあるが、spo2前提の定理の補題なのでここにある。
+--setup_trace_reachとの関係はreachで書くか、spo.leで書くかの違い？この証明の両方向で使っている。
 lemma setup_trace_spo_le (s : Setup_spo α) (x: s.V) (hx:(classOf s (@Quotient.mk _ s.setoid x
 )).card ≥ 2) (q1 q2 : Quotient (restrictedSetoid s x)) :
   (setup_trace s x hx).spo.le q1 q2 ↔ s.spo.le (toOld s x q1) (toOld s x q2) :=
