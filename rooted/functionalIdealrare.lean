@@ -40,6 +40,7 @@ noncomputable def setoid_ideal_injection_domain (s : Setup_spo α)(q : Quotient 
 noncomputable def setoid_ideal_injection_codomain (s : Setup_spo α)(q : Quotient s.setoid ) : Finset (Finset s.V) :=
    s.V.attach.powerset.filter (fun (ss:Finset s.V) => (spo_closuresystem s).sets (ss.image Subtype.val)  ∧ ¬(classOf s q) ⊆ ss)
 
+--極大性の仮定を使うので、実質的にspo2の仮定。
 noncomputable def setoid_ideal_injection (s: Setup_spo α)(q : Quotient s.setoid ) (hm: isMaximal_spo s q) : setoid_ideal_injection_domain s q → setoid_ideal_injection_codomain s q :=
   fun ⟨ss, hss⟩ => ⟨ss \ (classOf s q), by
   dsimp [setoid_ideal_injection_domain, setoid_ideal_injection_codomain]
@@ -139,6 +140,7 @@ noncomputable def setoid_ideal_injection (s: Setup_spo α)(q : Quotient s.setoid
             -- hq' : q' ≤ qq
             -- right : ⟦w⟧ = qq
             -- hm : isMaximal_spo s q
+            --ここで極大性の仮定を利用している。
             dsimp [isMaximal_spo] at hm
             have qneq:q' ≠ q := by
               intro h_contra
@@ -512,7 +514,7 @@ private lemma setoid_ideal_number_of_hyperedges (s : Setup_spo α)(q : Quotient 
   let siic := setoid_ideal_injection_card s
   exact siic
 
---下で使っている。
+--下で使っている。この定理の仮定はSetup_spoだが、hmで極大性を使うので、実質spo2の仮定。
 private lemma setoid_ideal_domain_codomain (s : Setup_spo α)(q : Quotient s.setoid ) (hm: isMaximal_spo s q) :
   (setoid_ideal_injection_domain s q).card ≤ (setoid_ideal_injection_codomain s q).card := by
   --dsimp [setoid_ideal_injection_domain, setoid_ideal_injection_codomain]
@@ -823,7 +825,7 @@ by
     exact this
   exact Finset.card_bij i H₁ H₂ H₃
 
---Setup_spo2からSetup_spoに変更した。
+--Setup_spo2からSetup_spoに変更した。この定理自体はSetup_spoの仮定だが、hmで極大性の仮定を使うので、実質spo2。
 private lemma setoid_ideal_rare (s : Setup_spo α)(q : Quotient s.setoid )(hm: isMaximal_spo s q) :
   ∀ (x : classOf s q), (spo_closuresystem s).toSetFamily.is_rare x := by
 
@@ -851,7 +853,7 @@ by
   intro y hq
   have hm: isMaximal_spo s.toSetup_spo q :=
   by
-    exact s.singleton_if_not_maximal q hx
+    exact s.singleton_if_not_maximal q hx  --ここで、spo2の仮定を使っている。
   let sir := setoid_ideal_rare s.toSetup_spo q hm
   have : y ∈ classOf s.toSetup_spo q := by
     subst hq
@@ -864,7 +866,7 @@ by
   subst hq
   simp_all only [ge_iff_le]
 
---
+--使ってないもの。
 
 --使ってない。これもpowersetとimageの順序を交換している様に見えるが。
 --微妙に証明すべき式の形と一致してないのかも。

@@ -16,9 +16,8 @@ import rooted.Preorder
 import rooted.Dominant
 import rooted.FamilyLemma
 import rooted.StemSizeOne
-import rooted.functionalCommon
---import rooted.functionalTreePreorder
-import rooted.functionalTreePartialorder
+--import rooted.functionalCommon
+--import rooted.functionalTreePartialorder
 import rooted.functionalSPO
 
 open Finset Set Classical

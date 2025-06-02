@@ -25,6 +25,7 @@ variable {α : Type} [Fintype α] [DecidableEq α]
 --fの連鎖で届くことと、preorderの大小が同値であることを示す。
 --後半は、考えている前順序集合に関する補題。
 --このファイルのメイン定理は、function fから作られるpreorderから引き起こされるsetoidの同値類において、同値類の大きさが2以上であれば、極大要素になっているという定理eqClass_size_ge_two_implies_inverse
+--リファクタリング予定：単にfunctionalPreorderでもいいかも。
 
 --Commonのle_eq_Rの内容とかぶっている。
 private lemma size_one_preorder_setup_lemma (s: Setup α) (x y : {x : α // x ∈ s.V}) :
@@ -719,7 +720,7 @@ theorem f_on_equiv
   s.setoid.r (s.f x) (s.f y) :=
 by
   have eqy: eqClass_setup s x = eqClass_setup s y := by
-      apply eqClass_eq
+      apply eqClass_lem
       · rw [s.h_setoid] at h
         rw [setoid_preorder] at h
         simp [equiv_rel] at h
@@ -763,7 +764,7 @@ by
     rw [setoid_preorder]
     simp
     dsimp [equiv_rel]
-    let eqe := (eqClass_eq_rev s (s.f x) (s.f y) x)
+    let eqe := (eqClass_lem_rev s (s.f x) (s.f y) x)
     specialize eqe eqsx
     specialize eqe this
     constructor
@@ -1437,7 +1438,7 @@ theorem eqClass_size_ge_two_implies_inverse2
     let ihh := ih (s.f x)
 
     have : eqClass_setup s x = eqClass_setup s (s.f x) := by
-      apply eqClass_eq s x (s.f x) slex2 slex1
+      apply eqClass_lem s x (s.f x) slex2 slex1
 
     have : 2 ≤ (eqClass_setup s (s.f x)).card := by
       rw [this] at h
@@ -1835,7 +1836,7 @@ by
       apply m1
       simp_all only
     exact
-      eqClass_eq s (s.f^[n1] x) (s.f^[n2] x)
+      eqClass_lem s (s.f^[n1] x) (s.f^[n2] x)
         (m2 (s.f^[n1] x) (m1 (s.f^[n2] x) (m2 (s.f^[n1] x) (m1 (s.f^[n2] x) le1))))
         (m1 (s.f^[n2] x) (m2 (s.f^[n1] x) (m1 (s.f^[n2] x) (m2 (s.f^[n1] x) le2))))
 -/

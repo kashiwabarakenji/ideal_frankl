@@ -17,7 +17,6 @@ import rooted.Dominant
 import rooted.FamilyLemma
 import rooted.StemSizeOne
 import rooted.functionalCommon
---import rooted.functionalTreePreorder
 import rooted.functionalTreePartialorder
 import rooted.functionalSPO
 import rooted.functionalSPOTrace
@@ -41,7 +40,8 @@ structure Setup_spo2 (α : Type) [Fintype α] [DecidableEq α]
 
 
 --ここから極大性の話。極大性の話はspoというよりもspo2なので移動させた。
--- Setup_spoの極大性とSetup2の極大性の関係。使われてない。
+--でも仮定の強さの点ではSPOにあった方が良かったのかも。再び移動するか？
+-- Setup_spoの極大性とSetup2の極大性の関係。これは使われてない。
 lemma isMaximal_spo_iff (s: Setup2 α) (q : Quotient s.setoid) :
   isMaximal_spo (setup_setupspo s) q ↔
   isMaximalQ s q :=
@@ -118,7 +118,7 @@ theorem eqClass_Maximal (s: Setup2 α) (q : Quotient s.setoid) :
 
 
 --Setup2からSetup_spo2への埋め込み。
---functionalMainのaverage_rareのところで使っている。
+--functionalMainの主定理average_rareのところで使っている。
 --ここで極大要素以外は、同値類のサイズが1という条件を証明している。
 def setup2_induces_spo (s : Setup2 α) : Setup_spo2 α :=
 {

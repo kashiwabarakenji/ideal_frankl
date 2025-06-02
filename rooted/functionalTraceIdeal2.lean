@@ -212,6 +212,8 @@ by
   exact trace_ideal_nds_increase s x hx
 
 --------------------------------------------------------
+--- ここから先は、traceとは関係ない内容か。
+-------------------------------------------------------------
 
   --ただのSetupと比較するとシンプルになっている。preorderのときのような同値類を考える必要がない。
   --これは、次の枠組みの話なのでPartialMaximalに移動してもよい。
@@ -547,7 +549,7 @@ by
           simp_all only [Subtype.coe_eta, Quotient.out_eq, zq, z, g]
         exact congrArg s.fq this
 
---すべての同値類の大きさが1のときに関して、対応するSetup_poを定義する。
+--すべての同値類の大きさが1のときに関して、対応するSetup_poを定義する。メインで使っている。
 noncomputable def po_ideal_system_from_allone {α : Type} [Fintype α] [DecidableEq α] (s: Setup_spo α) (hq1:∀ q: Quotient s.setoid, (classOf s q).card = 1): Setup_po α :=
 {
   V := s.V,

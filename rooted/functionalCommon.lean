@@ -458,8 +458,8 @@ by
   obtain ⟨val_1, property_1⟩ := y
   exact h.2
 
---逆に、前順序で同値ならば、eqClassでも同値。
-lemma eqClass_eq (s: Setup α) : (x y: {x : α // x ∈ s.V}) → s.pre.le x y →s.pre.le y x → eqClass_setup s x = eqClass_setup s y :=
+--逆に、前順序で同値ならば、eqClassでも同値。eqという割には必要十分条件ではない。
+lemma eqClass_lem (s: Setup α) : (x y: {x : α // x ∈ s.V}) → s.pre.le x y →s.pre.le y x → eqClass_setup s x = eqClass_setup s y :=
 by
   intro x y hxy hyx
   ext z
@@ -488,8 +488,28 @@ by
     ·
       exact s.pre.le_trans z ⟨yval, yproperty⟩ ⟨xval, xproperty⟩ h.2 hyx
 
+--使ってないけどあとから作った。
+lemma eqClass_xy (s: Setup α)  (x y: {x : α // x ∈ s.V}) :
+ x ∈ eqClass_setup s y ↔ y ∈ eqClass_setup s x :=
+by
+  constructor
+  · intro h
+    simp [eqClass_setup] at h
+    dsimp [eqClass_setup]
+    rw [Finset.mem_filter]
+    constructor
+    · exact mem_attach s.V y
+    · exact id (Setoid.symm' s.setoid h)
+  · intro h
+    simp [eqClass_setup] at h
+    dsimp [eqClass_setup]
+    rw [Finset.mem_filter]
+    constructor
+    · exact mem_attach s.V x
+    · exact id (Setoid.symm' s.setoid h)
+
 --必要に迫られて作った。同値な要素は、前順序でも同値。
-lemma eqClass_eq_rev (s: Setup α) : (x y z: {x : α // x ∈ s.V}) → x ∈ eqClass_setup s z → y ∈ eqClass_setup s z → s.pre.le x y ∧ s.pre.le y x:=
+lemma eqClass_lem_rev (s: Setup α) : (x y z: {x : α // x ∈ s.V}) → x ∈ eqClass_setup s z → y ∈ eqClass_setup s z → s.pre.le x y ∧ s.pre.le y x:=
 by
   intro x y z hx hy
   constructor
@@ -497,8 +517,7 @@ by
     dsimp [eqClass_setup] at hy
     rw [s.h_setoid] at hx hy
     simp_all only [AntisymmRel.setoid_r]
-    --obtain ⟨xval, xproperty⟩ := x
-    --obtain ⟨yval, yproperty⟩ := y
+
     simp_all only [mem_filter, mem_attach, true_and]
     --obtain ⟨val, property⟩ := z
     rw [AntisymmRel] at hx hy
@@ -519,6 +538,29 @@ by
     apply Preorder.le_trans
     assumption
     simp_all only
+
+--今は、直接使ってないけど、上の定理をまとめるものとして作った。
+lemma eqClass_eq (s: Setup α) (x y: {x : α // x ∈ s.V}) :
+  y ∈ eqClass_setup s x ↔ (s.pre.le x y ∧ s.pre.le y x) :=
+by
+  constructor
+  · intro h
+    simp [eqClass_setup] at h
+    rw [s.h_setoid] at h
+    simp_all only [AntisymmRel.setoid_r]
+    dsimp [AntisymmRel]
+    obtain ⟨left, right⟩ := h
+    constructor
+    · exact left
+    · exact right
+  · intro h
+    simp [eqClass_setup]
+    rw [s.h_setoid]
+    simp_all only [AntisymmRel.setoid_r]
+    dsimp [AntisymmRel]
+    constructor
+    · exact h.1
+    · exact h.2
 
 ---
 --Setupに直接関係ない部分。より抽象化されている。

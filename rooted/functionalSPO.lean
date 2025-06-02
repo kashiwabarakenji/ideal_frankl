@@ -275,7 +275,8 @@ def setup_setupspo (s: Setup2 α) : Setup_spo α :=
 }
 
 --eqClassとclassOfは同じもの。classOfは、setup_spoから定義されるところが違う。
---統合可能。
+--統合可能。Setup2でなくて、Setupで十分か。
+--使われている場所は、TreeIdealやSPO2など。
 lemma eqClass_Class_of (s: Setup2 α) (x : {x : α // x ∈ s.V}) :
   (eqClass_setup s.toSetup) x = classOf (setup_setupspo s) (@Quotient.mk' _ s.setoid x) := by
   dsimp [classOf]
@@ -313,6 +314,10 @@ by
   simp [Quotient.mk']
 
 --Setup2の順序がspoの順序に拡張できること。これも上の定理に統合できる。
+--半順序の親を辿るので、SetupでなくてSetup2。
+--TreeIdealで出てくる。
+-- Setup_spo2で出てくる。Setup2の仮定の上に、その補題isMaximal_spo_iffは使われてない。
+--setup2_induces_spoでは使われている。
 lemma spole_iff_po (s: Setup2 α) (x y : Quotient s.setoid) :
   s.po.le x y ↔ (setup_setupspo s).spo.le x y := by
   dsimp [setup_setupspo]
