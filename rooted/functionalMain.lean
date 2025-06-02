@@ -24,7 +24,8 @@ import Mathlib.Order.WellFoundedSet
 import LeanCopilot
 import rooted.CommonDefinition
 import rooted.functionalCommon
-import rooted.functionalTraceIdeal2
+import rooted.functionalPartial
+import rooted.functionalExcess
 import rooted.functionalPartialOne
 import rooted.functionalDirectProduct2
 

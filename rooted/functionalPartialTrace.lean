@@ -10,7 +10,7 @@ import rooted.Preorder
 import rooted.Dominant
 import rooted.FamilyLemma
 import rooted.functionalPartialMaximal
-import rooted.functionalTraceIdeal2
+import rooted.functionalPartial
 
 open Finset Set Classical
 
@@ -18,7 +18,7 @@ set_option maxHeartbeats 2000000
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 
---このファイルはtraceに関するもの。連結成分の数は1とは限らない。
+--このファイルは半順序集合の極大要素のtraceに関するもの。連結成分の数は1とは限らない。
 
 --ただのSetupと比較するとシンプルになっている。preorderのときのような同値類を考える必要がない。
 --structure Setup_po (α : Type) [Fintype α] [DecidableEq α] where

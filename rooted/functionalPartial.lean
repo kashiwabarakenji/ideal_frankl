@@ -37,179 +37,7 @@ set_option maxHeartbeats 2000000
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 
---excessが0であれば、同値類の大きさがすべて1。この部分は、TraceIdealに移動するか、excessの部分でまとめて1ファイルにするといいかも。
---functionalMainで使っている。
-theorem excess_zero (s: Setup_spo α) :
-  excess s = 0 → ∀ q: Quotient s.setoid, (classOf s q).card = 1 :=
-by
-  intro h q
-  have : ∀ q' :  Quotient s.setoid,0 ≤ (classOf s q').card - 1  := by
-    intro q'
-    simp_all only [zero_le]
 
-  have nonneg: ∀ i ∈ Finset.univ, 0 ≤ Int.ofNat (#(classOf s i)) - 1 := by
-    intro i a
-    simp_all only [zero_le, implies_true, Finset.mem_univ]
-    simp_all only [Int.ofNat_eq_coe, sub_nonneg, Nat.one_le_cast, one_le_card]
-    simp only [classOf_nonempty]
-  let fsez := @Finset.sum_eq_zero_iff_of_nonneg _ Int _ (fun q' => (classOf s q').card - 1) (Finset.univ : Finset (Quotient s.setoid)) nonneg
-  --let con := classOf_nonempty s.toSetup_spo q
-  dsimp [excess] at h
-  have :∀ i ∈ Finset.univ, (fun q' => Int.ofNat (#(classOf s q')) - 1) i = 0 :=
-  by
-    intro i a
-    simp_all only [Finset.mem_univ, Int.ofNat_zero, Int.ofNat_one, Int.ofNat_sub]
-    apply fsez.mp
-    simp
-    have h_cast :
-      (∑ q : Quotient s.setoid, (Int.ofNat (#(classOf s q)) - 1 : ℤ))
-        =
-      Int.ofNat (∑ q : Quotient s.setoid, (#(classOf s q) - 1)) :=
-    by
-      simp [Int.cast_sum]  -- ℕ の和を ℤ にキャスト
-      let fssd := @Finset.sum_sub_distrib _ _ (Finset.univ : Finset (Quotient s.setoid)) (fun q' => Int.ofNat (#(classOf s q'))) (fun q' => 1) _
-      suffices (∑ x : Quotient s.setoid, Int.ofNat (#(classOf s x))) - Int.ofNat (Fintype.card (Quotient s.setoid)) =
-  ∑ x : Quotient s.setoid,   (Int.ofNat (#(classOf s x)) - 1) from by
-
-        have :∀ q':Quotient s.setoid, Int.ofNat ((#(classOf s q')) - 1) = Int.ofNat (#(classOf s q')) - 1 := by
-          intro q'
-          simp [Int.ofNat_sub]
-          have h_card_ge : 1 ≤ #(classOf s q') := by
-            specialize nonneg q' (Finset.mem_univ _)
-            -- 0 ≤ ↑n - 1 ⇒ n ≥ 1
-            -- Int.ofNat n - 1 ≥ 0 ⇒ Int.ofNat n ≥ 1 ⇒ n ≥ 1
-            simp_all only [sum_eq_zero_iff, Finset.mem_univ, forall_const, le_refl, implies_true, Int.ofNat_eq_coe,
-              sum_sub_distrib, sum_const, card_univ, nsmul_eq_mul, mul_one, sub_nonneg, Nat.one_le_cast, one_le_card]
-
-          rw [Nat.cast_sub  h_card_ge] --(#(classOf s.toSetup_spo q')) 1
-          simp_all only [sum_eq_zero_iff, Finset.mem_univ, forall_const, le_refl, implies_true, Int.ofNat_eq_coe,
-            sum_sub_distrib, sum_const, card_univ, nsmul_eq_mul, mul_one, one_le_card, Nat.cast_one]
-
-        simp_all only [sum_eq_zero_iff, Finset.mem_univ, forall_const, le_refl, implies_true, Int.ofNat_eq_coe,
-          CharP.cast_eq_zero, sum_const_zero]
-        intro i_1
-        simp_all only [sum_sub_distrib, sum_const, card_univ, nsmul_eq_mul, mul_one]
-        rw [this]
-      rw [fssd]
-      simp_all only [sum_eq_zero_iff, Finset.mem_univ, forall_const, le_refl, implies_true, Int.ofNat_eq_coe, sum_const,
-        card_univ, nsmul_eq_mul, mul_one]
-    simp_all
-
-    simp_all only [sum_eq_zero_iff, Finset.mem_univ, forall_const, le_refl, implies_true]
-
-  let ts := this q
-  have :q ∈ Finset.univ := by
-    exact Finset.mem_univ q
-  specialize ts this
-  simp at ts
-  have h_eq : Int.ofNat (#(classOf s q)) - 1 + 1= 1 := by
-    simp_all only [sum_eq_zero_iff, Finset.mem_univ, forall_const, le_refl, implies_true, Int.ofNat_eq_coe, zero_add]
-  simp at h_eq
-  simp_all only [sum_eq_zero_iff, Finset.mem_univ, forall_const, le_refl, implies_true, Int.ofNat_eq_coe, Nat.cast_one,
-    sub_self]
-
---excessが正ならば、大きさ2以上の同値類が存在。
---この補題もSetup_spo2の前提でなくても成り立ちそう。大きさが2以上の同値類がMaximalであることは、Setup_spo2の前提が必要だが、ここではそこまでいってない。
---functionalMainで使っている。
-theorem exists_q_card_ge_two_of_excess_pos {α : Type} [Fintype α] [DecidableEq α] (s : Setup_spo α)
-  (h : excess s > 0) :
-  ∃ q : Quotient s.setoid, (classOf s q).card ≥ 2 := by
-  -- 対偶法で示す
-  by_contra h'
-  -- もし ∀ q, (classOf q).card < 2 ならば各項 (card - 1) = 0 で和も 0 になる
-  have hz : excess s = 0 := by
-    dsimp [excess]
-    have zero_terms : ∀ q, (classOf s q).card - 1 = 0 := by
-      intro q
-      -- ¬ ∃ q, card ≥ 2 から ¬ (card ≥ 2) をまず得て，Nat.not_le.mp で card < 2 に，
-      -- さらに Nat.lt_succ_iff.mp で card ≤ 1 にし，Nat.sub_eq_zero_of_le で m - 1 = 0 を結論
-      apply Nat.sub_eq_zero_of_le
-      apply Nat.lt_succ_iff.mp
-      apply Nat.not_le.mp
-      exact not_exists.mp h' q
-    simp [zero_terms]
-  -- しかし h : excess s > 0 と矛盾
-  exact (Nat.ne_of_gt h) hz
-
------------------------------------------------------------
---trace_parallel_average_rare を使って大きさ2以上の同値類の頂点をtraceすると、normalized degree sumが下がらないことを証明する。
---一般的な枠組みでは、trace_parallel_average_rareで証明済み。
---spo2_rareを利用しているので、仮定はSetup_spoでなくて、Setup_spo2である必要がある。
---下のtrace_ideal_nds_increase2で、setup_traceを利用する形に書き換え。
---以下の議論は、excessに関係がないので、TraceIdealに移動してもよい。
-lemma trace_ideal_nds_increase (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
-)).card ≥ 2) :
-  (spo_closuresystem s.toSetup_spo).normalized_degree_sum ≤ ((spo_closuresystem s.toSetup_spo).toSetFamily.trace x.val (by simp_all only [ge_iff_le,
-    coe_mem] ) (by
-  have :s.V = (spo_closuresystem s.toSetup_spo).ground := by
-    simp_all only [ge_iff_le]
-    obtain ⟨val, property⟩ := x
-    rfl
-  have : s.V.card ≥ 2:= by
-    let csl := card_subtype_le_original  (classOf s.toSetup_spo ⟦x⟧)
-    linarith
-  exact this
-    )).normalized_degree_sum :=
-by
-  have : s.V.card = (spo_closuresystem s.toSetup_spo).ground.card := by
-    simp_all only [ge_iff_le]
-    obtain ⟨val, property⟩ := x
-    rfl
-
-  let tpar := trace_parallel_average_rare (spo_closuresystem s.toSetup_spo) x (by simp_all only [ge_iff_le, coe_mem])
-  have :∃ y, ↑x ≠ y ∧ parallel (spo_closuresystem s.toSetup_spo) (↑x) y :=
-  by
-    let xx := representativeNeSelf2 s.toSetup_spo x hx
-    use xx
-    constructor
-    · dsimp [xx]
-      dsimp [representativeNeSelf2]
-      have rprop : (representativeNeSelf s.toSetup_spo x hx).val ∈ s.V.erase x.val := by
-        exact coe_mem (representativeNeSelf s.toSetup_spo x hx)
-      rw [Finset.mem_erase] at rprop
-      exact rprop.1.symm
-    · dsimp [xx]
-      dsimp [representativeNeSelf2]
-      have :s.setoid (representativeNeSelf2 s.toSetup_spo x hx) x := by
-        exact representativeNeSelf_mem_classOf3 s.toSetup_spo x hx
-      have :s.setoid x (representativeNeSelf2 s.toSetup_spo x hx) := by
-        exact id (Setoid.symm' s.setoid this)
-      let sce := spo_closuresystem_equiv2 s.toSetup_spo x (representativeNeSelf2 s.toSetup_spo x hx) this
-      have :x ≠ representativeNeSelf2 s.toSetup_spo x hx := by
-        dsimp [representativeNeSelf2]
-        have rprop : (representativeNeSelf s.toSetup_spo x hx).val ∈ s.V.erase x.val := by
-          exact coe_mem (representativeNeSelf s.toSetup_spo x hx)
-        rw [Finset.mem_erase] at rprop
-        let rp1s := rprop.1.symm
-        exact fun a => rp1s (congrArg Subtype.val a)
-      have : parallel (spo_closuresystem s.toSetup_spo) ↑x ↑(representativeNeSelf2 s.toSetup_spo x hx) :=
-      by
-        simp at sce
-        cases sce
-        case inr h =>
-          exact False.elim (this h)
-        case inl h =>
-          exact h
-      exact this
-
-      --parallelとsetoidの関係
-  specialize tpar this
-  have : (spo_closuresystem s.toSetup_spo).is_rare ↑x :=
-  by
-    exact spo2_rare s ⟦x⟧ hx x rfl
-  specialize tpar this
-  exact tpar
-
---trace_ideal_nds_increaseよりはすっきりした形。setup_traceを利用している。仮定はSetup_spo2である必要。
---Mainのh_ndsを証明するときに使っている。
-theorem trace_ideal_nds_increase2 (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
-)).card ≥ 2) :
-(spo_closuresystem s.toSetup_spo).normalized_degree_sum ≤ (spo_closuresystem (setup_trace s.toSetup_spo x hx)).normalized_degree_sum :=
-by
-  let tin := trace_ideal_nds s.toSetup_spo x hx
-  simp
-  rw [tin]
-  exact trace_ideal_nds_increase s x hx
 
 --------------------------------------------------------
 --- ここから先は、traceとは関係ない内容か。
@@ -255,7 +83,7 @@ def po_closuresystem {α : Type} [Fintype α] [DecidableEq α] (s: Setup_po α) 
 --そして、idealの集合族が一致する。
 
 --次の定義に利用。補題には、Setup_poは出てこない。ただ、同値類の個数が1という制約が特殊なので、ここでよいかも。
-lemma class_size_one_implies_eq (s: Setup_spo α) (x y: s.V) (ssl  : (⟦x⟧ : Quotient s.setoid) = ⟦y⟧) (hq1x :#(Finset.filter (fun a => @Quotient.mk'' _ s.setoid a = ⟦x⟧) s.V.attach) = 1) (hq1y :#(Finset.filter (fun a => @Quotient.mk'' _ s.setoid a = ⟦y⟧) s.V.attach) = 1) :
+private lemma class_size_one_implies_eq (s: Setup_spo α) (x y: s.V) (ssl  : (⟦x⟧ : Quotient s.setoid) = ⟦y⟧) (hq1x :#(Finset.filter (fun a => @Quotient.mk'' _ s.setoid a = ⟦x⟧) s.V.attach) = 1) (hq1y :#(Finset.filter (fun a => @Quotient.mk'' _ s.setoid a = ⟦y⟧) s.V.attach) = 1) :
      (x : α) = y := by
   -- 同値類 `{ a | ⟦a⟧ = ⟦x⟧ }` のカードが 1 → その唯一元を取り出す
   have hcard :=
@@ -416,7 +244,7 @@ by
   simp_all only [q]
 
 --同値類の大きさが1のときに関する補題。
-lemma equal_one_f (s: Setup_spo α) (hq1:∀ q: Quotient s.setoid, (classOf s q).card = 1) (x y: s.V) :
+private lemma equal_one_f (s: Setup_spo α) (hq1:∀ q: Quotient s.setoid, (classOf s q).card = 1) (x y: s.V) :
   s.fq (@Quotient.mk s.V s.setoid x) = (@Quotient.mk s.V s.setoid y) ↔ ((fun xx => s.fq (@Quotient.mk _ s.setoid xx)) x).out = y :=
 by
   have h_eq₁ := equal_one s hq1 ((s.fq ⟦x⟧).out) y
@@ -451,7 +279,7 @@ by
     simpa [this] using hout_q
 
 --同値類の大きさが1のときに関する補題。
-lemma equal_one_setroid (s: Setup_spo α) (hq1:∀ q: Quotient s.setoid, (classOf s q).card = 1) (x y: s.V) :
+private lemma equal_one_setroid (s: Setup_spo α) (hq1:∀ q: Quotient s.setoid, (classOf s q).card = 1) (x y: s.V) :
   s.setoid x y ↔ x = y :=
 by
   let eo := equal_one s hq1 x y
@@ -468,7 +296,7 @@ by
     exact (@Quotient.eq _ s.setoid x x).mp rfl
 
 --同値類の大きさが1のときに関する補題。
-lemma po_ideal_system_from_allone_lem (α : Type) [Fintype α] [DecidableEq α] (s: Setup_spo α) (hq1:∀ q: Quotient s.setoid, (classOf s q).card = 1) (x y : s.V)(n:Nat):
+private lemma po_ideal_system_from_allone_lem (α : Type) [Fintype α] [DecidableEq α] (s: Setup_spo α) (hq1:∀ q: Quotient s.setoid, (classOf s q).card = 1) (x y : s.V)(n:Nat):
  s.fq^[n] (@Quotient.mk s.V s.setoid x) = (@Quotient.mk s.V s.setoid y) ↔ (fun x => (s.fq ⟦x⟧).out)^[n] x = y:=
 by
   -- `g` は `(s.fq ⟦·⟧).out`

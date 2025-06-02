@@ -9,7 +9,7 @@ import rooted.ClosureMinors
 import rooted.Preorder
 import rooted.Dominant
 import rooted.FamilyLemma
-import rooted.functionalTraceIdeal2
+import rooted.functionalPartial
 
 open Finset Set Classical
 

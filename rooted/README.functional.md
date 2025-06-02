@@ -129,12 +129,14 @@ theorem functional_family_average_rare (V: Finset α) (f : V → V) (valid:∀ v
 - 順序idealとは、考えている前順序で、下に閉じている集合のことである。順序idealの定義やその性質。
 - pre_closuresystemは、前順序から作ったideal。Commonで定義済み。
 - pre2_closuresystemは、Setup2のpoを利用して作ったideal。
-- 補題(Preorder_eq_PartialOrder)：hyperedgeの集合の全体(pre_closuresystem)は、この半順序の順序ideal(pre2_closuresystem)に一致する。
+- 補題(Preorder_eq_PartialOrder)：hyperedgeの集合の全体(pre_closuresystem)は、この半順序の順序ideal(pre2_closuresystem)に一致する。仮定はSetup2。
 - spo_closuresystemは、Setup_spoの仮定から作ったideal。functionalIdealRare.leanなどからも参照される。
 - 補題(Setup_spo_eq_PartialOrder)：spo_closuresystemは、pre2_closuresystemと一致する。
-- Setup_spoのidealに関する補題は、特にtraceに関するものなどは、functionalTraceIdeal.leanやfunctionalTraceIdeal2.leanに記述されている。
+- Setup_spoのidealに関する補題は、特にtraceに関するものなどは、functionalTraceIdeal.leanやfunctionalTraceIdeal2.leanに記述されている。これも仮定はSetup2。
 
 # setup_spo2_average_rareの証明のための補題のファイル群
+
+基本的に仮定はSetup_spoかSetup_spo2である。この補題に帰着させる部分で、Setup2の仮定を使うこともある。
 
 ## spoのtrace (functionalSPOtrace.lean)
 
@@ -178,30 +180,32 @@ theorem functional_family_average_rare (V: Finset α) (f : V → V) (valid:∀ v
   - 同値な頂点(パラレルな頂点とも呼ぶ)のひとつをtraceして減らすことにより、同一視していく方向性。
   - 基本的にSetup_spoの仮定で考えている。
   - 集合族としては、パラレルな頂点を持つ頂点をtraceしていくことにより、パラレルな頂点を持たない集合族を得ることができる。この議論自体はMainで行なっている。ここではその準備。
-- ファイルの内容  
+- ファイルの内容 Setup_spoの仮定  
   - 定理(trace_ideal_nds ):traceしたものと、集合族が等しければ、標準化次数和ndsも等しい。
-  - excessもここで定義。excessは、同値類の大きさがすべて1であるときを0として、それからパラレルな要素があるたびに1ずつ増加していく関数。
-  - 補題(trace_excess_decrease):traceすることで、excessはひとつ減る。Setup_spoの仮定でもよいかも。
-
-## 半順序のtrace (functionalTraceIdeal2.lean)
-
-- 概要
-  - 半順序の構造Setup_poとの橋渡しの部分。Mainにあるsetup_po_average_rareに必要な補題を証明。
-  - 同値類の大きさが全部1であれば、Setup_poとみなせるということを示すのがメイン。
-  - TraceIdeal2というファイル名になっているが、Traceとは関係ないものも含まれている。
-  - trace_ideal_nds_increaseのところで、Setup_spo2の仮定を使っている。
-  - spo2_rareを呼んでいて、これがSetup_spo2の仮定を使っている。
-  - Setup_spo2の仮定は、同値類の大きさが1であることを仮定しているので、traceした後の集合族は、同値類の大きさが1であることがわかる。
-  - 定義 (po_ideal_system_from_allone)は、Setup_spoのidealは、すべての同値類の大きさが1であるときに、すべての要素を含むidealになることを示す。メインのsetup_spo2_average_rareの証明でも使う。
-- ファイルの内容
-  - 補題(excess_zero): excessは0であれば、同値類の大きさがすべて1。
+- ファイルの内容 Setup_spo2の仮定
   - 補題(trace_ideal_nds_increase2)： 集合族に対して、パラレルな要素を持つ要素で、rareな頂点をtraceして平均rareであれば、もともと平均rareである。 
   - この補題は順序構造とは関係なく、一般に成り立つ。
   - この補題の証明は、すでにParallel.leanのファイルの中で完了している。しかし、ここではそれを利用して証明せずに、改めて独自に証明している。
-  - Setup_poの定義を行なっている。この前提は、親をたかだか一つしか持たない、半順序という前提。もはやtraceとは関係ない。
-  - Setup_poの半順序に対するidealの定義po_closuresystemもここで行なっている。
-  - 補題(exists_q_card_ge_two_of_excess_pos): excessが正ならば、大きさ2以上の同値類が存在。
-  - Mainで使っている。
+  - spo2_rareを呼んでいて、これがSetup_spo2の仮定を使っている。
+  
+## 同値類の大きさのexcess (functionalExcess.lean)
+
+- excessをここで定義。excessは、同値類の大きさがすべて1であるときを0として、それからパラレルな要素があるたびに1ずつ増加していく関数。
+- 補題(trace_excess_decrease):traceすることで、excessはひとつ減る。Setup_spoの仮定でもよいかも。
+- 補題(excess_zero): excessは0であれば、同値類の大きさがすべて1。  
+- 補題(exists_q_card_ge_two_of_excess_pos): excessが正ならば、大きさ2以上の同値類が存在。
+- Mainで使っている。
+
+## 半順序のtrace (functionalPartial.lean)
+
+- 概要
+  - Mainにあるsetup_po_average_rareへの帰着に必要な補題を証明。
+  - 同値類の大きさが全部1であれば、Setup_poとみなせるということを示すのがこのファイルの主要な結果。
+  - ファイルの内容
+    - Setup_poの定義を行なっている。この前提は、親をたかだか一つしか持たない、半順序という前提。
+    - Setup_poの半順序に対するidealの定義po_closuresystemもここで行なっている。
+    - 定義 (po_ideal_system_from_allone)は、Setup_spoのidealは、すべての同値類の大きさが1であるときに、すべての要素を含むidealになることを示す。
+
 
 ## Mainの中の補題 (functionalMain.lean)
 
@@ -212,6 +216,10 @@ theorem functional_family_average_rare (V: Finset α) (f : V → V) (valid:∀ v
 - 補題(trace_ideal_nds_increase2): 集合族に対して、パラレルな要素を持つものが平均rareであることを示すためには、サイズ2以上の同値類をすべて1頂点にまでtraceしたものが平均rareであることを示せば良い。setup_spo2_average_rareの証明でこの言明を利用。
 - setup_spo2_average_rareはパラレルな頂点の個数に関する帰納法で示すことができる。excessの値でパラレルな頂点の個数を表す。すべての同値類の大きさが1であれば、excessの値は0である。
 - 補題setup_po_average_rareの部分は後述。
+
+# setup_po_average_rareの証明のための補題のファイル群
+
+基本的に仮定は、Setup_poである。
 
 ## 半順序の平均rare (functionalPartialTrace.lean)
 
@@ -266,14 +274,14 @@ theorem functional_family_average_rare (V: Finset α) (f : V → V) (valid:∀ v
 ## 全体的なリファクタリング予定のまとめ
 
 - 主定理からvalidの条件をなくす。
-- functionalCommon.leanは、commonというより、主定理のための定義だがどうするか。ファイルの名前を変える？他にもTreePreorderなどの名前も変えた方がいいか。
-- ファイル名の統一が取れていない。Mainのファイルの定理のどの定理から引用されるかでファイルをわけるといいかも。Mainの補題名を変えて、それに合わせてファイル名を整理するのがいいかも。
-- TraceIdealとTraceIdeal2の内容について、TraceIdeal2のTraceに関係ない部分が多いので、関係ある部分をTraceIdealに移動して、TraceIdeal2は別の名前にする。TraceとExcessとPartialの3つに分けるのでもいいかも。
-- pre_closuresystem_eq_lemの重複。
+- functionalCommon.leanは、内容的にcommonというより、Setup前提の主定理のための定義だがどうするか。 
+  - ファイルの名前を変える？他にもTreePreorderなどの名前も変えた方がいいか。
+- ファイル名の統一が取れていない。Mainのファイルの定理のどの定理から引用されるかでファイルをわけるといいかも。Mainにある補題名を変えて、それに合わせてファイル名を整理するのがいいか。もしくは、引用場所よりも仮定で分けた方がわかりやすいかもしれない。枠組みごとになるので。
+- pre_closuresystem_eq_lemの証明内容の重複。
 - functionalTreePreorder.leanでreachを使った表現に書き換える。
-- Setup2を無くして、Setupに関数を定義する。Setup_spo2などの名前も変える。
-- 全体的にSetupなどの仮定に依存する部分を減らして、部品を共通化したい。今は枠組みごとに独立に議論をしている。たとえば、qClassとclassOfは、同値類を与えるという同じ目的で定義されているが、枠組みごとに定義されている。
+- Setup2を無くして、Setupに関数を定義する。Setup_spo2などの名前も変える。同値なので。
+- 全体的にSetupなどの仮定に依存する部分を減らして、部品を共通化したい。今は枠組みごとに独立に議論をしている。たとえば、qClassとclassOfは、同値類を与えるという同じ目的で定義されているが、枠組みごとに定義されている。setoidが与えられれば、定義できるはず。
+- iteratef_lemma, iteratef_lemma_refなど片側ずつになっている定理を必要十分の形に書き直す。
 
-- 論文を書いた後に、全面的に書き直すか？
+- 論文を書いた後に、全面的に書き直すか？別のリポジトリにするのか？それだと大変すぎるかも。
 
-- iteratef_lemma, iteratef_lemma_refなどを必要十分の形に書き直す。
