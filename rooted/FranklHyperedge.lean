@@ -1,4 +1,4 @@
-import LeanCopilot
+--import LeanCopilot
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Set.Basic
 import Mathlib.Data.Finset.Powerset
@@ -66,7 +66,7 @@ by
         rw [this]
         rw [Finset.inter_comm]
         exact sic
-      · apply Finset.not_mem_erase x.val
+      · apply Finset.notMem_erase x.val
   ⟩
   have inj: ∀ s1 s2:S, ii s1 = ii s2 → s1 = s2 :=
   by
@@ -489,7 +489,7 @@ by
           simp_all only [Subtype.forall, forall_eq, ne_eq,Finset.subset_singleton_iff]
           simp_all only [Finset.mem_singleton]
           cases rsf with
-          | inl h => simp_all only [Finset.not_mem_empty]
+          | inl h => simp_all only [Finset.notMem_empty]
           | inr h_1 => simp_all only [Finset.mem_singleton, not_true_eq_false]
         simp_all only [Finset.mem_singleton, forall_eq, Finset.card_singleton, ne_eq, not_true_eq_false]
 
@@ -501,7 +501,7 @@ by
         use r
         use hr.1
         constructor
-        simp_all only [Subtype.forall, Finset.mem_singleton,Finset.card_singleton, Finset.not_mem_empty,not_false_eq_true]
+        simp_all only [Subtype.forall, Finset.mem_singleton,Finset.card_singleton, Finset.notMem_empty,not_false_eq_true]
         exact this
       specialize het this
       contradiction
@@ -1052,8 +1052,8 @@ by
       rw [Finset.mem_filter] at h
       refine ⟨h.1,h.2.1,?_⟩
       simp_all only [Subtype.mk.injEq, Subtype.forall, Finset.mem_filter, Finset.mem_powerset, and_imp,
-        Finset.singleton_subset_iff, Finset.coe_mem, subset_refl, not_false_eq_true, Finset.insert_inter_of_not_mem,
-        Finset.singleton_inter_of_not_mem, Finset.empty_subset, ii, M, S, T]
+        Finset.singleton_subset_iff, Finset.coe_mem, subset_refl, not_false_eq_true, Finset.insert_inter_of_notMem,
+        Finset.singleton_inter_of_notMem, Finset.empty_subset, ii, M, S, T]
     · intro h
       rw [Finset.mem_filter]
       rw [Finset.mem_filter] at h

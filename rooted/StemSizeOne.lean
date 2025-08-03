@@ -13,7 +13,7 @@ import rooted.ClosureOperator
 import rooted.RootedFrankl
 import rooted.RootedSets
 import rooted.Preorder
-import LeanCopilot
+--import LeanCopilot
 
 open Classical
 
@@ -778,7 +778,7 @@ by
           contradiction
         | k+1 =>
           -- A.card = k+2 ≥ 2
-          simp_all only [implies_true, add_left_eq_self, AddLeftCancelMonoid.add_eq_zero, one_ne_zero, and_false,
+          simp_all only [implies_true, add_eq_right, AddLeftCancelMonoid.add_eq_zero, one_ne_zero, and_false,
             not_false_eq_true, ne_eq, Finset.card_eq_zero, gt_iff_lt, lt_add_iff_pos_left, add_pos_iff, zero_lt_one,
             or_true, SF]
 
@@ -963,14 +963,14 @@ instance size_one_circuits_preorder  {α : Type} [Fintype α]  [DecidableEq α] 
   le := λ x y => preorder.R_hat (R_from_RS1 RS) y x  -- xとyの順序が最初間違っていた。
   le_refl := λ x =>
   by
-    simp_all only
+    --simp_all only
     simp [preorder.R_hat]
 
   le_trans := λ x y z =>
   by
     intro h1 h2
     intro s a a_1
-    simp_all only
+    --simp_all only
     obtain ⟨val, property⟩ := x
     obtain ⟨val_1, property_1⟩ := y
     obtain ⟨val_2, property_2⟩ := z
@@ -989,23 +989,36 @@ by
     simp_all only [Finset.univ_eq_attach, Finset.attach_nonempty_iff, s]
     obtain ⟨x, hx⟩ := RS
     simp_all only
-  obtain ⟨m, hm, hmax⟩ := Finset.exists_maximal s hs --mが極大元
-  --hmaxに順序<で表されているのがおかしい。
-  have : ∀ x : RS.ground, (preorder.R_hat (R_from_RS1 RS) x m) → (preorder.R_hat (R_from_RS1 RS) m x) :=
-  by
+  obtain ⟨m, hmax⟩ := Finset.exists_maximal hs
+
+  -- 2. `Maximal` を構造体分解
+  rcases hmax with ⟨hm , hmax_prop⟩
+  --   hm          : m ∈ s
+  --   hmax_prop   : ∀ {b}, b ∈ s → m < b → False
+
+  -- 3. ゴールとなる性質を示す
+  have key :
+      ∀ x : RS.ground,
+        preorder.R_hat (R_from_RS1 RS) x m →
+        preorder.R_hat (R_from_RS1 RS) m x
+  := by
     intro x hx
-    /-
-    have : ∀ a b :RS.ground,  b ≤ a ↔ preorder.R_hat (R_from_RS1 RS) a b := by
-      intro a b
-      simp_all only [Finset.univ_eq_attach, Finset.attach_nonempty_iff, Finset.mem_attach, forall_const,
-        Subtype.forall, s]
-      rfl
-    -/
-    have :x ∈ s := by
-      simp_all only [Finset.univ_eq_attach, Finset.attach_nonempty_iff, Finset.mem_attach, Subtype.forall, s]
-    by_contra hc
-    tauto
-  exact ⟨m, this⟩
+    -- `x` も `s` の要素
+    have hx_in_s : (x : {x // x ∈ RS.ground}) ∈ s := by
+      simp [s]
+    -- もし `R_hat m x` が成り立たなければ `m < x` が作れるような
+    -- 順序を定義しておき，極大性に矛盾させる……
+    -- 以降は従来の証明をそのまま移植
+    by_contra hmx
+    -- ここで目的の矛盾を導出（詳細は従来の証明と同じ）
+    have hlt : (m : {x // x ∈ RS.ground}) < x := by
+      -- `hx` と `hmx` を使って “真に小さい” 証明を作る
+      -- 具体的な順序定義に応じて補題を選ぶ
+      exact False.elim (hmx (hmax_prop hx_in_s hx))
+    exact hmx (hmax_prop hx_in_s hx)
+
+  exact ⟨m , key⟩
+
 
 -- ステムサイズが1の根付き集合族は、rareな頂点が存在すること。重要な定理
 --以下の補題element_is_rare_rootedsetを使うのが証明のポイント
@@ -1024,7 +1037,15 @@ by
     exact nonempty_ground
 
   -- 極小な頂点としてvをとる。これがrareであることを示す。順序はすでにinstanceで定義されている。
-  obtain ⟨v, hv, hsf⟩ := Finset.exists_minimal (Finset.univ : Finset SF.ground) nonempty_ground
+  let s : Finset SF.ground := Finset.univ
+  have nonempty_ground : s.Nonempty := by
+    -- ここは元の証明と同じ
+    subst eq
+    simp_all only [Finset.univ_eq_attach, Finset.attach_nonempty_iff, s]
+
+  -- 4.21 仕様 : Minimal 構造体で返って来る
+  obtain ⟨v, hmin⟩ := Finset.exists_minimal nonempty_ground
+  rcases hmin with ⟨hv, hmin_prop⟩
 
   have eq_ground : RS.ground  = SF.ground := by
     subst eq
@@ -1150,14 +1171,8 @@ by
       have hsforder: ∀ (a : α) (b : a ∈ SF.ground),   (dominated SF).le ⟨a ,b⟩ v  → (dominated SF).le  v ⟨a ,b⟩:=
       by
         intro a b hh
-        let hsfab := hsf a b
-        have a_in_RS : a ∈ RS.ground := by
-          subst eq
-          simp_all only [Subtype.coe_eta]
-        rw [Preorder.lt_iff_le_not_le] at hsfab
-        simp at hsfab
         subst eq
-        simp_all only [ne_eq, forall_const]
+        simp_all only [Finset.univ_eq_attach, Finset.attach_nonempty_iff, Finset.mem_attach, forall_const, ne_eq, RC, s]
 
       dsimp [dominated] at hsforder
       let hsorder2:= hsforder u_point ug Ruv

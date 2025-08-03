@@ -2,7 +2,7 @@ import Mathlib.Order.Defs.PartialOrder
 --import Mathlib.Order.Cover
 --import Mathlib.Logic.Function.Iterate
 import Mathlib.Tactic
-import LeanCopilot
+--import LeanCopilot
 import rooted.CommonDefinition
 import rooted.ClosureMinors
 import rooted.Preorder
@@ -478,7 +478,7 @@ by
   -- Int に直してゴール完了
   have : Int.ofNat ((ideals (po_closuresystem s).toSetFamily).card)
         = Int.ofNat ((ideals (po_closuresystem s).toSetFamily).erase (s.V)).card + 1 := by
-    simpa [Int.ofNat_add, Int.ofNat_one] using congrArg Int.ofNat h_card.symm
+    simpa [Int.natCast_add, Int.ofNat_one] using congrArg Int.ofNat h_card.symm
   let iee := ideals_eq_erase s conn x mx nontriv
   symm
   ring_nf
@@ -529,7 +529,7 @@ private lemma total_size_of_hyperedge_trace
 
   -- 4) 最終的に `ideals_eq_erase` と `Int.ofNat_add` を使って終わり
 
-  simp [ideals_eq_erase s conn x mx nontriv, Int.ofNat_add]
+  simp [ideals_eq_erase s conn x mx nontriv, Int.natCast_add]
   let cih := congrArg Int.ofNat h_sum.symm
   dsimp [I,ideals] at h_sum cih
   convert cih
@@ -539,7 +539,7 @@ private lemma total_size_of_hyperedge_trace
           (filter (po_closuresystem s).sets (po_closuresystem s).ground.powerset)
           card)
   · norm_cast
-    simp
+    --simp
     let iee := ideals_eq_erase s conn x mx nontriv
     exact congrFun (congrArg Finset.sum iee) fun x => #x
 
@@ -768,7 +768,7 @@ lemma total_size_of_hyperedge_trace2
   have h_int :
       Int.ofNat (((ideals (po_closuresystem s).toSetFamily).erase s.V).sum Finset.card + s.V.card)
         = Int.ofNat ((ideals (po_closuresystem s).toSetFamily).sum Finset.card) := by
-    simp [Int.ofNat_add]
+    simp [Int.natCast_add]
     let cio := congrArg Int.ofNat (h_sum.symm)
     simp_all only [ge_iff_le]
     --obtain ⟨val, property⟩ := x

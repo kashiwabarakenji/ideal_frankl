@@ -9,7 +9,7 @@ import Mathlib.Order.Cover
 import Mathlib.Logic.Function.Iterate
 import Mathlib.Data.Quot
 import Mathlib.Tactic
-import LeanCopilot
+--import LeanCopilot
 import rooted.CommonDefinition
 import rooted.ClosureMinors
 import rooted.Preorder
@@ -131,7 +131,7 @@ def setup2_induces_spo (s : Setup2 α) : Setup_spo2 α :=
   h_spo := (setup_setupspo s).h_spo,
   singleton_if_not_maximal := by
     intro q hq
-    dsimp [isMaximal_spo] at hq
+    --dsimp [isMaximal_spo] at hq
     let csm := eqClass_Maximal s q hq
     dsimp [isMaximalQ] at csm
     dsimp [isMaximal_spo]
@@ -246,7 +246,7 @@ noncomputable def setup_trace_spo2 (s : Setup_spo2 α)(x: s.V) (hx:(classOf s.to
   noLoop := by
     intro q1 q2
     intro h1 h2
-    simp at h1 h2
+    --simp at h1 h2
     exact setup_trace_noLoop s.toSetup_spo x hx q1 q2 h1 h2
   setoid := restrictedSetoid s.toSetup_spo x
   spo := partialOrderOfFq (setup_trace_base s.toSetup_spo x hx).fq (by
@@ -255,15 +255,15 @@ noncomputable def setup_trace_spo2 (s : Setup_spo2 α)(x: s.V) (hx:(classOf s.to
       exact setup_trace_noLoop s.toSetup_spo  x hx q1 q2 h1 h2
   )
   h_spo := by
-    simp_all only
+    --simp_all only
     obtain ⟨val, property⟩ := x
     simp_all only
     rfl
   singleton_if_not_maximal := by
     intro q hq
-    dsimp [isMaximal_spo] at hq
-    simp
-    simp at q
+    --dsimp [isMaximal_spo] at hq
+    --simp
+    --simp at q
     simp at hq
     set q' := toOld s.toSetup_spo x q with hq'
     have thisq:q = toNew s.toSetup_spo x hx q' := by

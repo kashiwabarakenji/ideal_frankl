@@ -9,7 +9,7 @@ import rooted.RootedCircuits
 --import rooted.RootedImplication
 import rooted.Dominant
 import rooted.RootedFrankl
-import LeanCopilot
+
 
 open Classical
 
@@ -566,6 +566,39 @@ lemma principal_ideal_injective : Function.Injective (principal_ideal : PO → O
 
 -- Order.Ideal PO が有限集合であることを示す
 --POがFintypeなので、Order.Ideal POもFintypeであることを示す？
+-- Order.Ideal PO が有限集合であることを示す
+noncomputable instance fintypeOrderIdeal : Fintype (Order.Ideal PO) := by
+  -- Set PO は finite
+  haveI : Fintype (Set PO) := inferInstance
+
+  -- イデアルかどうかの述語
+  let ideal_predicate : Set PO → Prop := fun s => ∃ I : Order.Ideal PO, I.carrier = s
+  haveI : DecidablePred ideal_predicate := inferInstance
+
+  -- その集合をサブタイプに束ねる
+  let S := { s : Set PO // ideal_predicate s }
+
+  -- S も finite
+  haveI : Fintype S := inferInstance
+
+  -- Order.Ideal PO ↪ S
+  let to_S : Order.Ideal PO → S :=
+    fun I => ⟨I.carrier, ⟨I, rfl⟩⟩
+
+  -- 単射性
+  have to_S_injective : Function.Injective to_S := by
+    intro I J hIJ
+    have : (I : Set PO) = J := by
+      simpa [to_S] using congrArg Subtype.val hIJ
+    -- ext で証明フィールドを自動で合わせる
+    ext x
+    simp_all only [LowerSet.carrier_eq_coe, Order.Ideal.coe_toLowerSet, SetLike.coe_set_eq, SetLike.mem_coe, S,
+      ideal_predicate, to_S]
+
+  -- injective なら Fintype を引き戻せる
+  exact Fintype.ofInjective to_S to_S_injective
+
+/-
 noncomputable instance fintypeOrderIdeal : Fintype (Order.Ideal PO) :=
 by
   haveI : Fintype (Set PO) :=
@@ -613,6 +646,7 @@ by
   --· -- `toFun (invFun s) = s` を示す
   simp_all only [LowerSet.carrier_eq_coe, Order.Ideal.coe_toLowerSet, S, ideal_predicate, to_S]
   exact Fintype.ofInjective _ to_S_injective
+-/
 
 -- 順序イデアルの個数がノードの数以上であることを証明
 theorem card_ideals_ge_card_nodes : Fintype.card PO ≤ Fintype.card (Order.Ideal PO) :=

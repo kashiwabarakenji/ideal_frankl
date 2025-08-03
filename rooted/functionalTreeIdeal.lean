@@ -7,7 +7,7 @@ import Mathlib.Order.Defs.PartialOrder
 import Mathlib.Order.Cover
 import Mathlib.Logic.Function.Iterate
 import Mathlib.Tactic
-import LeanCopilot
+--import LeanCopilot
 import rooted.CommonDefinition
 import rooted.ClosureMinors
 import rooted.Preorder
@@ -44,7 +44,7 @@ noncomputable def pre2_closuresystem (s: Setup2 α): ClosureSystem α :=
       exact s.nonemp
 
     has_ground := by --Vがsetsになることを示す。そのときは、すべての同値類がIに含まれる。
-      simp_all only
+      --simp_all only
       use Finset.univ
       constructor
       · simp_all
@@ -397,7 +397,7 @@ def spo_closuresystem (s: Setup_spo α) : ClosureSystem α :=
     exact s.nonemp
 
   has_ground := by --Vがsetsになることを示す。そのときは、すべての同値類がIに含まれる。
-    simp_all only
+    --simp_all only
     use Finset.univ
     constructor
     · simp_all

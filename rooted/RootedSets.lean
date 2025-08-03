@@ -12,7 +12,7 @@ import rooted.CommonDefinition
 import rooted.ClosureOperator
 import rooted.GeneralLemma
 import Mathlib.Tactic
-import LeanCopilot
+--import LeanCopilot
 
 -- 有限集合の型
 variable {α : Type} [Fintype α] [DecidableEq α]
@@ -123,7 +123,8 @@ by
 def rootedsetToClosureSystem (RS : RootedSets α) :
   ClosureSystem α :=
 {
-  ground := RS.ground
+  ground := RS.ground,
+  sets := fun s => s ∈ filteredFamily RS
 
   intersection_closed := filteredFamily_closed_under_intersection RS,
 

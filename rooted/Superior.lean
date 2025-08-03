@@ -1,4 +1,4 @@
-import LeanCopilot
+--import LeanCopilot
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Set.Basic
 import Mathlib.Data.Finset.Powerset
@@ -173,7 +173,7 @@ by
       intro a
       simp_all [Q, P]
       obtain ⟨val_1, property_1⟩ := y
-      simp_all only [Subtype.mk.injEq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem,
+      simp_all only [Subtype.mk.injEq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_notMem,
         Finset.card_singleton, Nat.reduceAdd, P]
       cases a with
       | inl h_1 => simp_all only [true_or, and_self, P]
@@ -189,7 +189,7 @@ by
         simp_all only [ne_eq, Q, P]
         obtain ⟨val, property⟩ := x
         obtain ⟨val_1, property_1⟩ := y
-        simp_all only [Subtype.mk.injEq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem,
+        simp_all only [Subtype.mk.injEq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_notMem,
           Finset.card_singleton, Nat.reduceAdd, P]
 
   have sub_eq_2:∀ s:Finset α, {x.val,y.val} ⊆ s ↔ ({x.val, y.val} ∩ s).card = 2 :=
@@ -217,7 +217,7 @@ by
       simp_all only [ne_eq, Finset.inter_eq_left, ge_iff_le]
       obtain ⟨val, property⟩ := x
       obtain ⟨val_1, property_1⟩ := y
-      simp_all only [Subtype.mk.injEq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem,
+      simp_all only [Subtype.mk.injEq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_notMem,
         Finset.card_singleton, Nat.reduceAdd]
       omega
 
@@ -373,7 +373,7 @@ by
         obtain ⟨val_1, property_1⟩ := y
         obtain ⟨left, right⟩ := a
         obtain ⟨left_1, right⟩ := right
-        simp_all only [Subtype.mk.injEq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem,
+        simp_all only [Subtype.mk.injEq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_notMem,
           Finset.card_singleton, Nat.reduceAdd, P]
       · intro a
         dsimp [R0,R2]
@@ -396,12 +396,12 @@ by
     simp only [Finset.mem_inter, Finset.mem_filter]
     constructor
     · intro h
-      simp_all only [ne_eq, and_congr_right_iff, not_and, Finset.mem_powerset, Finset.not_mem_empty, R2, Q, f, P, R0]
+      simp_all only [ne_eq, and_congr_right_iff, not_and, Finset.mem_powerset, Finset.notMem_empty, R2, Q, f, P, R0]
       obtain ⟨left, right⟩ := h
       simp_all only [Subtype.mk.injEq, P]
       simp_all only [not_true_eq_false, imp_false, Finset.card_empty, OfNat.zero_ne_ofNat, and_false, f, P, R2, Q, R0]
     · intro h
-      simp_all only [ne_eq, and_congr_right_iff, not_and, Finset.not_mem_empty, R2, Q, f, P, R0]
+      simp_all only [ne_eq, and_congr_right_iff, not_and, Finset.notMem_empty, R2, Q, f, P, R0]
 
   have notone_card: (SF.ground.powerset.filter (fun s => (P s ∧ ¬ (Q s)))).card =
   (SF.ground.powerset.filter (fun s => P s ∧ R2 s)).card + (SF.ground.powerset.filter (fun s => P s ∧ R0 s)).card :=
@@ -547,7 +547,7 @@ by
     simp_all only [ne_eq, gt_iff_lt]
     obtain ⟨val, property⟩ := x
     obtain ⟨val_1, property_1⟩ := y
-    simp_all only [Subtype.mk.injEq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem,
+    simp_all only [Subtype.mk.injEq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_notMem,
       Finset.card_singleton, Nat.reduceAdd]
 
   rw [this]
@@ -593,7 +593,7 @@ by
       simp_all only [ne_eq, gt_iff_lt, P, Q]
       obtain ⟨val, property⟩ := x
       obtain ⟨val_1, property_1⟩ := y
-      simp_all only [Subtype.mk.injEq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem,
+      simp_all only [Subtype.mk.injEq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_notMem,
         Finset.card_singleton, Nat.reduceAdd, P]
       ext a : 1
       simp_all only [Finset.mem_filter, Finset.mem_powerset, Finset.mem_union, P]
@@ -723,10 +723,10 @@ by
     have :∀ s:Finset α, s ∈ SF.ground.powerset → (x.val ∈ s ∧ y.val ∈ s ↔ {x.val,y.val} ⊆ s) :=
     by
       intro s hs
-      simp_all only [ne_eq, gt_iff_lt, Finset.mem_powerset, Finset.subset_iff, Finset.not_mem_empty]
+      simp_all only [ne_eq, gt_iff_lt, Finset.mem_powerset, Finset.subset_iff, Finset.notMem_empty]
       apply Iff.intro
       · intro h
-        simp_all only [ne_eq, gt_iff_lt, Finset.not_mem_empty, Finset.not_mem_singleton, Finset.mem_insert, Finset.mem_singleton]
+        simp_all only [ne_eq, gt_iff_lt, Finset.notMem_empty, Finset.notMem_singleton, Finset.mem_insert, Finset.mem_singleton]
         intro x_1 a
         cases a with
         | inl h =>
@@ -800,12 +800,12 @@ by
     have :∀ s:Finset α, s ∈ SF.ground.powerset → (x.val ∉ s ∧ y.val ∉ s ↔ {x.val,y.val} ∩ s = ∅) :=
     by
       intro s hs
-      simp_all only [ne_eq, gt_iff_lt, Finset.mem_powerset, Finset.subset_iff, Finset.not_mem_empty]
+      simp_all only [ne_eq, gt_iff_lt, Finset.mem_powerset, Finset.subset_iff, Finset.notMem_empty]
       apply Iff.intro
       · intro h
-        simp_all only [ne_eq, gt_iff_lt, Finset.not_mem_empty, Finset.not_mem_singleton, Finset.mem_insert, Finset.mem_singleton]
-        simp_all only [forall_eq_or_imp, forall_eq, not_false_eq_true, Finset.insert_inter_of_not_mem,
-          Finset.singleton_inter_of_not_mem, n10, n01, n00, n11]
+        simp_all only [ne_eq, gt_iff_lt, Finset.notMem_empty, Finset.notMem_singleton, Finset.mem_insert, Finset.mem_singleton]
+        simp_all only [forall_eq_or_imp, forall_eq, not_false_eq_true, Finset.insert_inter_of_notMem,
+          Finset.singleton_inter_of_notMem, n10, n01, n00, n11]
       · intro h
         simp_all only [Finset.mem_insert, Finset.mem_singleton, forall_eq_or_imp, forall_eq, and_self, n00]
         constructor

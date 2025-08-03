@@ -1,13 +1,13 @@
-import Mathlib.Data.Finset.Basic
+
+import Mathlib.Data.Fintype.Basic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Finset.Powerset
 import Mathlib.Data.Finset.Sum
-import Mathlib.Data.Fintype.Basic
 import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 
-structure SetFamily (α : Type) where --[DecidableEq α] をつけると、別のところで、synthesized type classエラー
+structure SetFamily (α : Type) where
   (ground : Finset α)
   (sets : Finset α → Prop)
   (inc_ground : ∀ s, sets s → s ⊆ ground)
@@ -33,7 +33,6 @@ noncomputable def SetFamily.normalized_degree_sum {α : Type} [DecidableEq α] [
   2 * (F.total_size_of_hyperedges:Int) - (F.number_of_hyperedges:Int)*(F.ground.card:Int)
 
 
---ClosureSystemの定義から空集合を分離した。
 @[ext]
 structure ClosureSystem (α : Type) [DecidableEq α]  [Fintype α] extends SetFamily α where
   (intersection_closed : ∀ s t , sets s → sets t → sets (s ∩ t))

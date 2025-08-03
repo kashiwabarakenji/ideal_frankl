@@ -8,7 +8,7 @@ import Mathlib.Order.Defs.PartialOrder
 import Mathlib.Order.Cover
 import Mathlib.Logic.Function.Iterate
 import Mathlib.Tactic
-import LeanCopilot
+--import LeanCopilot
 import rooted.CommonDefinition
 import rooted.ClosureMinors
 import rooted.Preorder
@@ -256,7 +256,7 @@ private lemma trace_ideal_lem_rev (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Q
           let xxx := representativeNeSelf s x hx
           let rmc := representativeNeSelf_mem_classOf s x hx
           have xxxsv: xxx.val ∈ s.V := by
-            exact coe_mem (Classical.choose (representativeNeSelf.proof_1 s x hx))
+            exact coe_mem (Classical.choose (representativeNeSelf._proof_2 s x hx))
           have xxxSve:xxx.val ∈ s.V.erase x.val := by
             simp_all only [Subtype.coe_eta, Finset.mem_image, Subtype.forall, mem_erase, ne_eq, coe_mem, I', xxx]
           let q := @Quotient.mk _ (restrictedSetoid s x) ⟨xxx.val, xxxSve⟩
@@ -435,9 +435,9 @@ by
   case isTrue h_1 =>
     have :(setup_trace s x hx).setoid.r (representativeNeSelf s x hx) x_1 := by
       rename_i h_1
-      simp_all only [ge_iff_le, Quotient.eq, Subtype.val_injective, image_erase, mem_erase, ne_eq, Finset.mem_image,
-        mem_filter, mem_attach, true_and, Subtype.exists, exists_and_right, exists_eq_right, exists_prop, not_and,
-        Function.const_apply]
+      --simp_all only [ge_iff_le, Quotient.eq, Subtype.val_injective, image_erase, mem_erase, ne_eq, Finset.mem_image,
+      --  mem_filter, mem_attach, true_and, Subtype.exists, exists_and_right, exists_eq_right, exists_prop, not_and,
+      --  Function.const_apply]
       --obtain ⟨val, property⟩ := x
       obtain ⟨val_1, property_1⟩ := x_1
       simp_all only [Subtype.mk.injEq, not_true_eq_false, forall_const, IsEmpty.forall_iff]
@@ -449,8 +449,11 @@ by
       simp_all only [Subtype.mk.injEq, not_true_eq_false, forall_const, IsEmpty.forall_iff]
       subst h_1
       dsimp [representativeNeSelf]
-      simp_all only
+      --simp_all only
       exfalso
+      simp_all only [mem_erase, ne_eq, not_true_eq_false, and_true]
+      simp_all only [Quotient.eq, Finset.mem_image, mem_filter, mem_attach, true_and, Subtype.exists, exists_and_right,
+      exists_eq_right, exists_true_left]
       simp_all only [mem_erase, ne_eq, not_true_eq_false, and_true]
 
     simp_all only [Quotient.eq, Subtype.val_injective, image_erase, mem_erase, ne_eq, Finset.mem_image, mem_filter,
@@ -553,7 +556,7 @@ private lemma trace_ideal_lem_rev2 (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@
           let xxx := representativeNeSelf s xx hx
           let rmc := representativeNeSelf_mem_classOf s xx hx --これは関係ないかも。
           have xxxsv: xxx.val ∈ s.V := by
-            exact coe_mem (Classical.choose (representativeNeSelf.proof_1 s xx hx))
+            exact coe_mem (Classical.choose (representativeNeSelf._proof_2 s xx hx))
           have xxx_equiv:s.setoid.r ⟨xxx.val,xxxsv⟩ xx := by
             dsimp [xxx]
             exact representativeNeSelf_mem_classOf2 s xx hx
@@ -840,7 +843,7 @@ private lemma trace_ideal (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quotient.
         let til := trace_ideal_lem s x hx ss
         simp at til
         have rwss2: (ss.erase ↑x) = ss := by
-          simp_all only [true_or, and_true, mem_erase, ne_eq, not_false_eq_true, erase_eq_of_not_mem]
+          simp_all only [true_or, and_true, mem_erase, ne_eq, not_false_eq_true, erase_eq_of_notMem]
         rw [rwss2] at til
         apply til
         exact hl

@@ -185,11 +185,13 @@ by
       simp_all only
   --使ってない模様。
   have _ : ({x, y}:Finset α).card = 2 := by
-    simp_all only [ne_eq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem, Finset.card_singleton,
+    simp_all only [ne_eq, Finset.mem_singleton, not_false_eq_true, Finset.erase_eq_of_notMem, Finset.card_singleton,
       Nat.reduceAdd]
+    simp_all only [Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_notMem, Finset.card_singleton,
+    Nat.reduceAdd]
   have:({x,y}:Finset α).card ≤ SF.ground.card := by
     exact Finset.card_le_card xyinc
-  simp_all only [ne_eq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem, Finset.card_singleton,
+  simp_all only [ne_eq, Finset.mem_singleton, not_false_eq_true, Finset.erase_eq_of_notMem, Finset.card_singleton,
     Nat.reduceAdd, ge_iff_le]
 
 --パラレルの1つの頂点をtraceしても、hyperedgeの数は変わらない。証明にに4時間ぐらい。number_of_hyperedgesが入った定理名のほうがよいか。
@@ -236,7 +238,7 @@ by
         rw [this]
         exact right_1
       · left
-        simp_all only [not_false_eq_true, Finset.erase_eq_of_not_mem]
+        simp_all only [not_false_eq_true, Finset.erase_eq_of_notMem]
   ⟩
   let ii :  (a : { x // x ∈ S }) → a ∈ S.attach → { x // x ∈ T } := fun a ha => i a
 
@@ -373,10 +375,10 @@ by
         obtain ⟨val, property⟩ := a₁
         simp_all only
         simp_all only [Finset.mem_filter, Finset.mem_powerset]
-        simp_all only [not_false_eq_true, Finset.erase_eq_of_not_mem]
+        simp_all only [not_false_eq_true, Finset.erase_eq_of_notMem]
       have : w ∉ a₂.val :=
       by
-        simp_all only [not_false_eq_true, Finset.erase_eq_of_not_mem, Finset.mem_erase, ne_eq, not_true_eq_false,
+        simp_all only [not_false_eq_true, Finset.erase_eq_of_notMem, Finset.mem_erase, ne_eq, not_true_eq_false,
           false_and, not_and]
         obtain ⟨val, property⟩ := a₁
         obtain ⟨val_1, property_1⟩ := a₂
@@ -389,16 +391,16 @@ by
         obtain ⟨val, property⟩ := a₁
         obtain ⟨val_1, property_1⟩ := a₂
         simp_all only [Finset.mem_filter, Finset.mem_powerset]
-        simp_all only [Finset.mem_filter, Finset.mem_powerset, not_false_eq_true, Finset.erase_eq_of_not_mem,
+        simp_all only [Finset.mem_filter, Finset.mem_powerset, not_false_eq_true, Finset.erase_eq_of_notMem,
           and_self]
       ext y
       apply Iff.intro
       ·
         intro a
-        simp_all only [not_false_eq_true, Finset.erase_eq_of_not_mem]
+        simp_all only [not_false_eq_true, Finset.erase_eq_of_notMem]
       ·
         intro a
-        simp_all only [not_false_eq_true, Finset.erase_eq_of_not_mem]
+        simp_all only [not_false_eq_true, Finset.erase_eq_of_notMem]
 
   have surj: ∀ b ∈ T.attach, ∃ a, ∃ (ha : a ∈ S.attach), ii a ha = b :=
   by
@@ -507,7 +509,7 @@ by
         simp_all only
       · simp
         left
-        simp_all only [not_false_eq_true, Finset.erase_eq_of_not_mem]
+        simp_all only [not_false_eq_true, Finset.erase_eq_of_notMem]
   ⟩
   let ii :  (a : { x // x ∈ S }) → a ∈ S.attach → { x // x ∈ T } := fun a ha => i a
 
@@ -640,10 +642,10 @@ by
         obtain ⟨val, property⟩ := a₁
         simp_all only
         simp_all only [Finset.mem_filter, Finset.mem_powerset]
-        simp_all only [not_false_eq_true, Finset.erase_eq_of_not_mem]
+        simp_all only [not_false_eq_true, Finset.erase_eq_of_notMem]
       have : w ∉ a₂.val :=
       by
-        simp_all only [not_false_eq_true, Finset.erase_eq_of_not_mem, Finset.mem_erase, ne_eq, not_true_eq_false,
+        simp_all only [not_false_eq_true, Finset.erase_eq_of_notMem, Finset.mem_erase, ne_eq, not_true_eq_false,
           false_and, not_and]
         obtain ⟨val, property⟩ := a₁
         obtain ⟨val_1, property_1⟩ := a₂
@@ -656,16 +658,16 @@ by
         obtain ⟨val, property⟩ := a₁
         obtain ⟨val_1, property_1⟩ := a₂
         simp_all only [Finset.mem_filter, Finset.mem_powerset]
-        simp_all only [Finset.mem_filter, Finset.mem_powerset, not_false_eq_true, Finset.erase_eq_of_not_mem,
+        simp_all only [Finset.mem_filter, Finset.mem_powerset, not_false_eq_true, Finset.erase_eq_of_notMem,
           and_self]
       ext y
       apply Iff.intro
       ·
         intro a
-        simp_all only [not_false_eq_true, Finset.erase_eq_of_not_mem]
+        simp_all only [not_false_eq_true, Finset.erase_eq_of_notMem]
       ·
         intro a
-        simp_all only [not_false_eq_true, Finset.erase_eq_of_not_mem]
+        simp_all only [not_false_eq_true, Finset.erase_eq_of_notMem]
 
   have surj: ∀ b ∈ T.attach, ∃ a, ∃ (ha : a ∈ S.attach), ii a ha = b :=
   by
@@ -865,8 +867,10 @@ by
         simp_all only [and_self]
       have h_card : ({v₁, v₂} : Finset α).card = 2 := by
         subst fgc
-        simp_all only [ne_eq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem,
+        simp_all only [ne_eq, Finset.mem_singleton, not_false_eq_true, Finset.erase_eq_of_notMem,
           Finset.card_singleton, Nat.reduceAdd]
+        simp_all only [Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_notMem, Finset.card_singleton,
+          Nat.reduceAdd]
       have gcard : F.ground.card >= 2:= by
         have : 2 ≤ F.ground.card := by
           rw [←h_card]
@@ -879,7 +883,7 @@ by
         dsimp [F'_closure]
         dsimp [trace_closure_system]
         subst fgc
-        simp_all only [ne_eq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem,
+        simp_all only [ne_eq, Finset.mem_singleton, not_false_eq_true, Finset.erase_eq_of_notMem,
           Finset.card_singleton, Nat.reduceAdd]
         ext a : 1
         simp_all only [Finset.mem_erase, ne_eq, Finset.mem_sdiff, Finset.mem_singleton]
@@ -894,7 +898,7 @@ by
         dsimp [F'_closure]
         dsimp [trace_closure_system]
         subst fgc
-        simp_all only [ne_eq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem,
+        simp_all only [ne_eq, Finset.mem_singleton, not_false_eq_true, Finset.erase_eq_of_notMem,
           Finset.card_singleton, Nat.reduceAdd, Finset.card_erase_of_mem]
 
          --F'がrare vertexを持つことを示す。
@@ -902,7 +906,7 @@ by
       apply tpv.mpr
       have : n - 1 < n:= by
         subst fgc
-        simp_all only [Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem, Finset.card_singleton,
+        simp_all only [Finset.mem_singleton, not_false_eq_true, Finset.erase_eq_of_notMem, Finset.card_singleton,
           Nat.reduceAdd, tsub_lt_self_iff, Finset.card_pos, zero_lt_one, and_true, F']
         exact ⟨v₁, v1fg⟩
       let ihn := (ih (n-1)) this

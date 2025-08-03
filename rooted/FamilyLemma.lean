@@ -1,4 +1,3 @@
-
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Finset.Powerset
@@ -15,74 +14,19 @@ import rooted.CommonDefinition
 open Classical
 
 variable {α : Type} [Fintype α] [DecidableEq α]
-/-
---Xに関するdouble counting lemmaも証明した方がいい？
-lemma double_counting_lemma (SF:ClosureSystem α) [DecidablePred SF.sets] (X: Finset α) :
-  Int.ofNat (∑ s ∈ (SF.ground.powerset.filter SF.sets), (X ∩ s).card) = ∑ v ∈ X,SF.degree v :=
-by
-  dsimp [SetFamily.degree]
 
-  --hyperedge sと頂点vが、v∈ sが成り立つ個数についてsを先に和を計算するか、vの和を先に計算するかの違い。
-  --上の補題を直接適用できない。s.cardでなくて、(s ∩ X).cardになっているので。
-  let S := Finset.filter SF.sets SF.ground.powerset
-  have : ∑ s ∈ S, (X ∩ s).card
-       = ∑ s ∈ S, ∑ v ∈ X, if v ∈ s then 1 else 0 := by
-    congr with s
-    -- (X ∩ s).card を ∑ v in X, if v ∈ s then 1 else 0 で書き換え
-    rw [Finset.card_eq_sum_ones]
-    simp_all only [Finset.sum_const,  mul_one]
-    simp only [Finset.sum_ite_mem]
-    exact Eq.symm (Finset.sum_const 1)
-  -- 上記の式を使って和の順序を交換
-  rw [this, Finset.sum_comm]
-  -- 内側の和を書き換え: ∑ s in S, if v ∈ s then 1 else 0 = (filter (λ s, v ∈ s) S).card
-  norm_cast
-  dsimp [S]
-
-  have : (∑ y ∈ X, ∑ x ∈ Finset.filter SF.sets SF.ground.powerset, if y ∈ x then 1 else 0) =
-   (∑ v ∈ X, (Finset.filter (fun s => SF.sets s ∧ v ∈ s) SF.ground.powerset).card) := by
-
-    apply Finset.sum_congr rfl
-    · intro v hv
-      norm_cast
-      simp_all only [Finset.sum_ite_mem, Finset.sum_const, mul_one, S]
-
-      congr 1
-      rw [Finset.card_eq_sum_ones]
-      rw [Finset.sum_filter]
-      rw [Finset.sum_filter]
-      apply Finset.sum_congr  --ここで情報が落ちている。
-      exact rfl
-
-      intro x hx
-      split
-      case a.isTrue h0 =>
-        split
-        case isTrue h1 =>
-          simp_all [h0, h1]
-        case isFalse h1 =>
-          simp_all [h0, h1]
-
-      case a.isFalse h0 =>
-        split
-        case isTrue h1 =>
-          simp_all [h0, h1]
-        case isFalse h1 =>
-          simp_all [h0, h1]
-  rw [this]
- -/
-  --lean 4.16ではimport Mathlib.Algebra.BigOperators.Ring.Finsetのライブラリが欠けていた。
-  --4.17で復活した。sum_booleなどに影響。なしで証明するのは難しい。
-  --closure systemでなく、set familyに対応させる必要がある。
-  --全体集合用のinterfaceは次の定理。
+--lean 4.16 lacked the import Mathlib.Algebra.BigOperators.Ring.Finset library.
+--Revived on 4/17.It affects sum_boole, etc.It's difficult to prove without it.
+--It is necessary to support set family instead of --closure system.
+--The interface for the whole set is the following theorem.
 omit [Fintype α] in
 lemma double_counting_lemma_X (SF:SetFamily α) [DecidablePred SF.sets] (X: Finset α) :
   ∑ s ∈ (SF.ground.powerset.filter SF.sets), (X ∩ s).card = ∑ v ∈ X,SF.degree v :=
 by
   dsimp [SetFamily.degree]
 
-  --hyperedge sと頂点vが、v∈ sが成り立つ個数についてsを先に和を計算するか、vの和を先に計算するかの違い。
-  --上の補題を直接適用できない。s.cardでなくて、(s ∩ X).cardになっているので。
+--hyperedge The difference between the number of s and vertex v, where v∈ s holds, or the sum of v is calculated first, or the sum of v is calculated first.
+--The above lemma cannot be applied directly.It's not s.card, but (s ∩ X).card.
   let S := Finset.filter SF.sets SF.ground.powerset
   have : ∑ s ∈ S, (X ∩ s).card
        = ∑ s ∈ S, ∑ v ∈ X, if v ∈ s then 1 else 0 := by
@@ -91,9 +35,9 @@ by
     rw [Finset.card_eq_sum_ones, Finset.sum_boole]
     simp_all only [Finset.sum_const, smul_eq_mul, mul_one, Nat.cast_id]
     rfl
-  -- 上記の式を使って和の順序を交換
+  -- Exchange sum order using the above equation
   rw [this, Finset.sum_comm]
-  -- 内側の和を書き換え: ∑ s in S, if v ∈ s then 1 else 0 = (filter (λ s, v ∈ s) S).card
+  -- Rewrite the inner sum: ∑ s in S, if v ∈ s then 1 else 0 = (filter (λ s, v ∈ s) S).card
 
   rw [Finset.sum_congr rfl]
   symm
@@ -104,7 +48,7 @@ by
   congr 1
   rw [Finset.filter_filter]
 
---全体集合でdouble counting lemmaを証明する。
+--Prove double counting lemma on the whole set.
 omit [Fintype α] in
 lemma double_counting_lemma (SF:SetFamily α) [DecidablePred SF.sets]:
   ∑ s ∈ (SF.ground.powerset.filter SF.sets), s.card = ∑ v ∈ SF.ground,SF.degree v :=

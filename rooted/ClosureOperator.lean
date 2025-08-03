@@ -1,7 +1,7 @@
 --Closure Operatorの基本的な定義と補題。
 --閉集合族からClosure Operatorが定義できること。Closure Operatorから閉集合が定義できることが証明されている。
 --閉包作用素は、無限集合に対しても定義できるが、ここでは有限集合上で考えている。
-import LeanCopilot
+--import LeanCopilot
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Set.Basic
 import Mathlib.Data.Finset.Powerset
@@ -153,9 +153,9 @@ lemma finite_intersection_in_closureSystem
                     Finset.mem_singleton, id_eq, and_assoc]
         -- 「x ∈ T₀ ∧ ∀ f ∈ {T₀}, x ∈ f」は x ∈ T₀ と同値
         subst hM'_empty
-        simp_all only [Finset.not_mem_empty, not_false_eq_true, forall_eq, and_self]
+        simp_all only [Finset.notMem_empty, not_false_eq_true, forall_eq, and_self]
       subst hM'_empty
-      simp_all only [insert_emptyc_eq,Finset.mem_singleton]--
+      simp_all only [LawfulSingleton.insert_empty_eq,Finset.mem_singleton]--
 
     | inr hM'_nonempty =>
       -- M' が非空 => 帰納仮定 ih : F.sets (finsetIntersection M')
@@ -236,7 +236,7 @@ lemma closureOperator_image_in_sets
     rw [Finset.nonempty_iff_ne_empty]
     simp_all only [ne_eq]
     intro a
-    rw [Finset.eq_empty_iff_forall_not_mem] at a
+    rw [Finset.eq_empty_iff_forall_notMem] at a
     simp_all only [Finset.mem_filter, Finset.mem_powerset, not_and, subset_refl]
 
   -- 3. 補題 finite_intersection_in_closureSystem を使って
@@ -303,7 +303,7 @@ lemma mem_finsetIntersection_iff_of_nonempty
         contrapose! hne
         simp_all only [imp_false, Finset.not_nonempty_iff_eq_empty]--
         ext a : 1
-        simp_all only [Finset.not_mem_empty]
+        simp_all only [Finset.notMem_empty]
       -- 以上で (x ∈ sup id ∧ ∀ f∈family, x∈f) が示せる
       ⟨x_in_union, hx⟩
     )

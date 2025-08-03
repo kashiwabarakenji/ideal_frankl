@@ -8,7 +8,7 @@ import rooted.ClosureOperator
 import rooted.RootedSets
 import rooted.RootedCircuits
 import rooted.Bridge
-import LeanCopilot
+--import LeanCopilot
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 --xとyは異なるとして、parallelを定義したほうがよい？ Definitionのファイルか、Parallel.leanに移す。
@@ -184,7 +184,7 @@ instance dominated (SF : ClosureSystem α) [DecidablePred SF.sets] :
     le_refl := (
     by
       intro a
-      simp_all only
+      --simp_all only
       obtain ⟨val, property⟩ := a
       simp_all only
       constructor

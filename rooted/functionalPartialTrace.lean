@@ -3,7 +3,7 @@ import Mathlib.Order.Defs.PartialOrder
 --import Mathlib.Order.Cover
 --import Mathlib.Logic.Function.Iterate
 import Mathlib.Tactic
-import LeanCopilot
+--import LeanCopilot
 import rooted.CommonDefinition
 import rooted.ClosureMinors
 import rooted.Preorder
@@ -82,7 +82,7 @@ def po_trace (s : Setup_po α) (x : s.V)
     contrapose! this
     simp_all only [not_nontrivial_iff, ne_eq, Finset.not_nonempty_iff_eq_empty]
     ext a : 1
-    simp_all only [mem_filter, Finset.not_mem_empty, iff_false, not_and, Decidable.not_not]
+    simp_all only [mem_filter, Finset.notMem_empty, iff_false, not_and, Decidable.not_not]
     intro a_1
     apply this
     · simp_all only [mem_coe]

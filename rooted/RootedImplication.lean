@@ -7,7 +7,7 @@ import rooted.ClosureOperator
 import rooted.RootedSets
 import rooted.RootedCircuits
 import rooted.Bridge
-import LeanCopilot
+--import LeanCopilot
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 

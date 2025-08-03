@@ -1,4 +1,4 @@
-import LeanCopilot
+--import LeanCopilot
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Set.Basic
 import Mathlib.Data.Finset.Powerset

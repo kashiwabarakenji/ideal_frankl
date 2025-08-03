@@ -419,11 +419,35 @@ theorem trace_excess_decrease (s: Setup_spo α) (x: s.V) (hx: (classOf s (@Quoti
     exact Nat.le_sub_one_of_lt hx
   exact Eq.symm (Nat.add_sub_assoc h (∑ q ∈ Finset.univ.erase qx, (#(classOf s q) - 1)))
 
---excessが0であれば、同値類の大きさがすべて1。この部分は、TraceIdealに移動するか、excessの部分でまとめて1ファイルにするといいかも。
---functionalMainで使っている。
+-- If excess is 0, all equivalence classes are 1.You might want to move this part to TraceIdeal or use the excess part to make it into one file.
+--Used with functionalMain.
 theorem excess_zero (s: Setup_spo α) :
   excess s = 0 → ∀ q: Quotient s.setoid, (classOf s q).card = 1 :=
 by
+  intro h q
+  dsimp [excess] at h
+  have nonneg : ∀ q, 0 ≤ (#(classOf s q) - 1) := by
+    intro q
+    have h_card : 1 ≤ #(classOf s q) := by
+      simp_all only [sum_eq_zero_iff, Finset.mem_univ, forall_const, one_le_card]
+      simp only [classOf_nonempty]
+    exact (Nat.le_sub_one_iff_lt h_card).mpr h_card
+
+  have sum_zero : ∑ q : Quotient s.setoid, (#(classOf s q) - 1) = 0 := h
+  have all_zero : ∀ q, (#(classOf s q) - 1) = 0 := by
+    simp_all only [zero_le, implies_true, sum_eq_zero_iff, Finset.mem_univ, forall_const]
+
+  specialize all_zero q
+  -- 同値類が空でないこと（カーディナリティ ≥ 1）を取得
+  have h_ge : 1 ≤ #(classOf s q) := by
+    simp only [classOf_nonempty, one_le_card]
+  -- 減算結果が0かつ1以上 → カーディナリティ=1
+  have h_le : 1 ≥ #(classOf s q) := by
+    exact Nat.le_of_sub_eq_zero all_zero
+  exact Eq.symm (Nat.le_antisymm h_ge h_le)
+
+  /-
+
   intro h q
   have : ∀ q' :  Quotient s.setoid,0 ≤ (classOf s q').card - 1  := by
     intro q'
@@ -434,7 +458,18 @@ by
     simp_all only [zero_le, implies_true, Finset.mem_univ]
     simp_all only [Int.ofNat_eq_coe, sub_nonneg, Nat.one_le_cast, one_le_card]
     simp only [classOf_nonempty]
-  let fsez := @Finset.sum_eq_zero_iff_of_nonneg _ Int _ (fun q' => (classOf s q').card - 1) (Finset.univ : Finset (Quotient s.setoid)) nonneg
+  --let fsez := @Finset.sum_eq_zero_iff_of_nonneg _ Int _ (fun q' => (classOf s q').card - 1) (Finset.univ : Finset (Quotient s.setoid)) nonneg
+  let fsez :=
+      @Finset.sum_eq_zero_iff_of_nonneg
+        (Quotient s.setoid)  -- α
+        ℤ                    -- β
+        _                    -- DecidableEq
+        _                    -- OrderedCancelAddCommMonoid
+        _
+        (fun q => Int.ofNat ((classOf s q).card) - 1) -- f
+        (Finset.univ : Finset (Quotient s.setoid))    -- s
+        nonneg                -- hf
+
   --let con := classOf_nonempty s.toSetup_spo q
   dsimp [excess] at h
   have :∀ i ∈ Finset.univ, (fun q' => Int.ofNat (#(classOf s q')) - 1) i = 0 :=
@@ -451,7 +486,7 @@ by
       simp [Int.cast_sum]  -- ℕ の和を ℤ にキャスト
       let fssd := @Finset.sum_sub_distrib _ _ (Finset.univ : Finset (Quotient s.setoid)) (fun q' => Int.ofNat (#(classOf s q'))) (fun q' => 1) _
       suffices (∑ x : Quotient s.setoid, Int.ofNat (#(classOf s x))) - Int.ofNat (Fintype.card (Quotient s.setoid)) =
-  ∑ x : Quotient s.setoid,   (Int.ofNat (#(classOf s x)) - 1) from by
+      ∑ x : Quotient s.setoid,   (Int.ofNat (#(classOf s x)) - 1) from by
 
         have :∀ q':Quotient s.setoid, Int.ofNat ((#(classOf s q')) - 1) = Int.ofNat (#(classOf s q')) - 1 := by
           intro q'
@@ -469,9 +504,41 @@ by
 
         simp_all only [sum_eq_zero_iff, Finset.mem_univ, forall_const, le_refl, implies_true, Int.ofNat_eq_coe,
           CharP.cast_eq_zero, sum_const_zero]
-        intro i_1
+        --intro i_1
         simp_all only [sum_sub_distrib, sum_const, card_univ, nsmul_eq_mul, mul_one]
+        --goal ∑ x, ↑(#(classOf s x)) - ↑(Fintype.card (Quotient s.setoid)) = 0
         rw [this]
+        · have : ((∑ x : Quotient s.setoid, (Int.ofNat (#(classOf s x)))) -
+                  Int.ofNat (Fintype.card (Quotient s.setoid)))
+                  =
+                  (∑ x : Quotient s.setoid, (Int.ofNat (#(classOf s x)) - 1 : ℤ)) :=
+          by
+            -- 1. 左辺を「和 － 定数和」の形に直す
+            have h₁ :
+                (∑ x : Quotient s.setoid, (Int.ofNat (#(classOf s x)))) -
+                Int.ofNat (Fintype.card (Quotient s.setoid))
+                =
+                (∑ x : Quotient s.setoid, (Int.ofNat (#(classOf s x)))) -
+                (∑ x : Quotient s.setoid, (1 : ℤ)) := by
+              -- `sum_const` で 1 の和がカードと一致
+              simp [sum_const, card_univ]
+
+            -- 2. `sum_sub_distrib` で Σ(a) − Σ(b) = Σ(a − b)
+            have h₂ :
+                (∑ x : Quotient s.setoid, (Int.ofNat (#(classOf s x)))) -
+                (∑ x : Quotient s.setoid, (1 : ℤ))
+                =
+                ∑ x : Quotient s.setoid,
+                  ((Int.ofNat (#(classOf s x))) - (1 : ℤ)) := by
+                    simp_all only [Int.ofNat_eq_coe, sum_const, card_univ, nsmul_eq_mul, mul_one, sum_sub_distrib]
+            -- 3. ゴールは h₁ ⬝ h₂
+            simp_all only [Int.ofNat_eq_coe, sum_const, card_univ, nsmul_eq_mul, mul_one, sum_sub_distrib]
+          -- this:  ∑ x, Int.ofNat #(classOf s x) - Int.ofNat (Fintype.card (Quotient s.setoid)) = ∑ x, (Int.ofNat #(classOf s x) - 1)
+          -- goal:  ∑ x, ↑(#(classOf s x)) - ↑(Fintype.card (Quotient s.setoid)) = ↑(#(classOf s ?m.72187)) - 1
+          sorry
+
+
+        · exact q
       rw [fssd]
       simp_all only [sum_eq_zero_iff, Finset.mem_univ, forall_const, le_refl, implies_true, Int.ofNat_eq_coe, sum_const,
         card_univ, nsmul_eq_mul, mul_one]
@@ -489,6 +556,7 @@ by
   simp at h_eq
   simp_all only [sum_eq_zero_iff, Finset.mem_univ, forall_const, le_refl, implies_true, Int.ofNat_eq_coe, Nat.cast_one,
     sub_self]
+-/
 
 --excessが正ならば、大きさ2以上の同値類が存在。
 --この補題もSetup_spo2の前提でなくても成り立ちそう。大きさが2以上の同値類がMaximalであることは、Setup_spo2の前提が必要だが、ここではそこまでいってない。

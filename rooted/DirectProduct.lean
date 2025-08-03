@@ -5,7 +5,7 @@ import Mathlib.Data.Fintype.Basic
 import Mathlib.Order.Defs.PartialOrder
 import Mathlib.Order.Cover
 import Mathlib.Tactic
-import LeanCopilot
+--import LeanCopilot
 import rooted.CommonDefinition
 import rooted.GeneralLemma
 --import rooted.ClosureMinors
@@ -155,7 +155,7 @@ by
                 have ain: a ∈ f1.ground ∩ f2.ground := by
                   exact Finset.mem_inter_of_mem right this
                 exfalso
-                simp_all only [Finset.not_mem_empty, SP, S2, S1, toUnion]
+                simp_all only [Finset.notMem_empty, SP, S2, S1, toUnion]
             · intro a_1
               simp_all only [true_or, true_and, SP, S2, S1, toUnion]
               have : x1 ⊆ f1.ground := by
@@ -179,7 +179,7 @@ by
                 have ain: a ∈ f1.ground ∩ f2.ground := by
                   exact Finset.mem_inter_of_mem right this
                 exfalso
-                simp_all only [Finset.not_mem_empty, SP, S2, S1, toUnion]
+                simp_all only [Finset.notMem_empty, SP, S2, S1, toUnion]
 
             · intro a_1
               simp_all only [true_or, true_and, SP, S2, S1, toUnion]
@@ -214,7 +214,7 @@ by
                 have ain: a ∈ f1.ground ∩ f2.ground := by
                   exact Finset.mem_inter_of_mem ain1 ain2
                 exfalso
-                simp_all only [Finset.not_mem_empty, SP, S2, S1, toUnion]
+                simp_all only [Finset.notMem_empty, SP, S2, S1, toUnion]
               | inr h_1 => simp_all only [SP, S2, S1, toUnion]
             · intro a_1
               simp_all only [true_or, true_and, SP, S2, S1, toUnion]
@@ -247,7 +247,7 @@ by
                 have : a ∈ f1.ground ∩ f2.ground := by
                   exact Finset.mem_inter_of_mem ain1 ain2
                 exfalso
-                simp_all only [Finset.not_mem_empty, SP, S2, S1, toUnion]
+                simp_all only [Finset.notMem_empty, SP, S2, S1, toUnion]
 
               | inr h_1 =>
                 simp_all only [SP, S2, S1, toUnion]
@@ -457,7 +457,7 @@ lemma direct_Product_total_size_of_hyperedges (f1 f2: SetFamily α) (disj: f1.gr
                 have ain: a ∈ f1.ground ∩ f2.ground := by
                   exact Finset.mem_inter_of_mem right this
                 exfalso
-                simp_all only [Finset.not_mem_empty, SP, S2, S1, toUnion]
+                simp_all only [Finset.notMem_empty, SP, S2, S1, toUnion]
             · intro a_1
               simp_all only [true_or, true_and, SP, S2, S1, toUnion]
               have : x1 ⊆ f1.ground := by
@@ -481,7 +481,7 @@ lemma direct_Product_total_size_of_hyperedges (f1 f2: SetFamily α) (disj: f1.gr
                 have ain: a ∈ f1.ground ∩ f2.ground := by
                   exact Finset.mem_inter_of_mem right this
                 exfalso
-                simp_all only [Finset.not_mem_empty, SP, S2, S1, toUnion]
+                simp_all only [Finset.notMem_empty, SP, S2, S1, toUnion]
 
             · intro a_1
               simp_all only [true_or, true_and, SP, S2, S1, toUnion]
@@ -516,7 +516,7 @@ lemma direct_Product_total_size_of_hyperedges (f1 f2: SetFamily α) (disj: f1.gr
                 have ain: a ∈ f1.ground ∩ f2.ground := by
                   exact Finset.mem_inter_of_mem ain1 ain2
                 exfalso
-                simp_all only [Finset.not_mem_empty, SP, S2, S1, toUnion]
+                simp_all only [Finset.notMem_empty, SP, S2, S1, toUnion]
               | inr h_1 => simp_all only [SP, S2, S1, toUnion]
             · intro a_1
               simp_all only [true_or, true_and, SP, S2, S1, toUnion]
@@ -549,7 +549,7 @@ lemma direct_Product_total_size_of_hyperedges (f1 f2: SetFamily α) (disj: f1.gr
                 have : a ∈ f1.ground ∩ f2.ground := by
                   exact Finset.mem_inter_of_mem ain1 ain2
                 exfalso
-                simp_all only [Finset.not_mem_empty, SP, S2, S1, toUnion]
+                simp_all only [Finset.notMem_empty, SP, S2, S1, toUnion]
 
               | inr h_1 =>
                 simp_all only [SP, S2, S1, toUnion]
@@ -671,7 +671,7 @@ lemma direct_Product_total_size_of_hyperedges (f1 f2: SetFamily α) (disj: f1.gr
         exact hp1 ha.1
         exact hp2 ha.2
       rw [disj] at h
-      exact Finset.not_mem_empty a h
+      exact Finset.notMem_empty a h
 
     have hg_disj2 : Disjoint p.1 p.2:= by
       exact Finset.disjoint_iff_inter_eq_empty.mpr hg_disj

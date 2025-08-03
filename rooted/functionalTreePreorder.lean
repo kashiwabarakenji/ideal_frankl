@@ -6,7 +6,7 @@ import Mathlib.Data.Fintype.Basic
 import Mathlib.Order.Defs.PartialOrder
 import Mathlib.Order.Cover
 import Mathlib.Tactic
-import LeanCopilot
+--import LeanCopilot
 import rooted.CommonDefinition
 import rooted.ClosureMinors
 import rooted.Preorder
@@ -382,11 +382,11 @@ by
       exact Finset.card_le_card hsub
     have :({y,z}:Finset s.V).card = 2:= by
       simp_all only [Function.iterate_succ, Function.comp_apply, ne_eq, gt_iff_lt, Finset.mem_singleton,
-        not_false_eq_true, card_insert_of_not_mem, Finset.card_singleton, Nat.reduceAdd, y, z]
+        not_false_eq_true, card_insert_of_notMem, Finset.card_singleton, Nat.reduceAdd, y, z]
     rw [this] at hsub_card
     simp
     simp_all only [Function.iterate_succ, Function.comp_apply, ne_eq, gt_iff_lt, Finset.mem_singleton,
-      not_false_eq_true, card_insert_of_not_mem, Finset.card_singleton, Nat.reduceAdd, y, z]
+      not_false_eq_true, card_insert_of_notMem, Finset.card_singleton, Nat.reduceAdd, y, z]
     obtain ⟨val, property⟩ := x
     obtain ⟨val_1, property_1⟩ := y
     obtain ⟨val_2, property_2⟩ := z

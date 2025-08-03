@@ -3,7 +3,7 @@ import Mathlib.Order.Defs.PartialOrder
 --import Mathlib.Order.Cover
 --import Mathlib.Logic.Function.Iterate
 import Mathlib.Tactic
-import LeanCopilot
+--import LeanCopilot
 import rooted.CommonDefinition
 import rooted.ClosureMinors
 import rooted.Preorder
@@ -554,7 +554,7 @@ lemma nodes_le_ideals
       simp_all [f, Ideal']
       apply Aesop.BuiltinRules.not_intro
       intro a_1
-      simp_all only [Finset.not_mem_empty, f, Ideal']
+      simp_all only [Finset.notMem_empty, f, Ideal']
   have hf_inj : InjOn f s.V.attach := by
     intro a b hae hbe h
     -- principal_injective でサブタイプまでさかのぼる
@@ -609,7 +609,7 @@ lemma nodes_le_ideals
           ·
             intro v w a a_1
             simp_all only [mem_attach, mem_sdiff, mem_filter, Finset.mem_powerset, and_self, Finset.mem_singleton, true_and,
-              forall_const, Finset.not_mem_empty, f, Ideal']
+              forall_const, Finset.notMem_empty, f, Ideal']
 
   have : #Ideal' + 1 = #(filter (isIdeal s) s.V.powerset) := by
     rw [this]

@@ -2,7 +2,7 @@ import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Data.Finset.Defs
 import Mathlib.Data.Finset.Card
-import LeanCopilot
+--import LeanCopilot
 
 --open Finset
 
@@ -40,7 +40,7 @@ by
   use x, y
   have : {x,y}⊆ A :=
   by
-    simp_all only [ge_iff_le, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem,
+    simp_all only [ge_iff_le, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_notMem,
       Finset.card_singleton, Nat.reduceAdd, ne_eq]
     obtain ⟨left, right⟩ := hx
     simp [← right]
@@ -48,7 +48,7 @@ by
   · -- x ∈ A
     have : x ∈ A :=
     by
-       simp_all only [ge_iff_le, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem,
+       simp_all only [ge_iff_le, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_notMem,
          Finset.card_singleton, Nat.reduceAdd, ne_eq]
        obtain ⟨left, right⟩ := hx
        apply this
@@ -57,14 +57,14 @@ by
   · constructor
     · have : y ∈ A :=
       by
-        simp_all only [ge_iff_le, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem,
+        simp_all only [ge_iff_le, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_notMem,
           Finset.card_singleton, Nat.reduceAdd, ne_eq]
         obtain ⟨left, right⟩ := hx
         apply this
         simp_all only [Finset.mem_insert, Finset.mem_singleton, or_true]
       exact this
     ·
-      simp_all only [ge_iff_le, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem,
+      simp_all only [ge_iff_le, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_notMem,
         Finset.card_singleton, Nat.reduceAdd, ne_eq]
       obtain ⟨left, right⟩ := hx
       rw [propext (sdiff_eq_comm hBA this)] at right

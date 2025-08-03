@@ -8,7 +8,7 @@ import Mathlib.Order.Defs.PartialOrder
 import Mathlib.Order.Cover
 import Mathlib.Logic.Function.Iterate
 import Mathlib.Tactic
-import LeanCopilot
+--import LeanCopilot
 import rooted.CommonDefinition
 import rooted.ClosureMinors
 import rooted.Preorder
@@ -63,14 +63,14 @@ def partialOrder_from_preorder (s : Setup α) : PartialOrder (Quotient s.setoid)
       )
   le_refl := by
     intro xx
-    simp_all only
+    --simp_all only
     simp [Quotient.lift₂]
     induction xx using Quotient.inductionOn
     simp_all only [Quotient.lift_mk, le_refl]
 
   le_trans := by
     intro x y z
-    simp_all only
+    --simp_all only
     induction x using Quotient.inductionOn
     simp_all only [Quotient.lift_mk, Quotient.lift₂]
     induction y using Quotient.inductionOn
@@ -82,7 +82,7 @@ def partialOrder_from_preorder (s : Setup α) : PartialOrder (Quotient s.setoid)
 
   le_antisymm := by
     intro x y
-    simp_all only
+    --simp_all only
     induction x using Quotient.inductionOn
     rename_i a
     intro a_1 a_2
@@ -118,6 +118,10 @@ instance (s : Setup2 α) : PartialOrder (Quotient s.setoid) := s.po
 --SetupとSetup2は仮定としての強さが同じ。
 def Setup_to_Setup2 (s : Setup α) : Setup2 α :=
   {
+    V := s.V
+    f := s.f
+    setoid := s.setoid
+    pre := s.pre
     nonemp := s.nonemp
     valid := s.valid
     h_pre := s.h_pre

@@ -10,7 +10,7 @@ import rooted.GeneralLemma
 import rooted.RootedCircuits
 import rooted.Dominant
 import rooted.Parallel
-import LeanCopilot
+--import LeanCopilot
 
 open Classical
 

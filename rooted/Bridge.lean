@@ -12,7 +12,7 @@ import rooted.ClosureOperator
 import rooted.RootedSets
 import rooted.ClosureMinors
 import Mathlib.Tactic
-import LeanCopilot
+--import LeanCopilot
 
 -- 有限集合の型
 variable {α : Type} [Fintype α] [DecidableEq α]
@@ -245,7 +245,7 @@ by
           exact h_1
 
     simp_all only [Finset.mem_filter, Finset.mem_powerset, and_self, and_imp, subset_refl, Finset.singleton_subset_iff,
-      Finset.coe_mem, Finset.erase_insert_eq_erase, not_false_eq_true, Finset.erase_eq_of_not_mem, exists_const, S,
+      Finset.coe_mem, Finset.erase_insert_eq_erase, not_false_eq_true, Finset.erase_eq_of_notMem, exists_const, S,
       S', SF', ii]
 
   have card_eq: S.card = S'.card := by
@@ -437,7 +437,7 @@ by
 
     simp_all only [Finset.mem_filter,  Finset.coe_mem, Nat.cast_inj,  ii]
     simp_all only [ne_eq, subset_refl, implies_true, Finset.singleton_subset_iff, Finset.coe_mem,
-      Finset.erase_insert_eq_erase, not_false_eq_true, Finset.erase_eq_of_not_mem,
+      Finset.erase_insert_eq_erase, not_false_eq_true, Finset.erase_eq_of_notMem,
       Finset.mem_insert, or_true, and_self, exists_const]
 
   have card_eq: S.card = S'.card := by
@@ -608,15 +608,17 @@ by
         exact SF.has_ground
     have eq2: ({s, SF.ground}:Finset (Finset α)).card = 2 :=
     by
-      simp_all only [ne_eq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem,
+      simp_all only [ne_eq, Finset.mem_singleton, not_false_eq_true, Finset.erase_eq_of_notMem,
         Finset.card_singleton, Nat.reduceAdd]
+      simp_all only [Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_notMem, Finset.card_singleton,
+         Nat.reduceAdd]
     have : (Finset.filter (fun s => SF.sets s) SF.ground.powerset).card ≥ 2 :=
     by
       let fcl := Finset.card_le_card inc
       simp_all only [ge_iff_le]
       convert fcl
       exact eq2.symm
-    simp_all only [ne_eq, Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem,
+    simp_all only [ne_eq, Finset.mem_singleton, not_false_eq_true, Finset.erase_eq_of_notMem,
       Finset.card_singleton, Nat.reduceAdd, ge_iff_le, Nat.cast_eq_one]
     apply Aesop.BuiltinRules.not_intro
     intro a
@@ -672,7 +674,7 @@ by
     dsimp [SetFamily.is_bridge] at h_br
     dsimp [ClosureSystem.has_empty] at h
     specialize h_br ∅
-    simp_all only [Finset.not_mem_empty, imp_false, not_true_eq_false]
+    simp_all only [Finset.notMem_empty, imp_false, not_true_eq_false]
   · intro h
     dsimp [SetFamily.is_bridge] at h
     simp at h
@@ -784,13 +786,7 @@ by
   have : ({(∅:Finset α), SF.ground}:Finset (Finset α)).card = 2 := by
     simp_all only [Nat.cast_eq_one, Finset.mem_filter, Finset.mem_powerset, Finset.empty_subset, and_self,
       subset_refl, true_and, ne_eq]
-    rw [Finset.card_insert_of_not_mem]
-    · simp_all only [Finset.card_singleton, Nat.reduceAdd]
-    · simp_all only [Finset.mem_singleton]
-      apply Aesop.BuiltinRules.not_intro
-      intro a
-      simp_all only [Finset.mem_singleton, Finset.insert_eq_of_mem, Finset.singleton_subset_iff, Finset.mem_filter,
-        Finset.mem_powerset, subset_refl, and_self, not_true_eq_false]
+    simp [this, Ne.symm this]
   have :(Finset.filter (fun s => SF.sets s) SF.ground.powerset).card ≥ 2:= by
     let fcl := Finset.card_le_card inc
     simp_all only [Nat.cast_eq_one, Finset.mem_filter, Finset.mem_powerset, Finset.empty_subset, and_self,
@@ -942,7 +938,9 @@ by
 
   have : ({newss, SF'.ground}:Finset (Finset α)).card = 2 := by
     simp_all only [ne_eq, Finset.mem_filter, Finset.mem_powerset, and_true, subset_refl, true_and, Finset.mem_singleton,
-      not_false_eq_true, Finset.card_insert_of_not_mem, Finset.card_singleton, Nat.reduceAdd, SF', newss]
+      not_false_eq_true, Finset.erase_eq_of_notMem, Finset.card_singleton, Nat.reduceAdd, SF', newss]
+    simp_all only [Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_notMem, Finset.card_singleton,
+    Nat.reduceAdd, SF', newss]
 
   have : (Finset.filter (fun s => SF'.sets s) SF'.ground.powerset).card ≥ 2 := by
     let fcl := Finset.card_le_card h_newss3
@@ -953,11 +951,11 @@ by
   have : SF'.number_of_hyperedges ≥ 2 := by
     dsimp [SetFamily.number_of_hyperedges]
     simp_all only [ne_eq, Finset.mem_filter, Finset.mem_powerset, and_true, subset_refl, true_and,
-      Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem, Finset.card_singleton,
+      Finset.mem_singleton, not_false_eq_true, Finset.erase_eq_of_notMem, Finset.card_singleton,
       ge_iff_le, Nat.ofNat_le_cast, SF', newss]
   dsimp [is_trivial] at h_trivial2
   simp_all only [ne_eq, Finset.mem_filter, Finset.mem_powerset, and_true, subset_refl, true_and,
-    Finset.mem_singleton, not_false_eq_true, Finset.card_insert_of_not_mem, Finset.card_singleton,
+    Finset.mem_singleton, not_false_eq_true, Finset.erase_eq_of_notMem, Finset.card_singleton,
     ge_iff_le, Nat.not_ofNat_le_one, SF', newss]
 
 def P_nontrivial {α : Type} [DecidableEq α] [Fintype α] (n : Nat) : Prop :=

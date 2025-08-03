@@ -6,7 +6,7 @@ import Mathlib.Data.Finset.Powerset
 import Mathlib.Tactic
 import rooted.CommonDefinition
 import rooted.RootedCircuits
-import LeanCopilot
+--import LeanCopilot
 
 variable {α : Type} [DecidableEq α] [Fintype α]
 
@@ -73,7 +73,7 @@ def SetFamily.trace {α : Type} [DecidableEq α] [Fintype α] (F : SetFamily α)
     nonempty_ground := ground_nonempty_after_minor F.ground x hx ground_ge_two,
     inc_ground := λ s hs =>
       by
-        simp_all only [decide_eq_false_iff_not]
+        --simp_all only [decide_eq_false_iff_not]
         obtain ⟨left, right⟩ := hs
         rw [Finset.subset_erase]
         constructor

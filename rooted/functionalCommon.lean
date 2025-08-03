@@ -1,4 +1,4 @@
---このファイルは、functionalの議論の基本的な定義を行う。Setupなど。
+--This file provides the basic definition of functional discussion.Setup etc.
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Finset.Powerset
 import Mathlib.Data.Set.Function
@@ -6,7 +6,7 @@ import Mathlib.Data.Fintype.Basic
 import Mathlib.Order.Defs.PartialOrder
 import Mathlib.Order.Cover
 import Mathlib.Tactic
-import LeanCopilot
+--import LeanCopilot
 import rooted.CommonDefinition
 import rooted.ClosureMinors
 import rooted.Dominant
@@ -19,20 +19,20 @@ open Finset Set Classical
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 
---Main定理を述べるのに必要だからここにおいている。それほど、他の部分から共通に使われているわけではない。
---もっと共通の部品を増やせればいいが。Setupのように仮定をコロコロ変えていると部品が共通化しにくい。
---Setupは、Preorderのところしか出てこないので、Setupに関する部分はPreorderのところに移動可能かと思ったら、
---preclosuresystemも同様。
---合わせて、Setupの定義に関連する補題をいくつか。
---eqClass_setupの定義に関係する部分。
---reachに関する部分。これは、Setupに依存しないかも。
+--This is here because it is necessary to state the Main theorem.It is not so commonly used by other parts.
+--I wish I could add more common parts.If you change your assumptions all the time, like Setup, it is difficult to make the parts common.
+--Setup only appears in Preorder, so I thought it would be possible to move the Setup section to Preorder.
+--The same goes for preclosuresystem.
+--In addition, some lemma related to the Setup definition.
+--Part of the definition of --eqClass_setup.
+--Reach.This may not depend on Setup.
 
-------------
---setupの定義に必要な部分。
---fからRootedSetを作る関数。
---この形が一番良いか？alpha上のRootedSetsを与える。集合族を定義するのにこの形を利用している。
---functionalMainの主定理でもこの定義が参照されている。
---これをSetupから使えるようにしたのが、rootedset_from_setup。
+--------------------------------------------------------------------------------------------------------------------------------
+--The part required to define setup.
+-- A function to create a RootedSet from --f.
+--Is this the best form?Gives RootedSets on alpha.This form is used to define groupings.
+--This definition is also referenced in the --functionalMain Primary theorem.
+--The rootedset_from_setup is now available from Setup.
 noncomputable def rootedset_onestem_eachvertex_V {α : Type} [Fintype α] [DecidableEq α] (V: Finset α) (f : V → V) (valid:∀ v : V, f v ≠ v) (nonemp:Finset.Nonempty V): RootedSets α :=
 {
   ground := V,
@@ -72,12 +72,12 @@ noncomputable def rootedset_onestem_eachvertex_V {α : Type} [Fintype α] [Decid
     simp_all only [ne_eq, Subtype.forall, attach_nonempty_iff]
   }
 
---setupを定義する時に利用している。fからpreorderを定義。
+--It is used when defining setup.Define preorder from f.
 noncomputable def size_one_preorder {α : Type} [Fintype α] [DecidableEq α] (V: Finset α) (f : V → V) (valid:∀ v : V, f v ≠ v) (nonemp:V.Nonempty):
   Preorder { x // x ∈ V } := size_one_circuits_preorder (rootedset_onestem_eachvertex_V V f valid nonemp)
 
 
---前順序が同値類を作り、それ上の半順序を作るという一般的な話の部分。setoidが導入されている。Setupに利用される。
+--This is the general story in which the previous order creates equivalence classes and then creates a partial order above it.Setoid has been introduced.Used for Setup.
 def equiv_rel {α : Type} [Preorder α] (x y : α) : Prop := x ≤ y ∧ y ≤ x
 
 lemma equiv_rel_refl {α : Type} [Preorder α]  : Reflexive (@equiv_rel α _) := fun x => ⟨le_refl x, le_refl x⟩
@@ -91,10 +91,10 @@ lemma equiv_rel_trans {α : Type} [Preorder α] : Transitive (@equiv_rel α _) :
 lemma equiv_rel_equiv {α : Type}  [Preorder α]: Equivalence (@equiv_rel α _) :=
   ⟨equiv_rel_refl, @equiv_rel_symm α _, @equiv_rel_trans α _⟩
 
---preorderから定義するsetoidの定義。setupの定義で用いる。
+--The definition of the setoid defined from preorder.Used in setup definition。
 def setoid_preorder {α : Type}[Preorder α]: Setoid α := ⟨@equiv_rel α _, equiv_rel_equiv⟩
 
---normalized degree sumが非正になる程度の強さはある。
+--It is strong enough to make normalized degree sum non-positive.
 structure Setup (α : Type) [Fintype α] [DecidableEq α] where
   (V        : Finset α)
   (nonemp   : V.Nonempty)
@@ -103,22 +103,22 @@ structure Setup (α : Type) [Fintype α] [DecidableEq α] where
   (pre      : Preorder {x // x ∈ V})
   (h_pre    : pre = size_one_preorder V f valid nonemp)
   (setoid   : Setoid {x // x ∈ V})
-  (h_setoid : setoid = setoid_preorder) --これは順序ではなく、同値類まで。
+  (h_setoid : setoid = setoid_preorder) --This is not an order, but up to the equivalent class.
 
---size_one_preorderは、ステムから定義されている。
---rootedset_onestem_eachvertex_Vからrootedsetが定義されて、
---そのステムの大きさが1なので、size_one_circuits_preorderで前順序が定義されている。
---本当はfから直接前順序を定義した方が証明は簡単だったか。これはtransitive closureによる定義。
---その関係は、size_one_preorder_eq_transitionで示されている。
+--size_one_preorder is defined from the stem.
+--rootedset_oneste_eachvertex_V defines rootedset,
+--The stem is 1, so the forward order is defined in size_one_circuits_preorder.
+--Is it actually easier to prove if you define the previous order directly from f?This is defined by transitive closure.
+--The relationship is indicated by size_one_preorder_eq_transition.
 
 instance (s : Setup α) : Preorder {x // x ∈ s.V} := s.pre
 
 ----------------------
---setupの定義からClosure Systemを導入する部分。
+--The part where Closure System is introduced from the setup definition.
 -----------------------
 
---setupからrootedsetを作るもの。fから作るには、rootedset_onestem_eachvertex_Vを利用すれば良い。setupに含めてもよいかも。
---RootedSetsから2項関係にするには、R_from_RS1 を用いると、ステムサイズ1のものだけから2項関係を作ってくれる。
+--Create rootedset from setup.To create from f, you can use rootedset_onestem_eachvertex_V.Maybe you can include it in your setup.
+--To make a binary relationship from --RootedSets, use R_from_RS1 to create a binary relationship from only stem size 1.
 noncomputable def rootedset_from_setup {α : Type} [Fintype α] [DecidableEq α] (s: Setup α) : RootedSets α :=
  rootedset_onestem_eachvertex_V s.V s.f s.valid s.nonemp
 
@@ -127,7 +127,7 @@ lemma rootedset_from_setup_ground (s:Setup α) :
 by
   rfl
 
---このときのRootedSetsのステムのサイズがすべて1であること。
+--All stem sizes of the RootedSets at this time must be 1.
 lemma rootedsetset_from_setup_has_stem1 (s: Setup α) :
  ∀ p ∈ (rootedset_from_setup s).rootedsets, p.stem.card = 1 :=
 by
@@ -139,10 +139,10 @@ by
   rw [←ha.2]
   simp
 
---setupを与えたときのClosureSystemを与える関数。
---次のpre_closuresystem2のように定義する方法もある。
---定義は、functionalTreeIdealの中に移動した方が良いかと思ったが、メイン定理を述べるのに必要だから
---ここにおいているよう。
+--A function that gives ClosureSystem when you give setup.
+--There is also a way to define it as pre_closuresystem2 below.
+--I thought it would be better to move the definition into functionalTreeIdeal, but it's necessary to state the main theorem.
+--Like I'm here.
 noncomputable def pre_closuresystem (s:Setup α): ClosureSystem α :=
 {
   ground := s.V
@@ -153,7 +153,7 @@ noncomputable def pre_closuresystem (s:Setup α): ClosureSystem α :=
   nonempty_ground := by
     exact s.nonemp
   has_ground := by
-    simp_all only
+    --simp_all only
     constructor
     · simp_all only [subset_refl]
     ·
@@ -162,7 +162,7 @@ noncomputable def pre_closuresystem (s:Setup α): ClosureSystem α :=
       simp_all only [coe_mem]
   intersection_closed := by
     intro s t a b
-    simp_all only
+    --simp_all only
     constructor
     ·
       obtain ⟨left, right⟩ := a
@@ -187,30 +187,30 @@ noncomputable def pre_closuresystem (s:Setup α): ClosureSystem α :=
       · tauto
 }
 
---集合族をrootedcircircuits経由で別に定義。同値性は、ideal_system_eq_lemで示される。
---functionalMainの中で使う。
+--Aggregation families are defined separately via rootedcircutures.Equivalence is denoted by ideal_system_eq_lem.
+--Use in functionalMain.
 noncomputable def pre_closuresystem2 (s:Setup α): ClosureSystem α :=
  rootedsetToClosureSystem (rootedset_from_setup s)
---既存の関数を利用した形で定義されているが、rootedsetToClosureSystemが複雑なので簡単になってないかも。
+--They are defined using existing functions, but the rootedsetToClosureSystem is complicated so it may not be easy.
 
---preorderidealsytemは、rootedsetToClosureSystem(rootedset_onestem_eachvertex_V)と等しくなるのか。
---既存の定理を利用する形で証明できないか。rootedToClosureSystemとidealの関係の定理を探す。
---表現のステムの大きさがすべて1であれば、RSのから作った集合族とステム1から作ったpreorderのイデアルが一致する。
+--Will preorderidealsytem equal rootedsetToClosureSystem(rootedset_onestem_eachvertex_V)?
+--Can we prove it by using existing theorems?Find the theorem for the relationship between rootedToClosureSystem and ideal.
+--If the stem size of the representation is all 1, then the set family created from RS and the preorder created from stem 1 match.
 --lemma size_one_preorder_lemma {α : Type} [DecidableEq α] [Fintype α]
 --  (RS : RootedSets α) [DecidablePred (rootedsetToClosureSystem RS).sets]
 --  (h₁ : ∀ p ∈ RS.rootedsets, p.stem.card = 1) :
 --  let SF := rootedsetToClosureSystem RS
 --  ∀ s : Finset RS.ground, SF.sets (s.image Subtype.val) ↔ (s ∈ (preorder.S_R (R_from_RS1 RS))) :=
 
---後ろで使っている。
+--I'm using it at the back.
 lemma subtype_subset_attach {α : Type} (ss t : Finset α)  :
     Finset.subtype (fun x => x ∈ t) ss ⊆ t.attach :=
 by
   intro x hx
   simp_all only [mem_subtype, mem_attach]
 
--- 大小関係と寝付きサーキットから定義するpreorderの関係。
--- 両向き。size_one_preorder_setup_lemmaと同じか。
+-- The relationship between the size and size of the relationship and the preorder defined by the sleep circuit.
+-- Both facing.Is it the same as size_one_preorder_setup_lemma?
 private lemma le_eq_R (s : Setup α) (x y : {x // x ∈ s.V}) :
   s.pre.le y x ↔ preorder.R_hat (R_from_RS1 (rootedset_from_setup s)) x y :=
 by
@@ -228,9 +228,9 @@ by
     dsimp [rootedset_from_setup] at hxy
     exact hxy
 
---ふたつの定義が同値であることを示す。本質的には、size_one_preorder_setで示したこと。
---それに気がつくのが遅かったので、証明はもっと短くなるかも。
---functionalMainの主定理の証明でも使われている。
+--Indicates that the two definitions are equal.Essentially, what was shown in size_one_preorder_set.
+--I was late to notice it, so the proof might be shorter.
+--It is also used in the proof of the functionalMain's principal theorem.
 lemma pre_closuresystem_eq_lem (s : Setup α) :
    pre_closuresystem s = pre_closuresystem2 s :=
 by
@@ -293,7 +293,7 @@ by
       obtain ⟨h1,h2⟩ := h
 
       constructor
-      · -- (rootedset_onestem_eachvertex_V s.V s.f ⋯ ⋯).groundはs.Vではないか。
+      · -- (rootedset_onestem_eachvertex_V s.V s.f ⋯ ⋯).
         suffices Finset.subtype (fun x => x ∈ s.V) ss ⊆ s.V.attach from by
           exact this
         let ssa := subtype_subset_attach ss s.V
@@ -316,7 +316,6 @@ by
           rfl
         exact (rootedsetToClosureSystem (rootedset_from_setup s)).inc_ground ss h
 
-      -- `ss` を subtype 化
       let ss_attach : Finset {x // x ∈ (rootedset_from_setup s).ground} :=
         ss.subtype (fun x => x ∈ (rootedset_from_setup s).ground)
 
@@ -326,13 +325,10 @@ by
         constructor
         · intro hx
           rw [Finset.mem_image] at hx
-          --使うのは、hxとss_attachの定義と、
           simp at hx
           obtain ⟨w,hx⟩ := hx
           dsimp [ss_attach] at hx
           simp_all only [mem_subtype, ss_attach]
-          --rcases hx with ⟨⟨y,hy⟩,hy_in,rfl⟩
-          --exact hy_in
         · intro hx
           simp_all only [attach_image_val, ss_attach]
           rw [Finset.mem_image]
@@ -340,18 +336,14 @@ by
           constructor
           · exact hx
           · exact hsub hx
-      ------------------------------------------------------------------
-      -- `pre_closuresystem2` の closedUnder 部分から
-      --   ss_attach ∈ preorder.S_R …
-      ------------------------------------------------------------------
+
       have hS : ss_attach ∈ preorder.S_R (R_from_RS1 (rootedset_from_setup s)) := by
         dsimp [ss_attach]
         show Finset.subtype (fun x => x ∈ (rootedset_from_setup s).ground) ss ∈ preorder.S_R (R_from_RS1 (rootedset_from_setup s))
-        --spolで変換したあとにhを使うと思われる。
+
         have hsets :
           (rootedsetToClosureSystem (rootedset_from_setup s)).sets
             (Finset.image Subtype.val ss_attach) := by
-          -- `h : … .sets ss` を `himg` で書き換えるだけ
            simpa [himg] using h
         exact (sopl ss_attach).mp hsets
 
@@ -378,28 +370,22 @@ by
           obtain ⟨val_3, property_3⟩ := y
           tauto
 
-        -- 1.  w2 ≤ w1  を  R_from_RS1 w1 w2  に変換。後ろで使っている。
         have hR :  preorder.R_hat (R_from_RS1 (rootedset_from_setup s)) w1 w2 :=
         by
           exact (le_eq_R s w1 w2).mp hw2
 
         -- 2.  w1 ∈ ss_attach
         have hw1_in : (w1 : {x // x ∈ s.V}) ∈ ss_attach := by
-          -- `Finset.mem_subtype` 展開
           have : (w1 : α) ∈ ss := hw1
           have hground : (w1 : α) ∈ s.V := w1.property
-          -- ss_attach = ss.subtype hsub なので両方満たせば OK
           simp_all only [Finset.mem_powerset, mem_subtype, Subtype.forall, coe_mem, ss_attach]
 
-        -- 3.  hS2' を使って w2 ∈ ss_attach
         dsimp [rootedset_from_setup] at hS2'
-        --simp at hS2'
         have ideal_eq_ss :preorder_ideal (rootedset_from_setup s) ss_attach = Finset.subtype (fun x => x ∈ s.V) ss :=
         by
           have hsubs : ss_attach =
               Finset.subtype (fun x : α => x ∈ s.V) ss :=
           by
-            -- 定義と `eq_ground` を展開すれば同型
             exact rfl
 
           rw [←hsubs]
@@ -411,32 +397,28 @@ by
 
         let RS := rootedset_from_setup s
         have : (w2 : α) ∈ ss := by
-          -- 1. w1 ∈ preorder_ideal …
           have hw1_ideal : w1 ∈ preorder_ideal RS ss_attach := by
-            -- 単に witness を w1 自身にすればよい
             have hw1_attach : w1 ∈ ss_attach := hw1_in
             have : (w1 : α) ∈ RS.ground := w1.property
 
             simp_all only [Finset.mem_powerset, mem_subtype, Subtype.forall, coe_mem, ss_attach, RS]
 
-          -- 2. イデアル閉包で w2 も入る。simp_allで利用している。
           have hw2_ideal :=
             preorder_ideal_closed_lemma (RS := RS) (s := ss_attach)
               w1 w2 hR hw1_ideal
 
-          -- 3. イデアル=ss で書き換え
           simp_all only [Finset.mem_powerset, mem_subtype, Subtype.forall, RS, ss_attach]
 
         exact this
 
--------------
---Setupに関する同値類の関係。SetupにはSetoidが導入されているのにsetoidを使ってないのは、それ以前に作ったものだからかも。
+------------------------------------------------------------------------------------------------------------------
+--Relationship of equivalence classes related to Setup.Setoid is installed in Setup, but it doesn't use setoid, perhaps because it was created before that.
 
---下で使っている。Setupの枠組みで、同値な要素全体を与える。
+--I'm using it below.In the Setup framework, all equal elements are given.
 noncomputable def eqClass_setup (s: Setup α) (x : {x : α // x ∈ s.V}) : Finset {x // x ∈ s.V} :=
   s.V.attach.filter (fun y => s.setoid.r x y)
 
---同じ同値類に入っている要素には大小関係がある。
+--Elements that have the same equivalent value have a relationship of size.
 lemma eqClass_le (s: Setup α) : (x y: {x : α // x ∈ s.V}) → y ∈ eqClass_setup s x → s.pre.le x y :=
 by
   intro x y h
@@ -447,7 +429,7 @@ by
   obtain ⟨val_1, property_1⟩ := y
   exact h.1
 
---上の逆向き。
+--The above reverse direction.
 lemma eqClass_ge (s: Setup α) : (x y: {x : α // x ∈ s.V}) → y ∈ eqClass_setup s x → s.pre.le y x :=
 by
   intro x y h
@@ -458,7 +440,7 @@ by
   obtain ⟨val_1, property_1⟩ := y
   exact h.2
 
---逆に、前順序で同値ならば、eqClassでも同値。eqという割には必要十分条件ではない。
+--Conversely, if the value is the same in the previous order, it is also the same in eqClass.Despite its eq, it is not a necessary and sufficient condition.
 lemma eqClass_lem (s: Setup α) : (x y: {x : α // x ∈ s.V}) → s.pre.le x y →s.pre.le y x → eqClass_setup s x = eqClass_setup s y :=
 by
   intro x y hxy hyx
@@ -488,7 +470,7 @@ by
     ·
       exact s.pre.le_trans z ⟨yval, yproperty⟩ ⟨xval, xproperty⟩ h.2 hyx
 
---使ってないけどあとから作った。
+--I haven't used it but I made it later.
 lemma eqClass_xy (s: Setup α)  (x y: {x : α // x ∈ s.V}) :
  x ∈ eqClass_setup s y ↔ y ∈ eqClass_setup s x :=
 by
@@ -508,7 +490,7 @@ by
     · exact mem_attach s.V x
     · exact id (Setoid.symm' s.setoid h)
 
---必要に迫られて作った。同値な要素は、前順序でも同値。
+--I made it because of necessity.Equivalent elements are equal in the previous order.
 lemma eqClass_lem_rev (s: Setup α) : (x y z: {x : α // x ∈ s.V}) → x ∈ eqClass_setup s z → y ∈ eqClass_setup s z → s.pre.le x y ∧ s.pre.le y x:=
 by
   intro x y z hx hy
@@ -519,7 +501,6 @@ by
     simp_all only [AntisymmRel.setoid_r]
 
     simp_all only [mem_filter, mem_attach, true_and]
-    --obtain ⟨val, property⟩ := z
     rw [AntisymmRel] at hx hy
     obtain ⟨left, right⟩ := hx
     obtain ⟨left_1, right_1⟩ := hy
@@ -528,10 +509,7 @@ by
     dsimp [eqClass_setup] at hy
     rw [s.h_setoid] at hx hy
     simp_all only [AntisymmRel.setoid_r]
-    --obtain ⟨xval, xproperty⟩ := x
-    --obtain ⟨yval, yproperty⟩ := y
     simp_all only [mem_filter, mem_attach, true_and]
-    --obtain ⟨val, property⟩ := z
     rw [AntisymmRel] at hx hy
     obtain ⟨left, right⟩ := hx
     obtain ⟨left_1, right_1⟩ := hy
@@ -539,7 +517,7 @@ by
     assumption
     simp_all only
 
---今は、直接使ってないけど、上の定理をまとめるものとして作った。
+--I'm not using it directly now, but I created it as a summary of the theorem above.
 lemma eqClass_eq (s: Setup α) (x y: {x : α // x ∈ s.V}) :
   y ∈ eqClass_setup s x ↔ (s.pre.le x y ∧ s.pre.le y x) :=
 by
@@ -563,7 +541,7 @@ by
     · exact h.2
 
 ---
---Setupに直接関係ない部分。より抽象化されている。
+--Parts that are not directly related to Setup.It's more abstract.
 
 def reach {A : Type} (f : A → A) (x y : A) : Prop :=
   ∃ n : ℕ, f^[n] x = y

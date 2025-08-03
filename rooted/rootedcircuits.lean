@@ -14,7 +14,7 @@ import Mathlib.Tactic
 import LeanCopilot
 
 -- 有限集合の型
-variable {α : Type} [Fintype α] [DecidableEq α]
+variable {α : Type}  [DecidableEq α]
 
 open Classical  --これでsetsのdecidablePredの問題が解決した。
 
@@ -73,148 +73,157 @@ def rootedcircuits_from_RS (RS : RootedSets α) : RootedCircuits α :=
     simp_all only
 }
 
-
-
-
 --根つき集合が与えられたら、同じ根を持つものの中でステムが包含関係で極小なものが存在する。補題として何回か利用している。
-omit [Fintype α] in
-lemma rootedcircuits_minimality (RS : RootedSets α) (p₁:(ValidPair α)):
-  p₁ ∈ RS.rootedsets → ∃ p₂ ∈ RS.rootedsets , p₁.root = p₂.root ∧   p₂.stem ⊆ p₁.stem  ∧
-  ∀ q ∈ RS.rootedsets, q.root = p₂.root → ¬(q.stem ⊂ p₂.stem) :=
- by
+/--
+  ルート `p₁.root` を共有し，`p₁.stem` に含まれる stem の中で
+  ⊂ に関して極小な stem を与える根付き集合 `p₂` が存在する。
+-/
+
+--omit [Fintype α] in
+lemma rootedcircuits_minimality
+    (RS : RootedSets α) (p₁ : ValidPair α) :
+    p₁ ∈ RS.rootedsets →
+      ∃ p₂ ∈ RS.rootedsets,
+        p₁.root = p₂.root ∧
+        p₂.stem ⊆ p₁.stem ∧
+        ∀ q ∈ RS.rootedsets, q.root = p₂.root → ¬ (q.stem ⊂ p₂.stem) := by
   intro hp₁
-  -- F の中で s の部分集合を考える
-  let F := RS.ground.powerset.filter (λ stem => ∃ p ∈ RS.rootedsets, p.stem = stem ∧ p.root = p₁.root ∧ stem ⊆ p₁.stem)
-  let Fs := F.filter (· ⊆ RS.ground \ {p₁.root})
-  -- Fs が空でないことを示す
+
+  ----------------------------------------------------------------
+  -- 1.  stem の候補集合 F と，そのうち root を含まないもの Fs
+  ----------------------------------------------------------------
+  let F : Finset (Finset α) :=
+    RS.ground.powerset.filter (λ stem =>
+      ∃ p ∈ RS.rootedsets,
+        p.stem = stem ∧ p.root = p₁.root ∧ stem ⊆ p₁.stem)
+
+  let Fs : Finset (Finset α) :=
+    F.filter (λ s => s ⊆ RS.ground \ {p₁.root})
+
+  ----------------------------------------------------------------
+  -- 2.  Fs が空でない（p₁.stem が入る）ことを示す
+  ----------------------------------------------------------------
   have hFs_nonempty : Fs.Nonempty := by
-    simp_all only [Fs]
-    rw [Finset.filter_nonempty_iff]
-    use p₁.stem
-    constructor
-    · dsimp [F]
-      simp
-      constructor
-      ·exact (RS.inc_ground p₁ hp₁).1
+    have h₁ : p₁.stem ⊆ RS.ground := (RS.inc_ground p₁ hp₁).1
+    have h₂ : p₁.root ∉ p₁.stem := p₁.root_not_in_stem
 
-      · apply Exists.intro
-        · apply And.intro
-          on_goal 2 => apply And.intro
-          on_goal 3 => {rfl
-          }
-          · simp_all only
-          · simp_all only
-    · --goal p₁.stem ⊆ RS.ground \ {p₁.root}
-      have pground: p₁.stem ⊆ RS.ground := by
-        exact (RS.inc_ground p₁ hp₁).1
-      have pr: p₁.root ∉ p₁.stem := by
-        exact p₁.root_not_in_stem
+    -- p₁.stem ∈ F
+    have h_in_F : p₁.stem ∈ F := by
+      simp_all only [Finset.mem_filter, Finset.mem_powerset, subset_refl, and_true, true_and, F]
+      apply Exists.intro
+      · apply And.intro
+        on_goal 2 => apply And.intro
+        on_goal 3 => {rfl
+        }
+        · simp_all only
+        · simp_all only
+
+    -- p₁.stem ⊆ ground \ {root}
+    have h_sub_root : p₁.stem ⊆ RS.ground \ {p₁.root} := by
       intro x hx
-      simp_all only [Finset.mem_sdiff, Finset.mem_singleton]
-      apply And.intro
-      · exact pground hx
-      · apply Aesop.BuiltinRules.not_intro
-        intro a
-        subst a
-        simp_all only [not_true_eq_false]
+      have hx₁ : x ∈ RS.ground := h₁ hx
+      have hx₂ : x ≠ p₁.root := by
+        intro h_eq; subst h_eq; exact h₂ hx
+      simpa [Finset.mem_sdiff, Finset.mem_singleton] using And.intro hx₁ hx₂
 
-  -- Fs は有限集合なので、極小要素が存在する
-  obtain ⟨t, htFs, ht_minimal⟩ := Finset.exists_minimal Fs hFs_nonempty
-  -- t が Fs に属することより t ⊆ s と t ∈ F を確認
-  rw [Finset.mem_filter] at htFs
-  obtain ⟨htF, hts⟩ := htFs
-  -- 結果を構成
-  let v: ValidPair α := {stem := t, root := p₁.root, root_not_in_stem := (by
-    --Fの定義からわかるはず。
-    dsimp [F] at htF
-    rw [Finset.mem_filter] at htF
-    rw [Finset.mem_powerset] at htF
-    obtain ⟨htF, htF2⟩ := htF
-    obtain ⟨htF, htF3⟩ := htF2
-    have : p₁.root ∉ t := by
-      rw [Finset.subset_sdiff] at hts
-      simp_all only [Finset.disjoint_singleton_right,not_false_eq_true]--
-    exact this
-    ) }
-  --ht_minimal : ∀ x ∈ Fs, ¬x < t これは包含関係。後ろで使っている。
-  use v --ここでは極小なstemのものを使っている。
-  simp_all only [Finset.mem_filter, Finset.lt_eq_subset, and_imp, true_and, Fs]--
-  apply And.intro
-  · dsimp [RootedSets.rootedsets]
-    simp_all only [Finset.mem_filter, Finset.mem_powerset, and_imp, forall_exists_index, F]
-    --{ stem := t, root := p₁.root, root_not_in_stem := ⋯ } ∈ RS.rootedsets
-    dsimp [F] at htF
-    rw [Finset.mem_filter] at htF
-    simp_all only [Finset.mem_powerset]
-    obtain ⟨left, right⟩ := htF
-    obtain ⟨w, h⟩ := right
-    obtain ⟨left_1, right⟩ := h
-    obtain ⟨left_2, right⟩ := right
-    subst left_2
-    rw [Finset.mem_filter] at htF
-    have :{ stem := w.stem, root := w.root, root_not_in_stem := w.root_not_in_stem } ∈ RS.rootedsets := by
-      exact left_1
-    simp_all only [Finset.mem_powerset, true_and]
-    simp_all only [and_true, and_self, F, Fs, v]
+    exact ⟨p₁.stem, by
+      simp [Fs, h_in_F, h_sub_root]⟩
 
-  · have tp: t ⊆ p₁.stem:= by
-      have : t ∈ F := by
-        simp_all only [Finset.mem_filter, Finset.mem_powerset]
-      dsimp [F] at this
-      rw [Finset.mem_filter] at this
-      obtain ⟨left, right⟩ := this
-      obtain ⟨w, h⟩ := right
-      obtain ⟨left_1, right⟩ := h
-      obtain ⟨left_2, right⟩ := right
-      subst left_2
-      simp_all only [Finset.mem_powerset]
-    apply And.intro
-    · simp_all only [Finset.mem_filter, Finset.mem_powerset, and_imp, forall_exists_index, F, Fs, v]
+  ----------------------------------------------------------------
+  -- 3.  Fs の ⊂ で極小な stem `t` を取り，その証明を `ht_min`
+  ----------------------------------------------------------------
+  obtain ⟨t, ht_min⟩ := Finset.exists_minimal (s := Fs) hFs_nonempty
+  -- `t ∈ Fs`
+  have htFs : t ∈ Fs := ht_min.1
 
-    · --∀ q ∈ RS.rootedsets, q.root = p₁.root → ¬q.stem ⊂ t.stem
-      constructor
-      simp_all only [Finset.mem_filter, Finset.mem_powerset, and_imp, forall_exists_index, F, Fs, v]
-      intro q a a_1
-      intro qt_contra
-      have hq_minimal := ht_minimal q.stem (by
-        dsimp [F]
-        rw [Finset.mem_filter]
-        constructor
-        · rw [Finset.mem_powerset]
-          exact (RS.inc_ground q a).1
+  ----------------------------------------------------------------
+  -- 4.  t ∈ Fs から情報を分解して p₂ を得る
+  ----------------------------------------------------------------
+  --   (1) まず Fs の filter をはずす
+  obtain ⟨htF, ht_sub_root⟩ := (Finset.mem_filter).mp htFs
+  --   (2) つぎに F の filter をはずす
+  obtain ⟨_, ⟨p₂, hp₂, hstem, hroot, hsub⟩⟩ :=
+    (Finset.mem_filter).mp htF
 
-        · simp_all only [Finset.mem_filter, Finset.mem_powerset, and_imp, forall_exists_index, F]
-          use q
-          constructor
-          · exact a
-          · constructor
-            · rfl
-            · constructor
-              · exact a_1
-              · --q.stem ⊆ p₁.stem
-                rw [Finset.ssubset_iff_subset_ne] at qt_contra
-                -- q ⊆ t を取り出す
-                exact qt_contra.1.trans tp
-      )
-      have hq_subset : q.stem ⊆ RS.ground \ {p₁.root} := by
-        rw [Finset.subset_sdiff]
-        constructor
-        · exact (RS.inc_ground q a).1
-        · rw [←a_1]
-          have : q.root ∉ q.stem := by
-            exact q.root_not_in_stem
-          simp_all only [Finset.disjoint_singleton_right, not_false_eq_true]--
+  have ht_eq : p₂.stem = t := by
+    simpa using hstem
 
-      simp_all only [F]
-      simp_all only [Finset.mem_filter, Finset.mem_powerset, and_imp, forall_exists_index, F, Fs, v]
+  ----------------------------------------------------------------
+  -- 5.  目的の結論を組み立てる
+  ----------------------------------------------------------------
+  refine ⟨p₂, hp₂, ?_, ?_, ?_⟩
+
+  -- (i) roots が一致
+  · simp [hroot]
+
+  -- (ii)  stem ⊆ p₁.stem
+  · simpa [ht_eq] using hsub
+
+  -- (iii)  極小性
+  · intro q hq hqroot hss
+    ----------------------------------------------------------------
+    --  q.stem が Fs に属することを示す
+    ----------------------------------------------------------------
+    have hq_in_F : q.stem ∈ F := by
+      have hq_sub_ground : q.stem ⊆ RS.ground := (RS.inc_ground q hq).1
+      have hq_cond :
+          ∃ p ∈ RS.rootedsets,
+            p.stem = q.stem ∧ p.root = p₁.root ∧ q.stem ⊆ p₁.stem := by
+        refine ⟨q, hq, rfl, ?_, ?_⟩
+        · -- roots 一致
+          simpa [hroot] using hqroot
+        · -- q.stem ⊆ p₁.stem  （q.stem ⊂ p₂.stem ⊆ p₁.stem）
+          have : q.stem ⊂ p₂.stem := by
+            simpa [ht_eq] using hss
+          rw [←hstem] at hsub
+          have hss2: q.stem ⊆ p₂.stem := by
+            exact subset_of_ssubset hss
+          exact this.subset.trans hsub
+      simp [F, hq_sub_ground, hq_cond]
+
+    have hq_sub_root : q.stem ⊆ RS.ground \ {p₁.root} := by
+      intro x hx
+      have hx_ground : x ∈ RS.ground := (RS.inc_ground q hq).1 hx
+      have hx_not_root : x ≠ p₁.root := by
+        intro h_eq
+        have : q.root = p₁.root := by simpa [hroot] using hqroot
+        have : q.root ∈ q.stem := by
+          have : x = q.root := by
+            subst ht_eq h_eq
+            simp_all only [Finset.mem_filter, Finset.mem_powerset, and_true, true_and, and_self, F, Fs]
+          rw [this] at hx
+          exact hx
+        exact (q.root_not_in_stem) this
+      simpa [Finset.mem_sdiff, Finset.mem_singleton] using And.intro hx_ground hx_not_root
+
+    have hq_in_Fs : q.stem ∈ Fs := by
+      simp [Fs, hq_in_F, hq_sub_root]
+
+    ----------------------------------------------------------------
+    --  q.stem ⊂ t は Minimal 性に反する
+    ----------------------------------------------------------------
+    have hlt : (q.stem : Finset α) < t := by
+      -- `Finset.lt_eq_subset` で < ↔ ⊂
+      simpa [Finset.lt_eq_subset, ht_eq] using hss
+
+    have hlt2: q.stem ≤ t := by
+      exact le_of_lt hlt
+    let h_cont := ht_min.2 hq_in_Fs hlt2
+    have htl3: t < t := by
+      exact lt_of_le_of_lt h_cont hlt
+    rw [Finset.lt_iff_ssubset] at htl3
+    obtain ⟨h_subset, h_ne⟩ := htl3
+    exact h_ne h_subset
+
 
 --rootedcircuits_minimalityとほぼ同じだが、rootedcircuitsの中から取れる形に書き換えた。
-omit [Fintype α] in
+--omit [Fintype α] in
 lemma rootedcircuits_extsts (RS : RootedSets α) (p : ValidPair α) :
   p ∈ RS.rootedsets → ∃r ∈ (rootedcircuits_from_RS RS).rootedsets, r.root = p.root ∧ r.stem ⊆ p.stem :=
 by
   intro hp
   simp_all only [rootedcircuits_from_RS]
+
   obtain ⟨r,hr⟩ := rootedcircuits_minimality RS p hp
   use r
   simp_all only [Finset.mem_filter, not_false_eq_true, implies_true, and_self]
@@ -222,7 +231,7 @@ by
 
 --rootedset_setfamilyのrootedcircuits版。rootedcircuitsの中に存在することをいっている。
 --rooted set版は、rootedset_setfamily。subtype版は下にある。
-lemma rootedcircuits_setfamily (RS : RootedSets α) (SF:ClosureSystem α)
+lemma rootedcircuits_setfamily [Fintype α]  (RS : RootedSets α) (SF:ClosureSystem α)
  (eq:  rootedsetToClosureSystem RS = SF) :
   ∀ (s : Finset α), s ⊆ SF.ground → (¬ SF.sets s ↔ ∃ (p : ValidPair α), p ∈ (rootedcircuits_from_RS RS).rootedsets ∧ p.stem ⊆ s ∧ p.root  ∈ (closureOperator SF (s.subtype (λ x => x ∈ SF.ground))).image Subtype.val ∧ p.root ∉ s) :=
 by
@@ -267,7 +276,7 @@ by
         exact hp.2.2.2
 
 --rootedcircuits_setfamilyのsubtype版。
-lemma rootedcircuits_setfamily_subtype (RS : RootedSets α) (SF:ClosureSystem α)
+lemma rootedcircuits_setfamily_subtype [Fintype α] (RS : RootedSets α) (SF:ClosureSystem α)
  (eq:  rootedsetToClosureSystem RS = SF) :
   ∀ (s : Finset SF.ground), (¬ SF.sets (s.image Subtype.val)  ↔ ∃ (p : ValidPair α), p ∈ (rootedcircuits_from_RS RS).rootedsets ∧ p.stem ⊆ (s.image Subtype.val) ∧ p.root  ∈ (closureOperator SF s).image Subtype.val ∧ p.root ∉ (s.image Subtype.val)) :=
 by
@@ -290,7 +299,7 @@ by
 
 
 --rootedcircuitsを考えても、根つき集合族を考えても、集合族が同じであること。
-theorem rootedcircuits_makes_same_setfamily: ∀ (RS : RootedSets α), ∀ (s : Finset α),
+theorem rootedcircuits_makes_same_setfamily[Fintype α]:  ∀ (RS : RootedSets α), ∀ (s : Finset α),
   (rootedsetToClosureSystem (rootedcircuits_from_RS RS).toRootedSets).sets s = (rootedsetToClosureSystem RS).sets s :=
 by
   intro RS s

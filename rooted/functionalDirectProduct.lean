@@ -2,7 +2,7 @@ import Mathlib.Order.Defs.PartialOrder
 --import Mathlib.Order.Cover
 --import Mathlib.Logic.Function.Iterate
 import Mathlib.Tactic
-import LeanCopilot
+--import LeanCopilot
 import rooted.CommonDefinition
 import rooted.ClosureMinors
 import rooted.Preorder

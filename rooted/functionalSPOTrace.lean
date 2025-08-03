@@ -9,7 +9,7 @@ import Mathlib.Order.Cover
 import Mathlib.Logic.Function.Iterate
 import Mathlib.Data.Quot
 import Mathlib.Tactic
-import LeanCopilot
+--import LeanCopilot
 import rooted.CommonDefinition
 import rooted.ClosureMinors
 import rooted.Preorder
@@ -568,7 +568,7 @@ noncomputable def setup_trace (s : Setup_spo α)(x: s.V) (hx:(classOf s (@Quotie
   noLoop := by
     intro q1 q2
     intro h1 h2
-    simp at h1 h2
+    --simp at h1 h2
     exact setup_trace_noLoop s x hx q1 q2 h1 h2
 
   --s.V上には半順序が導入済み。s.V.erase x上にはこれから導入する。
@@ -578,7 +578,7 @@ noncomputable def setup_trace (s : Setup_spo α)(x: s.V) (hx:(classOf s (@Quotie
       exact setup_trace_noLoop s x hx q1 q2 h1 h2
   )
   h_spo := by
-    simp_all only
+    --simp_all only
     obtain ⟨val, property⟩ := x
     simp_all only
     rfl
