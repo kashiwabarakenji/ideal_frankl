@@ -1,7 +1,4 @@
---import Init.Data.Fin.Lemmas
 import Mathlib.Order.Defs.PartialOrder
---import Mathlib.Order.Cover
---import Mathlib.Logic.Function.Iterate
 import Mathlib.Tactic
 --import LeanCopilot
 import rooted.CommonDefinition
@@ -21,12 +18,12 @@ variable {α : Type} [Fintype α] [DecidableEq α]
 
 open Function Finset
 
---Setup_poの極大要素に関係がある部分をfunctionalPartialMaximalとして独立させた。
+--The parts related to the maximum element of Setup_po have been made independent as functionalPartialMaximal.
 
 def po_maximal (s: Setup_po α) (x: s.V) : Prop := ∀ y, s.po.le x y → x = y
 
---極大であることは、s.fが自分自身であること。
---外からも参照している。
+--To be the maximum means that s.f is itself.
+--It is also referred to from outside.
 lemma po_maximal_lem (s: Setup_po α) (x: s.V) :
   po_maximal s x ↔ s.f x = x :=
 by
@@ -56,8 +53,8 @@ by
     simpa [h_iter] using hn
 
 /--
-`f : α → α` を `Fintype` 上で反復すると、
-`0,1,…,Fintype.card α` のうち 2 つの反復が一致する。
+Repeating `f : α → α` on `Fintype` will result in
+Two iterations of `0,1,...,Fintype.card α` match.
 -/
 private lemma exists_eq_iterate {α : Type u} [DecidableEq α] [Fintype α]
   (f : α → α) (a : α) :
@@ -68,12 +65,10 @@ private lemma exists_eq_iterate {α : Type u} [DecidableEq α] [Fintype α]
   -- Consider g : Fin (N+1) → α,  k ↦ f^[k] a
   let g : Fin (N + 1) → α := fun k => (f^[k]) a
 
-  ----------------------------------------------------------------
-  -- 1.  g  は単射になれない (鳩ノ巣原理)
-  ----------------------------------------------------------------
+
   have h_not_inj : ¬Injective g := by
     intro hg
-    -- 単射なら |Fin (N+1)| ≤ |α|
+
     have h_card := Fintype.card_le_of_injective g hg
     -- |Fin (N+1)| = N+1
     have : N + 1 ≤ N := by
@@ -81,9 +76,6 @@ private lemma exists_eq_iterate {α : Type u} [DecidableEq α] [Fintype α]
       simp_all only [Fintype.card_fin, add_le_iff_nonpos_right, nonpos_iff_eq_zero, one_ne_zero, N, g]
     exact (Nat.not_succ_le_self N) this
 
-  ----------------------------------------------------------------
-  -- 2.  非単射性 → 同じ像を持つ異なる添字が存在
-  ----------------------------------------------------------------
   have h_exists_pair :
       ∃ i j : Fin (N + 1), i ≠ j ∧ g i = g j := by
     -- `not_injective_iff` : ¬Inj f ↔ ∃ x y, f x = f y ∧ x ≠ y
@@ -95,13 +87,10 @@ private lemma exists_eq_iterate {α : Type u} [DecidableEq α] [Fintype α]
     rw [and_comm]
     exact hEq
 
-  -- 取り出し，順序を m < n に整える
   rcases h_exists_pair with ⟨i, j, hne, hEq⟩
-  -- choose (m,n) with m < n
   cases lt_or_gt_of_ne hne with
   | inl hij =>
       exact ⟨i, j, hij, by
-        -- g i = g j は そのまま iterate equality
         simpa [g] using hEq⟩
   | inr hji =>
       -- swap  i j
@@ -109,24 +98,18 @@ private lemma exists_eq_iterate {α : Type u} [DecidableEq α] [Fintype α]
         simp [g, hEq]
         ⟩
 
---かならず上に極大要素がある。外からも参照あり。
+--There's always a maximum element above.There is also a reference from outside.
 lemma po_maximal_reachable (s : Setup_po α) (y : s.V):
  ∃ x, po_maximal s x ∧ reach s.f y x :=
 by
-  -- x は、yの上を要素を辿っていって、s.f x = x になるもの。
-  -- f^[n] yでnを増やすと有限の大きさなので、必ず、どこかで、m < nで、f^[m] = f^[n]になる。
-  --このとき、 半順序のantisymmetryより、f^[m] y <= f^[m+1] y <= f^[n] yより、
-  -- f^[m] y = f^[m+1] yとなる。
-  --x = f^[m] yとすればよい。
+
   obtain ⟨m,n,hmn,heq⟩ :=
     exists_eq_iterate (s.f) y   -- m < n かつ f^[m] y = f^[n] y
   set g : ℕ → s.V := fun k => (s.f^[k]) y with hg
 
-  -- 2. 連鎖   g m ≤ g (m+1) ≤ … ≤ g n = g m
-  --    antisymmetry から g m = g (m+1) が従う
   have h_step :
       s.po.le (g m) (g (m+1)) := by
-    -- reach (1 step) → ≤
+
     have : reach s.f (g m) (g (m+1)) := by
       refine ⟨1,?_⟩
       simp [hg, iterate_one, iterate_succ_apply']  -- f^[m+1] = f^[1] (f^[m])
@@ -134,7 +117,7 @@ by
 
   have h_chain :
       s.po.le (g (m+1)) (g n) := by
-    -- reach (n-(m+1)) steps → ≤
+
     have : reach s.f (g (m+1)) (g n) := by
       refine ⟨n - (m+1), ?_⟩
       -- iterate_add to split the exponent
@@ -154,7 +137,6 @@ by
     simp
     exact so
 
-  -- g m = g n なので antisymmetry で g m = g (m+1)
   have h_fix : (s.f^[m] y) = (s.f^[m+1] y) := by
     have : s.po.le (g m) (g (m+1)) ∧ s.po.le (g (m+1)) (g m) := by
       have h₁ := h_step
@@ -166,9 +148,7 @@ by
     have := s.po.le_antisymm (g m) (g (m+1)) this.1 this.2
     simpa [hg, iterate_succ_apply'] using this
 
-  -- 3. 目的の元 `x`
   let x : s.V := ⟨ (s.f^[m] y).val, by
-    -- g m ∈ s.V  は自明
     simp_all only [iterate_succ, comp_apply, le_refl, coe_mem, g]⟩
 
   have fx_eq : s.f x = x := by
@@ -179,19 +159,17 @@ by
     exact id (Eq.symm h_fix)
 
   have h_max : po_maximal s x := by
-    -- 既に示してある補題 po_maximal_lem
     have := (po_maximal_lem s x).mpr fx_eq
     simpa using this
 
   have h_reach : reach s.f y x := by
-    -- x = f^[m] y なので reach (m steps)
     refine ⟨m, ?_⟩
     -- unfold x
     simp_all only [iterate_succ, comp_apply, Subtype.coe_eta, g, x]
 
   exact ⟨x, h_max, h_reach⟩
 
---任意の要素を極大要素は、ただ1つしかない。外からも参照あり。
+--There is only one element that can be maximized.There is also a reference from outside.
 lemma po_maximal_reachable_eq (s : Setup_po α) (y : s.V):
  ∀ x1 x2, (po_maximal s x1 ∧ reach s.f y x1 ) →
           (po_maximal s x2 ∧ reach s.f y x2) →
@@ -200,13 +178,11 @@ by
   intro x₁ x₂ h₁ h₂
   rcases h₁ with ⟨hmax₁, ⟨k₁, hk₁⟩⟩
   rcases h₂ with ⟨hmax₂, ⟨k₂, hk₂⟩⟩
-  -- 反復回数を比較
+
   cases le_or_gt k₁ k₂ with
   | inl hle =>
-      -- k₁ ≤ k₂ なら x₁ → x₂ に可達
       have hreach : reach s.f x₁ x₂ := by
         have : (s.f^[k₂ - k₁]) x₁ = x₂ := by
-          -- 書き換えに `iterate_add_apply`
           have : (s.f^[k₁ + (k₂ - k₁)]) y = x₂ := by
             simpa [Nat.add_sub_cancel' hle] using hk₂
           have : (s.f^[k₂ - k₁]) ((s.f^[k₁]) y) = x₂ := by
@@ -218,12 +194,9 @@ by
 
           simpa [hk₁] using this
         exact ⟨k₂ - k₁, this⟩
-      -- 可達性 ↔ ≤ で比較
       have hle₁₂ : s.po.le x₁ x₂ := (s.order _ _).1 hreach
-      -- 極大性から等号
       exact (hmax₁ x₂ hle₁₂)
   | inr hgt =>
-      -- 対称な場合 k₂ ≤ k₁
       have hreach : reach s.f x₂ x₁ := by
         have : (s.f^[k₁ - k₂]) x₂ = x₁ := by
           have : (s.f^[k₂ + (k₁ - k₂)]) y = x₁ := by
@@ -240,14 +213,14 @@ by
       have hle₂₁ : s.po.le x₂ x₁ := (s.order _ _).1 hreach
       exact (hmax₂ x₁ hle₂₁).symm
 
---ただ、ひとつしかない極大要素を与える関数
+--a function that gives only one maximum element
 noncomputable def proj_max (s: Setup_po α) (v : {x : α // x ∈ s.V}) : {x : α // x ∈ s.V} :=
   Classical.choose (po_maximal_reachable s v)
 
---極大要素が一致する同値類の同値関係。連結成分の同値関係でもある。
+--Equivalent relationships of equivalence classes where the maximum elements match.It is also an equivalence relationship of connected components.
 def projr (s: Setup_po α)(v w : {x : α // x ∈ s.V}) : Prop := proj_max s v = proj_max s w
 
---極大要素が一致する同値類のsetoid。
+--Setoid of the equivalence class that matches the maximum element.
 instance proj_setoid {α : Type} [Fintype α] [DecidableEq α] (s: Setup_po α) [DecidableRel (projr s)]: Setoid {x : α // x ∈ s.V} where
   r  := projr s
   iseqv :=
@@ -261,17 +234,14 @@ instance proj_setoid {α : Type} [Fintype α] [DecidableEq α] (s: Setup_po α) 
           (h₁ : projr s v w) (h₂ : projr s w u) => Eq.trans h₁ h₂
     ⟩
 
---proj_maxは、本当に極大元になっていることの証明。
---functionalMainでも利用。
+--proj_max is proof that it is truly the source of maximum.
+-- Also used with functionalMain.
 lemma proj_max_maximal (s: Setup_po α) (v : {x : α // x ∈ s.V}) :
   po_maximal s (proj_max s v) := by
-  -- proj_max は po_maximal_reachable の選択肢の一つ
   obtain ⟨x, hmax, _⟩ := Classical.choose_spec (po_maximal_reachable s v)
-  -- x = proj_max s v を示す
-  --obtain ⟨val, property⟩ := v
   exact x
 
---proj_maxは、自分より上にあることの証明。外からも利用。
+--proj_max is proof that you are above you.It can also be used from outside.
 lemma reach_maximal (s: Setup_po α) (v : {x : α // x ∈ s.V}) : reach s.f v (proj_max s v) := by
   -- proof for reachability from v to proj_max s v
   dsimp [proj_max]
@@ -280,10 +250,9 @@ lemma reach_maximal (s: Setup_po α) (v : {x : α // x ∈ s.V}) : reach s.f v (
   dsimp [reach]
   use n
 
---setroidのコンポーネントが等しいことと、極大要素が等しいことは同値。
+--Setroid components are equal and maximum elements are equal.
 lemma proj_max_quotient (s: Setup_po α) (x y : {x : α // x ∈ s.V}) :
   proj_max s x = proj_max s y ↔ Quotient.mk (proj_setoid s) x = Quotient.mk (proj_setoid s) y := by
-  -- proj_max は po_maximal_reachable の選択肢の一つ
   apply Iff.intro
   · intro h
     dsimp [proj_max] at h
@@ -296,7 +265,7 @@ lemma proj_max_quotient (s: Setup_po α) (x y : {x : α // x ∈ s.V}) :
     simp_all only [Quotient.eq]
     exact h
 
---同値類から極大要素を取り出す。proj_max_quotientはつかってない。
+--Retrieves the maximum element from the equivalence class.Proj_max_quotient is not used.
 noncomputable def proj_max_of_quot
     {α : Type} [Fintype α] [DecidableEq α]
     (s : Setup_po α) :
@@ -305,8 +274,6 @@ noncomputable def proj_max_of_quot
   Quotient.lift
     (fun v : {x : α // x ∈ s.V} => proj_max s v)
     (by
-      -- `projr s v w` はまさに
-      -- `proj_max s v = proj_max s w` なのでそのまま使える
       intro v w h
       simpa using h)
 
@@ -315,24 +282,22 @@ noncomputable def proj_max_of_quot
     (s : Setup_po α) (v : {x : α // x ∈ s.V}) :
   proj_max_of_quot s ⟦v⟧ = proj_max s v := rfl
 
---yの極大要素proj_maxが本当に極大要素で、上にあること。proj_max_maximalとかぶっている。そのから参照あり。
+--That the maximum element proj_max of y is really the maximum element and is above.It's similar to proj_max_maximal.There's a reference then.
 lemma proj_max_spec (s : Setup_po α) (y : s.V) :
   po_maximal s (proj_max s y) ∧ reach s.f y (proj_max s y) :=
   Classical.choose_spec (po_maximal_reachable s y)
 
---極大でreachableであれば、proj_maxになること。functionalDirectProductから参照。
+--If it is at maximum and is well-able, it should be proj_max.See it from functionalDirectProduct.
 lemma proj_max_unique (s : Setup_po α) {y x : s.V}
   (h : po_maximal s x ∧ reach s.f y x) :
   proj_max s y = x := by
-  -- choose_spec で proj_max の性質を取り出し
   have hy := proj_max_spec s y
-  -- 一意性の補題で同値写像
   exact po_maximal_reachable_eq s y (proj_max s y) x hy h
 
---大小関係がある場合は、対応する極大要素proj_maxは等しい。
+--If there is a large and small relationship, the corresponding maximum element proj_max is equal.
 private lemma proj_max_order (s: Setup_po α) (x y : {x : α // x ∈ s.V})(od:s.po.le x y) :
  proj_max s x = proj_max s y := by
-  -- proj_max は po_maximal_reachable の選択肢の一つ
+
   dsimp [proj_max]
   rw [←s.order x y] at od
   obtain ⟨xm, hmax, hx⟩ := Classical.choose_spec (po_maximal_reachable s x)
@@ -347,14 +312,14 @@ private lemma proj_max_order (s: Setup_po α) (x y : {x : α // x ∈ s.V})(od:s
   · simp_all only
   · exact this
 
---大小関係がある場合は、対応するコンポーネントは等しい。外から参照あり。
+--If there is a large and small relationship, the corresponding components are equal.There is an external reference.
 lemma quotient_order (s: Setup_po α) (x y : {x : α // x ∈ s.V}) (od:s.po.le x y):
   Quotient.mk (proj_setoid s) x = Quotient.mk (proj_setoid s) y := by
-  -- proj_max は po_maximal_reachable の選択肢の一つ
+
   apply (proj_max_quotient s x y).mp
   exact proj_max_order s x y od
 
---極大要素のproj_maxは自分自身。外から参照あり。
+--That the maximum element proj_max of y is really the maximum element and is above.It's similar to proj_max_maximal.There's a reference then.
 lemma proj_max_eq_of_maximal
     (s : Setup_po α) (x : s.V) (hmax : po_maximal s x) :
     proj_max s x = x := by
@@ -366,19 +331,16 @@ lemma proj_max_eq_of_maximal
     use 0
     simp
 
-/------------------------------------------------------------
-  1. principal ideal を Finset で定義
-------------------------------------------------------------/
 
 /-
-`s : Setup_po α` から得られる半順序 `s.po` 上で
-`x` が生成する principal ideal を Finset として取る
+`s : Setup_po α` on the partial order `s.po`
+Take the principal ideal generated by `x` as a Finset
 -/
 noncomputable def principalIdeal (s : Setup_po α) (x : s.V) : Finset α :=
   (s.V.attach.filter (fun y ↦ s.po.le y x)).image Subtype.val
 
 /------------------------------------------------------------
-  2. principalIdeal が injective
+  2. principalIdeal is injective
 ------------------------------------------------------------/
 lemma principal_injective
     (s : Setup_po α) :
@@ -394,7 +356,6 @@ lemma principal_injective
     simp [principalIdeal] at hx_in_y
     exact hx_in_y
 
-  -- y ≤ x も同様
   have hy_in : (y : α) ∈ principalIdeal s y := by
     simp [principalIdeal, s.po.le_refl]
   have hy_in_x : (y : α) ∈ principalIdeal s x := by
@@ -403,28 +364,25 @@ lemma principal_injective
     simp [principalIdeal] at hy_in_x
     exact hy_in_x
 
-  -- 反対称性
   exact s.po.le_antisymm x y x_le_y y_le_x
 
 
 /------------------------------------------------------------
-  3. 写像の像 ⊆ ideal 集合 & card 計算
+  3. Image of the map ⊆ ideal set & card calculation
 ------------------------------------------------------------/
--- 下方閉 (ideal) 述語
+--ideal predicate
 def isIdeal (s : Setup_po α) (I : Finset α) : Prop :=
   I ⊆ s.V ∧ ∀ {v w : s.V}, v.1 ∈ I → s.po.le w v → w.1 ∈ I
 
---ssは、forallにしたほうがrwが使いやすいと思って変えた。
+--I changed SS because I thought it would be easier to use RW if it was used in Forall.
 lemma isIdeal_lem (s: Setup_po α) :--(ss : Finset α)(hss : ss ⊆ s.V) :
   ∀ ss : Finset s.V, isIdeal s (ss.image Subtype.val) ↔ ∀ (v : s.V ), v ∈ ss → ∀ w :s.V, s.po.le  w v → w ∈ ss :=
 by
   intro ss
   constructor
   · intro h v hv w hle
-    -- ss ⊆ s.V から v ∈ ss ならば w ∈ ss
     have : v ∈ ss := by
       simp_all only
-    -- ideal の定義から w ∈ ss
     dsimp [isIdeal] at h
     simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, Subtype.coe_eta, coe_mem,
       exists_const, Subtype.forall]
@@ -439,7 +397,6 @@ by
       obtain ⟨w, h_1⟩ := hx
       simp_all only
     · intro v w hv hle
-      -- ideal の定義から w ∈ ss
       simp_all only [Subtype.forall, Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right,
         Subtype.coe_eta, coe_mem, exists_const]
       obtain ⟨val, property⟩ := v
@@ -455,16 +412,13 @@ by
   intro ss hss
   constructor
   · intro h
-    -- ss ⊆ s.V から v ∈ ss ならば w ∈ ss
     have : ∀ v : s.V, v.1 ∈ ss → ∀ w : s.V, s.po.le w v → w.1 ∈ ss := by
       intro v hv w hle
-      -- ideal の定義から w ∈ ss
       dsimp [isIdeal] at h
       simp_all only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right, Subtype.coe_eta, coe_mem,
         exists_const, Subtype.forall]
       tauto
 
-    -- ideal の定義から ss ⊆ s.V
     constructor
     · exact hss
 
@@ -475,7 +429,6 @@ by
     · exact h.1
 
     · intro v w hv hle
-      -- ideal の定義から w ∈ ss
       dsimp [po_closuresystem] at h
       simp_all only [Subtype.forall]
       obtain ⟨val, property⟩ := v
@@ -488,18 +441,14 @@ by
 
 lemma principal_isIdeal (s : Setup_po α) (x : s.V) :
     isIdeal s (principalIdeal s x) := by
-  -- 包含と下方閉を順に証明
   constructor
   · intro y hy
     simp [principalIdeal] at hy
-    --obtain ⟨val, property⟩ := x
-    --obtain ⟨w, h⟩ := hy
     obtain ⟨val, property⟩ := x
     obtain ⟨w, h⟩ := hy
     simp_all only
 
   · intro v w hv hle
-    -- From hv we know that v ∈ principalIdeal s x; decompose it to obtain a witness.
     dsimp [principalIdeal] at hv
     dsimp [principalIdeal]
     simp_all only [Finset.mem_image, mem_filter, mem_attach, true_and, Subtype.exists, exists_and_right,
@@ -509,9 +458,8 @@ lemma principal_isIdeal (s : Setup_po α) (x : s.V) :
     exact hle.trans hv
 
 
-/------------------------------------------------------------
-  4. ノード数 ≤ イデアル数
-------------------------------------------------------------/
+--  4. Number of nodes ≤ Ideal
+
 lemma nodes_le_ideals
     (s : Setup_po α) :
     s.V.card + 1 ≤
@@ -529,16 +477,14 @@ lemma nodes_le_ideals
     have hideal : isIdeal s (f x) := principal_isIdeal s x
     exact Finset.mem_filter.2 ⟨hpow, hideal⟩
   -- Use Finset.card_le_of_inj_on
-  let Ideal' := s.V.powerset.filter (isIdeal s) \ {∅} --ここでisIdealからemptyを引いたものを考える。
+  let Ideal' := s.V.powerset.filter (isIdeal s) \ {∅}
   have hf_maps :
     ∀ a ∈ s.V.attach, f a ∈ (s.V.powerset.filter (isIdeal s)) := by
     intro ⟨a, ha⟩ _
-    -- principal_isIdeal ですでに filter の要件は示してあるので
     exact hf_im ⟨a, ha⟩
   have hf_maps' :
     ∀ a ∈ s.V.attach, f a ∈ Ideal' := by
     intro ⟨a, ha⟩ _
-    -- principal_isIdeal ですでに filter の要件は示してあるので
     dsimp [Ideal']
     rw [@mem_sdiff]
     constructor
@@ -557,7 +503,6 @@ lemma nodes_le_ideals
       simp_all only [Finset.notMem_empty, f, Ideal']
   have hf_inj : InjOn f s.V.attach := by
     intro a b hae hbe h
-    -- principal_injective でサブタイプまでさかのぼる
     apply Subtype.ext
     exact congrArg Subtype.val (hf_inj h)
 

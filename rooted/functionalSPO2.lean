@@ -25,23 +25,21 @@ open Finset Set Classical
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 
---ここからSetup_spo2が前提のもの。
---一部にSetup_spoが前提の話も入っているがsetup_spo2につながる話。
---traceに関しても、maximalにつながる話がここに入っている。
+--Setup_spo2 is the premise from here.
+--Some of the stories include the premise of Setup_spo, but this is a story that leads to setup_spo2.
+--trace also includes stories that lead to maximal.
 
---Setup_spoよりも仮定としてはつよくなっている。大きさ2以上の同値類が極大なもののみという仮定が付け加わる。
+--As a more assumption than Setup_spo, it's stronger.The assumption is added that only the maximum equivalent class of size 2 or higher is the maximum.
 structure Setup_spo2 (α : Type) [Fintype α] [DecidableEq α]
   extends Setup_spo α where
-  -- 極大でない要素の同値類のサイズが 1
   singleton_if_not_maximal :
   ∀ q : Quotient toSetup_spo.setoid,
     (classOf toSetup_spo q).card ≥ 2 →
     isMaximal_spo toSetup_spo q
 
-
---ここから極大性の話。極大性の話はspoというよりもspo2なので移動させた。
---でも仮定の強さの点ではSPOにあった方が良かったのかも。再び移動するか？
--- Setup_spoの極大性とSetup2の極大性の関係。これは使われてない。
+--This is where we talk about maximity.The story of the maximity is not SPO, but SPO 2, so I moved it.
+--But in terms of the strength of the assumption, it might have been better to have been in the SPO.Shall we move again?
+-- The relationship between the maximity of Setup_spo and the maximity of Setup2.This is not used.
 lemma isMaximal_spo_iff (s: Setup2 α) (q : Quotient s.setoid) :
   isMaximal_spo (setup_setupspo s) q ↔
   isMaximalQ s q :=
@@ -63,8 +61,8 @@ by
     rw [spole_iff_po] at hy
     exact hy
 
---同値類の大きさが2以上であれば、同値類の極大性が成り立つ。
---setup2_induces_spoで利用している。
+--If the magnitude of the equivalence class is 2 or more, the maximum value class is valid.
+--Used with setup2_induces_spo.
 theorem eqClass_Maximal (s: Setup2 α) (q : Quotient s.setoid) :
   (classOf (setup_setupspo s) q).card ≥ 2 → isMaximalQ s q  := by
   intro h
@@ -117,9 +115,9 @@ theorem eqClass_Maximal (s: Setup2 α) (q : Quotient s.setoid) :
   simp_all only [Subtype.forall, ge_iff_le, Subtype.coe_eta, implies_true, Quotient.out_eq]
 
 
---Setup2からSetup_spo2への埋め込み。
---functionalMainの主定理average_rareのところで使っている。
---ここで極大要素以外は、同値類のサイズが1という条件を証明している。
+--Embedded from Setup2 to Setup_spo2.
+--Used in functionalMain's principal theorem average_rare.
+--Here, except for the maximum element, it proves that the size of the equivalence class is 1.
 def setup2_induces_spo (s : Setup2 α) : Setup_spo2 α :=
 {
   V := s.V,
@@ -131,7 +129,6 @@ def setup2_induces_spo (s : Setup2 α) : Setup_spo2 α :=
   h_spo := (setup_setupspo s).h_spo,
   singleton_if_not_maximal := by
     intro q hq
-    --dsimp [isMaximal_spo] at hq
     let csm := eqClass_Maximal s q hq
     dsimp [isMaximalQ] at csm
     dsimp [isMaximal_spo]
@@ -149,16 +146,15 @@ def setup2_induces_spo (s : Setup2 α) : Setup_spo2 α :=
 }
 
 -----------------------
---trace関係の定義や補題。
---Setup_spo2に関連するもの
+--trace definitions and lemma.
+--Related to Setup_spo2
 ------------------------------
 
---すぐ下で利用。
+--Use right below.
 omit [Fintype α] in
 private lemma card_of_image_subset (V1 V2: Finset α) (A : Finset V1)(B:Finset V2)
   (h : A.image Subtype.val ⊆ B.image Subtype.val) :
   B.card ≥ A.card := by
-  --haveI : DecidableEq (Subtype (· : α → Prop)) := inferInstance
   have : A.card = (A.image Subtype.val).card := by
     symm
     apply Finset.card_image_of_injective
@@ -168,7 +164,7 @@ private lemma card_of_image_subset (V1 V2: Finset α) (A : Finset V1)(B:Finset V
   simp_all only [ge_iff_le]
   linarith
 
---新しく写って同値類が大きくなることはない。前提は、Setup_spoだが、setup_trace_spo2内で利用。
+--The equivalent class will not increase when a new photo is taken.The premise is Setup_spo, but it is used within setup_trace_spo2.
 private lemma toNew_card (s : Setup_spo α) (x : {x : α // x ∈ s.V})
   (q: Quotient s.setoid)
    (hx:(classOf s (@Quotient.mk _ s.setoid x)).card ≥ 2):
@@ -198,10 +194,10 @@ by
 
   exact card_of_image_subset (setup_trace s x hx).V s.V (classOf (setup_trace s x hx) (toNew s x hx q)) (classOf s q) this
 
---Setup_spo2前提ではないが、下でもそとのファイルのsetup_trace_spo2の証明で利用。それがspo2の前提。
---traceしても、大小関係は変わらない。
---場所をSPOTraceに移動する余地はあるが、spo2前提の定理の補題なのでここにある。
---setup_trace_reachとの関係はreachで書くか、spo.leで書くかの違い？この証明の両方向で使っている。
+--Setup_spo2 is not a premise, but it is also used to prove the setup_trace_spo2 file below.That's the premise of SPO2.
+--trace does not change the size of the size.
+--There is room for moving the location to SPOTrace, but it is here as it is a lemma of the theorem assumption based on spo2.
+--Is the difference between writing the relationship with setup_trace_reach with reach or spo.le?It is used in both directions of this proof.
 lemma setup_trace_spo_le (s : Setup_spo α) (x: s.V) (hx:(classOf s (@Quotient.mk _ s.setoid x
 )).card ≥ 2) (q1 q2 : Quotient (restrictedSetoid s x)) :
   (setup_trace s x hx).spo.le q1 q2 ↔ s.spo.le (toOld s x q1) (toOld s x q2) :=
@@ -234,9 +230,9 @@ by
     simp_all only
     exact this
 
---setup2_induces_spoなどと違って、traceをとっている。ただし、spo2前提。
---結構いろいろなところで使われていた、setup_traceの定義で十分なところはそちらに変更。Mainで使われている。
---大きさ2以上の同値類が極大なもののみという条件が必要な場合のみSetup_spo2が必要。
+--Unlike setup2_induces_spo, it takes a trace.However, it is assumed that SPO2.
+--The definition of setup_trace, which was used in quite a variety of places, has been changed to that.It is used in Main.
+--Setup_spo2 is required only if the condition is that only the maximum equivalent class of 2 or higher is required.
 noncomputable def setup_trace_spo2 (s : Setup_spo2 α)(x: s.V) (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
 )).card ≥ 2): Setup_spo2 α :=
 {
@@ -246,7 +242,6 @@ noncomputable def setup_trace_spo2 (s : Setup_spo2 α)(x: s.V) (hx:(classOf s.to
   noLoop := by
     intro q1 q2
     intro h1 h2
-    --simp at h1 h2
     exact setup_trace_noLoop s.toSetup_spo x hx q1 q2 h1 h2
   setoid := restrictedSetoid s.toSetup_spo x
   spo := partialOrderOfFq (setup_trace_base s.toSetup_spo x hx).fq (by
@@ -255,15 +250,11 @@ noncomputable def setup_trace_spo2 (s : Setup_spo2 α)(x: s.V) (hx:(classOf s.to
       exact setup_trace_noLoop s.toSetup_spo  x hx q1 q2 h1 h2
   )
   h_spo := by
-    --simp_all only
     obtain ⟨val, property⟩ := x
     simp_all only
     rfl
   singleton_if_not_maximal := by
     intro q hq
-    --dsimp [isMaximal_spo] at hq
-    --simp
-    --simp at q
     simp at hq
     set q' := toOld s.toSetup_spo x q with hq'
     have thisq:q = toNew s.toSetup_spo x hx q' := by
@@ -298,7 +289,7 @@ noncomputable def setup_trace_spo2 (s : Setup_spo2 α)(x: s.V) (hx:(classOf s.to
     exact this
 }
 
---setup_trace_spo2の立ち位置をはっきりさせるため。Mainで使っている。
+--To clarify the position of setup_trace_spo2.Used in Main.
 lemma setup_trace_spo2_lem (s : Setup_spo2 α)(x: s.V) (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).card ≥ 2):
   (setup_trace_spo2 s x hx).toSetup_spo = setup_trace s.toSetup_spo x hx := by
   dsimp [setup_trace_spo2]

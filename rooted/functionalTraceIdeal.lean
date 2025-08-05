@@ -17,16 +17,15 @@ import rooted.FamilyLemma
 import rooted.StemSizeOne
 import rooted.Parallel
 import rooted.functionalCommon
---import rooted.functionalTreePreorder
 import rooted.functionalTreePartialorder
 import rooted.functionalSPO
 import rooted.functionalSPO2
 import rooted.functionalTreeIdeal
 import rooted.functionalIdealrare
 
----前半がndsの話。
----前半がSetup_spoの仮定の話。
----後半がSetup_spo2の仮定の話。
+---The first half is about the NDS.
+---The first half is about Setup_spo's hypothesis.
+---The second half is about the hypothesis of Setup_spo2.
 
 open Finset Set Classical
 
@@ -34,11 +33,10 @@ set_option maxHeartbeats 2000000
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 
---制限される前から、制限された世界への成り立つ定理。
+--A theorem that holds a restricted world even before it is restricted.
 private lemma trace_ideal_lem (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quotient.mk _ s.setoid x
 )).card ≥ 2) :
   ∀ ss:Finset α,  (spo_closuresystem s).sets ss → (spo_closuresystem (setup_trace s x hx)).sets (ss.erase x.val) := by
-  --右から左は別の補題に分けた。
   intro ss
   intro h
   dsimp [setup_trace]
@@ -62,7 +60,6 @@ private lemma trace_ideal_lem (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quoti
 
     have holdq :oldq ∈ I := by
       dsimp [oldq]
-      --つかうのは、hq
       rw [Finset.mem_image] at hq
       obtain ⟨qq, hqq, hqq1⟩ := hq
       rw [←hqq1]
@@ -97,7 +94,6 @@ private lemma trace_ideal_lem (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quoti
     · intro hs
       constructor
       · intro x1 hx1
-        --goal ⟦⟨x1, ⋯⟩⟧ ∈ I'
         dsimp [I']
         rw [Finset.mem_image]
         have : x1 ∈ s.V := by
@@ -115,17 +111,12 @@ private lemma trace_ideal_lem (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quoti
         constructor
         ·
           simp_all only [Subtype.coe_eta, Subtype.forall, I']
-          --obtain ⟨val, property⟩ := x
           obtain ⟨left, right⟩ := hI
-          --obtain ⟨left_1, right_1⟩ := hx1
           obtain ⟨left_2, right⟩ := right
           simp_all only [forall_true_left]
         · dsimp [toNew]
           dsimp [toErased]
           obtain ⟨val, property⟩ := x
-          --obtain ⟨left, right⟩ := hI
-          --obtain ⟨left_1, right_1⟩ := hx1
-          --obtain ⟨left_2, right⟩ := right
           simp_all only [forall_true_left]
           simp_all only [Subtype.coe_eta, Subtype.forall, Subtype.mk.injEq, ↓reduceDIte]
       · intro q1 hq1 x2 b hx3
@@ -141,8 +132,6 @@ private lemma trace_ideal_lem (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quoti
           rw [Finset.mem_image] at hq1
           obtain ⟨q, hq, hq1⟩ := hq1
           have hqold:q = toOld s x q1 := by
-            --hq1 : toNew s.toSetup_spo x hx q = q1
-            --の両辺にtoOld s.toSetup_spo xを作用させる。
             let no := NewOld_id s x hx q
             subst hq1
             simp_all only [Subtype.coe_eta, Subtype.forall, forall_const, I', q1old, no]
@@ -170,16 +159,16 @@ private lemma trace_ideal_lem (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quoti
           rw [←ca]
           dsimp [toOld]
 
-/- spo2だったし、使ってなさそうだからコメントアウト。問題なければ消去。
+/- It was SPO2 and I don't think I've used it so I commented it out.If not, erase it.
 --(hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).card ≥ 2)
---これはsetup_spo2の仮定が必要なのか？
-noncomputable def spo_equiv_x_sub (s : Setup_spo2 α) (x: s.V)  : Finset s.V :=
-  (classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).erase x
+--Does this require the setup_spo2 assumption?
+noncomputable def spo_equiv_x_sub (s : Setup_spo2 α) (x: s.V) : Finset s.V :=
+(classOf s.toSetup_spo (@Quotient.mk _s.setoid x)).erase x
 
---xと同値だけど、xそのものはふくまない定義。
+The definition is equivalent to --x, but does not include x itself.
 --(hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).card ≥ 2)
-noncomputable def spo_equiv_x (s : Setup_spo2 α) (x: s.V)   : Finset α :=
-  ((classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).erase x).image Subtype.val
+noncomputable def spo_equiv_x (s : Setup_spo2 α) (x: s.V) : Finset α :=
+((classOf s.toSetup_spo (@Quotient.mk _s.setoid x)).erase x).image Subtype.val
 -/
 -- (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x)).card ≥ 2)
 noncomputable def spo_equiv_x_with (s : Setup_spo α) (x: s.V)  : Finset α :=
@@ -187,7 +176,7 @@ noncomputable def spo_equiv_x_with (s : Setup_spo α) (x: s.V)  : Finset α :=
 
   --s.toSetup_spo.spo.le x (spo_equiv_x s x hx) := by
 
---制限されたあとのhyperedgeから制限される前の世界に戻す定理。
+--A theorem that returns from hyperedge after being restricted to the world before being restricted.
 private lemma trace_ideal_lem_rev (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quotient.mk _ s.setoid x
 )).card ≥ 2) :
   ∀ ss:Finset α, (spo_closuresystem (setup_trace s x hx)).sets ss → ((spo_equiv_x_with s x) ∩ ss).Nonempty  → (spo_closuresystem s).sets (ss ∪ {x.val}):= by
@@ -250,9 +239,9 @@ private lemma trace_ideal_lem_rev (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Q
         rw [Finset.mem_image]
 
         by_cases hx1x: x1 = x
-        case pos => --x1 = xのとき。
+        case pos =>
           subst hx1x
-          --x1=xのときは、hxを使って、xでないxxxを持ってきて、それがssに入ることを示せば、hnの仮定に矛盾。
+
           let xxx := representativeNeSelf s x hx
           let rmc := representativeNeSelf_mem_classOf s x hx
           have xxxsv: xxx.val ∈ s.V := by
@@ -260,7 +249,6 @@ private lemma trace_ideal_lem_rev (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Q
           have xxxSve:xxx.val ∈ s.V.erase x.val := by
             simp_all only [Subtype.coe_eta, Finset.mem_image, Subtype.forall, mem_erase, ne_eq, coe_mem, I', xxx]
           let q := @Quotient.mk _ (restrictedSetoid s x) ⟨xxx.val, xxxSve⟩
-          --qは制限された世界。
 
           let oldq := toOld s x q
 
@@ -269,8 +257,6 @@ private lemma trace_ideal_lem_rev (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Q
           obtain ⟨xxxx, hxxxxss⟩ := hn
 
           have xxxxss:xxxx ∈ ss := by
-            --hI4を使うべきか？これを証明するのと、q ∈ Iを証明するのが循環している。hI4とhI3の結論と前提が逆。
-            --よって、hI4を使いのは難しい。hnを使うべき。
             simp_all only [Finset.mem_union, Finset.mem_singleton, or_true, Subtype.coe_eta, Quotient.eq,
               Subtype.forall, mem_erase, ne_eq, Finset.mem_inter, I', xxx, q]
           have xxxxsv:xxxx∈ s.V := by
@@ -330,7 +316,6 @@ private lemma trace_ideal_lem_rev (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Q
           constructor
           · dsimp [q]
             exact qinI
-            --exact hI3 (hI4 ⟦⟨↑xxx, hI2 this⟩⟧ (hI3 this) xxx rfl)
           · have : oldq = @Quotient.mk _ s.setoid x :=
             by
               dsimp [oldq]
@@ -435,13 +420,8 @@ by
   case isTrue h_1 =>
     have :(setup_trace s x hx).setoid.r (representativeNeSelf s x hx) x_1 := by
       rename_i h_1
-      --simp_all only [ge_iff_le, Quotient.eq, Subtype.val_injective, image_erase, mem_erase, ne_eq, Finset.mem_image,
-      --  mem_filter, mem_attach, true_and, Subtype.exists, exists_and_right, exists_eq_right, exists_prop, not_and,
-      --  Function.const_apply]
-      --obtain ⟨val, property⟩ := x
       obtain ⟨val_1, property_1⟩ := x_1
       simp_all only [Subtype.mk.injEq, not_true_eq_false, forall_const, IsEmpty.forall_iff]
-      --subst h_1
       dsimp [setup_trace]
       dsimp [restrictedSetoid]
       let rmc := representativeNeSelf_mem_classOf s x hx
@@ -449,7 +429,6 @@ by
       simp_all only [Subtype.mk.injEq, not_true_eq_false, forall_const, IsEmpty.forall_iff]
       subst h_1
       dsimp [representativeNeSelf]
-      --simp_all only
       exfalso
       simp_all only [mem_erase, ne_eq, not_true_eq_false, and_true]
       simp_all only [Quotient.eq, Finset.mem_image, mem_filter, mem_attach, true_and, Subtype.exists, exists_and_right,
@@ -465,7 +444,6 @@ by
     mem_filter, mem_attach, true_and, Subtype.exists, exists_and_right, exists_eq_right, not_and, not_exists,
     Subtype.coe_eta]
 
---これもSetup_spoに仮定を変えても大丈夫か？
 private lemma trace_ideal_lem_rev2 (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quotient.mk _ s.setoid x
 )).card ≥ 2) :
   ∀ ss:Finset α, (spo_closuresystem (setup_trace s x hx)).sets ss → (spo_equiv_x_with s x) ∩ ss =∅ → (spo_closuresystem s).sets ss := by
@@ -536,7 +514,7 @@ private lemma trace_ideal_lem_rev2 (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@
         use q'
         exact And.symm ⟨rfl, hI3 x1 hx1⟩
 
-      · intro q hq xx hxx --I'に入っているqは、その要素は、ssの要素であることを示す。hI4は使いそう。
+      · intro q hq xx hxx
 
         let newq := toNew s x hx q
         specialize hI4 newq
@@ -552,9 +530,8 @@ private lemma trace_ideal_lem_rev2 (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@
         by_cases hnx: xx = x
         case pos =>
           subst hnx
-          --xx=xのときは、hxを使って、xでないxxxを持ってきて、それがssに入ることを示せば、hnの仮定に矛盾。
           let xxx := representativeNeSelf s xx hx
-          let rmc := representativeNeSelf_mem_classOf s xx hx --これは関係ないかも。
+          let rmc := representativeNeSelf_mem_classOf s xx hx
           have xxxsv: xxx.val ∈ s.V := by
             exact coe_mem (Classical.choose (representativeNeSelf._proof_2 s xx hx))
           have xxx_equiv:s.setoid.r ⟨xxx.val,xxxsv⟩ xx := by
@@ -565,9 +542,8 @@ private lemma trace_ideal_lem_rev2 (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@
             simp_all only [Subtype.coe_eta, Finset.mem_image, Subtype.forall, mem_erase, ne_eq, coe_mem, I', newq,
               xxx]
           have xxxss: xxx.val ∈ ss := by
-            specialize hI4 xxx --⟨xxx.val, this⟩
+            specialize hI4 xxx
             apply hI4
-            --dsimp [classOf] at rmc
             have :q = toOld s xx newq := by
               exact Eq.symm (NewOld_id s xx hx q)
             dsimp [newq]
@@ -595,7 +571,7 @@ private lemma trace_ideal_lem_rev2 (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@
                   exact False.elim (h_2 rfl)
               have :xxx.val ∈ spo_equiv_x_with s xx ∩ ss := by
                 dsimp [spo_equiv_x_with]
-                apply mem_inter_of_mem-- h_contra this
+                apply mem_inter_of_mem
                 exact h_contra
                 exact this
               rw [hn] at this
@@ -605,8 +581,6 @@ private lemma trace_ideal_lem_rev2 (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@
             symm
             rw [←hxx]
             simp
-
-            --以下の補題は既存の条件を明示的にあらためて書いただけ。
 
             have hqsqxx:@Quotient.mk _ s.setoid xx = q := by
               exact hxx
@@ -652,7 +626,6 @@ private lemma trace_ideal_lem_rev2 (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@
           contradiction
 
         case neg =>
-          --xxがxと一致する場合は、ssに入る。
           have :xx.val ∈ s.V.erase ↑x  := by
             rw [@mem_erase]
             constructor
@@ -661,16 +634,10 @@ private lemma trace_ideal_lem_rev2 (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@
               subst hxx
               simp_all only [Subtype.coe_eta, Finset.mem_image, Subtype.forall, mem_erase, ne_eq, coe_mem, I', newq]
 
-           --· exact coe_mem xx
-
           specialize hI4 ⟨xx.val, this⟩
           apply hI4
           simp
-          --show  ⟦⟨↑xx, ⋯⟩⟧ = newq
           dsimp [newq]
-          --dsimp [toNew]
-          --dsimp [toErased]
-          --rw [←hxx]
           have :q = toOld s x newq := by
             exact Eq.symm (NewOld_id s x hx q)
           rw [this]
@@ -679,13 +646,9 @@ private lemma trace_ideal_lem_rev2 (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@
           let nln := new_lem_notx s x hx ⟨xx.val, h_1⟩
           have : xx.val ∉ spo_equiv_x_with s x  := by
             dsimp [spo_equiv_x_with]
-            --thisからqは、newqは対応。
-            --hxxからxxもqに対応。
-            --hnがメインの条件。
             by_contra h_contra
             have : xx.val ∈ ss := by
               apply hI4
-              --⟦⟨↑⟨↑xx, h_1⟩, ⋯⟩⟧ = newq
               dsimp [newq]
               rw [←hxx]
               simp
@@ -693,8 +656,6 @@ private lemma trace_ideal_lem_rev2 (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@
               dsimp [toErased]
               split
               · let rmc := representativeNeSelf_mem_classOf s x hx
-                --obtain ⟨val, property⟩ := x
-                --obtain ⟨val_1, property_1⟩ := xx
                 simp_all only [mem_erase, ne_eq]
                 rename_i h_2
                 rw [h_2] at h_1
@@ -709,7 +670,7 @@ private lemma trace_ideal_lem_rev2 (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@
               · exact rfl
             have :xx.val ∈ spo_equiv_x_with s x ∩ ss := by
               dsimp [spo_equiv_x_with]
-              apply mem_inter_of_mem-- h_contra this
+              apply mem_inter_of_mem
               exact h_contra
               exact this
             rw [hn] at this
@@ -724,8 +685,8 @@ private lemma trace_ideal_lem_rev2 (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@
           rw [nln]
           exact rfl
 
---今までの補題をまとめたもの。
---trace_ideal_ndsで引用。
+--A summary of all the lemmas so far.
+-- called from trace_ideal_nds.
 private lemma trace_ideal (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quotient.mk _ s.setoid x
 )).card ≥ 2) :
   ∀ ss:Finset α,  (spo_closuresystem (setup_trace s x hx)).sets ss ↔ ((spo_closuresystem s).toSetFamily.trace x.val (by simp_all only [ge_iff_le,
@@ -756,7 +717,6 @@ private lemma trace_ideal (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quotient.
 
       ·
         show (spo_closuresystem s).sets ss ∨ (spo_closuresystem s).sets (ss ∪ {↑x})
-        --分類するのは、xがssにはいっているかではない。ssはxを含み得ない。ssがxと同値な要素を含んでいるかどうかで分類。
         by_cases hn:((spo_equiv_x_with s x) ∩ ss).Nonempty
         case pos =>
           let tilr := trace_ideal_lem_rev s x hx ss
@@ -765,7 +725,6 @@ private lemma trace_ideal (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quotient.
         case neg =>
           have :spo_equiv_x_with s x ∩ ss = ∅ := by
             exact Finset.not_nonempty_iff_eq_empty.mp hn
-          --このときは、xと関係がないssであるとき。補題を作るか。
           let tilr2 := trace_ideal_lem_rev2 s x hx ss
           specialize tilr2 h this
           exact Or.inl tilr2
@@ -824,7 +783,7 @@ private lemma trace_ideal (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quotient.
             subst a_2
             simp_all only
 
-      obtain ⟨x1, hx1⟩ := hh --x1がxの同値類の仲間。
+      obtain ⟨x1, hx1⟩ := hh
       have : s.setoid.r x1 x := by
         have : x1 ∈ (classOf s (@Quotient.mk _ s.setoid x)) := by
           simp_all only [mem_erase, ne_eq]
@@ -853,10 +812,8 @@ private lemma trace_ideal (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quotient.
         simp at til
         rw [←rwss]
         apply til
-        --ssがxを含むケース。
         exact hr
 
---すぐ下で利用。
 private lemma normalized_degree_sum_congr {α : Type} [DecidableEq α] [Fintype α]
   (F G : SetFamily α)
   [DecidablePred F.sets] [DecidablePred G.sets]
@@ -864,38 +821,32 @@ private lemma normalized_degree_sum_congr {α : Type} [DecidableEq α] [Fintype 
   (h_ground : F.ground = G.ground) :
   F.normalized_degree_sum = G.normalized_degree_sum := by
 
-  -- 定義を展開
   dsimp [ SetFamily.normalized_degree_sum
         , SetFamily.total_size_of_hyperedges
         , SetFamily.number_of_hyperedges ]
 
-  -- 便宜上，powerset を s と置く
   let s := F.ground.powerset
 
-  -- filter の中身（F.sets）を書き換え
   have h_filter : s.filter F.sets = s.filter G.sets :=
     filter_congr (by intros x _; simp [h_sets])
 
-  -- フィルターされた集合族の要素数が等しい ⇒ Int.ofNat したものも等しい
   have h_card_nat : (s.filter F.sets).card = (s.filter G.sets).card :=
     congrArg Finset.card h_filter
   let h_card := congrArg Int.ofNat h_card_nat
 
-  -- フィルターされた集合族の「大きさの合計」も同様に等しい
   have h_sum_nat : (s.filter F.sets).sum Finset.card = (s.filter G.sets).sum Finset.card :=
   by
     let ca := @congrArg (Finset (Finset α)) Nat (s.filter F.sets) (s.filter G.sets)  (fun S:Finset (Finset α) => S.sum Finset.card) h_filter
     exact ca
   let h_sum := congrArg Int.ofNat h_sum_nat
 
-  -- 最後に normalized_degree_sum の本体を書き換える
   simp [h_card, h_sum]
   rw [h_ground]
   simp_all only [s]
 
---traceしたものと、集合族が等しければ、ndsも等しい。これはSetup_spoの仮定で大丈夫？
---functionalMainで使われている。
---trace_ideal_nds_increase2でも使われている。
+--traced and the group family are equal, nds are equal.Is this okay assuming Setup_spo?
+--Used in functionalMain.
+--It is also used in trace_ideal_nds_increase2.
 theorem trace_ideal_nds (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quotient.mk _ s.setoid x
 )).card ≥ 2) :
   (spo_closuresystem (setup_trace s x hx)).normalized_degree_sum = ((spo_closuresystem s).toSetFamily.trace x.val (by simp_all only [ge_iff_le,
@@ -921,11 +872,11 @@ theorem trace_ideal_nds (s: Setup_spo α) (x: s.V)  (hx:(classOf s (@Quotient.mk
 
 
 -----------------------------------------------------------
---trace_parallel_average_rare を使って大きさ2以上の同値類の頂点をtraceすると、normalized degree sumが下がらないことを証明する。
---一般的な枠組みでは、trace_parallel_average_rareで証明済み。
---spo2_rareを利用しているので、仮定はSetup_spoでなくて、Setup_spo2である必要がある。
---下のtrace_ideal_nds_increase2で、setup_traceを利用する形に書き換え。
---以下の議論は、excessに関係がないので、TraceIdealに移動してもよい。
+--Using trace_parallel_average_rare to trace vertices of equivalence classes of magnitude 2 or higher, proves that normalized degree sum does not drop.
+--In a general framework, proven by trace_parallel_average_rare.
+--Since we are using spo2_rare, the assumption must be Setup_spo2, not Setup_spo.
+--Rewrite the form using trace_ideal_nds_increase2 below to use setup_trace.
+--The following discussion is unrelated to excess and may be moved to TraceIdeal.
 lemma trace_ideal_nds_increase (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
 )).card ≥ 2) :
   (spo_closuresystem s.toSetup_spo).normalized_degree_sum ≤ ((spo_closuresystem s.toSetup_spo).toSetFamily.trace x.val (by simp_all only [ge_iff_le,
@@ -981,7 +932,6 @@ by
           exact h
       exact this
 
-      --parallelとsetoidの関係
   specialize tpar this
   have : (spo_closuresystem s.toSetup_spo).is_rare ↑x :=
   by
@@ -989,8 +939,8 @@ by
   specialize tpar this
   exact tpar
 
---trace_ideal_nds_increaseよりはすっきりした形。setup_traceを利用している。仮定はSetup_spo2である必要。
---Mainのh_ndsを証明するときに使っている。
+--It's cleaner than trace_ideal_nds_increase.I'm using setup_trace.The assumption must be Setup_spo2.
+--Used to prove Main's h_nds.
 theorem trace_ideal_nds_increase2 (s: Setup_spo2 α) (x: s.V)  (hx:(classOf s.toSetup_spo (@Quotient.mk _ s.setoid x
 )).card ≥ 2) :
 (spo_closuresystem s.toSetup_spo).normalized_degree_sum ≤ (spo_closuresystem (setup_trace s.toSetup_spo x hx)).normalized_degree_sum :=

@@ -1,4 +1,4 @@
---Setup2が定義される。
+-- Setup2 is defined in this file.
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Finset.Powerset
 import Mathlib.Data.Set.Function
@@ -23,20 +23,20 @@ open Finset Set Classical
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 
---ここで定義するsetup2は、同値類setoid上の半順序に関するもの。s.poやs.fqが使える。
---半順序で大小関係があったら、それをpullbackした前順序でも大小関係がある。
---前順序で大小関係があったら、それをpushforwardした半順序でも大小関係がある。
---preorderの大きさ2以上の同値類は、半順序の極大要素になる。(ここでは示してない？)
---preorderの極大要素は、同値類の極大要素になる。(ここでは示してない？)
+-- Setup2 defined here refers to the partial order on the equivalence class setoid.You can use s.po and s.fq.
+--If there is a relationship between magnitude and size in the partial order, the previous order in which you pull back it also has a relationship between magnitude and size.
+--If there is a relationship between magnitude and size in the previous order, even if the partial order is pushforwarded, there is a relationship between magnitude and size.
+-- Equivalent types with a magnitude of 2 or more of the preorder become the maximum element of the partial order.(Not shown here?)
+-- The maximum element of preorder is the maximum element of the equivalent class.(Not shown here?)
 
 
 -------------------
----Setup2の定義の準備
+---Preparing for Setup2 definitions
 --------------------
 
---quotient_partial_orderよりも証明が長いのは、preorderが間接的に定義されているから？
--- Preorder_eq_PartialOrderでも利用されている。
--- 直接この定義を利用しなくても、このファイルの補題を通じて利用している。
+-- Is the reason the proof is longer than quoteient_partial_order because preorder is defined indirectly?
+-- It is also used in Preorder_eq_PartialOrder.
+-- It is used through the lemma of this file without directly using this definition.
 def partialOrder_from_preorder (s : Setup α) : PartialOrder (Quotient s.setoid) where
   le := by
     exact Quotient.lift₂ (fun x y => s.pre.le x y)
@@ -44,7 +44,6 @@ def partialOrder_from_preorder (s : Setup α) : PartialOrder (Quotient s.setoid)
 
         intros a₁ b₁ a₂ b₂ h₁ h₂
 
-        -- まず setoid の定義を展開
         have h₁' := s.h_setoid ▸ h₁
         have h₂' := s.h_setoid ▸ h₂
 
@@ -63,14 +62,12 @@ def partialOrder_from_preorder (s : Setup α) : PartialOrder (Quotient s.setoid)
       )
   le_refl := by
     intro xx
-    --simp_all only
     simp [Quotient.lift₂]
     induction xx using Quotient.inductionOn
     simp_all only [Quotient.lift_mk, le_refl]
 
   le_trans := by
     intro x y z
-    --simp_all only
     induction x using Quotient.inductionOn
     simp_all only [Quotient.lift_mk, Quotient.lift₂]
     induction y using Quotient.inductionOn
@@ -82,7 +79,7 @@ def partialOrder_from_preorder (s : Setup α) : PartialOrder (Quotient s.setoid)
 
   le_antisymm := by
     intro x y
-    --simp_all only
+
     induction x using Quotient.inductionOn
     rename_i a
     intro a_1 a_2
@@ -96,26 +93,18 @@ def partialOrder_from_preorder (s : Setup α) : PartialOrder (Quotient s.setoid)
     simp_all only [AntisymmRel.setoid_r]
     trivial
 
-/- 使ってなかった。
-noncomputable def spullback  (s: Setup α) (J : Finset (Quotient s.setoid)) : Finset s.V :=
-  { a : s.V | Quotient.mk s.setoid a ∈ J }
-
-noncomputable def spushforward  (s: Setup α) (I : Finset s.V) : Finset (Quotient s.setoid) :=
-  Finset.univ.filter (fun q => ∃ a ∈ I, Quotient.mk s.setoid a = q)
--/
-
---同値類上の半順序を加えたSetup。仮定としての強さは、Setupと同じか。するとSetupからSetup2が定義できる。Setup_to_Setup2
---Setup2にすることで、s.poが使える。
---リファクタリング予定：SetupとSetup2にわけないで、poをdefにしてしまったほうがよかった。
---上のinstanceは、s.po.leとは別物になってしまうので、instanceでなくてdefのほうがよい。
+-- Setup with partial order on equivalence classes.Is the strength the assumption the same as Setup?You can then define Setup2 from Setup.Setup_to_Setup2
+-- By setting it to Setup2, you can use s.po.
+-- Refactoring schedule: It would have been better to have set po to def without having to set it to Setup and Setup2.
+-- The above instance is different from s.po.le, so def is better than instance.
 structure Setup2 (α : Type) [Fintype α] [DecidableEq α] extends Setup α where
   (po       : PartialOrder (Quotient setoid))
   (h_po     :  po = partialOrder_from_preorder toSetup)
 
---前に定義していたquotient_partial_orderと内容的に被っている。
+-- It overlaps with the previously defined quotaent_partial_order.
 instance (s : Setup2 α) : PartialOrder (Quotient s.setoid) := s.po
 
---SetupとSetup2は仮定としての強さが同じ。
+-- Setup and Setup2 have the same assumption strength.
 def Setup_to_Setup2 (s : Setup α) : Setup2 α :=
   {
     V := s.V
@@ -130,22 +119,16 @@ def Setup_to_Setup2 (s : Setup α) : Setup2 α :=
     h_po := rfl
   }
 
-/-
---これは自明なのか。使ってないのでコメントアウト。
-lemma setup_to_setup2_prop (s : Setup α) :
- (Setup_to_Setup2 s).toSetup = s :=
-by
-  exact rfl
--/
+
 
 ------------------------
---s.preとs.poの関係を示す補題。
+-- A lemma showing the relationship between s.pre and s.po.
 ---------------------------
 
---同値類上の半順序は、前順序の大小関係と両立する。
---下で使っているし外からも使っている。
---instを入れなくても、自動的にs.poのインスタンスを使ってくれている。
-lemma pullback_preorder_lemma (s : Setup2 α)-- [inst : PartialOrder (Quotient s.setoid)]
+-- The partial order on the equivalence class is compatible with the magnitude relationship of the previous order.
+-- I'm using it below and from outside.
+-- It automatically uses an instance of s.po even without inst included.
+lemma pullback_preorder_lemma (s : Setup2 α)
  (j1 j2 : (Quotient s.setoid)) (x1 x2 : s.V) :
   Quotient.mk s.setoid x1 = j1 → Quotient.mk s.setoid x2 = j2 → s.po.le j1 j2 → s.pre.le x1 x2 :=
 by
@@ -155,11 +138,10 @@ by
   simp [LE.le, partialOrder_from_preorder, Quotient.lift₂] at h3
   subst h2 h1
   simp_all only [Quotient.lift_mk]
-
---要素の大小関係と、同値類の大小関係の関係。前順序で関係があれば、半順序でも関係がある。
---下で使っているし、そとからも使っている。
---逆方向は、上の補題？
---Preorder_eq_PartialOrderなどで利用。
+-- The relationship between the magnitude and size of elements and the magnitude of equivalence classes.If there is a relationship in the previous order, there is a relationship in the semi order.
+--I'm using it below, and I'm using it from there as well.
+-- Is the lemma above in the reverse direction?
+--Used with Preorder_eq_PartialOrder etc.
 lemma pushforward_preorder_lemma (s : Setup2 α) (x1 x2 : s.V) :
   s.pre.le x1 x2 → s.po.le (Quotient.mk s.setoid x1)  (Quotient.mk s.setoid x2) :=
 by
@@ -169,24 +151,21 @@ by
   simp_all only
 
 --------------------------
--- 極大要素に関する定義や補題。
+-- Definitions and lemma regarding the maximum elements.
 
---商集合上 `(Quotient setoid_preorder, ≤)` における「極大元」であることを表す述語。
---この順序はPartial orderの順序。まだ使ってないかも。setupで書き直す。
+-- A predicate that represents the "maximum" in `(Quotient setoid_preorder, ≤)` on the quotient set.
+--This order is the order of Partial order.Maybe I haven't used it yet.Rewrite with setup.
 def isMaximalQ (s : Setup2 α) (x : Quotient (s.setoid)) : Prop :=
   ∀ y, s.po.le x y → s.po.le y x
 
---要素としての極大性と、同値類の極大性の関係。別のファイルで使っている。
+-- The relationship between the maximum value as an element and the maximum value class.It's used in a different file.
 lemma isMaximal_iff (s: Setup2 α) (a : s.V) :
   isMaximal s.toSetup a ↔ isMaximalQ s (Quotient.mk s.setoid a) := by
   constructor
   · --------------------
-    -- (→) 方向の証明
-    intro ha  -- `ha` : a は元の前順序で極大
+    intro ha
     intro x hx
-    -- x は商集合上の元なので、代表元 b を取り出す
     rcases Quotient.exists_rep x with ⟨b, rfl⟩
-    -- hx : Quotient.mk a ≤ Quotient.mk b から a ≤ b を得る
     dsimp [isMaximal] at ha
     specialize ha b
     have : a ≤ b := by
@@ -195,11 +174,9 @@ lemma isMaximal_iff (s: Setup2 α) (a : s.V) :
       exact ha this
     apply pushforward_preorder_lemma s
     simp_all only [imp_self]
-  · --------------------
-    -- (←) 方向の証明
-    intro ha  -- `ha` : 商集合で Quotient.mk a が極大
+  ·
+    intro ha
     intro b hab
-    -- a ≤ b から商集合でも Quotient.mk a ≤ Quotient.mk b となる
     dsimp [isMaximalQ] at ha
     have : s.po.le (Quotient.mk s.setoid a) (Quotient.mk s.setoid b) := by
       exact pushforward_preorder_lemma s a b hab
@@ -209,17 +186,17 @@ lemma isMaximal_iff (s: Setup2 α) (a : s.V) :
     simp_all only
 
 -------------------
-----fqに関係する補題。
+----Lemma related to fq.
 --------------------
 
---setoidの半順序の一つ上のQuotientを指すもの。
---Setup2じゃなくて、Setupにすることもできるかもしれないが。
+-- refers to a Quotient one above the partial order of the setoid.
+-- It might be possible to set it instead of Setup2.
 def fq (s: Setup2 α) (q:(Quotient s.setoid)):
   (Quotient s.setoid) :=
  Quotient.lift (fun (x:s.V) => Quotient.mk s.setoid (s.f x))
     (by
       intros a b h
-      -- まず setoid の定義を展開
+      -- First, expand the setoid definition
       dsimp [Quotient.lift]
       rw [@Quotient.eq]
       apply (Setoid.comap_rel s.f s.setoid a b).mp
@@ -231,8 +208,8 @@ def fq (s: Setup2 α) (q:(Quotient s.setoid)):
       exact foe
     ) q
 
---Quotientとってからfqを施しても、fをとってからQuotientを取っても同じ。
---fqの引数がSetupでなくて、Setup2にする必要あり。reachを使えそう。
+-- It's the same whether you take Quotient and then apply fq, or take f and then take Quotient.
+--The argument to fq must be set to Setup2 instead of Setup.I think I can use reach.
 private lemma f_on_equiv_n
   (s: Setup2 α) (x : s.V) :
   ∀ n:Nat, Quotient.mk s.setoid (s.f^[n] x) = (fq s)^[n] (Quotient.mk s.setoid x) :=
@@ -248,10 +225,9 @@ by
     rw [@Function.comp_def]
     rw [ih (s.f x)]
     simp_all only [Subtype.forall]
-    --obtain ⟨val, property⟩ := x
     congr 1
 
---任意の同値類から要素を取れることも補題にする。Setupでも良さそうだが、ここでしか使わないので。Quot.outでもよさそう。
+-- It is also possible to use lemma to take elements from any equivalence class.It would be good to set up, but I'll only use it here.Quot.out would also be fine.
 private lemma quotient_representative (s: Setup2 α) (q: Quotient s.setoid) :
   ∃ x : s.V, q = Quotient.mk s.setoid x :=
 by
@@ -259,7 +235,6 @@ by
   rcases q with ⟨x,hx⟩
   exact ⟨x, hx, rfl⟩
 
---下で利用。
 private lemma pre_po_lemma (s: Setup2 α) (x y :s.V) :
  s.pre.le x y ↔ s.po.le (Quotient.mk s.setoid x) (Quotient.mk s.setoid y) := by
   constructor
@@ -268,31 +243,9 @@ private lemma pre_po_lemma (s: Setup2 α) (x y :s.V) :
   · intro h
     exact pullback_preorder_lemma s ⟦x⟧ ⟦y⟧ x y rfl rfl h
 
-/-
---reachを使えそう。f_on_equiv_nと同じだった。
-lemma f_fq_lemma (s: Setup2 α) (x:s.V) :
-  ∀ n:Nat, Quotient.mk s.setoid (s.f^[n] x) = (fq s)^[n] (Quotient.mk s.setoid x) := by
-  intro n
-  exact f_on_equiv_n s x n
--/
-  /-
-  induction n generalizing x
-  case zero =>
-    simp_all only [Finset.mem_univ, Quotient.lift_mk, Quotient.mk]
-    simp_all only [Function.iterate_zero, id_eq]
 
-  case succ n ih =>
-    simp_all only [Function.iterate_succ, Quotient.mk]
-    rw [@Function.comp_def]
-    rw [@Function.comp_def]
-    rw [ih (s.f x)]
-    simp_all only [Subtype.forall]
-    --obtain ⟨val, property⟩ := x
-    congr 1
-  -/
+--Can you rewrite using reach?The opposite is fq_lemma_rev.
 
---reachを使って書き直せる？逆は、fq_lemma_rev。
---そとからも使っている。
 lemma fq_lemma (s: Setup2 α) (qx:Quotient s.setoid) :
   ∀ qy :(Quotient s.setoid), s.po.le qx qy → ∃ n:Nat, qy = ((fq s)^[n]) qx :=
 by
@@ -319,20 +272,17 @@ by
   rw [hy]
   rw [←h]
 
---poからfqの大小の方向。fq_lemma_revのbase caseに使う。
---1段階の場合。
---下で使っている。
+--The direction of the size and size of the PO to FQ.Used as the base case of fq_lemma_rev.
+-- For one level.
+-- I'm using it below.
 private lemma fq_lemma_rev_one (s: Setup2 α) (qx :Quotient s.setoid) :
   s.po.le qx ((fq s) qx) :=
 by
-  --pre_po_lemmaでs.preの議論に帰着する。
-  --qxや((fq s) qx)の代表元を持ってくる必要。
-  --そのあと、f_on_equiv_revを使う？
 
   obtain ⟨x,hx⟩ := quotient_representative s qx
 
   let y := s.f x
-  have hy: ((fq s) qx) = Quotient.mk s.setoid y := by --どこかで示したかも。
+  have hy: ((fq s) qx) = Quotient.mk s.setoid y := by
     rw [@Setup.h_setoid] at qx
     rw [setoid_preorder] at qx
     simp_all only [Quotient.lift_mk]
@@ -346,9 +296,9 @@ by
   subst hx
   simp_all [y]
 
---fqのiterationでいけるものは、大小関係がある。fq_lemmaの逆。
---functionalSPOでreachを使って書き換えられるreach_leq のでそっちを使うと良い。
---外から使っていた。
+--What you can do with FQ's Iteration has something to do with size.The reverse of fq_lemma.
+-- Reach_leq can be rewritten using reach in functionalSPO, so it's a good idea to use that.
+-- I used it from outside.
 lemma fq_lemma_rev (s: Setup2 α) (qx qy:Quotient s.setoid) :
   (∃ n:Nat, qy = ((fq s)^[n]) qx) → s.po.le qx qy :=
 by
@@ -377,10 +327,9 @@ by
     · exact this
     · simp_all only [Function.comp_apply]
 
---こっちは、spoでなくてpoの方。外でも使っている。名前を変えた。
+--This one is the PO, not the SPO.I use it outside too.I changed my name.
 lemma reach_po_leq (s : Setup2 α) (x y : Quotient s.setoid) :
   reach (fq s) x y → s.po.le x y := by
-  --これはs.spo.leの定義な気もするが。
   intro h
   rw [s.h_po]
   dsimp [reach] at h
@@ -395,88 +344,3 @@ lemma reach_po_leq (s : Setup2 α) (x y : Quotient s.setoid) :
   rw [←hn] at fql
   convert fql
   rw [s.h_po]
-
-/-
---今のところ使ってない？極大なものより大きなものは下に一致。
-theorem exists_max_ge_of_mem {s : Setup2 α} {q : Quotient s.setoid} :
-  ∃ y : Quotient s.setoid, s.po.le q y ∧ ∀ z : Quotient s.setoid, s.po.le y z → z = y :=
-by
-  let uA:Finset (Quotient s.setoid) := univ
-  let A := uA.filter (fun z => s.po.le q z)
-
-
-  have hA_nonempty : A.Nonempty := ⟨q, by simp_all only [mem_filter, Finset.mem_univ, le_refl, and_self, A, uA]⟩
-
-  obtain ⟨m, hmA, hmax⟩ := Finset.exists_maximal A hA_nonempty
-  have hms : m ∈ uA := by simp_all only [mem_filter, Finset.mem_univ, true_and, A, uA]--mem_of_mem_filter hmA
-  have hxm : s.po.le q m := by simp_all only [mem_filter, Finset.mem_univ, true_and, A, uA]
-
-  use m
-  constructor
-  · exact hxm
-  · intro z
-    intro h
-    let hmaxz := hmax z
-    simp at hmaxz
-    have notspo: ¬ (s.po.lt m z) :=
-    by
-      simp_all only [mem_filter, Finset.mem_univ, and_self, A, uA]
-      apply Aesop.BuiltinRules.not_intro
-      intro a
-      apply hmaxz
-      · simp_all only [mem_filter, Finset.mem_univ, true_and, A, uA]
-        exact le_trans hxm h
-      · simp_all only [A, uA]
-
-    have : z ∈ A:=
-    by
-      simp_all only [mem_filter, Finset.mem_univ, and_self, true_and, A, uA]
-      exact le_trans hxm h
-    specialize hmaxz this
-    --rw  [s.h_po] at h  --rwできるがやらない方が良かったみたい。
-    --rw [partialOrder_from_preorder] at h
-    --なんだかよくわからないけど、証明できたパターン。不等式の分解が難しい。
-    --po.ltをleで書き直した。
-    have : ¬((¬s.po.le z m) ∧ s.po.le m z) := --これはhmaxzと同値なはず。
-    by
-      rw [s.h_po]
-      rw [partialOrder_from_preorder]
-      rw [s.h_po] at notspo
-      rw [partialOrder_from_preorder] at notspo
-      simp_all only [mem_filter, Finset.mem_univ, and_self, true_and, Decidable.not_not, not_false_eq_true,
-        not_true_eq_false, and_true, A, uA]
-      simp_all only [not_and, Decidable.not_not, A, uA]
-      intro a
-      simp_all only [imp_false, not_false_eq_true, A, uA]
-    rw [not_and_or] at this
-    simp at this
-    cases this with
-    |inl hh =>
-      apply s.po.le_antisymm
-      exact hh
-      exact h
-    |inr hh =>
-      rename_i h
-      exfalso
-      exact hh h
--/
-
---同値類間の写像。
-/- Setupの中に組み込まれているから必要ないかも。
-def fq (s: Setup2 α) (q:(Finset.univ:Finset (Quotient s.setoid))):
-  (Finset.univ:Finset (Quotient s.setoid)) :=
-by
-
-  let ql := Quotient.lift (fun (x:s.V) => Quotient.mk s.setoid (s.f x))
-    (by
-      intros a b h
-      -- まず setoid の定義を展開
-      dsimp [Quotient.lift]
-      rw [@Quotient.eq]
-      exact (Setoid.comap_rel s.f s.setoid a b).mp h
-    )
-  --simp_all only [Finset.mem_univ]
-  obtain ⟨val, property⟩ := q
-  --simp_all only [Finset.mem_univ]
-  use val
--/

@@ -1,6 +1,4 @@
 import Mathlib.Order.Defs.PartialOrder
---import Mathlib.Order.Cover
---import Mathlib.Logic.Function.Iterate
 import Mathlib.Tactic
 --import LeanCopilot
 import rooted.CommonDefinition
@@ -21,7 +19,7 @@ variable {α : Type} [Fintype α] [DecidableEq α]
 
 noncomputable instance : ∀ v, Decidable (Quotient.mk'' v = q) :=  fun v => (Quotient.mk'' v).decidableEq q
 
---compとexclの分解は、disjointであることの補題。すぐ下で使っている。
+--comp and excl decomposition is a lemma of being a disjoint.I use it right below.
 private lemma disjoint_ground_excl (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]
   --(hnonempty : (excl_po_V' s q).Nonempty) :
   (geq2quotient: (numClasses (proj_setoid s) ≥ 2)) :
@@ -52,8 +50,8 @@ by
   obtain ⟨val, property⟩ := v1
   contradiction
 
---成分ごとに分解した集合族の直積がもとの集合族に一致すること。
-----directProduct_comp_excel_ground_cardなど下で使っている。
+--The direct product of the group group decomposed for each component matches the original group group.
+----directProduct_comp_excel_ground_card etc. are used below.
 lemma directProduct_comp_excel  (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]
   (geq2quotient: (numClasses (proj_setoid s) ≥ 2)) :
   DirectProduct (po_closuresystem (comp_po s q)).toSetFamily (po_closuresystem (excl_po s q geq2quotient)).toSetFamily =
@@ -87,7 +85,7 @@ by
      tauto
   · funext ss
     simp
-    --以下はs.Vの2分割になっている。
+
     let compq := Finset.image Subtype.val (filter (fun v => Quotient.mk'' v = q) s.V.attach)
     let eclq := Finset.image Subtype.val (filter (fun v => ¬ (⟦v⟧ = q))    s.V.attach)
     have : compq ∪ eclq = s.V :=
@@ -130,12 +128,10 @@ by
 
     constructor
     · intro a_1
-      obtain ⟨comp_s, a_12, a_1⟩ := a_1 --comp_sはssのq側
+      obtain ⟨comp_s, a_12, a_1⟩ := a_1
       obtain ⟨comp1, comp2⟩ := a_12
-      obtain ⟨ecl_s, a_14, unions⟩ := a_1 --ecl_sはssのnot q側
+      obtain ⟨ecl_s, a_14, unions⟩ := a_1
       obtain ⟨ecl1, ecl2⟩ := a_14
-
-      --compqとeclqは、ssのq側とnot q側に分割するもの。
 
       have comp1' : comp_s ⊆ compq :=
       by
@@ -197,8 +193,8 @@ by
 
         exact this hv
 
-      · intro vv hvv hvvs  --このvvはssの要素。
-        intro v hv hv_ine  --vのほうがvvよりも小さい。
+      · intro vv hvv hvvs
+        intro v hv hv_ine
         have rel_equiv: @Quotient.mk'' _ (proj_setoid s) ⟨vv, hvv⟩ = @Quotient.mk'' _ (proj_setoid s) ⟨v, hv⟩ :=
         by
           subst unions
@@ -207,21 +203,18 @@ by
           dsimp [proj_setoid]
           dsimp [projr]
           show proj_max s ⟨vv, hvv⟩ = proj_max s ⟨v, hv⟩
-          -- 同じ極大要素にいくものは同じ同値類に入るということを補題で示す。
+
           apply (proj_max_quotient s ⟨vv, hvv⟩ ⟨v, hv⟩).mpr
           exact Eq.symm (quotient_order s ⟨v, hv⟩ ⟨vv, hvv⟩ hv_ine)
 
         show v ∈ ss
         rw [unions]
-        -- a_122と_a_131を使うのか。
-        --どこかで場合分けする？b2の同値類がq側かnot q側か？
+
         let vq := @Quotient.mk'' _ (proj_setoid s) ⟨vv,hvv⟩
-        by_cases hvq :vq = q --このように分けるよりも、vvがq側かnot q側かで分けたほうがいいのでは？
-        case pos => --compのほう。hvvs : vv ∈ comp_s ∨ vv ∈ ecl_sで左側。hvqからいえる。
+        by_cases hvq :vq = q
+        case pos =>
           have vvincomp: vv ∈ comp_s :=
           by
-            --vvは、ssの要素なので、unionsにより、comp_sかecl_sのどちらか。
-            --ecl_sだとすると、ecl1より、vq=qに反する。補題にするか？どのような補題か？
             have vvincomp: vv ∈ compq := by
               dsimp [compq]
               rw [Finset.mem_image]
@@ -230,7 +223,6 @@ by
               exact hvq
             have : compq ∩ ss = comp_s :=
             by
-              --dsimp [compq]
               rw [unions]
               have comp_inc: comp_s ⊆ compq := by
                 exact comp1'
@@ -238,7 +230,6 @@ by
                 exact inc_ecl'
 
               have : compq ∩ ecl_s = ∅ := by
-                --これは正しいのでAIに聞くと教えてくれそう。
                 have : compq ∩ ecl_s ⊆ compq ∩ eclq := by
                   exact Finset.inter_subset_inter (fun ⦃a⦄ a => a) inc_ecl'
                 subst unions hvq
@@ -264,7 +255,6 @@ by
             exists_and_right, exists_eq_right]
           left
           show v ∈ comp_s
-          --comp2はおそらく使う。vvがcomp側だとvもcomp側。
           specialize comp2 vv hvv
           have : Quotient.mk'' ⟨vv, hvv⟩ = vq :=
           by
@@ -276,15 +266,12 @@ by
           apply comp2
           · exact hv_ine
           · show Quotient.mk'' ⟨v, hv⟩ = vq
-            --まだv in comp_sは証明されていないので使えない。
-            --大小関係があれば、同じ連結成分という補題があるといいか。
             exact id (Eq.symm rel_equiv)
 
         case neg =>
           specialize ecl2 vv hvv
           rw [Finset.mem_union]
           right
-          --apply ecl2は使わない？
           show v ∈ ecl_s
           have : ¬⟦⟨vv, hvv⟩⟧ = q :=
           by
@@ -292,7 +279,6 @@ by
             simp_all only [ge_iff_le, Quotient.eq, not_false_eq_true, forall_true_left, Finset.mem_union, compq, eclq,
               vq]
             exact hvq
-            --vとvvが同じ連結成分で、vvがq側でないから、vもq側でない。
 
           specialize ecl2 this
           have vvinecl: vv ∈ ecl_s :=
@@ -310,7 +296,6 @@ by
                 exact inc_ecl'
 
               have : comp_s ∩ eclq = ∅ := by
-                --これは正しいのでAIに聞くと教えてくれそう。
                 have : comp_s ∩ eclq ⊆ compq ∩ eclq := by
                   exact Finset.inter_subset_inter comp1' fun ⦃a⦄ a => a
                 subst unions
@@ -382,7 +367,7 @@ by
                 · tauto
                 · exact h_1
             · --show ss = Finset.image Subtype.val (filter (fun v => Quotient.mk'' v = q) s.V.attach) ∪ ?right.h.mpr.h.right.w
-              ext x --この段階で、compとeclで最小でないので、右から左が言えない気がする。
+              ext x
               apply Iff.intro
               · intro a_2
                 simp at a_2
@@ -396,9 +381,6 @@ by
                 simp_all only [compq, eclq]
                 tauto
               · intro a_2
-                --a_1やa2などを使うのか？まだ証明まで遠そう。
-                -- a_1 : ∀ (a : α) (b : a ∈ s.V), a ∈ ss → ∀ (a_4 : α) (b_1 : a_4 ∈ s.V), ⟨a_4, b_1⟩ ≤ ⟨a, b⟩ → a_4 ∈ ss
-                -- a_2 : x ∈ Finset.image Subtype.val (filter (fun v => Quotient.mk'' v = q) s.V.attach) ∪ Finset.image Subtype.val (filter (fun v => ¬⟦v⟧ = q) s.V.attach)
                 have xinsv: x ∈ s.V :=
                 by
                   simp_all only [ge_iff_le, Finset.mem_union, Finset.mem_inter, Finset.mem_image, mem_filter,
@@ -445,7 +427,6 @@ by
                     simp_all only [and_false, false_or, ne_eq, not_false_eq_true, compq, eclq]
                     simp_all only [and_true, compq, eclq]
                     exact Q
-                  --a_2を使ったのでもう使わないかも。
                   dsimp [compq] at a_2
                   have : x ∉ Finset.image Subtype.val (filter (fun v => Quotient.mk'' v = q) s.V.attach) :=
                   by
@@ -459,16 +440,13 @@ by
                     simp_all only [ge_iff_le, Finset.mem_inter, and_false, not_false_eq_true, or_true, ne_eq,
                       Finset.mem_image, mem_filter, mem_attach, true_and, Subtype.exists, exists_and_right,
                       exists_eq_right, exists_true_left, exists_const, compq, eclq]
-                  --have : @Quotient.mk'' _ (proj_setoid s) ⟨x, xinsv⟩ ≠ q := 最初に証明ずみ。
 
-                  --どの条件を使うのか？
-                  --a_1を使うためには、aが必要。
                   simp_all only [ge_iff_le, Finset.mem_inter, Finset.mem_image, mem_filter, mem_attach, true_and,
                     Subtype.exists, exists_and_right, exists_eq_right, exists_true_left, false_or, not_false_eq_true,
                     ne_eq, exists_const, and_false, compq, eclq]
 
---(po_closuresystem s)の台集合がcompとexclに分解できるという言明。
---使ってない？directProduct_comp_excel_ground_cardの証明で使えそうだけど。
+--The statement that the set of (po_closuresystem s) can be decomposed into comp and excl.
+--Don't you use it?It seems to be useful as a proof of directProduct_comp_excel_ground_card.
 private lemma directProduct_comp_excel_ground (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]
   (geq2quotient: (numClasses (proj_setoid s) ≥ 2)) :
   (po_closuresystem (comp_po s q)).ground ∪ (po_closuresystem (excl_po s q geq2quotient)).ground =
@@ -477,8 +455,8 @@ by
   rw [← directProduct_comp_excel s q geq2quotient]
   dsimp [DirectProduct]
 
---comp側の台集合の大きさとexcl側の台集合の大きさを足すと、もとの台集合の大きさになること。
---下で使っている。
+--Composing the size of the platform set on the --comp side and the size of the platform set on the excl side will result in the size of the original platform set.
+--I'm using it below.
 private lemma directProduct_comp_excel_ground_card (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]
   (geq2quotient: (numClasses (proj_setoid s) ≥ 2)) :
   (po_closuresystem (comp_po s q)).toSetFamily.ground.card +
@@ -500,8 +478,8 @@ by
 
   rw [Finset.card_union_of_disjoint this]
 
---comp側の台集合の大きさが1以上であること。
---下のdirectProduct_comp_excel_ground_eで使っている。
+--Comp side platform set must be 1 or more.
+--Used in the directProduct_comp_excel_ground_e below.
 private lemma directProduct_comp_ground_card (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]  :
  ((po_closuresystem (comp_po s q))).toSetFamily.ground.card ≥ 1 :=
 by
@@ -515,8 +493,8 @@ by
   simp
   exact Quotient.mk_eq_iff_out.mpr rfl
 
---excl側の台集合の大きさが1以上であること。
---下のdirectProduct_comp_excel_ground_cで使っている。
+--The size of the platform set on the excl side must be 1 or more.
+--Used in the directProduct_comp_excel_ground_c below.
 private lemma directProduct_excl_ground_card (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]
   (geq2quotient: (numClasses (proj_setoid s) ≥ 2)) :
  ((po_closuresystem (excl_po s q geq2quotient))).toSetFamily.ground.card ≥ 1 :=
@@ -528,7 +506,7 @@ by
   let epv := excl_po_V'_nonempty_of_classes_ge2 s q geq2quotient
   exact one_le_card.mpr epv
 
---functionalMainで利用。
+--Used with functionalMain.
 lemma directProduct_comp_excel_ground_c (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]
   (geq2quotient: (numClasses (proj_setoid s) ≥ 2)) :
   (po_closuresystem (comp_po s q)).toSetFamily.ground.card <
@@ -543,7 +521,7 @@ by
   let degc := directProduct_excl_ground_card s q geq2quotient
   exact Mathlib.Tactic.LinearCombination.lt_of_lt degc this
 
---functionalMainで利用。
+--Used with functionalMain.
 lemma directProduct_comp_excel_ground_e (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]
   (geq2quotient: (numClasses (proj_setoid s) ≥ 2)) :
   ((po_closuresystem (excl_po s q geq2quotient))).toSetFamily.ground.card <
@@ -561,7 +539,7 @@ by
   rw [add_comm]
   exact this
 
---functionalMainで使っている。
+--Used with functionalMain.
 theorem directProduct_nds  (s : Setup_po α) (q : Quotient (proj_setoid s)) [DecidableRel (projr s)][DecidableEq (Quotient (proj_setoid s))]
   (geq2quotient: (numClasses (proj_setoid s) ≥ 2)) :
   (po_closuresystem (comp_po s q)).toSetFamily.normalized_degree_sum ≤ 0 →

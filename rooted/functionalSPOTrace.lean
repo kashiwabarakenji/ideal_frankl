@@ -16,19 +16,17 @@ import rooted.Preorder
 import rooted.Dominant
 import rooted.FamilyLemma
 import rooted.StemSizeOne
---import rooted.functionalCommon
---import rooted.functionalTreePartialorder
 import rooted.functionalSPO
 
 open Finset Set Classical
 
 variable {α : Type} [Fintype α] [DecidableEq α]
 
---このファイルはSetup_spo前提の1点制限traceの話の補題。
---Setup_spoから得られるideal全体の集合族において、同値類の大きさが2以上のときに、1元traceしても、またSetup_spoになる。setup_trace
+--This file is a lemma for the one-point limit trace, assuming Setup_spo.
+--In the set family of the entire idea obtained from Setup_spo, if the equivalence class is 2 or more, even if the 1-trace is 1-trace, it will become Setup_spo again.setup_trace
 
------------------------------------
--- いろいろなところで使われている。trace後のSetoid。
+--------------------------------------------------------------------------------------------------------------------------------
+-- It is used in a variety of places.Setoid after trace.
 def restrictedSetoid (s: Setup_spo α)(x : {x : α // x ∈ s.V}): Setoid {y : α // y ∈ s.V.erase x.val} :=
   Setoid.comap
     (fun y => ⟨y.val, Finset.mem_of_mem_erase y.property⟩)
@@ -36,7 +34,7 @@ def restrictedSetoid (s: Setup_spo α)(x : {x : α // x ∈ s.V}): Setoid {y : �
 
 
 
---xと同じ同じ同値類から要素を一つ取り出す。
+-- Takes one element from the same equivalent class as x.
 noncomputable def representativeNeSelf
   (s : Setup_spo α) (x : {x : α // x ∈ s.V})
   (hx : (classOf s ⟦x⟧).card ≥ 2) :
@@ -48,7 +46,7 @@ noncomputable def representativeNeSelf
     simp only [Finset.mem_erase]
     exact ⟨Subtype.coe_ne_coe.mpr hb.right, b.property⟩⟩
 
---上で取り出す範囲をs.Vにしたもの。使われている。
+--The area to be extracted above is s.V.It is used.
 noncomputable def representativeNeSelf2
   (s : Setup_spo α) (x : {x : α // x ∈ s.V})
   (hx : (classOf s ⟦x⟧).card ≥ 2) :
@@ -59,8 +57,8 @@ noncomputable def representativeNeSelf2
     simp_all only
     simp [representativeNeSelf]⟩
 
---取り出したものが同値類に入っているという保証。
---TraceIdealからも利用されている。
+-- Guaranteed that what you extracted is in the same value.
+--It is also used by TraceIdeal.
 lemma representativeNeSelf_mem_classOf
   (s : Setup_spo α) (x : {x // x ∈ s.V}) (hx : 2 ≤ (classOf s ⟦x⟧).card) :
   ⟨(representativeNeSelf s x hx).val, Finset.mem_of_mem_erase (representativeNeSelf s x hx).property⟩ ∈ (classOf s (@Quotient.mk _ s.setoid x)).erase x :=
@@ -69,8 +67,8 @@ by
   have hb := Classical.choose_spec (exists_ne_of_one_lt_card hx x)
   simp_all only [ne_eq, Subtype.coe_eta, mem_erase, not_false_eq_true, and_self]
 
---上と同じだが、同値だという表現の仕方がsetoid.rを使っている。
---TraceIdealからも利用されている。
+--It is the same as above, but the expression is equivalent using setoid.r.
+--It is also used by TraceIdeal.
 lemma representativeNeSelf_mem_classOf2
   (s : Setup_spo α) (x : {x // x ∈ s.V}) (hx : 2 ≤ (classOf s ⟦x⟧).card) :
   s.setoid.r ⟨(representativeNeSelf s x hx), by
@@ -87,8 +85,8 @@ by
   obtain ⟨h11,h12⟩ := h1
   exact Quotient.eq''.mp h12
 
---これも同値だという表現の仕方が違うだけ。
---TraceIdeal2からも利用されている。
+--The only difference is that this is also equivalent.
+--It is also used by TraceIdeal2.
 lemma representativeNeSelf_mem_classOf3
   (s : Setup_spo α) (x : {x // x ∈ s.V}) (hx : 2 ≤ (classOf s ⟦x⟧).card) :
   s.setoid.r (representativeNeSelf2 s x hx) x :=
@@ -99,10 +97,10 @@ by
 
 
 -----------------------
---要素の対応。
+--Element correspondence.
 -----------------------
 
---s.Vからs.V.erase xへの要素の対応。
+--Supporting elements from s.V to s.V.erase x.
 noncomputable def toErased (s : Setup_spo α)
   (x : {x : α // x ∈ s.V})
   (hx : (classOf s ⟦x⟧).card ≥ 2) :
@@ -119,7 +117,7 @@ noncomputable def toErased (s : Setup_spo α)
         simp [Finset.mem_erase, h]
         exact Subtype.coe_ne_coe.mpr h⟩
 
---toErasedの写像は、xと異なる場合は、恒等写像。
+--toErased map is an identity map if it is different from x.
 private lemma toErased_eq_ne
   (s : Setup_spo α) (x z : {x // x ∈ s.V})
   (hx : 2 ≤ (classOf s ⟦x⟧).card)
@@ -134,7 +132,7 @@ by
   · contradiction
   · rfl
 
---一方xとyが同値で、xとzが同値のときに、yとzが同値なので、yの写り先とzの写り先も同値である。
+--On the other hand, when x and y are equal and x and z are equal, y and z are equal, so the destination of y and z are equal.
 /-
 lemma Quotient.eq
   (s : Setup_spo2 α) (y z : {x : α // x ∈ s.V})
@@ -144,9 +142,9 @@ by
   simp_all only [Quotient.eq]
 -/
 
--- yとzが同じ同値類であれば、移り先も同じ同値類。
---TraceIdealからも利用されている。
---逆方向は、toErased_eqxやtoErased_eq_lemを使う。
+-- If y and z are the same equivalent, then the destination is the same equivalent.
+--It is also used by TraceIdeal.
+--In the reverse direction, use toErased_eqx or toErased_eq_lem.
 lemma toErased_eq
   (s : Setup_spo α) (x y z : {x : α // x ∈ s.V})
   (hx : 2 ≤ (classOf s ⟦x⟧).card)
@@ -161,7 +159,6 @@ by
       subst h_1 h
       simp_all only [Subtype.coe_eta]
     · have a_eq_r: (toErased s x hx y) = (representativeNeSelf s x hx) := by
-          --dsimp [representativeNeSelf]
           dsimp [toErased]
           simp
           rename_i h h_1
@@ -183,7 +180,7 @@ by
           simp_all only [Quotient.eq]
         .
           rename_i h
-          --使っているかも。
+
           have : s.setoid.r y z := by
             subst h
             simp_all only [Quotient.eq, not_false_eq_true]
@@ -232,7 +229,7 @@ by
       simp_all only
       rfl
   · split
-    · --上の議論でyとzを取り替えたもので、同じもの。
+    ·
       have a_eq_r: (toErased s x hx z) = (representativeNeSelf s x hx) := by
           dsimp [toErased]
           simp
@@ -301,8 +298,8 @@ by
       simp_all only [Quotient.eq]
       exact q_eq
 
---上の命題の逆方向。xの移り先の同値類に入った時は、もともとxと同値だった。
---TraceIdealからも利用されている。
+--The opposite direction of the above proposition.When it entered the equivalent class of x to which it was transferred, it was originally the same value as x.
+--It is also used by TraceIdeal.
 lemma toErased_eqx
   (s : Setup_spo α) (x : {xx : α // xx ∈ s.V}) (y z : {xx : α // xx ∈ s.V.erase x.val})
   -- (hx : 2 ≤ (classOf s ⟦x⟧).card)
@@ -326,27 +323,24 @@ lemma toErased_eqx
 --
 
 -------------
----同値類のtraceによる対応
---oldが大きい世界で、newが小さい世界
+---Response to trace equivalents
+--The world where old is big, new is small
 
---新旧の同値類同士は全単射するので、fqを定義するには、それの対応の写像を作る必要がある。
+--Since both old and new equivalence classes are all injected, in order to define fq, we need to create a map of their correspondence.
 def toOld (s : Setup_spo α) (x : {x : α // x ∈ s.V})
   : Quotient (restrictedSetoid s x) → Quotient s.setoid :=
   λ newCls =>
     Quotient.liftOn newCls
       (fun (y : {y : α // y ∈ s.V.erase x.val}) =>
-        -- y はもともと s.V に属するし，x とは違う
         @Quotient.mk _ s.setoid (⟨y.val, by exact Finset.mem_of_mem_erase y.property⟩ : {z // z ∈ s.V})
       )
-      -- liftOn の証明義務：代表の取り方が違っても結果が同値類の同じ要素に行くこと
       (by
         intros a b hab
         apply Quotient.sound
-        -- restrictedSetoid で同値 ⇒ もともとの setoid でも同値
         exact hab
       )
 
---古い同値類から新しい同値類への対応。
+--Response from old equivalence classes to new equivalence classes.
 noncomputable def toNew (s : Setup_spo α) (x : {x : α // x ∈ s.V})
   (hx : (classOf s (@Quotient.mk _ s.setoid x)).card ≥ 2)
   : Quotient s.setoid → Quotient (restrictedSetoid s x) :=
@@ -360,8 +354,8 @@ noncomputable def toNew (s : Setup_spo α) (x : {x : α // x ∈ s.V})
       exact hab
     )
 
---Newを行って、Oldを行うと元の同値類に戻る。
---いまいち、Quotient.inductionOnの使い方がわからないけど、証明できた。
+--New and Old will return to the original equivalent class.
+--I'm not sure how to use Quotient.inductionOn, but I've proved it.
 lemma NewOld_id (s : Setup_spo α) (x : {x : α // x ∈ s.V})
   (hx : (classOf s (@Quotient.mk _ s.setoid x)).card ≥ 2)
   (Cls : Quotient s.setoid) :
@@ -371,7 +365,6 @@ lemma NewOld_id (s : Setup_spo α) (x : {x : α // x ∈ s.V})
     dsimp [toNew]
     dsimp [toOld]
     dsimp [toErased]
-    --dsimp [restrictedSetoid]
     dsimp [representativeNeSelf]
 
     by_cases h:x ∈ (classOf s ⟦a⟧)
@@ -384,7 +377,6 @@ lemma NewOld_id (s : Setup_spo α) (x : {x : α // x ∈ s.V})
         rw [Finset.mem_filter] at h
         let cc := Classical.choose_spec (exists_ne_of_one_lt_card hx a)
         simp_all only [mem_attach, and_self]
-        --obtain ⟨val, property⟩ := a
         obtain ⟨left, right⟩ := cc
         simp_all only [ne_eq]
         dsimp [classOf] at left
@@ -429,7 +421,7 @@ by
     dsimp [toOld]
     dsimp [toErased]
     dsimp [representativeNeSelf]
-    have: a.val ≠ x.val := by --暗黙に使っている。
+    have: a.val ≠ x.val := by
       dsimp [representativeNeSelf]
       obtain ⟨val_1, property_1⟩ := a
       simp_all only [Subtype.mk.injEq]
@@ -441,9 +433,9 @@ by
     rfl
 
 
---toNewやtoOldで順序が保存されることを示す必要があるのか。そのためには、新しい同値類の構造で順序が導入されている必要があるが。
---段階的に導入するのがいいのか。そのためには、setup_spoになることをまず証明するか。
---fqまでで、まだloopも定義されていない。setup_spo0みたいなものを作った方がいいかも。
+--Does it need to indicate that the order is saved in toNew or toOld?To do this, it is necessary that the order be introduced in a new equivalence structure.
+--Is it better to introduce it in stages?To do this, first prove that it will become setup_spo.
+-- It's up to fq and loop is not defined yet.Maybe it's better to create something like setup_spo0.
 
 
 noncomputable def setup_trace_base (s : Setup_spo α)(x: s.V) (hx:(classOf s (@Quotient.mk _ s.setoid x
@@ -471,16 +463,7 @@ noncomputable def setup_trace_base (s : Setup_spo α)(x: s.V) (hx:(classOf s (@Q
 
   fq := fun q => toNew s x hx (s.fq (toOld s x q))
 }
-/-
---(setup2_trace s x).fqをn回適用したもの(setup2_trace s x).fq^[n]は、
---(toNew s x hx (s.fq^[n] (toOld s x q))と等しい。
---使ってない。
-lemma setup2_trace_fq_one (s : Setup_spo α) (x: s.V) (hx:(classOf s (@Quotient.mk _ s.setoid x)).card ≥ 2) :
-  (setup_trace_base s x hx).fq = fun q => toNew s x hx (s.fq (toOld s x q)) := by
-  dsimp [setup_trace_base]
--/
 
---したで使っている。
 private lemma setup2_trace_fq_n (s : Setup_spo α) (x: s.V) (hx:(classOf s (@Quotient.mk _ s.setoid x)).card ≥ 2) (n :Nat):
   ((setup_trace_base s x hx).fq)^[n] = fun q => toNew s x hx (s.fq^[n] (toOld s x q)) := by
   dsimp [setup_trace_base]
@@ -502,8 +485,8 @@ private lemma setup2_trace_fq_n (s : Setup_spo α) (x: s.V) (hx:(classOf s (@Quo
     let no := NewOld_id s x hx
     simp_all only [no]
 
---すぐしたのsetup_trace_noLoopで使う。
---functionalSPO2でも使う。
+--Use it with setup_trace_noLoop.
+-- Also used for functionalSPO2.
 lemma setup_trace_reach (s : Setup_spo α) (x: s.V) (hx:(classOf s (@Quotient.mk _ s.setoid x
 )).card ≥ 2) (q1 q2 : Quotient (restrictedSetoid s x)) :
   reach (setup_trace_base s x hx).fq q1 q2 ↔
@@ -534,7 +517,7 @@ by
     rw [h]
     exact OldNew_id s x hx q2
 
---setup_traceやsetup_trace_spo2で使う。
+--Use with setup_trace or setup_trace_spo2.
 lemma setup_trace_noLoop (s : Setup_spo α) (x: s.V) (hx:(classOf s (@Quotient.mk _ s.setoid x
 )).card ≥ 2) (q1 q2 : Quotient (restrictedSetoid s x)) :
   reach (fun q => toNew s x hx (s.fq (toOld s x q))) q1 q2 →
@@ -556,7 +539,7 @@ by
   rw [OldNew_id s x hx q2] at this
   exact this
 
---traceで、こちらは、Setup_spo2ではなく、Setup_spoの前提。
+--trace, this is the premise of Setup_spo, not Setup_spo2.
 noncomputable def setup_trace (s : Setup_spo α)(x: s.V) (hx:(classOf s (@Quotient.mk _ s.setoid x
 )).card ≥ 2): Setup_spo α :=
 {
@@ -564,27 +547,25 @@ noncomputable def setup_trace (s : Setup_spo α)(x: s.V) (hx:(classOf s (@Quotie
   nonemp := (setup_trace_base s x hx).nonemp,
     setoid := restrictedSetoid s x
   fq := fun q => toNew s x hx (s.fq (toOld s x q))
-  --s.V上には半順序が導入済み。s.V.erase x上にはこれから導入する。
+
   noLoop := by
     intro q1 q2
     intro h1 h2
-    --simp at h1 h2
+
     exact setup_trace_noLoop s x hx q1 q2 h1 h2
 
-  --s.V上には半順序が導入済み。s.V.erase x上にはこれから導入する。
   spo := partialOrderOfFq (setup_trace_base s x hx).fq (by
       intro q1 q2
       intro h1 h2
       exact setup_trace_noLoop s x hx q1 q2 h1 h2
   )
   h_spo := by
-    --simp_all only
     obtain ⟨val, property⟩ := x
     simp_all only
     rfl
 }
 
---toNew_card_eqの証明で使う。
+
 private lemma toErased_eq_lem (s : Setup_spo α) (x : {x : α // x ∈ s.V})
   (y z: {y : α // y ∈ s.V}) (hx:(classOf s (@Quotient.mk _ s.setoid x)).card ≥ 2)
    (ree: restrictedSetoid s x (toErased s x hx y) (toErased s x hx z)) :
@@ -624,7 +605,6 @@ by
   case neg =>
     by_cases hz: z = x
     case pos =>
-      --subst hz
       simp at ree
       simp [dif_neg hy] at ree
       set rnsm := representativeNeSelf_mem_classOf3 s x hx
@@ -652,7 +632,7 @@ by
       simp_all only
       exact ree
 
---xと違う同値類は、恒等写像。toNew_classOfなどexcessの議論で使う。
+--Equivalent types that differ from x are identity maps.Used in excess discussions such as toNew_classOf.
 private lemma toNew_card_eq (s : Setup_spo α) (x : {x : α // x ∈ s.V})
   (q: Quotient s.setoid)
    (hx:(classOf s (@Quotient.mk _ s.setoid x)).card ≥ 2)
@@ -743,8 +723,6 @@ by
           simp_all only [Subtype.mk.injEq, not_false_eq_true]
         specialize teen this
         dsimp [toNew]  at h2
-        --h2は新しい制限された世界での式。証明すべきは、制限されない世界。
-        --しかし、teenによると、この対応は恒等写像。hによるとwとyは同じ。
         let  teenw := toErased_eq_ne s x ⟨w, winsV⟩ hx
         have :⟨w, winsV⟩ ≠ x := by
           subst h
@@ -772,8 +750,8 @@ by
 
     · simp_all only [ne_eq, mem_filter, mem_attach, true_and]
 
---xを含まない同値類は、traceしても大きさが変わらない。
---trace_excess_decreaseで利用。
+-- Equivalent classes that do not include x do not change in size even if traced.
+-- Used with trace_excess_decrease.
 lemma toNew_classOf (s : Setup_spo α) (x : {x : α // x ∈ s.V})
   (hx : (classOf s (@Quotient.mk _ s.setoid x)).card ≥ 2)
   (cls : Quotient s.setoid) :
@@ -784,9 +762,7 @@ by
   dsimp [setup_trace]
   dsimp [toNew]
   dsimp [classOf]
-  --bij_cardで証明するのがいいか。
   let tce := toNew_card_eq s x cls hx h
-  --tceと、ゴールの関係を探る。
 
   let src := filter (fun a : {y // y ∈ s.V} => Quotient.mk'' a = cls) s.V.attach
   let tgt := filter (fun a : {y // y ∈ s.V.erase x} =>
@@ -803,7 +779,7 @@ by
           simp_all only [ne_eq, Quotient.eq]
         )
     ) (s.V.erase x).attach
-  --tgtの定義の仕方はこれでよかったのか。toNewとclassOfで定義する方法もあったと思う。
+
   have tgt_classOf : tgt = classOf (setup_trace s x hx) (toNew s x hx cls) := by
     dsimp [tgt]
     dsimp [classOf]
@@ -827,10 +803,9 @@ by
     dsimp [tgt] at h
     simp at h
 
-  --これを証明すれば、定理の証明が終わる。
+
   have : src.image Subtype.val = tgt.image Subtype.val := by
     dsimp [src]
-    --dsimp [tgt]  -- tgt_classOfを使うてもある。
     rw [tgt_classOf]
     ext y
     constructor
@@ -852,13 +827,13 @@ by
           contradiction
         · exact w
       use this
-      --have : (restrictedSetoid s.toSetup_spo x).r
+
       have yinsVe:y ∈ (setup_trace s x hx).V := by
         dsimp [setup_trace]
         simp_all only [mem_erase, ne_eq, not_false_eq_true, and_self]
       let cq := (classOf_quotient  (setup_trace s x hx) ⟨y,yinsVe⟩ (toNew s x hx cls)).mp
       apply cq
-      --h:Quotient.mk'' ⟨y, ⋯⟩ = clsを使って証明。
+
       have : toNew s x hx (@Quotient.mk _ s.setoid ⟨y,w⟩) = @Quotient.mk _ (restrictedSetoid s x) ⟨y, yinsVe⟩ := by
         dsimp [toNew]
         dsimp [restrictedSetoid]
@@ -942,14 +917,12 @@ by
       intros a _ b _ hab
       exact Subtype.ext hab
 
-    -- それぞれに card_image_iff を適用
     have h_card_src : (Finset.image Subtype.val src).card = src.card :=
       (Finset.card_image_iff.mpr h_inj_src)
 
     have h_card_tgt : (Finset.image Subtype.val tgt).card = tgt.card :=
       (Finset.card_image_iff.mpr h_inj_tgt)
 
-    -- そして this を使って等式を連結
     have : src.card = tgt.card := by
       rw [←h_card_src, this, h_card_tgt]
 

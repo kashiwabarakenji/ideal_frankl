@@ -16,7 +16,6 @@ import rooted.Dominant
 import rooted.FamilyLemma
 import rooted.StemSizeOne
 import rooted.functionalCommon
---import rooted.functionalTreePreorder
 import rooted.functionalTreePartialorder
 import rooted.functionalSPO
 import rooted.functionalSPO2
@@ -40,7 +39,6 @@ noncomputable def setoid_ideal_injection_domain (s : Setup_spo α)(q : Quotient 
 noncomputable def setoid_ideal_injection_codomain (s : Setup_spo α)(q : Quotient s.setoid ) : Finset (Finset s.V) :=
    s.V.attach.powerset.filter (fun (ss:Finset s.V) => (spo_closuresystem s).sets (ss.image Subtype.val)  ∧ ¬(classOf s q) ⊆ ss)
 
---極大性の仮定を使うので、実質的にspo2の仮定。
 noncomputable def setoid_ideal_injection (s: Setup_spo α)(q : Quotient s.setoid ) (hm: isMaximal_spo s q) : setoid_ideal_injection_domain s q → setoid_ideal_injection_codomain s q :=
   fun ⟨ss, hss⟩ => ⟨ss \ (classOf s q), by
   dsimp [setoid_ideal_injection_domain, setoid_ideal_injection_codomain]
@@ -57,12 +55,11 @@ noncomputable def setoid_ideal_injection (s: Setup_spo α)(q : Quotient s.setoid
   dsimp [setoid_ideal_injection_domain] at hss
   rw [Finset.mem_filter] at hss
   dsimp [spo_closuresystem] at hss
-  obtain ⟨hss, hss'⟩ := hss --分解できないのはimpliesの形式かも。
-  --hss'は、domainに入っているideal全体か。
+  obtain ⟨hss, hss'⟩ := hss
   obtain ⟨hss', hss''⟩ := hss'
-  --この段階で、hss'は、idealの要素になる条件がはいっている。
+
   obtain ⟨sqq', hss'''⟩ := hss'
-  --sqq'は、idealの要素となるquotientの集合。
+
   simp at hss'''
   obtain ⟨hss''', hss5⟩ := hss'''
   obtain ⟨hss5, hss6⟩ := hss5
@@ -81,12 +78,11 @@ noncomputable def setoid_ideal_injection (s: Setup_spo α)(q : Quotient s.setoid
     · apply congrFun rfl
     · exact val_le_iff_val_subset.mpr diff_subset
   · constructor
-    · --qを除いてもidealであることを示す必要。ここの部分は、極大性を利用する必要がある。
-      dsimp [setoid_ideal_injection_domain, setoid_ideal_injection_codomain]
+    · dsimp [setoid_ideal_injection_domain, setoid_ideal_injection_codomain]
       dsimp [spo_closuresystem]
-      --qの生成するidealをuseすればよいか。でも連結とは限らない。
-      --ssに対応するQuotientをuseすればよいか。
-      --Setup_spoにおいて、ssに対して、そのQuotientの集合を与える関数を作ってもいいかも。
+
+
+
       use QuotientOf s (ss \ (classOf s q))
       constructor
       · intro qq hqq q' hq'
@@ -96,8 +92,7 @@ noncomputable def setoid_ideal_injection (s: Setup_spo α)(q : Quotient s.setoid
         rw [Finset.mem_image]
         use Quotient.out q'
         constructor
-        · --hq'から言えるはず。hq' : q' ≤ qq
-          show q'.out ∈ ss \ classOf s q
+        · show q'.out ∈ ss \ classOf s q
           rw [Finset.mem_sdiff]
           obtain ⟨w, hqq⟩ := hqq
           obtain ⟨left, right⟩ := hqq
@@ -105,7 +100,6 @@ noncomputable def setoid_ideal_injection (s: Setup_spo α)(q : Quotient s.setoid
           have :s.setoid.r w qq.out := by
             apply s.setoid.trans (s.setoid.refl w)
             exact Quotient.mk_eq_iff_out.mp right
-            --f_fromが関係ありそう。
 
           have qqs:qq ∈ sqq' := by
             simp_all only [Finset.mem_powerset, coe_mem, Subtype.coe_eta, Quotient.eq, forall_const]
@@ -135,12 +129,7 @@ noncomputable def setoid_ideal_injection (s: Setup_spo α)(q : Quotient s.setoid
             subst right
             simp_all only [Finset.mem_powerset, coe_mem, Subtype.coe_eta, Quotient.out_eq]
           · show q'.out ∉ classOf s q
-            --goal q'.out ∉ classOf s q
-            --left : w ∈ ss ∧ w ∉ classOf s q
-            -- hq' : q' ≤ qq
-            -- right : ⟦w⟧ = qq
-            -- hm : isMaximal_spo s q
-            --ここで極大性の仮定を利用している。
+
             dsimp [isMaximal_spo] at hm
             have qneq:q' ≠ q := by
               intro h_contra
@@ -157,8 +146,7 @@ noncomputable def setoid_ideal_injection (s: Setup_spo α)(q : Quotient s.setoid
                 · subst right h_contra
                   simp_all only [Finset.mem_powerset, coe_mem, Subtype.coe_eta]
                 · exact hq'
-              --rw [←this] at h_contra
-              --rightとleftに矛盾することをいう。
+
               rw [←right] at this
               rw [←this] at left
               let left2 := left.2
@@ -175,8 +163,7 @@ noncomputable def setoid_ideal_injection (s: Setup_spo α)(q : Quotient s.setoid
             rw [this] at qneq
             contradiction
         · simp_all only [Subtype.exists, Quotient.out_eq]
-      · --(ss \ classOf s q).valがidealの要素であることを示す。
-        simp
+      · simp
         constructor
         ·
           rename_i x
@@ -187,7 +174,6 @@ noncomputable def setoid_ideal_injection (s: Setup_spo α)(q : Quotient s.setoid
           obtain ⟨left, right⟩ := h
           simp_all only
         · intro hs
-          --idealの要素になるためには、下のものがssにはいることと、
           constructor
           · intro x hx h
             dsimp [QuotientOf]
@@ -197,9 +183,8 @@ noncomputable def setoid_ideal_injection (s: Setup_spo α)(q : Quotient s.setoid
             · simp_all only [mem_sdiff, not_false_eq_true, and_self]
             · simp_all only
 
-          · --ssの元の同値類を考えて、その要素を持ってきたら、またssの要素。大小は関係ないかも。qが極大であることも使わないかも。
-            intro q_1 hq_1 a ha hha
-            specialize h_from q_1  --これは正しいのか。
+          · intro q_1 hq_1 a ha hha
+            specialize h_from q_1
             dsimp [QuotientOf] at hq_1
             rw [Finset.mem_image] at hq_1
             obtain ⟨w, hq_1⟩ := hq_1
@@ -216,9 +201,7 @@ noncomputable def setoid_ideal_injection (s: Setup_spo α)(q : Quotient s.setoid
                 and_true]
 
             constructor
-            · --hhaとhq_1を使う。hha : ⟦⟨a, ha⟩⟧ = q_1。hq_1 : w ∈ ss \ classOf s q ∧ ⟦w⟧ = q_1。必要であれば補題を作る。ssはsetoidで閉じている。
-              --h_fromも使うかも。
-              show ⟨a, ha⟩ ∈ ss
+            · show ⟨a, ha⟩ ∈ ss
               have wss: w ∈ ss := by
                 exact hq_1.1.1
 
@@ -234,8 +217,6 @@ noncomputable def setoid_ideal_injection (s: Setup_spo α)(q : Quotient s.setoid
               rw [Finset.mem_filter]
               simp
               show ¬Quotient.mk'' ⟨a, ha⟩ = q
-              --hq_1 : w ∈ ss \ classOf s q ∧ ⟦w⟧ = q_1は使いそう。
-              --srwa: (s.setoid).r w ⟨a, ha⟩:= by
               have : q_1 ≠ q := by
                 intro h_contra
                 obtain ⟨hq_11, hq_12⟩ := hq_1
@@ -248,7 +229,7 @@ noncomputable def setoid_ideal_injection (s: Setup_spo α)(q : Quotient s.setoid
               simp_all only [Finset.mem_powerset, Quotient.eq, forall_const, Subtype.coe_eta, true_and, and_true,
                 ne_eq, not_false_eq_true]
 
-    · have :(classOf s q).Nonempty := by --使っているみたい。
+    · have :(classOf s q).Nonempty := by
         exact classOf_nonempty s q
       rw [@subset_sdiff]
       simp_all only [disjoint_self, Finset.bot_eq_empty, not_and]
@@ -258,21 +239,17 @@ noncomputable def setoid_ideal_injection (s: Setup_spo α)(q : Quotient s.setoid
       simp_all only [Finset.not_nonempty_empty, disjoint_self, Finset.bot_eq_empty, not_and]
 ⟩
 
---下で使っている。
 private lemma setoid_ideal_injection_injective
   (s : Setup_spo α) (q : Quotient s.setoid) (hm : isMaximal_spo s q) :
   Function.Injective (setoid_ideal_injection s q hm) := by
   intro ⟨ss₁, h₁⟩ ⟨ss₂, h₂⟩ h_eq
   simp only [setoid_ideal_injection] at h_eq
 
-  -- 差集合が等しい → 元の集合が等しいことを示す
-  -- ss₁ = (ss₁ \ classOf s q) ∪ classOf s q
-
   have h₂_subset : classOf s q ⊆ ss₂ := by
     dsimp [setoid_ideal_injection_domain, setoid_ideal_injection_codomain] at h₂
     dsimp [spo_closuresystem] at h₂
     dsimp [classOf]
-    simp_all only [Subtype.mk.injEq]  --場所を変えるとエラー。
+    simp_all only [Subtype.mk.injEq]
     simp_all
     obtain ⟨left, right⟩ := h₂
     obtain ⟨left_1, right⟩ := right
@@ -301,7 +278,6 @@ private lemma setoid_ideal_injection_injective
   by
     exact Eq.symm (sdiff_union_of_subset h₂_subset)
 
-  -- ここで eq_sdiff を使い、差集合が等しいので右辺も等しくなる
   have : ss₁ = ss₂ := by
     rw [h₁_union]
     rw [eq₂]
@@ -312,17 +288,15 @@ private lemma setoid_ideal_injection_injective
 
   exact Subtype.mk_eq_mk.mpr this
 
---下で使っている。
+
 omit [Fintype α] [DecidableEq α] in
 private lemma powerset_image {α β : Type*}[DecidableEq β]
   (s : Finset α) (f : α → β) :
   s.powerset.image (fun a => a.image f) = (s.image f).powerset := by
-  -- 要素レベルで等しいことを示すために `ext t` で両辺のメンバーシップを比較
   ext t
-  --simp only [mem_image, mem_powerset]
+
   constructor
-  · -- (→) もし `t` が左辺に属するなら
-    intro a
+  · intro a
     simp_all only [Finset.mem_image, Finset.mem_powerset]
     obtain ⟨w, h⟩ := a
     obtain ⟨left, right⟩ := h
@@ -331,36 +305,25 @@ private lemma powerset_image {α β : Type*}[DecidableEq β]
     intro x a
     simp_all only [Finset.mem_image]
     exact ⟨x, left a, rfl⟩
-  · -- (←) もし `t` が右辺に属するなら
-    intro ht
-    -- t ⊆ s.image f
-    -- このとき「t = ある a の像 `a.image f`」となる部分集合 a ⊆ s を作ればよい
+  · intro ht
     let a := s.filter (fun x => f x ∈ t)
     rw [Finset.mem_image]
     use a
     constructor
-    · -- a ⊆ s は自明
-      apply mem_powerset.mpr
+    · apply mem_powerset.mpr
       simp_all only [Finset.mem_powerset, filter_subset, a]
-    · -- a.image f = t を示す
-      ext y
-      --simp only [mem_image, mem_filter]
+    · ext y
+
       constructor
-      -- (⇒) y ∈ a.image f → y ∈ t
       ·
         intro a_1
         simp_all only [Finset.mem_powerset, Finset.mem_image, mem_filter, a]
         obtain ⟨w, h⟩ := a_1
         obtain ⟨left, right⟩ := h
         obtain ⟨left, right_1⟩ := left
-        --subst right
         simp_all only [a]
 
-      -- (⇐) y ∈ t → y ∈ a.image f
       · intro hy
-        -- y ∈ t かつ t ⊆ s.image f なので y = f x の形で x ∈ s
-        -- x を a に入れれば y = f x ∈ a.image f
-        -- ただし「f x ∈ t」であることが a へのフィルタ条件
 
         have : y ∈ s.image f := by
           simp_all only [Finset.mem_powerset, Finset.mem_image, a]
@@ -375,8 +338,8 @@ private lemma powerset_image {α β : Type*}[DecidableEq β]
 
 
 
---「Filter 後に image を取ったカードが等しい」単射性を利用。
---card_filter_image_eqで使っているが直接証明した方が簡単そう。
+--Utilizing the injectivity of "cards that received image after filter are equal."
+-- It is used with card_filter_image_eq, but it seems easier to prove it directly.
 private lemma card_of_image_filter_of_inj_on
   {α β : Type} [DecidableEq α] [DecidableEq β]
   (s : Finset α) (f : α → β) (p : α → Prop) [DecidablePred p]
@@ -385,8 +348,6 @@ private lemma card_of_image_filter_of_inj_on
 by
   exact card_image_iff.mpr hf
 
-
---setoid_ideal_injection_cardの証明で使っている。
 private lemma card_filter_image_eq
   {α β : Type} [DecidableEq α] [DecidableEq β]
   (S₀ : Finset α) (φ : α → β) (P : β → Prop)
@@ -399,8 +360,7 @@ by
   rw [filter_image]
   simp_all only [coe_filter, cif]
 
---Subtype を val で写したときの単射性を保証するもの。
---setoid_ideal_injection_cardの証明で使っている。
+--This guarantees the injectivity when a Subtype is copied with val.
 private lemma image_val_inj_on
   {α : Type*} [DecidableEq α]
   {V : Finset α}
@@ -428,7 +388,7 @@ by
       simp_all only
     rw [this]; exact ha'
 
---attach した要素からなる powerset を val で写したら元の powerset に戻る。下で使っている。
+--If you copy the powerset consisting of the --attached elements with val, it returns to the original powerset.I'm using it below.
 private lemma powerset_image_attach {α : Type*} [DecidableEq α] (V : Finset α) :
   Finset.image (fun ss => ss.image Subtype.val) V.attach.powerset = V.powerset := by
   apply Finset.ext
@@ -444,32 +404,27 @@ private lemma powerset_image_attach {α : Type*} [DecidableEq α] (V : Finset α
     obtain ⟨left, right⟩ := h
     simp_all only
   · intro h
-    -- h: S ⊆ V を利用
     let ss := V.attach.filter (fun ⟨x, _⟩ => x ∈ s)
-    -- ss は V.attach の部分集合
     have hss : ss ∈ V.attach.powerset := by
       simp_all only [Finset.mem_powerset, filter_subset, ss]
-    -- ss.image Subtype.val = S を証明
     have hS : ss.image Subtype.val = s := by
       ext a
       simp [ss]
       intro a_1
       simp_all only [Finset.mem_powerset, filter_subset, ss]
       exact h a_1
-    -- S が左辺に含まれることを示す
     rw [Finset.mem_image]
     exact ⟨ss, hss, hS⟩
 
---下で使っている。
 private lemma setoid_ideal_injection_card
   (s : Setup_spo α):-- (q : Quotient s.setoid)  :
   #(filter (fun ss => (spo_closuresystem s).sets (Finset.image Subtype.val ss)) s.V.attach.powerset) =
   #(filter (fun s_1 => (spo_closuresystem s).sets s_1) (spo_closuresystem s).ground.powerset) :=
 by
-  let S₀ := s.V.attach.powerset                       -- Finset s.V の部分集合たち
+  let S₀ := s.V.attach.powerset
   let φ : Finset s.V → Finset α := fun ss => ss.image Subtype.val
-  let S₁ := (spo_closuresystem s).ground.powerset     -- Finset α 上の部分集合
-  let P := (spo_closuresystem s).sets                 -- closure system の性質
+  let S₁ := (spo_closuresystem s).ground.powerset
+  let P := (spo_closuresystem s).sets
 
   change #(S₀.filter (fun s => P (φ s))) = #(S₁.filter P)
 
@@ -477,7 +432,6 @@ by
   have : InjOn φ ↑(filter (fun x => P (φ x)) S₀) := by
     exact image_val_inj_on (filter (fun x => P (φ x)) S₀)
   specialize cfi this
-  --dsimp [S₀, S₁, φ, P]
   rw [cfi]
 
   have :s.V = (spo_closuresystem s).ground := by  dsimp [spo_closuresystem]
@@ -485,13 +439,12 @@ by
     dsimp [S₀, S₁, φ]
     exact powerset_image_attach s.V
 
-  dsimp [S₁] --ここで同値性が失われたかも。
+  dsimp [S₁]
   dsimp [S₀, φ, P]
 
   --simp_all only [coe_filter, Finset.mem_powerset, S₀, φ, S₁, P]
   simp_all only [coe_filter, Finset.mem_powerset, P, S₀, φ, S₁]
 
---下で使っている。
 private lemma setoid_ideal_number_of_hyperedges (s : Setup_spo α)(q : Quotient s.setoid ):
   (setoid_ideal_injection_domain s q).card + (setoid_ideal_injection_codomain s q).card =
   (spo_closuresystem s).number_of_hyperedges := by
@@ -514,12 +467,10 @@ private lemma setoid_ideal_number_of_hyperedges (s : Setup_spo α)(q : Quotient 
   let siic := setoid_ideal_injection_card s
   exact siic
 
---下で使っている。この定理の仮定はSetup_spoだが、hmで極大性を使うので、実質spo2の仮定。
+--The assumption in this theorem is Setup_spo, but since it uses maximality in hm, it is essentially an assumption of spo2.
 private lemma setoid_ideal_domain_codomain (s : Setup_spo α)(q : Quotient s.setoid ) (hm: isMaximal_spo s q) :
   (setoid_ideal_injection_domain s q).card ≤ (setoid_ideal_injection_codomain s q).card := by
-  --dsimp [setoid_ideal_injection_domain, setoid_ideal_injection_codomain]
 
-  --domainからcodomainへの写像が単射であることを使う。setoid_ideal_injectionで示されている。
 
   have : Function.Injective (setoid_ideal_injection s q hm) := by
     intro a b hab
@@ -529,7 +480,6 @@ private lemma setoid_ideal_domain_codomain (s : Setup_spo α)(q : Quotient s.set
   specialize fcl this
   simp_all only
 
---下で使っている。
 private lemma degree_le_setoid_ideal_injection_domain_card
   (s : Setup_spo α) (q : Quotient s.setoid) (x : {x // x ∈ classOf s q}) :
   (spo_closuresystem s).degree ↑↑x  = #(setoid_ideal_injection_domain s q) :=
@@ -540,27 +490,11 @@ by
   simp
   have svg:s.V = (spo_closuresystem s).ground := by  dsimp [spo_closuresystem]
   rw [←svg]
-  --補題を示していく。中身が等しいわけではない。片方はsubtypeで片方はそうでない。
-  /-
-  have :filter (fun s_1 => (spo_closuresystem s).sets s_1 ∧ ↑↑x ∈ s_1) (spo_closuresystem s).ground.powerset
-    =
-    Finset.filter
-      (fun (ss: Finset {x//x ∈ s.V}) =>
-        (spo_closuresystem s).sets (Finset.image Subtype.val ss) ∧
-          filter (fun a => Quotient.mk'' a = q) s.V.attach ⊆ ss)
-      s.V.attach.powerset := by
-  -/
-  -- filter (fun s_1 => (spo_closuresystem s).sets s_1 ∧ ↑↑x ∈ s_1) (spo_closuresystem s).ground.powerset
-  --からFinset.filter (fun (ss: Finset {x//x ∈ s.V}) => (spo_closuresystem s).sets (Finset.image Subtype.val ss) ∧ filter (fun a => Quotient.mk'' a = q) s.V.attach ⊆ ss)
-  --への全単射を作る。
 
   let domain := filter (fun s_1 => (spo_closuresystem s).sets s_1 ∧ ↑↑x ∈ s_1) (spo_closuresystem s).ground.powerset
 
-  --Finset.filter (fun (ss: Finset {x//x ∈ s.V}) => (spo_closuresystem s).sets (Finset.image Subtype.val ss) ∧ filter (fun a => Quotient.mk'' a = q) s.V.attach ⊆ ss)
-  --xを含むhyperedgeは、qの同値類の元だし、逆も言えるので、本来は簡単なはず。上は、subtypeでなく、下はsubtypeであることに注意。
   have equiv: ∀ ss:Finset α, ss ∈ domain ↔ (s.V.attach.filter (fun (t: {x//x ∈ s.V}) => t.val ∈ ss)) ∈ (setoid_ideal_injection_domain s q) ∧ ss ⊆ s.V := by
-    --言明がおかしい可能性。右辺から、ss subseteq s.Vがいえない。右辺の条件に、ssがs.Vの部分集合である条件を足すか。forallを変えるか？
-    --使っているのは、equiv2なので、そっちの原名はあっているのかも。
+
     intro ss
     dsimp [domain]
     dsimp [setoid_ideal_injection_domain]
@@ -583,7 +517,6 @@ by
         obtain ⟨val, property⟩ := val
         simp_all only
         exact left a
-        --ssがs.Vの部分集合であることはどこからいえるか。
       constructor
       ·
         constructor
@@ -608,7 +541,6 @@ by
                 simp_all only [Quotient.eq]
               have : x.val.val ∈ ss := by
                 simp_all only [mem_attach, true_and, domain]
-              --ssに入っているかどうかは、同値であれば、一致すると言う補題を作る。
               let sce := spo_closuresystem_equiv s x.val sss sr left1
               simp_all only [mem_attach, true_and, domain, sce]
 
@@ -627,7 +559,7 @@ by
         obtain ⟨left, right_1⟩ := left
         obtain ⟨val, property⟩ := val
         exact right a
-        --ssがs.Vの部分集合であることはどこからいえるか。
+
 
       constructor
       · --simp_all only [filter_subset, domain]
@@ -641,7 +573,6 @@ by
           rw [Finset.mem_filter] at xp
           have :(classOf s q).image Subtype.val ⊆ ss := by
             dsimp [classOf]
-            --right1からいえるはず。
             intro xx hxx
             rw [Finset.mem_image] at hxx
             simp at hxx
@@ -678,12 +609,9 @@ by
     constructor
     · intro hss
       use hss
-      -- i ss hss = s.V.attach.filter (fun t => t.val ∈ ss)
-      -- よって i ss hss ∈ codomain は equiv から直接従う
       simp_all only [mem_filter, Finset.mem_powerset, domain, i]
       simp_all only [mem_filter, Finset.mem_powerset, domain]
     · rintro ⟨hss, hi⟩
-      -- これは ss ∈ domain をそのまま取り出すだけ
       exact hss
 
   have H₁ : ∀ a ha, i a ha ∈ (setoid_ideal_injection_domain s q) := by
@@ -693,10 +621,8 @@ by
     exact ea
 
   have H₂ : ∀ a₁ ha₁ a₂ ha₂, i a₁ ha₁ = i a₂ ha₂ → a₁ = a₂ := by
-    -- attach と filter の injectivity に基づいて証明
     dsimp [i]
     intro a₁ ha₁ a₂ ha₂ h_eq
-    --simp only [Finset.mem_image, Finset.mem_filter]
     dsimp [domain] at ha₁
     rw [Finset.mem_filter] at ha₁
     obtain ⟨ha11, ha12 , ha13⟩ := ha₁
@@ -766,7 +692,6 @@ by
       exact hss1.2
 
   have H₃ : ∀ b ∈ (setoid_ideal_injection_domain s q), ∃ a ha, i a ha = b := by
-    -- 任意の b ∈ t に対して、もとの ground.powerset の元 a を再構成する
     intro b hb
     use b.image Subtype.val
     have fsv: Finset.image Subtype.val b ∈ domain :=
@@ -782,18 +707,12 @@ by
         intro x hx
         rw [Finset.mem_image] at hx
         obtain ⟨x', hx', rfl⟩ := hx
-        -- x' : {x // x ∈ s.V}, x = x'.val
-        -- hx' : x' ∈ b
-        -- hb1 : b ⊆ s.V.attach
         exact coe_mem x'
       · obtain ⟨hb1,hb2,hb3⟩ := hb
         constructor
         · exact hb2
         · dsimp [classOf]
           let xp := x.property
-          --hb3とxpだけで証明できるか。
-          --have : x.val ∈ b := by
-          --  exact hb3 xp
           exact Finset.mem_image_of_mem Subtype.val (hb3 xp)
 
     let ea := (equiv2 (b.image Subtype.val)).mpr
@@ -837,23 +756,17 @@ private lemma setoid_ideal_rare (s : Setup_spo α)(q : Quotient s.setoid )(hm: i
   simp
   let dls := degree_le_setoid_ideal_injection_domain_card s q x_1
   linarith
-
-
---functionalIdealrare.lean: maximalの頂点はrare。
---theorem setoid_ideal_rare (s : Setup_spo2 α)(q : Quotient (s.toSetup_spo).setoid )(hm: isMaximal_spo s.toSetup_spo q) :
---  ∀ (x : classOf s.toSetup_spo q), (spo_closuresystem s.toSetup_spo).toSet
-
---ある同値類がサイズ2以上であった場合に、その頂点はrareになる。
--- spo2のsingleton_if_not_maximalで極大要素出ない場合は、サイズが1。
--- よって、サイズ2以上の同値類は、rareなvertexになる。
--- この補題は、singleton_if_not_maximalを使っているので、仮定は、Setup_spoでなく、Setup_spo2である必要がある。
+-- If a certain equivalence class is size 2 or higher, the vertex becomes rare.
+-- If the maximum element does not appear in singleton_if_not_maximal in spo2, the size is 1.
+-- Therefore, equivalence classes of size 2 or higher will be rare vertex.
+-- This lemma uses singleton_if_not_maximal, so the assumption must be Setup_spo2, not Setup_spo.
 theorem spo2_rare (s : Setup_spo2 α) (q: Quotient s.setoid) (hx:(classOf s.toSetup_spo q).card ≥ 2) :
   ∀ (y : s.V), @Quotient.mk _ s.toSetup_spo.setoid y = q → (spo_closuresystem s.toSetup_spo).is_rare y :=
 by
   intro y hq
   have hm: isMaximal_spo s.toSetup_spo q :=
   by
-    exact s.singleton_if_not_maximal q hx  --ここで、spo2の仮定を使っている。
+    exact s.singleton_if_not_maximal q hx
   let sir := setoid_ideal_rare s.toSetup_spo q hm
   have : y ∈ classOf s.toSetup_spo q := by
     subst hq
@@ -865,38 +778,3 @@ by
   specialize sir ⟨y,this⟩
   subst hq
   simp_all only [ge_iff_le]
-
---使ってないもの。
-
---使ってない。これもpowersetとimageの順序を交換している様に見えるが。
---微妙に証明すべき式の形と一致してないのかも。
-private lemma card_filter_image_image_eq_filter
-  {α β : Type} [DecidableEq α] [DecidableEq β]
-  {s : Finset α} (f : α → β) (p : Finset β → Prop) [DecidablePred p] :
-  ((s.powerset.image (Finset.image f)).filter p).card =
-    ((s.image f).powerset.filter p).card := by
-  rw [@filter_image]
-  rw [←@powerset_image α β _ s f]
-  simp only [filter_image]
-
---使ってない。証明すべき式の形と一致してないのかも。
-private lemma filter_set_of_set_comp_eq_image_filter
-  {α β : Type*} [DecidableEq α] [DecidableEq β]
-  (S : Finset (Finset α)) (f : Finset α → Finset β)
-  (p : Finset β → Prop) [DecidablePred p] :
-  (S.filter (fun s => p (f s))).image f = (S.image f).filter p := by
-  ext x
-  simp only [Finset.mem_filter, Finset.mem_image]
-  constructor
-  · rintro ⟨hs, hps⟩
-    obtain ⟨left, right⟩ := hps
-    obtain ⟨left, right_1⟩ := left
-    subst right
-    simp_all only [and_true]
-    exact ⟨_, left, rfl⟩
-  · intro a
-    obtain ⟨left, right⟩ := a
-    obtain ⟨w, h⟩ := left
-    obtain ⟨left, right_1⟩ := h
-    subst right_1
-    exact ⟨w, ⟨left, right⟩, rfl⟩

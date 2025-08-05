@@ -46,7 +46,6 @@ noncomputable def rootedset_onestem_eachvertex_V {α : Type} [Fintype α] [Decid
       exact valid _ _ a.symm
     simp
     by_contra h_contra
-    --cases h_contraこれを入れるとbyでエラー
     simp_all only [Finset.mem_singleton, ne_eq]
     have h_eq : v = f v := by
       apply Subtype.eq
